@@ -10,7 +10,7 @@ class BOnD(object):
     def fieldmaps_ok(self):
         pass
     
-    def rename_files(self, bids_dir, pattern, replacement):
+    def rename_files(self, pattern, replacement):
         # This function performs find/replace on path names in a BIDS directory 
         # @Params
         # - bids_dir: a string contianing the path to the bids directory inside which we want to change files 
@@ -18,7 +18,7 @@ class BOnD(object):
         # - replacement: the substring that will replace "pattern"
         # @Returns
             # - None 
-        files_and_dirs = Path(bids_dir).rglob('*')
+        files_and_dirs = Path(self.path).rglob('*')
         for path in files_and_dirs:
             old_name = path.stem 
             old_ext = path.suffix
