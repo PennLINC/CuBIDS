@@ -30,5 +30,4 @@ class BOnD(object):
 
     def fill_metadata(self, pattern, metadata):
         pass
-if __name__ == '__main__':
-    pass
+
