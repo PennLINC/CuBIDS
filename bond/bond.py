@@ -9,7 +9,20 @@ class BOnD(object):
         pass
 
     def rename_files(self, pattern, replacement):
-        pass
+        # @Params
+            # - path: a string contianing the path to the bids directory inside which we want to change files 
+            # - pattern: the substring of the file we would like to replace
+            # - replacement: the substring that will replace "pattern"
+        # @Returns
+            # - None 
+    def rename_files(self.path, pattern, replacement):
+        files_and_dirs = Path(self.path).rglob('*')
+        for path in files_and_dirs:
+            old_name = path.stem 
+            old_ext = path.suffix
+            directory = path.parent
+            new_name = old_name.replace(pattern, replacement) + old_ext
+            path.rename(pathlib.Path(directory, new_name))
 
     def find_param_sets(self, pattern):
         pass
