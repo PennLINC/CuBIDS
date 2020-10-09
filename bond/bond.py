@@ -12,7 +12,7 @@ NON_KEY_ENTITIES = set(["subject", "session", "extension"])
 IMAGING_PARAMS = set(["ParallelReductionFactorInPlane", "ParallelAcquisitionTechnique",
     "ParallelAcquisitionTechnique", "PartialFourier", "PhaseEncodingDirection",
     "EffectiveEchoSpacing", "TotalReadoutTime", "EchoTime", "SliceEncodingDirection",
-    "DwellTime", "FlipAngle", "MultibandAccelerationFactor", "RepetitionTime",
+    "DwellTime", "FlipAngle", "MultibandAccelerationFactor", "RepetitionTime", "SliceTiming",
     "VolumeTiming", "NumberOfVolumesDiscardedByScanner", "NumberOfVolumesDiscardedByUser"])
 
 class BOnD(object):
