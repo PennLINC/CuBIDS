@@ -6,6 +6,7 @@ from bids.layout import parse_file_entities
 
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
 
+
 class BOnD(object):
 
     def __init__(self, data_root):
@@ -14,17 +15,23 @@ class BOnD(object):
     def fieldmaps_ok(self):
         pass
 
-    def rename_files(self, pattern, replacement):
+    def rename_files(self, filters, pattern, replacement):
         """
         # @Params
-            # - path: a string contianing the path to the bids directory inside which we want to change files
+            # - filters: pybids entities dictionary to find files to rename
             # - pattern: the substring of the file we would like to replace
             # - replacement: the substring that will replace "pattern"
         # @Returns
             # - None
+
+        >>> my_bond.rename_files({"PhaseEncodingDirection": 'j-',
+        ...                       "EchoTime": 0.005},
+        ...                       "acq-123", "acq-12345_dir-PA"
+        ...                     )
         """
-        files_and_dirs = Path(self.path).rglob('*')
-        for path in files_and_dirs:
+        files_to_change = self.layout.get(return_type='filename', **filters)
+        for bidsfile in files_to_change:
+            path = Path(bidsfile.path)
             old_name = path.stem
             old_ext = path.suffix
             directory = path.parent
@@ -45,8 +52,15 @@ class BOnD(object):
             key_groups.update(_file_to_key_group(path),)
         return sorted(key_groups)
 
-    def fill_metadata(self, pattern, metadata):
+    def change_metadata(self, filter, pattern, metadata):
         pass
+
+
+def _update_json(json_file, metadata):
+    with open(json_file, "r") as meta_in:
+        metadata = json.read(meta_in)
+
+    metadata.update
 
 
 def _key_group_to_entities(key_group):
