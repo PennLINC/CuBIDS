@@ -2,7 +2,7 @@
 from pathlib import Path
 import bids
 bids.config.set_option('extension_initial_dot', True)
-from bids.util import parse_file_entities
+from bids.layout import parse_file_entities
 
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
 
