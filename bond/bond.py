@@ -1,8 +1,11 @@
 """Main module."""
-from pathlib import Path
 import bids
-bids.config.set_option('extension_initial_dot', True)
+import json
+from pathlib import Path
 from bids.layout import parse_file_entities
+from bids.layout import BIDSFile
+
+bids.config.set_option('extension_initial_dot', True)
 
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
 
@@ -11,6 +14,7 @@ class BOnD(object):
 
     def __init__(self, data_root):
         self.path = data_root
+        self.layout = bids.BIDSLayout(self.path, validate = False)
 
     def fieldmaps_ok(self):
         pass
@@ -52,15 +56,63 @@ class BOnD(object):
             key_groups.update(_file_to_key_group(path),)
         return sorted(key_groups)
 
-    def change_metadata(self, filter, pattern, metadata):
-        pass
+    def change_metadata(self, filters, pattern, metadata):
+
+        # TODO: clean prints and add warnings
+
+        files_to_change = self.layout.get(return_type='object', **filters)
+
+        if not files_to_change:
+
+            print('NO FILES FOUND')
+        for bidsfile in files_to_change:
+
+            # get the sidecar file
+            bidsjson_file = bidsfile.get_associations()
+
+            if not bidsjson_file:
+                print("NO JSON FILES FOUND IN ASSOCIATIONS")
+                continue
+
+            json_file = [x for x in bidsjson_file if 'json' in x.filename]
+
+            if len(json_file) is not 1:
+
+                print("FOUND IRREGULAR ASSOCIATIONS")
+
+            else:
+
+                # get the data from it
+                json_file = json_file[0]
+
+                sidecar = json_file.get_dict()
+                sidecar.update(metadata)
+
+                # write out
+                _update_json(json_file.path, sidecar)
 
 
 def _update_json(json_file, metadata):
-    with open(json_file, "r") as meta_in:
-        metadata = json.read(meta_in)
 
-    metadata.update
+    if _validateJSON(metadata):
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=4)
+    else:
+
+        print("INVALID JSON DATA")
+    #metadata.update
+
+
+def _validateJSON(json_data):
+
+    # TODO
+    return True
+    '''try:
+        json.load(json_data)
+    except ValueError as err:
+        return False
+    return True
+    '''
 
 
 def _key_group_to_entities(key_group):
