@@ -8,7 +8,12 @@ from bids.layout import BIDSFile
 bids.config.set_option('extension_initial_dot', True)
 
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
-
+# Multi-dimensional keys SliceTiming
+IMAGING_PARAMS = set(["ParallelReductionFactorInPlane", "ParallelAcquisitionTechnique",
+    "ParallelAcquisitionTechnique", "PartialFourier", "PhaseEncodingDirection",
+    "EffectiveEchoSpacing", "TotalReadoutTime", "EchoTime", "SliceEncodingDirection",
+    "DwellTime", "FlipAngle", "MultibandAccelerationFactor", "RepetitionTime",
+    "VolumeTiming", "NumberOfVolumesDiscardedByScanner", "NumberOfVolumesDiscardedByUser"])
 
 class BOnD(object):
 
