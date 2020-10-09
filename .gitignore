@@ -133,4 +133,3 @@ dmypy.json
 # extra stuff
 data/*
 .DS_Store
-testdata/

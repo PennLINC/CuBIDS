@@ -1,0 +1,7 @@
+{
+    "BIDSVersion": "1.0.0",
+    "License": "BSD 3-clause",
+    "Name": "Heavily downsampled CS-DSI simulated data",
+    "ReferencesAndLinks": [],
+    "Authors": ["PennLINC", "PennBBL"]
+}
