@@ -3,17 +3,21 @@ import bids
 import json
 from pathlib import Path
 from bids.layout import parse_file_entities
-from bids.layout import BIDSFile
+import pandas as pd
 
 bids.config.set_option('extension_initial_dot', True)
 
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
 # Multi-dimensional keys SliceTiming
-IMAGING_PARAMS = set(["ParallelReductionFactorInPlane", "ParallelAcquisitionTechnique",
+IMAGING_PARAMS = set([
+    "ParallelReductionFactorInPlane", "ParallelAcquisitionTechnique",
     "ParallelAcquisitionTechnique", "PartialFourier", "PhaseEncodingDirection",
-    "EffectiveEchoSpacing", "TotalReadoutTime", "EchoTime", "SliceEncodingDirection",
-    "DwellTime", "FlipAngle", "MultibandAccelerationFactor", "RepetitionTime", "SliceTiming",
-    "VolumeTiming", "NumberOfVolumesDiscardedByScanner", "NumberOfVolumesDiscardedByUser"])
+    "EffectiveEchoSpacing", "TotalReadoutTime", "EchoTime",
+    "SliceEncodingDirection", "DwellTime", "FlipAngle",
+    "MultibandAccelerationFactor", "RepetitionTime", "SliceTiming",
+    "VolumeTiming", "NumberOfVolumesDiscardedByScanner",
+    "NumberOfVolumesDiscardedByUser"])
+
 
 class BOnD(object):
 
@@ -49,16 +53,17 @@ class BOnD(object):
 
     def get_param_groups(self, key_group):
         key_entities = _key_group_to_entities(key_group)
+        key_entities["extension"] = ".nii[.gz]*"
         matching_files = self.layout.get(return_type="file", scope="self",
-                                         **key_entities)
-        return _get_param_groups(matching_files)
+                                         regex_search=True, **key_entities)
+        return _get_param_groups(matching_files, self.layout)
 
     def get_key_groups(self):
         key_groups = set()
         for path in Path(self.path).rglob("*.*"):
             if path.suffix == ".json":
                 continue
-            key_groups.update(_file_to_key_group(path),)
+            key_groups.update((_file_to_key_group(path),))
         return sorted(key_groups)
 
     def change_metadata(self, filters, pattern, metadata):
@@ -81,7 +86,7 @@ class BOnD(object):
 
             json_file = [x for x in bidsjson_file if 'json' in x.filename]
 
-            if len(json_file) is not 1:
+            if not len(json_file) == 1:
 
                 print("FOUND IRREGULAR ASSOCIATIONS")
 
@@ -135,7 +140,7 @@ def _file_to_key_group(filename):
     return _entities_to_key_group(entities)
 
 
-def _get_param_groups(files):
+def _get_param_groups(files, layout):
     """Finds a list of *parameter groups* from a list of files.
 
     Parameters:
@@ -153,4 +158,19 @@ def _get_param_groups(files):
     For each file in `files`, find critical parameters for metadata. Then find
     unique sets of these critical parameters.
     """
-    pass
+    dfs = []
+    for path in files:
+        metadata = layout.get_metadata(path)
+        wanted_keys = metadata.keys() & IMAGING_PARAMS
+        example_data = {key: metadata[key] for key in wanted_keys}
+
+        # Expand slice timing to multiple columns
+        SliceTime = example_data.get('SliceTiming')
+        if SliceTime:
+            example_data.update(
+                {"SliceTime%03d" % SliceNum: time for
+                 SliceNum, time in enumerate(SliceTime)})
+            del example_data['SliceTiming']
+        dfs.append(example_data)
+
+    return pd.DataFrame(dfs).drop_duplicates()
