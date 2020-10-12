@@ -167,6 +167,9 @@ def _get_param_groups(files, layout):
         # Expand slice timing to multiple columns
         SliceTime = example_data.get('SliceTiming')
         if SliceTime:
+            # round each slice time to one place after the decimal
+            for i in range(len(SliceTime)):
+                SliceTime[i] = round(SliceTime[i], 1)
             example_data.update(
                 {"SliceTime%03d" % SliceNum: time for
                  SliceNum, time in enumerate(SliceTime)})
