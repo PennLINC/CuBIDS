@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from bids.layout import parse_file_entities
 import pandas as pd
+import pdb
 
 bids.config.set_option('extension_initial_dot', True)
 
@@ -21,10 +22,12 @@ IMAGING_PARAMS = set([
 
 class BOnD(object):
 
-    def __init__(self, data_root):
+    def __init__(self, data_root):  
+
         self.path = data_root
         self.layout = bids.BIDSLayout(self.path, validate = False)
-
+        self.keys_files = {}
+       
     def fieldmaps_ok(self):
         pass
 
@@ -58,14 +61,58 @@ class BOnD(object):
                                          regex_search=True, **key_entities)
         return _get_param_groups(matching_files, self.layout)
 
+    def get_file_params(self, key_group):
+        # files = self.keys_files[key_group] 
+        # return _get_file_params(files, self.layout)
+        key_entities = _key_group_to_entities(key_group)
+        key_entities["extension"] = ".nii[.gz]*"
+        matching_files = self.layout.get(return_type="file", scope="self",
+                                         regex_search=True, **key_entities)
+        return _get_file_params(matching_files, self.layout)
+    
+
     def get_key_groups(self):
         key_groups = set()
         for path in Path(self.path).rglob("*.*"):
-            if path.suffix == ".json":
-                continue
-            key_groups.update((_file_to_key_group(path),))
+            if path.suffix == ".json" and path.stem != "dataset_description":
+                key_groups.update((_file_to_key_group(path),))
+                # FILL THE DICTIONARY OF KEY GROUP, LIST OF FILENAMES PAIRS
+                ret = _file_to_key_group(path)
+                if ret not in self.keys_files.keys():
+                    self.keys_files[ret] = []    
+                self.keys_files[ret].append(path)
         return sorted(key_groups)
+   
+    
+    def get_filenames(self, key_group): 
+        # NEW - WORKS
+        return self.keys_files[key_group]
 
+
+    
+    
+    def change_filenames(self, key_group, split_params, pattern, replacement):
+        # NEW
+        #files = self.keys_files[key_group]
+        # for each filename in the key group, check if it's params match split_params
+        # if they match, perform the replacement acc to pattern/replacement
+        new_paths = []
+        changes = 0
+        dict_files_params = self.get_file_params(key_group)
+        for filename in dict_files_params.keys(): 
+            if dict_files_params[filename] == split_params:
+                # DO REPLACEMENT!
+                path = Path(filename)
+                old_name = path.stem
+                old_ext = path.suffix
+                directory = path.parent
+                new_name = old_name.replace(pattern, replacement) + old_ext
+                path.rename(Path(directory, new_name)) 
+                new_paths.append(path)
+                changes += 1
+        return (new_paths, changes)
+
+       
     def change_metadata(self, filters, pattern, metadata):
 
         # TODO: clean prints and add warnings
@@ -158,12 +205,13 @@ def _get_param_groups(files, layout):
     For each file in `files`, find critical parameters for metadata. Then find
     unique sets of these critical parameters.
     """
+
     dfs = []
     for path in files:
         metadata = layout.get_metadata(path)
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
-
+        
         # Expand slice timing to multiple columns
         SliceTime = example_data.get('SliceTiming')
         if SliceTime:
@@ -174,6 +222,50 @@ def _get_param_groups(files, layout):
                 {"SliceTime%03d" % SliceNum: time for
                  SliceNum, time in enumerate(SliceTime)})
             del example_data['SliceTiming']
+        
         dfs.append(example_data)
 
     return pd.DataFrame(dfs).drop_duplicates()
+
+
+def _get_file_params(files, layout):
+    """Finds a list of *parameter groups* from a list of files.
+
+    Parameters:
+    -----------
+
+    files : list
+        List of file names
+
+    Returns:
+    --------
+
+    parameter_groups : list
+        A list of unique parameter groups
+
+    For each file in `files`, find critical parameters for metadata. Then find
+    unique sets of these critical parameters.
+    """
+    dict_files_params = {}
+    
+    for path in files:
+        metadata = layout.get_metadata(path)
+        wanted_keys = metadata.keys() & IMAGING_PARAMS
+        example_data = {key: metadata[key] for key in wanted_keys}
+        
+        # Expand slice timing to multiple columns
+        SliceTime = example_data.get('SliceTiming')
+        if SliceTime:
+            # round each slice time to one place after the decimal
+            for i in range(len(SliceTime)):
+                SliceTime[i] = round(SliceTime[i], 1)
+            example_data.update(
+                {"SliceTime%03d" % SliceNum: time for
+                 SliceNum, time in enumerate(SliceTime)})
+            del example_data['SliceTiming']
+        
+        dict_files_params[path] = example_data
+
+    return dict_files_params
+    
+
