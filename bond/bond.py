@@ -36,6 +36,7 @@ class BOnD(object):
             # - replacement: the substring that will replace "pattern"
         # @Returns
             # - None
+
         >>> my_bond.rename_files({"PhaseEncodingDirection": 'j-',
         ...                       "EchoTime": 0.005},
         ...                       "acq-123", "acq-12345_dir-PA"
@@ -141,14 +142,19 @@ def _file_to_key_group(filename):
 
 def _get_param_groups(files, layout):
     """Finds a list of *parameter groups* from a list of files.
+
     Parameters:
     -----------
+
     files : list
         List of file names
+
     Returns:
     --------
+
     parameter_groups : list
         A list of unique parameter groups
+
     For each file in `files`, find critical parameters for metadata. Then find
     unique sets of these critical parameters.
     """
