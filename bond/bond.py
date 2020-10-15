@@ -26,19 +26,27 @@ class BOnD(object):
 
         self.path = data_root
         self.layout = bids.BIDSLayout(self.path, validate = False)
-        self.keys_files = {}
+        self.keys_files = {} # dictionary of KEYS: keys groups, VALUES: list of files 
        
     def fieldmaps_ok(self):
         pass
 
     def rename_files(self, filters, pattern, replacement):
         """
-        # @Params
-            # - filters: pybids entities dictionary to find files to rename
-            # - pattern: the substring of the file we would like to replace
-            # - replacement: the substring that will replace "pattern"
-        # @Returns
-            # - None
+        Parameters:
+        -----------
+            - filters : dictionary 
+                pybids entities dictionary to find files to rename
+
+            - pattern : string 
+                the substring of the file we would like to replace
+
+            - replacement : string 
+                the substring that will replace "pattern"
+        
+        Returns
+        -----------
+            - None
 
         >>> my_bond.rename_files({"PhaseEncodingDirection": 'j-',
         ...                       "EchoTime": 0.005},
@@ -62,8 +70,6 @@ class BOnD(object):
         return _get_param_groups(matching_files, self.layout)
 
     def get_file_params(self, key_group):
-        # files = self.keys_files[key_group] 
-        # return _get_file_params(files, self.layout)
         key_entities = _key_group_to_entities(key_group)
         key_entities["extension"] = ".nii[.gz]*"
         matching_files = self.layout.get(return_type="file", scope="self",
@@ -72,15 +78,23 @@ class BOnD(object):
     
 
     def get_key_groups(self):
+        
         key_groups = set()
+        
         for path in Path(self.path).rglob("*.*"):
+            
             if path.suffix == ".json" and path.stem != "dataset_description":
                 key_groups.update((_file_to_key_group(path),))
-                # FILL THE DICTIONARY OF KEY GROUP, LIST OF FILENAMES PAIRS
+                
+                # Fill the dictionary of key group, list of filenames pairrs 
                 ret = _file_to_key_group(path)
+                
                 if ret not in self.keys_files.keys():
+                    
                     self.keys_files[ret] = []    
+                
                 self.keys_files[ret].append(path)
+        
         return sorted(key_groups)
    
     
@@ -92,16 +106,20 @@ class BOnD(object):
     
     
     def change_filenames(self, key_group, split_params, pattern, replacement):
-        # NEW
-        #files = self.keys_files[key_group]
         # for each filename in the key group, check if it's params match split_params
         # if they match, perform the replacement acc to pattern/replacement
+        
+        # list of file paths that incorporate the replacement 
         new_paths = []
-        changes = 0
+
+        # obtain the dictionary of files, param groups 
         dict_files_params = self.get_file_params(key_group)
+
         for filename in dict_files_params.keys(): 
-            if dict_files_params[filename] == split_params:
-                # DO REPLACEMENT!
+            
+            if dict_files_params[filename] == split_params:    
+                # Perform the replacement if the param dictionaries match
+                
                 path = Path(filename)
                 old_name = path.stem
                 old_ext = path.suffix
@@ -109,8 +127,8 @@ class BOnD(object):
                 new_name = old_name.replace(pattern, replacement) + old_ext
                 path.rename(Path(directory, new_name)) 
                 new_paths.append(path)
-                changes += 1
-        return (new_paths, changes)
+        
+        return new_paths 
 
        
     def change_metadata(self, filters, pattern, metadata):
@@ -240,8 +258,8 @@ def _get_file_params(files, layout):
     Returns:
     --------
 
-    parameter_groups : list
-        A list of unique parameter groups
+    dict_files_params : dictionary 
+        A dictionary of KEYS: filenames, VALUES: their param dictionaries
 
     For each file in `files`, find critical parameters for metadata. Then find
     unique sets of these critical parameters.
@@ -267,3 +285,5 @@ def _get_file_params(files, layout):
         dict_files_params[path] = example_data
 
     return dict_files_params
+    
+
