@@ -27,10 +27,12 @@ class BOnD(object):
         self.path = data_root
         self.layout = bids.BIDSLayout(self.path, validate = False)
         self.keys_files = {} # dictionary of KEYS: keys groups, VALUES: list of files 
-       
+
+        
     def fieldmaps_ok(self):
         pass
 
+      
     def rename_files(self, filters, pattern, replacement):
         """
         Parameters:
@@ -68,7 +70,8 @@ class BOnD(object):
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
         return _get_param_groups(matching_files, self.layout)
-
+      
+      
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
         key_entities["extension"] = ".nii[.gz]*"
@@ -102,8 +105,6 @@ class BOnD(object):
         # NEW - WORKS
         return self.keys_files[key_group]
 
-
-    
     
     def change_filenames(self, key_group, split_params, pattern, replacement):
         # for each filename in the key group, check if it's params match split_params
@@ -229,7 +230,7 @@ def _get_param_groups(files, layout):
         metadata = layout.get_metadata(path)
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
-        
+
         # Expand slice timing to multiple columns
         SliceTime = example_data.get('SliceTiming')
         if SliceTime:
@@ -286,4 +287,3 @@ def _get_file_params(files, layout):
 
     return dict_files_params
     
-

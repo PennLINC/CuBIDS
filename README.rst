@@ -1,6 +1,6 @@
-====
-BOnD
-====
+==================
+BOnD: BIDS On Disk
+==================
 
 
 .. image:: https://img.shields.io/pypi/v/bond.svg
@@ -13,25 +13,18 @@ BOnD
         :target: https://bond.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
+``BOnD`` is designed to facilitate the curation and sanity-checking of BIDS
+datasets that live on a hard drive. Its has many functions that help curators
+follow the Three Steps of Curation. These steps are
 
 
-
-BIDS On Disk Editor
-
-
-* Free software: GNU General Public License v3
-* Documentation: https://bond.readthedocs.io.
+  1. Ensure the data is valid BIDS.
+  2. Detect potentially multiple *parameter groups* within *key groups*
+  3. Test preprocessing pipelines on an example of each *parameter group*.
 
 
-Features
---------
+Step 1: Ensure the data is valid BIDS
+-------------------------------------
 
-* TODO
-
-Credits
--------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+The BOnD class has a call to a containerized version of the BIDS Validator. The
+output of the BIDS validator is collected and converted to a convenient Python object.
