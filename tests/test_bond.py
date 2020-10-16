@@ -9,6 +9,7 @@ from pkg_resources import resource_filename as pkgrf
 import shutil
 import bond
 import tempfile
+from pathlib import Path
 import os.path as op
 from copy import deepcopy
 import base64
@@ -18,7 +19,7 @@ TEST_DATA = pkgrf("bond", "testdata")
 
 
 def test_data(tmp_path):
-    data_root = tmp_path / "testdata"
+    data_root = Path(tmp_path) / "testdata"
     shutil.copytree(TEST_DATA, str(data_root))
     assert len(list(data_root.rglob("*"))) > 5
 

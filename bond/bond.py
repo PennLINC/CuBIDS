@@ -2,6 +2,7 @@
 import bids
 import json
 from pathlib import Path
+import bids
 from bids.layout import parse_file_entities
 import pandas as pd
 
@@ -21,12 +22,10 @@ IMAGING_PARAMS = set([
 
 class BOnD(object):
 
-    def __init__(self, data_root):
-        self.path = data_root
-        self.layout = bids.BIDSLayout(self.path, validate = False)
+    def __init__(self, bidslayout):
+        self.layout = bidslayout
+        self.path = self.layout.root
 
-    def fieldmaps_ok(self):
-        pass
 
     def rename_files(self, filters, pattern, replacement):
         """
