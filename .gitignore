@@ -1,3 +1,5 @@
+*.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -131,3 +133,4 @@ dmypy.json
 # extra stuff
 data/*
 .DS_Store
+notebooks/testdata
