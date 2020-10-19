@@ -229,9 +229,11 @@ def _get_param_groups(files, layout):
     dfs = []
     for path in files:
         metadata = layout.get_metadata(path)
+        fmap = layout.get_fieldmap(path, return_list=True)
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
-
+        for fmap_num, fmap_info in enumerate(fmap):
+            example_data['fieldmap_type%02d' % fmap_num] = fmap_info.get('suffix', '')
         # Expand slice timing to multiple columns
         SliceTime = example_data.get('SliceTiming')
         if SliceTime:
@@ -272,7 +274,6 @@ def _get_file_params(files, layout):
         metadata = layout.get_metadata(path)
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
-
         # Expand slice timing to multiple columns
         SliceTime = example_data.get('SliceTiming')
         if SliceTime:
