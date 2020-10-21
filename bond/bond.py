@@ -1,10 +1,13 @@
 """Main module."""
+from collections import defaultdict
 import bids
 import json
 from pathlib import Path
 from bids.layout import parse_file_entities
+from bids.utils import listify
 import pandas as pd
 import pdb
+from tqdm import tqdm
 
 bids.config.set_option('extension_initial_dot', True)
 
@@ -27,11 +30,28 @@ class BOnD(object):
         self.path = data_root
         self.layout = bids.BIDSLayout(self.path, validate = False)
         self.keys_files = {} # dictionary of KEYS: keys groups, VALUES: list of files
-
+        self.fieldmaps_cached = False
 
     def fieldmaps_ok(self):
         pass
 
+    def _cache_fieldmaps(self):
+        """Searches all fieldmaps and creates a lookup for each file.
+        """
+        suffix = '(phase1|phasediff|epi|fieldmap)'
+        fmap_files = self.layout.get(suffix=suffix, regex_search=True,
+                                     extension=['.nii.gz', '.nii'])
+        
+        files_to_fmaps = defaultdict(list)
+        for fmap_file in tqdm(fmap_files):
+            intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
+            subject_prefix = "sub-%s/" % fmap_file.entities['subject']
+            for intended_for in intentions:
+                subject_relative_path = subject_prefix + intended_for
+                files_to_fmaps[subject_relative_path]. append(fmap_file)
+
+        self.fieldmap_lookup = files_to_fmaps
+        self.fieldmaps_cached = True
 
     def rename_files(self, filters, pattern, replacement):
         """
@@ -65,12 +85,13 @@ class BOnD(object):
             path.rename(Path(directory, new_name))
 
     def get_param_groups(self, key_group):
+        if not self.fieldmaps_cached:
+            raise Exception("Fieldmaps must be cached to find parameter groups.")
         key_entities = _key_group_to_entities(key_group)
         key_entities["extension"] = ".nii[.gz]*"
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
-        return _get_param_groups(matching_files, self.layout)
-
+        return _get_param_groups(matching_files, self.layout, self.fieldmap_lookup)
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
@@ -78,7 +99,6 @@ class BOnD(object):
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
         return _get_file_params(matching_files, self.layout)
-
 
     def get_key_groups(self):
 
@@ -100,11 +120,9 @@ class BOnD(object):
 
         return sorted(key_groups)
 
-
     def get_filenames(self, key_group):
         # NEW - WORKS
         return self.keys_files[key_group]
-
 
     def change_filenames(self, key_group, split_params, pattern, replacement):
         # for each filename in the key group, check if it's params match split_params
@@ -130,7 +148,6 @@ class BOnD(object):
                 new_paths.append(path)
 
         return new_paths
-
 
     def change_metadata(self, filters, pattern, metadata):
 
@@ -206,7 +223,7 @@ def _file_to_key_group(filename):
     return _entities_to_key_group(entities)
 
 
-def _get_param_groups(files, layout):
+def _get_param_groups(files, layout, fieldmap_lookup):
     """Finds a list of *parameter groups* from a list of files.
 
     Parameters:
@@ -214,6 +231,13 @@ def _get_param_groups(files, layout):
 
     files : list
         List of file names
+    
+    layout : bids.BIDSLayout
+        PyBIDS BIDSLayout object where `files` come from
+    
+    fieldmap_lookup : defaultdict
+        mapping of filename strings relative to the bids root 
+        (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
 
     Returns:
     --------
@@ -226,13 +250,17 @@ def _get_param_groups(files, layout):
     """
 
     dfs = []
+    # path needs to be relative to the root with no leading prefix
     for path in files:
         metadata = layout.get_metadata(path)
-        fmap = layout.get_fieldmap(path, return_list=True)
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
-        for fmap_num, fmap_info in enumerate(fmap):
-            example_data['fieldmap_type%02d' % fmap_num] = fmap_info.get('suffix', '')
+
+        # Get the fieldmaps out and add their types
+        fieldmap_types = sorted([fmap.entities['fmap'] for fmap in fieldmap_lookup[path]])
+        for fmap_num, fmap_type in enumerate(fieldmap_types):
+            example_data['fieldmap_type%02d' % fmap_num] = fmap_type
+
         # Expand slice timing to multiple columns
         SliceTime = example_data.get('SliceTiming')
         if SliceTime:
