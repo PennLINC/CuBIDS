@@ -18,7 +18,7 @@ IMAGING_PARAMS = set([
     "SliceEncodingDirection", "DwellTime", "FlipAngle",
     "MultibandAccelerationFactor", "RepetitionTime", "SliceTiming",
     "VolumeTiming", "NumberOfVolumesDiscardedByScanner",
-    "NumberOfVolumesDiscardedByUser"])
+    "NumberOfVolumesDiscardedByUser", "ProtocolName"])
 
 
 class BOnD(object):
@@ -51,6 +51,7 @@ class BOnD(object):
 
         return df
 
+
     def rename_files(self, filters, pattern, replacement):
         """
         Parameters:
@@ -82,12 +83,28 @@ class BOnD(object):
             new_name = old_name.replace(pattern, replacement) + old_ext
             path.rename(Path(directory, new_name))
 
-    def get_param_groups(self, key_group):
-        key_entities = _key_group_to_entities(key_group)
-        key_entities["extension"] = ".nii[.gz]*"
-        matching_files = self.layout.get(return_type="file", scope="self",
-                                         regex_search=True, **key_entities)
-        return _get_param_groups(matching_files, self.layout)
+    def get_param_groups(self, key_groups, include_files=False):
+
+        if not isinstance(key_groups, list):
+            key_groups = [key_groups]
+
+        for kg in key_groups:
+
+            key_entities = _key_group_to_entities(kg)
+            key_entities["extension"] = ".nii[.gz]*"
+            matching_files = self.layout.get(return_type="file", scope="self",
+                                            regex_search=True, **key_entities)
+
+            params = _get_param_groups(matching_files, self.layout)
+
+            params['key_group'] = kg
+
+            if include_files:
+                params['files'] = [matching_files]
+                params = params.explode('files')
+            all_param_groups.append(params)
+
+        return pd.concat(all_param_groups)
 
 
     def get_file_params(self, key_group):
