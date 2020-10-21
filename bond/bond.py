@@ -52,6 +52,11 @@ class BOnD(object):
         return df
 
 
+    def get_files_with_protocol(self, protocol_name):
+
+        return self.layout.get(return_type='filename', ProtocolName=protocol_name)
+
+
     def rename_files(self, filters, pattern, replacement):
         """
         Parameters:
