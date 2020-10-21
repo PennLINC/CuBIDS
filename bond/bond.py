@@ -48,10 +48,11 @@ class BOnD(object):
             subject_prefix = "sub-%s/" % fmap_file.entities['subject']
             for intended_for in intentions:
                 subject_relative_path = subject_prefix + intended_for
-                files_to_fmaps[subject_relative_path]. append(fmap_file)
+                files_to_fmaps[subject_relative_path].append(fmap_file)
 
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
+        return self.fieldmap_lookup 
 
     def rename_files(self, filters, pattern, replacement):
         """
@@ -59,17 +60,13 @@ class BOnD(object):
         -----------
             - filters : dictionary
                 pybids entities dictionary to find files to rename
-
             - pattern : string
                 the substring of the file we would like to replace
-
             - replacement : string
                 the substring that will replace "pattern"
-
         Returns
         -----------
             - None
-
         >>> my_bond.rename_files({"PhaseEncodingDirection": 'j-',
         ...                       "EchoTime": 0.005},
         ...                       "acq-123", "acq-12345_dir-PA"
@@ -91,7 +88,7 @@ class BOnD(object):
         key_entities["extension"] = ".nii[.gz]*"
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
-        return _get_param_groups(matching_files, self.layout, self.fieldmap_lookup)
+        return _get_param_groups(matching_files, self.layout, self.fieldmap_lookup, self.path)
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
@@ -223,12 +220,10 @@ def _file_to_key_group(filename):
     return _entities_to_key_group(entities)
 
 
-def _get_param_groups(files, layout, fieldmap_lookup):
+def _get_param_groups(files, layout, fieldmap_lookup, root_dir):
     """Finds a list of *parameter groups* from a list of files.
-
     Parameters:
     -----------
-
     files : list
         List of file names
     
@@ -238,28 +233,29 @@ def _get_param_groups(files, layout, fieldmap_lookup):
     fieldmap_lookup : defaultdict
         mapping of filename strings relative to the bids root 
         (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
-
     Returns:
     --------
-
     parameter_groups : list
         A list of unique parameter groups
-
     For each file in `files`, find critical parameters for metadata. Then find
     unique sets of these critical parameters.
     """
-
+    #fieldmap_lookups = []
+    
     dfs = []
     # path needs to be relative to the root with no leading prefix
+    l_fieldmap_types = []
     for path in files:
         metadata = layout.get_metadata(path)
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
 
         # Get the fieldmaps out and add their types
-        fieldmap_types = sorted([fmap.entities['fmap'] for fmap in fieldmap_lookup[path]])
+        fpath = path.replace(root_dir, "")
+        fieldmap_types = sorted([fmap.entities['fmap'] for fmap in fieldmap_lookup[fpath]])
+        l_fieldmap_types.append(fieldmap_types)
         for fmap_num, fmap_type in enumerate(fieldmap_types):
-            example_data['fieldmap_type%02d' % fmap_num] = fmap_type
+            example_data['fieldmap_type%02d' % fmap_num] = fmap_type    
 
         # Expand slice timing to multiple columns
         SliceTime = example_data.get('SliceTiming')
@@ -274,24 +270,19 @@ def _get_param_groups(files, layout, fieldmap_lookup):
 
         dfs.append(example_data)
 
-    return pd.DataFrame(dfs).drop_duplicates()
+    return (pd.DataFrame(dfs).drop_duplicates(), fieldmap_types)
 
 
 def _get_file_params(files, layout):
     """Finds a list of *parameter groups* from a list of files.
-
     Parameters:
     -----------
-
     files : list
         List of file names
-
     Returns:
     --------
-
     dict_files_params : dictionary
         A dictionary of KEYS: filenames, VALUES: their param dictionaries
-
     For each file in `files`, find critical parameters for metadata. Then find
     unique sets of these critical parameters.
     """
