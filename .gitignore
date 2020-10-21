@@ -134,3 +134,5 @@ dmypy.json
 data/*
 .DS_Store
 notebooks/testdata
+.Rproj.user
+*.RProj

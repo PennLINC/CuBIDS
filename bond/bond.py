@@ -34,6 +34,23 @@ class BOnD(object):
         pass
 
 
+    def get_sidecar_data(self, filelist=None):
+
+        if not filelist:
+
+            filelist = [v.path for k,v in layout.files.items() if type(v) == bids.layout.models.BIDSImageFile]
+
+        sidecar_data = _get_file_params(filelist, self.layout)
+        df = pd.DataFrame.from_dict(sidecar_data, orient='index')
+
+        df['filepath'] = df.index
+        df['filepath'] = df['filepath'].str.extract('(sub.+)')
+        df.reset_index(inplace=True)
+
+        del df['index']
+
+        return df
+
     def rename_files(self, filters, pattern, replacement):
         """
         Parameters:
