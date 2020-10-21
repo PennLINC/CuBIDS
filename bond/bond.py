@@ -240,7 +240,6 @@ def _get_param_groups(files, layout, fieldmap_lookup, root_dir):
     For each file in `files`, find critical parameters for metadata. Then find
     unique sets of these critical parameters.
     """
-    #fieldmap_lookups = []
     
     dfs = []
     # path needs to be relative to the root with no leading prefix
@@ -270,7 +269,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, root_dir):
 
         dfs.append(example_data)
 
-    return (pd.DataFrame(dfs).drop_duplicates(), fieldmap_types)
+    return pd.DataFrame(dfs).drop_duplicates()
 
 
 def _get_file_params(files, layout):
