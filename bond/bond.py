@@ -45,10 +45,10 @@ class BOnD(object):
         files_to_fmaps = defaultdict(list)
         for fmap_file in tqdm(fmap_files):
             intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
-            subject_prefix = "sub-%s/" % fmap_file.entities['subject']
+            subject_prefix = "sub-%s" % fmap_file.entities['subject']
             for intended_for in intentions:
-                subject_relative_path = subject_prefix + intended_for
-                files_to_fmaps[subject_relative_path].append(fmap_file)
+                full_path = Path(self.path) / subject_prefix / intended_for
+                files_to_fmaps[str(full_path)].append(fmap_file)
 
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
@@ -220,7 +220,7 @@ def _file_to_key_group(filename):
     return _entities_to_key_group(entities)
 
 
-def _get_param_groups(files, layout, fieldmap_lookup, root_dir):
+def _get_param_groups(files, layout, fieldmap_lookup):
     """Finds a list of *parameter groups* from a list of files.
     Parameters:
     -----------
@@ -243,16 +243,13 @@ def _get_param_groups(files, layout, fieldmap_lookup, root_dir):
     
     dfs = []
     # path needs to be relative to the root with no leading prefix
-    l_fieldmap_types = []
     for path in files:
         metadata = layout.get_metadata(path)
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
 
         # Get the fieldmaps out and add their types
-        fpath = path.replace(root_dir, "")
-        fieldmap_types = sorted([fmap.entities['fmap'] for fmap in fieldmap_lookup[fpath]])
-        l_fieldmap_types.append(fieldmap_types)
+        fieldmap_types = sorted([fmap.entities['fmap'] for fmap in fieldmap_lookup[path]])
         for fmap_num, fmap_type in enumerate(fieldmap_types):
             example_data['fieldmap_type%02d' % fmap_num] = fmap_type    
 
