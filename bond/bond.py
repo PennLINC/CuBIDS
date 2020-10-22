@@ -256,10 +256,11 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
         example_data["key_group"] = key_group_name
+
         # Get the fieldmaps out and add their types
         fieldmap_types = sorted([fmap.entities['fmap'] for fmap in fieldmap_lookup[path]])
         for fmap_num, fmap_type in enumerate(fieldmap_types):
-            example_data['fieldmap_type%02d' % fmap_num] = fmap_type    
+            example_data['FieldmapType%02d' % fmap_num] = fmap_type    
 
         # Expand slice timing to multiple columns
         SliceTime = example_data.get('SliceTiming')
