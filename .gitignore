@@ -135,3 +135,5 @@ data/*
 .DS_Store
 notebooks/testdata
 .vscode/settings.json
+.Rproj.user
+*.RProj

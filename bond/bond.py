@@ -3,6 +3,7 @@ from collections import defaultdict
 import bids
 import json
 from pathlib import Path
+import bids
 from bids.layout import parse_file_entities
 from bids.utils import listify
 import pandas as pd
@@ -20,7 +21,7 @@ IMAGING_PARAMS = set([
     "SliceEncodingDirection", "DwellTime", "FlipAngle",
     "MultibandAccelerationFactor", "RepetitionTime", "SliceTiming",
     "VolumeTiming", "NumberOfVolumesDiscardedByScanner",
-    "NumberOfVolumesDiscardedByUser"])
+    "NumberOfVolumesDiscardedByUser", "ProtocolName"])
 
 
 class BOnD(object):
@@ -41,7 +42,7 @@ class BOnD(object):
         suffix = '(phase1|phasediff|epi|fieldmap)'
         fmap_files = self.layout.get(suffix=suffix, regex_search=True,
                                      extension=['.nii.gz', '.nii'])
-        
+
         files_to_fmaps = defaultdict(list)
         for fmap_file in tqdm(fmap_files):
             intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
@@ -52,7 +53,30 @@ class BOnD(object):
 
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
-        return self.fieldmap_lookup 
+        return self.fieldmap_lookup
+
+    def get_sidecar_data(self, filelist=None):
+
+        if not filelist:
+
+            filelist = [v.path for k,v in layout.files.items() if type(v) == bids.layout.models.BIDSImageFile]
+
+        sidecar_data = _get_file_params(filelist, self.layout)
+        df = pd.DataFrame.from_dict(sidecar_data, orient='index')
+
+        df['filepath'] = df.index
+        df['filepath'] = df['filepath'].str.extract('(sub.+)')
+        df.reset_index(inplace=True)
+
+        del df['index']
+
+        return df
+
+
+    def get_files_with_protocol(self, protocol_name):
+
+        return self.layout.get(return_type='filename', ProtocolName=protocol_name)
+
 
     def rename_files(self, filters, pattern, replacement):
         """
@@ -81,14 +105,29 @@ class BOnD(object):
             new_name = old_name.replace(pattern, replacement) + old_ext
             path.rename(Path(directory, new_name))
 
-    def get_param_groups(self, key_group):
-        if not self.fieldmaps_cached:
-            raise Exception("Fieldmaps must be cached to find parameter groups.")
-        key_entities = _key_group_to_entities(key_group)
-        key_entities["extension"] = ".nii[.gz]*"
-        matching_files = self.layout.get(return_type="file", scope="self",
-                                         regex_search=True, **key_entities)
-        return _get_param_groups(matching_files, self.layout, self.fieldmap_lookup, self.path)
+    def get_param_groups(self, key_groups, include_files=False):
+
+        if not isinstance(key_groups, list):
+            key_groups = [key_groups]
+
+        for kg in key_groups:
+
+            key_entities = _key_group_to_entities(kg)
+            key_entities["extension"] = ".nii[.gz]*"
+            matching_files = self.layout.get(return_type="file", scope="self",
+                                            regex_search=True, **key_entities)
+
+            params = _get_param_groups(matching_files, self.layout)
+
+            params['key_group'] = kg
+
+            if include_files:
+                params['files'] = [matching_files]
+                params = params.explode('files')
+            all_param_groups.append(params)
+
+        return pd.concat(all_param_groups)
+
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
@@ -226,12 +265,12 @@ def _get_param_groups(files, layout, fieldmap_lookup, root_dir):
     -----------
     files : list
         List of file names
-    
+
     layout : bids.BIDSLayout
         PyBIDS BIDSLayout object where `files` come from
-    
+
     fieldmap_lookup : defaultdict
-        mapping of filename strings relative to the bids root 
+        mapping of filename strings relative to the bids root
         (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
     Returns:
     --------
@@ -240,7 +279,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, root_dir):
     For each file in `files`, find critical parameters for metadata. Then find
     unique sets of these critical parameters.
     """
-    
+
     dfs = []
     # path needs to be relative to the root with no leading prefix
     l_fieldmap_types = []
@@ -254,7 +293,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, root_dir):
         fieldmap_types = sorted([fmap.entities['fmap'] for fmap in fieldmap_lookup[fpath]])
         l_fieldmap_types.append(fieldmap_types)
         for fmap_num, fmap_type in enumerate(fieldmap_types):
-            example_data['fieldmap_type%02d' % fmap_num] = fmap_type    
+            example_data['fieldmap_type%02d' % fmap_num] = fmap_type
 
         # Expand slice timing to multiple columns
         SliceTime = example_data.get('SliceTiming')
