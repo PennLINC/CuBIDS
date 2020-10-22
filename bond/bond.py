@@ -52,7 +52,6 @@ class BOnD(object):
 
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
-        return self.fieldmap_lookup 
 
     def rename_files(self, filters, pattern, replacement):
         """
@@ -81,14 +80,23 @@ class BOnD(object):
             new_name = old_name.replace(pattern, replacement) + old_ext
             path.rename(Path(directory, new_name))
 
-    def get_param_groups(self, key_group):
+    def get_param_groups_from_key_group(self, key_group):
         if not self.fieldmaps_cached:
             raise Exception("Fieldmaps must be cached to find parameter groups.")
         key_entities = _key_group_to_entities(key_group)
         key_entities["extension"] = ".nii[.gz]*"
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
-        return _get_param_groups(matching_files, self.layout, self.fieldmap_lookup, self.path)
+        return _get_param_groups(matching_files, self.layout, self.fieldmap_lookup, key_group)
+
+    def get_param_groups_dataframe(self):
+        key_groups = self.get_key_groups()
+        parameter_groups = []
+        for key_group in key_groups:
+            parameter_groups.append(
+                self.get_param_groups_from_key_group(key_group))
+        return pd.concat(parameter_groups)
+
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
@@ -220,7 +228,7 @@ def _file_to_key_group(filename):
     return _entities_to_key_group(entities)
 
 
-def _get_param_groups(files, layout, fieldmap_lookup):
+def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     """Finds a list of *parameter groups* from a list of files.
     Parameters:
     -----------
@@ -247,7 +255,7 @@ def _get_param_groups(files, layout, fieldmap_lookup):
         metadata = layout.get_metadata(path)
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
-
+        example_data["key_group"] = key_group_name
         # Get the fieldmaps out and add their types
         fieldmap_types = sorted([fmap.entities['fmap'] for fmap in fieldmap_lookup[path]])
         for fmap_num, fmap_type in enumerate(fieldmap_types):
