@@ -279,6 +279,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
         # Add the number of slice times specified
         example_data["NSliceTimes"] = len(slice_times)
+        example_data["FilePath"] = path
 
         dfs.append(example_data)
 
