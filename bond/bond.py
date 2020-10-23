@@ -267,19 +267,27 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     # path needs to be relative to the root with no leading prefix
     for path in files:
         metadata = layout.get_metadata(path)
+        intentions = metadata.get("IntendedFor", [])
         slice_times = metadata.get("SliceTiming", [])
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
         example_data["key_group"] = key_group_name
 
         # Get the fieldmaps out and add their types
-        fieldmap_types = sorted([fmap.entities['fmap'] for fmap in fieldmap_lookup[path]])
+        fieldmap_types = sorted([_file_to_key_group(fmap.path) for 
+                                 fmap in fieldmap_lookup[path]])
         for fmap_num, fmap_type in enumerate(fieldmap_types):
-            example_data['FieldmapType%02d' % fmap_num] = fmap_type    
+            example_data['FieldmapKey%02d' % fmap_num] = fmap_type    
 
         # Add the number of slice times specified
         example_data["NSliceTimes"] = len(slice_times)
         example_data["FilePath"] = path
+
+        # If it's a fieldmap, see what key group it's intended to correct
+        intended_key_groups = sorted([_file_to_key_group(intention) for 
+                                      intention in intentions])
+        for intention_num, intention_key_group in enumerate(intended_key_groups):
+            example_data["IntendedForKey%02d" % intention_num] = intention_key_group
 
         dfs.append(example_data)
 
