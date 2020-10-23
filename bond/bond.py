@@ -98,13 +98,21 @@ class BOnD(object):
                                          regex_search=True, **key_entities)
         return _get_param_groups(matching_files, self.layout, self.fieldmap_lookup, key_group)
 
-    def get_param_groups_dataframe(self):
+    def get_param_groups_dataframes(self):
+        """Creates DataFrames of files x param groups and a summary
+        """
         key_groups = self.get_key_groups()
         parameter_groups = []
         for key_group in key_groups:
             parameter_groups.append(
                 self.get_param_groups_from_key_group(key_group))
-        return pd.concat(parameter_groups)
+        df = pd.concat(parameter_groups, ignore_index=True)
+        # Make a counts summary dataframe
+        param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
+        uniques = df.drop_duplicates(param_group_cols, ignore_index=True)
+        counts = df.groupby(["key_group", "ParamGroup"]).size().reset_index(name='Count')
+        params_and_counts = pd.merge(uniques, counts)
+        return df, params_and_counts
 
 
     def get_file_params(self, key_group):
@@ -293,7 +301,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
     # Assign each file to a ParamGroup
     df = pd.DataFrame(dfs)
-    df['ParamGroup'] = df.groupby(df.columns.tolist(), sort=False).ngroup() + 1
+    param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
+    df['ParamGroup'] = df.groupby(param_group_cols, sort=False).ngroup() + 1
 
     return df
 
