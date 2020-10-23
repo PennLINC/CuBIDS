@@ -41,17 +41,26 @@ class BOnD(object):
         suffix = '(phase1|phasediff|epi|fieldmap)'
         fmap_files = self.layout.get(suffix=suffix, regex_search=True,
                                      extension=['.nii.gz', '.nii'])
-        
+        misfits = []
         files_to_fmaps = defaultdict(list)
         for fmap_file in tqdm(fmap_files):
             intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
             subject_prefix = "sub-%s" % fmap_file.entities['subject']
-            for intended_for in intentions:
-                full_path = Path(self.path) / subject_prefix / intended_for
-                files_to_fmaps[str(full_path)].append(fmap_file)
+            
+            if intentions is not None: 
+                for intended_for in intentions:
+                    full_path = Path(self.path) / subject_prefix / intended_for
+                    files_to_fmaps[str(full_path)].append(fmap_file)
+            
+            # fmap file detected, no intended for found
+            else:
+                misfits.append(fmap_file)
 
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
+
+        # return a list of all filenames where fmap file detected, no intended for found
+        return misfits
 
     def rename_files(self, filters, pattern, replacement):
         """
