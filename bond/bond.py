@@ -18,7 +18,7 @@ IMAGING_PARAMS = set([
     "ParallelAcquisitionTechnique", "PartialFourier", "PhaseEncodingDirection",
     "EffectiveEchoSpacing", "TotalReadoutTime", "EchoTime",
     "SliceEncodingDirection", "DwellTime", "FlipAngle",
-    "MultibandAccelerationFactor", "RepetitionTime", "SliceTiming",
+    "MultibandAccelerationFactor", "RepetitionTime",
     "VolumeTiming", "NumberOfVolumesDiscardedByScanner",
     "NumberOfVolumesDiscardedByUser"])
 
@@ -230,6 +230,10 @@ def _file_to_key_group(filename):
 
 def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     """Finds a list of *parameter groups* from a list of files.
+
+    For each file in `files`, find critical parameters for metadata. Then find
+    unique sets of these critical parameters.
+
     Parameters:
     -----------
     files : list
@@ -241,18 +245,20 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     fieldmap_lookup : defaultdict
         mapping of filename strings relative to the bids root 
         (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
+
     Returns:
     --------
-    parameter_groups : list
-        A list of unique parameter groups
-    For each file in `files`, find critical parameters for metadata. Then find
-    unique sets of these critical parameters.
+    parameter_groups_df : pd.DataFrame
+        A data frame with one row per file where the ParamGroup column indicates which
+        group each scan is a part of.
+
     """
     
     dfs = []
     # path needs to be relative to the root with no leading prefix
     for path in files:
         metadata = layout.get_metadata(path)
+        slice_times = metadata.get("SliceTiming", [])
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
         example_data["key_group"] = key_group_name
@@ -262,20 +268,16 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         for fmap_num, fmap_type in enumerate(fieldmap_types):
             example_data['FieldmapType%02d' % fmap_num] = fmap_type    
 
-        # Expand slice timing to multiple columns
-        SliceTime = example_data.get('SliceTiming')
-        if SliceTime:
-            # round each slice time to one place after the decimal
-            for i in range(len(SliceTime)):
-                SliceTime[i] = round(SliceTime[i], 1)
-            example_data.update(
-                {"SliceTime%03d" % SliceNum: time for
-                 SliceNum, time in enumerate(SliceTime)})
-            del example_data['SliceTiming']
+        # Add the number of slice times specified
+        example_data["NSliceTimes"] = len(slice_times)
 
         dfs.append(example_data)
 
-    return pd.DataFrame(dfs).drop_duplicates()
+    # Assign each file to a ParamGroup
+    df = pd.DataFrame(dfs)
+    df['ParamGroup'] = df.groupby(df.columns.tolist(), sort=False).ngroup() + 1
+
+    return df
 
 
 def _get_file_params(files, layout):
