@@ -19,7 +19,7 @@ IMAGING_PARAMS = set([
     "ParallelAcquisitionTechnique", "PartialFourier", "PhaseEncodingDirection",
     "EffectiveEchoSpacing", "TotalReadoutTime", "EchoTime",
     "SliceEncodingDirection", "DwellTime", "FlipAngle",
-    "MultibandAccelerationFactor", "RepetitionTime", "SliceTiming",
+    "MultibandAccelerationFactor", "RepetitionTime",
     "VolumeTiming", "NumberOfVolumesDiscardedByScanner",
     "NumberOfVolumesDiscardedByUser", "ProtocolName"])
 
@@ -42,18 +42,26 @@ class BOnD(object):
         suffix = '(phase1|phasediff|epi|fieldmap)'
         fmap_files = self.layout.get(suffix=suffix, regex_search=True,
                                      extension=['.nii.gz', '.nii'])
-
+        misfits = []
         files_to_fmaps = defaultdict(list)
         for fmap_file in tqdm(fmap_files):
             intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
             subject_prefix = "sub-%s" % fmap_file.entities['subject']
-            for intended_for in intentions:
-                full_path = Path(self.path) / subject_prefix / intended_for
-                files_to_fmaps[str(full_path)].append(fmap_file)
+
+            if intentions is not None:
+                for intended_for in intentions:
+                    full_path = Path(self.path) / subject_prefix / intended_for
+                    files_to_fmaps[str(full_path)].append(fmap_file)
+
+            # fmap file detected, no intended for found
+            else:
+                misfits.append(fmap_file)
 
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
 
+        # return a list of all filenames where fmap file detected, no intended for found
+        return misfits
 
     def rename_files(self, filters, pattern, replacement):
         """
@@ -233,6 +241,10 @@ def _file_to_key_group(filename):
 
 def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     """Finds a list of *parameter groups* from a list of files.
+
+    For each file in `files`, find critical parameters for metadata. Then find
+    unique sets of these critical parameters.
+
     Parameters:
     -----------
     files : list
@@ -244,18 +256,20 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     fieldmap_lookup : defaultdict
         mapping of filename strings relative to the bids root
         (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
+
     Returns:
     --------
-    parameter_groups : list
-        A list of unique parameter groups
-    For each file in `files`, find critical parameters for metadata. Then find
-    unique sets of these critical parameters.
+    parameter_groups_df : pd.DataFrame
+        A data frame with one row per file where the ParamGroup column indicates which
+        group each scan is a part of.
+
     """
 
     dfs = []
     # path needs to be relative to the root with no leading prefix
     for path in files:
         metadata = layout.get_metadata(path)
+        slice_times = metadata.get("SliceTiming", [])
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
         example_data["key_group"] = key_group_name
@@ -266,20 +280,16 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
             example_data['FieldmapType%02d' % fmap_num] = fmap_type
 
-        # Expand slice timing to multiple columns
-        SliceTime = example_data.get('SliceTiming')
-        if SliceTime:
-            # round each slice time to one place after the decimal
-            for i in range(len(SliceTime)):
-                SliceTime[i] = round(SliceTime[i], 1)
-            example_data.update(
-                {"SliceTime%03d" % SliceNum: time for
-                 SliceNum, time in enumerate(SliceTime)})
-            del example_data['SliceTiming']
+        # Add the number of slice times specified
+        example_data["NSliceTimes"] = len(slice_times)
 
         dfs.append(example_data)
 
-    return pd.DataFrame(dfs).drop_duplicates()
+    # Assign each file to a ParamGroup
+    df = pd.DataFrame(dfs)
+    df['ParamGroup'] = df.groupby(df.columns.tolist(), sort=False).ngroup() + 1
+
+    return df
 
 
 def _get_file_params(files, layout):
