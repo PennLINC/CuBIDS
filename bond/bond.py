@@ -109,6 +109,8 @@ class BOnD(object):
         for key_group in key_groups:
             labeled_file_params, param_summary = \
                 self.get_param_groups_from_key_group(key_group)
+            if labeled_file_params is None:
+                continue
             param_group_summaries.append(param_summary)
             labeled_files.append(labeled_file_params)
 
@@ -125,13 +127,19 @@ class BOnD(object):
     def get_key_groups(self):
 
         key_groups = set()
+
         for path in Path(self.path).rglob("*.*"):
+
             if path.suffix == ".json" and path.stem != "dataset_description":
                 key_groups.update((_file_to_key_group(path),))
+
                 # Fill the dictionary of key group, list of filenames pairrs
                 ret = _file_to_key_group(path)
+
                 if ret not in self.keys_files.keys():
+
                     self.keys_files[ret] = []
+
                 self.keys_files[ret].append(path)
 
         return sorted(key_groups)
@@ -255,6 +263,9 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         A data frame with param group summaries
 
     """
+    if not files:
+        print("WARNING: no files for", key_group_name)
+        return None, None
     
     dfs = []
     # path needs to be relative to the root with no leading prefix
