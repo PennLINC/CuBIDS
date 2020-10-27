@@ -130,7 +130,7 @@ class BOnD(object):
 
         for path in Path(self.path).rglob("*.*"):
 
-            if path.suffix == ".json" and path.stem != "dataset_description":
+            if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 key_groups.update((_file_to_key_group(path),))
 
                 # Fill the dictionary of key group, list of filenames pairrs
