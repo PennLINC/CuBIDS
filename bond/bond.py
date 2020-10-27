@@ -5,12 +5,14 @@ import json
 from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
+import numpy as np
 import pandas as pd
 import pdb
 from tqdm import tqdm
 
 bids.config.set_option('extension_initial_dot', True)
 
+ID_VARS = set(["KeyGroup", "ParamGroup", "FilePath"])
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
 # Multi-dimensional keys SliceTiming
 IMAGING_PARAMS = set([
@@ -102,18 +104,16 @@ class BOnD(object):
         """Creates DataFrames of files x param groups and a summary
         """
         key_groups = self.get_key_groups()
-        parameter_groups = []
+        labeled_files = []
+        param_group_summaries = []
         for key_group in key_groups:
-            parameter_groups.append(
-                self.get_param_groups_from_key_group(key_group))
-        df = pd.concat(parameter_groups, ignore_index=True)
-        # Make a counts summary dataframe
-        param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
-        uniques = df.drop_duplicates(param_group_cols, ignore_index=True)
-        counts = df.groupby(["key_group", "ParamGroup"]).size().reset_index(name='Count')
-        params_and_counts = pd.merge(uniques, counts)
-        return df, params_and_counts
+            labeled_file_params, param_summary = \
+                self.get_param_groups_from_key_group(key_group)
+            param_group_summaries.append(param_summary)
+            labeled_files.append(labeled_file_params)
 
+        return _order_columns(pd.concat(labeled_files, ignore_index=True)), \
+               _order_columns(pd.concat(param_group_summaries, ignore_index=True))
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
@@ -125,19 +125,13 @@ class BOnD(object):
     def get_key_groups(self):
 
         key_groups = set()
-
         for path in Path(self.path).rglob("*.*"):
-
             if path.suffix == ".json" and path.stem != "dataset_description":
                 key_groups.update((_file_to_key_group(path),))
-
                 # Fill the dictionary of key group, list of filenames pairrs
                 ret = _file_to_key_group(path)
-
                 if ret not in self.keys_files.keys():
-
                     self.keys_files[ret] = []
-
                 self.keys_files[ret].append(path)
 
         return sorted(key_groups)
@@ -152,15 +146,11 @@ class BOnD(object):
 
         # list of file paths that incorporate the replacement
         new_paths = []
-
         # obtain the dictionary of files, param groups
         dict_files_params = self.get_file_params(key_group)
-
         for filename in dict_files_params.keys():
-
             if dict_files_params[filename] == split_params:
                 # Perform the replacement if the param dictionaries match
-
                 path = Path(filename)
                 old_name = path.stem
                 old_ext = path.suffix
@@ -176,27 +166,19 @@ class BOnD(object):
         # TODO: clean prints and add warnings
 
         files_to_change = self.layout.get(return_type='object', **filters)
-
         if not files_to_change:
-
             print('NO FILES FOUND')
         for bidsfile in files_to_change:
-
             # get the sidecar file
             bidsjson_file = bidsfile.get_associations()
-
             if not bidsjson_file:
                 print("NO JSON FILES FOUND IN ASSOCIATIONS")
                 continue
 
             json_file = [x for x in bidsjson_file if 'json' in x.filename]
-
             if not len(json_file) == 1:
-
                 print("FOUND IRREGULAR ASSOCIATIONS")
-
             else:
-
                 # get the data from it
                 json_file = json_file[0]
 
@@ -265,9 +247,12 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
     Returns:
     --------
-    parameter_groups_df : pd.DataFrame
+    labeled_files : pd.DataFrame
         A data frame with one row per file where the ParamGroup column indicates which
         group each scan is a part of.
+
+    param_groups_with_counts : pd.DataFrame
+        A data frame with param group summaries
 
     """
     
@@ -279,7 +264,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         slice_times = metadata.get("SliceTiming", [])
         wanted_keys = metadata.keys() & IMAGING_PARAMS
         example_data = {key: metadata[key] for key in wanted_keys}
-        example_data["key_group"] = key_group_name
+        example_data["KeyGroup"] = key_group_name
 
         # Get the fieldmaps out and add their types
         fieldmap_types = sorted([_file_to_key_group(fmap.path) for 
@@ -302,9 +287,29 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     # Assign each file to a ParamGroup
     df = pd.DataFrame(dfs)
     param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
-    df['ParamGroup'] = df.groupby(param_group_cols, sort=False).ngroup() + 1
 
-    return df
+    # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
+    deduped = df.drop('FilePath', axis=1).drop_duplicates(ignore_index=True)
+    deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
+
+    # Add the ParamGroup to the whole list of files
+    labeled_files = pd.merge(df, deduped, on=param_group_cols)
+    value_counts = labeled_files.ParamGroup.value_counts()
+    param_group_counts = pd.DataFrame({"Counts": value_counts.to_numpy(),
+                                       "ParamGroup": value_counts.index.to_numpy()})
+    
+    param_groups_with_counts = pd.merge(deduped, param_group_counts, on=["ParamGroup"])
+
+    return labeled_files, param_groups_with_counts
+
+
+def _order_columns(df):
+    cols = set(df.columns.to_list())
+    non_id_cols = cols - ID_VARS
+    new_columns = ["KeyGroup", "ParamGroup"] + sorted(non_id_cols)
+    if "FilePath" in cols:
+        new_columns.append("FilePath")
+    return df[new_columns]
 
 
 def _get_file_params(files, layout):
