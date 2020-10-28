@@ -78,10 +78,6 @@ class BOnD(object):
         Returns
         -----------
             - None
-        >>> my_bond.rename_files({"PhaseEncodingDirection": 'j-',
-        ...                       "EchoTime": 0.005},
-        ...                       "acq-123", "acq-12345_dir-PA"
-        ...                     )
         """
         files_to_change = self.layout.get(return_type='filename', **filters)
         for bidsfile in files_to_change:
@@ -117,13 +113,29 @@ class BOnD(object):
 
         big_df = _order_columns(pd.concat(labeled_files, ignore_index=True))
         summary = _order_columns(pd.concat(param_group_summaries, ignore_index=True))
-        
+  
         summary.insert(0, "MergeInto", np.nan)
         return (big_df, summary)
 
         # return _order_columns(pd.concat(labeled_files, ignore_index=True)), \
         #        _order_columns(pd.concat(param_group_summaries, ignore_index=True))
 
+    def get_CSVs(self, path_prefix): 
+        """
+        Parameters:
+        -----------
+            - prefix_path: prefix of the path to the directory where you want to save your CSVs
+                example path: /Users/Covitz/PennLINC/RBC/CCNP/
+        Returns
+        -----------
+            - None
+        """
+        big_df = self.get_param_groups_dataframes()[0]
+        summary = self.get_param_groups_dataframes()[1]
+        big_df.to_csv(path_prefix + "files.csv", index=False)
+        summary.to_csv(path_prefix + "summary.csv", index=False)
+        
+    
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
         key_entities["extension"] = ".nii[.gz]*"
