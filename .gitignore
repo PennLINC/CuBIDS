@@ -134,3 +134,4 @@ dmypy.json
 data/*
 .DS_Store
 notebooks/testdata
+.vscode/settings.json
