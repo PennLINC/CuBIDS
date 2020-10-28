@@ -117,7 +117,7 @@ class BOnD(object):
 
         big_df = _order_columns(pd.concat(labeled_files, ignore_index=True))
         summary = _order_columns(pd.concat(param_group_summaries, ignore_index=True))
-        big_df.insert(0, "MergeInto", np.nan)
+        
         summary.insert(0, "MergeInto", np.nan)
         return (big_df, summary)
 
