@@ -48,12 +48,12 @@ class BOnD(object):
         for fmap_file in tqdm(fmap_files):
             intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
             subject_prefix = "sub-%s" % fmap_file.entities['subject']
-            
-            if intentions is not None: 
+
+            if intentions is not None:
                 for intended_for in intentions:
                     full_path = Path(self.path) / subject_prefix / intended_for
                     files_to_fmaps[str(full_path)].append(fmap_file)
-            
+
             # fmap file detected, no intended for found
             else:
                 misfits.append(fmap_file)
@@ -114,8 +114,28 @@ class BOnD(object):
             param_group_summaries.append(param_summary)
             labeled_files.append(labeled_file_params)
 
-        return _order_columns(pd.concat(labeled_files, ignore_index=True)), \
-               _order_columns(pd.concat(param_group_summaries, ignore_index=True))
+        big_df = _order_columns(pd.concat(labeled_files, ignore_index=True))
+        summary = _order_columns(pd.concat(param_group_summaries, ignore_index=True))
+
+        summary.insert(0, "MergeInto", np.nan)
+
+        return (big_df, summary)
+
+    def get_CSVs(self, path_prefix):
+        """
+        Parameters:
+        -----------
+            - prefix_path: prefix of the path to the directory where you want to save your CSVs
+                example path: /Users/Covitz/PennLINC/RBC/CCNP/
+        Returns
+        -----------
+            - None
+        """
+        big_df = self.get_param_groups_dataframes()[0]
+        summary = self.get_param_groups_dataframes()[1]
+        
+        big_df.to_csv(path_prefix + "files.csv", index=False)
+        summary.to_csv(path_prefix + "summary.csv", index=False)
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
@@ -245,12 +265,12 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     -----------
     files : list
         List of file names
-    
+
     layout : bids.BIDSLayout
         PyBIDS BIDSLayout object where `files` come from
-    
+
     fieldmap_lookup : defaultdict
-        mapping of filename strings relative to the bids root 
+        mapping of filename strings relative to the bids root
         (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
 
     Returns:
@@ -266,7 +286,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     if not files:
         print("WARNING: no files for", key_group_name)
         return None, None
-    
+
     dfs = []
     # path needs to be relative to the root with no leading prefix
     for path in files:
@@ -278,17 +298,17 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         example_data["KeyGroup"] = key_group_name
 
         # Get the fieldmaps out and add their types
-        fieldmap_types = sorted([_file_to_key_group(fmap.path) for 
+        fieldmap_types = sorted([_file_to_key_group(fmap.path) for
                                  fmap in fieldmap_lookup[path]])
         for fmap_num, fmap_type in enumerate(fieldmap_types):
-            example_data['FieldmapKey%02d' % fmap_num] = fmap_type    
+            example_data['FieldmapKey%02d' % fmap_num] = fmap_type
 
         # Add the number of slice times specified
         example_data["NSliceTimes"] = len(slice_times)
         example_data["FilePath"] = path
 
         # If it's a fieldmap, see what key group it's intended to correct
-        intended_key_groups = sorted([_file_to_key_group(intention) for 
+        intended_key_groups = sorted([_file_to_key_group(intention) for
                                       intention in intentions])
         for intention_num, intention_key_group in enumerate(intended_key_groups):
             example_data["IntendedForKey%02d" % intention_num] = intention_key_group
@@ -308,7 +328,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     value_counts = labeled_files.ParamGroup.value_counts()
     param_group_counts = pd.DataFrame({"Counts": value_counts.to_numpy(),
                                        "ParamGroup": value_counts.index.to_numpy()})
-    
+
     param_groups_with_counts = pd.merge(deduped, param_group_counts, on=["ParamGroup"])
 
     return labeled_files, param_groups_with_counts
