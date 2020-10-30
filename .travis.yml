@@ -1,13 +1,17 @@
+# vim ft=yaml
 language: python
+sudo: false
+cache:
+  directories:
+    - $HOME/.cache/pip
+
 python:
-  - "2.7"
-  - "3.8"
-  # PyPy versions
-  - "pypy"   # currently Python 2.7.13, PyPy 7.1.1
-  - "pypy3"  # currently Python 3.6.1,  PyPy 7.1.1-beta0
-# command to install dependencies
-install:
-  - pip install -r requirements.txt
-  - pip install .
-# command to run tests
-script: pytest
+  - 3.6
+
+before_install:
+  - python -m pip install --upgrade pip
+  - pip install "flake8<3.0" flake8-putty
+
+script:
+  - flake8 bond
+

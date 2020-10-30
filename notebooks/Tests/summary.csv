@@ -1,0 +1,6 @@
+Notes,ManualCheck,MergeInto,RenamedKeyGroup,KeyGroup,ParamGroup,Counts,DwellTime,EchoTime,EffectiveEchoSpacing,FlipAngle,NSliceTimes,PartialFourier,PhaseEncodingDirection,RepetitionTime,TotalReadoutTime
+,,,,datatype-anat_reconstruction-refaced_suffix-T1w,1,189,1.5e-05,0.00302,,8.0,0,0.75,,2.6,
+,,,,datatype-anat_reconstruction-refaced_suffix-T1w,2,2,,,,,0,,,,
+,,,,datatype-func_run-1_suffix-bold_task-rest,1,191,3.1e-06,0.03,0.000510002,80.0,38,1.0,j-,2.5,0.0362102
+,,,,datatype-func_run-2_suffix-bold_task-rest,1,189,3.1e-06,0.03,0.000510002,80.0,38,1.0,j-,2.5,0.0362102
+,,,,datatype-func_run-2_suffix-bold_task-rest,2,1,3.1e-06,0.03,0.000510002,80.0,38,1.0,i,2.5,0.0362102
