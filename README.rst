@@ -6,8 +6,8 @@ BOnD: BIDS On Disk
 .. image:: https://img.shields.io/pypi/v/bond.svg
         :target: https://pypi.python.org/pypi/bond
 
-.. image:: https://img.shields.io/travis/mattcieslak/bond.svg
-        :target: https://travis-ci.com/mattcieslak/bond
+.. image:: https://img.shields.io/travis/PennLINC/bond.svg
+        :target: https://travis-ci.com/PennLINC/bond
 
 .. image:: https://readthedocs.org/projects/bond/badge/?version=latest
         :target: https://bond.readthedocs.io/en/latest/?badge=latest

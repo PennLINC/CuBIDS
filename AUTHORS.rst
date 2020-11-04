@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Matt Cieslak <mattcieslak@gmail.com>
+* Matt Cieslak <matthew.cieslak at pennmedicine dot upenn .edu>
 
 Contributors
 ------------

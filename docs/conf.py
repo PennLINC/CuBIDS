@@ -47,8 +47,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'BOnD'
-copyright = "2020, Matt Cieslak"
-author = "Matt Cieslak"
+copyright = "2020, PennLINC"
+author = "PennLINC"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -129,7 +129,7 @@ latex_elements = {
 latex_documents = [
     (master_doc, 'bond.tex',
      'BOnD Documentation',
-     'Matt Cieslak', 'manual'),
+     'PennLINC', 'manual'),
 ]
 
 

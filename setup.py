@@ -17,8 +17,8 @@ setup_requirements = ['pytest-runner']
 test_requirements = ['pytest>=3']
 
 setup(
-    author="Matt Cieslak",
-    author_email='mattcieslak@gmail.com',
+    author="PennLINC",
+    author_email='matthew.cieslak@pennmecidine.upenn.edu',
     python_requires='>=3.5',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
