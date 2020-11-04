@@ -10,15 +10,15 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['pybids', 'nipype', 'tqdm']
+requirements = ['pybids', 'tqdm', 'pandas', 'numpy']
 
-setup_requirements = ['pytest-runner', ]
+setup_requirements = ['pytest-runner']
 
-test_requirements = ['pytest>=3', ]
+test_requirements = ['pytest>=3']
 
 setup(
-    author="Matt Cieslak",
-    author_email='mattcieslak@gmail.com',
+    author="PennLINC",
+    author_email='matthew.cieslak@pennmecidine.upenn.edu',
     python_requires='>=3.5',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
