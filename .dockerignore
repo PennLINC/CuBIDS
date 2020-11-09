@@ -1,0 +1,5 @@
+.git
+.ipynb_checkpoints
+Dockerfile
+.DS_Store
+.gitignore
