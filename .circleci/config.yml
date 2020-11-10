@@ -56,17 +56,35 @@ jobs:
             docker save pennlinc/bond:latest \
             | pigz -3 > /tmp/cache/docker.tar.gz
 
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - src/BOnD
-
       - save_cache:
          key: docker-v1-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
          paths:
            - /tmp/cache/docker.tar.gz
 
-  pytest:
+
+  setup_conda:
+    machine:
+      image: ubuntu-1604:202004-01 
+      - run:
+           name: install miniconda
+           command: |
+             cd /tmp
+             export MINICONDA=/tmp/miniconda
+             export PATH="$MINICONDA/bin:$PATH"
+             wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+             bash miniconda.sh -b -f -p $MINICONDA
+             conda config --set always_yes yes
+             conda update conda
+             conda info -a
+             conda create -n bond python=3.7
+             source activate bond
+
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - miniconda
+
+  install_and_test:
     machine:
       image: ubuntu-1604:202004-01
     steps:
@@ -291,7 +309,19 @@ workflows:
             tags:
               only: /.*/
 
+      - setup_conda:
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /docker\/.*/
+            tags:
+              only: /.*/
+
       - pytest:
+          requires:
+            - build
+            - setup_conda
           filters:
             branches:
               ignore:
