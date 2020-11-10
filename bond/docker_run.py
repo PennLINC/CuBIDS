@@ -71,7 +71,8 @@ def run(call, verbose=True):
 
 
 def parse_validator(output):
-    """Parse the JSON/dictionary output of the BIDS validator into a pandas dataframe
+    """Parse the JSON/dictionary output of the BIDS validator into a pandas
+    dataframe.
 
     Parameters:
     -----------
@@ -98,7 +99,8 @@ def parse_validator(output):
     def parse_issue(issue_dict):
 
         return_dict = {}
-        return_dict['files'] = [get_nested(x, 'file', 'relativePath') for x in issue_dict.get('files', '')]
+        return_dict['files'] = [get_nested(x, 'file', 'relativePath')
+                                for x in issue_dict.get('files', '')]
         return_dict['type'] = issue_dict.get('key' '')
         return_dict['severity'] = issue_dict.get('severity', '')
         return_dict['description'] = issue_dict.get('reason', '')

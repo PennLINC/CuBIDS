@@ -1,9 +1,9 @@
 """Console script for bond."""
 import argparse
 import sys
-import docker
 import logging
-from .docker_run import check_docker, check_image, build_validator_call, run, parse_validator
+from .docker_run import (check_docker, check_image, build_validator_call,
+                         run, parse_validator)
 
 
 logging.basicConfig(level=logging.INFO)
@@ -13,10 +13,10 @@ logger = logging.getLogger('bond-cli')
 def run_validator(bidsdir, output_path=None):
     """Run the BIDS validator on a BIDS directory"""
 
-    #check for docker and the image
+    # check for docker and the image
     if not all([check_docker(), check_image("bond")]):
         logger.error("Couldn't run validator! Please make sure you Docker"
-        " installed and the correct Docker image cloned: ")
+                     " installed and the correct Docker image cloned: ")
         return 1
 
     # build the call and run

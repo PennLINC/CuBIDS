@@ -7,7 +7,6 @@ from bids.layout import parse_file_entities
 from bids.utils import listify
 import numpy as np
 import pandas as pd
-import pdb
 from tqdm import tqdm
 
 bids.config.set_option('extension_initial_dot', True)
@@ -30,8 +29,9 @@ class BOnD(object):
     def __init__(self, data_root):
 
         self.path = data_root
-        self.layout = bids.BIDSLayout(self.path, validate = False)
-        self.keys_files = {} # dictionary of KEYS: keys groups, VALUES: list of files
+        self.layout = bids.BIDSLayout(self.path, validate=False)
+        # dictionary of KEYS: keys groups, VALUES: list of files
+        self.keys_files = {}
         self.fieldmaps_cached = False
 
     def fieldmaps_ok(self):
@@ -61,7 +61,8 @@ class BOnD(object):
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
 
-        # return a list of all filenames where fmap file detected, no intended for found
+        # return a list of all filenames where fmap file detected,
+        # no intended for found
         return misfits
 
     def rename_files(self, filters, pattern, replacement):
@@ -77,6 +78,7 @@ class BOnD(object):
         Returns
         -----------
             - None
+        >>> my_bond = BOnD()
         >>> my_bond.rename_files({"PhaseEncodingDirection": 'j-',
         ...                       "EchoTime": 0.005},
         ...                       "acq-123", "acq-12345_dir-PA"
@@ -93,12 +95,14 @@ class BOnD(object):
 
     def get_param_groups_from_key_group(self, key_group):
         if not self.fieldmaps_cached:
-            raise Exception("Fieldmaps must be cached to find parameter groups.")
+            raise Exception(
+                "Fieldmaps must be cached to find parameter groups.")
         key_entities = _key_group_to_entities(key_group)
         key_entities["extension"] = ".nii[.gz]*"
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
-        return _get_param_groups(matching_files, self.layout, self.fieldmap_lookup, key_group)
+        return _get_param_groups(
+            matching_files, self.layout, self.fieldmap_lookup, key_group)
 
     def get_param_groups_dataframes(self):
         """Creates DataFrames of files x param groups and a summary
@@ -115,7 +119,8 @@ class BOnD(object):
             labeled_files.append(labeled_file_params)
 
         big_df = _order_columns(pd.concat(labeled_files, ignore_index=True))
-        summary = _order_columns(pd.concat(param_group_summaries, ignore_index=True))
+        summary = _order_columns(pd.concat(param_group_summaries,
+                                 ignore_index=True))
 
         summary.insert(0, "MergeInto", np.nan)
 
@@ -125,7 +130,9 @@ class BOnD(object):
         """
         Parameters:
         -----------
-            - prefix_path: prefix of the path to the directory where you want to save your CSVs
+            prefix_path: str
+                prefix of the path to the directory where you want
+                to save your CSVs
                 example path: /Users/Covitz/PennLINC/RBC/CCNP/
         Returns
         -----------
@@ -169,8 +176,9 @@ class BOnD(object):
         return self.keys_files[key_group]
 
     def change_filenames(self, key_group, split_params, pattern, replacement):
-        # for each filename in the key group, check if it's params match split_params
-        # if they match, perform the replacement acc to pattern/replacement
+        # for each filename in the key group, check if it's params match
+        # split_params if they match, perform the replacement acc to
+        # pattern/replacement
 
         # list of file paths that incorporate the replacement
         new_paths = []
@@ -225,19 +233,12 @@ def _update_json(json_file, metadata):
     else:
 
         print("INVALID JSON DATA")
-    #metadata.update
 
 
 def _validateJSON(json_data):
 
     # TODO
     return True
-    '''try:
-        json.load(json_data)
-    except ValueError as err:
-        return False
-    return True
-    '''
 
 
 def _key_group_to_entities(key_group):
@@ -276,8 +277,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     Returns:
     --------
     labeled_files : pd.DataFrame
-        A data frame with one row per file where the ParamGroup column indicates which
-        group each scan is a part of.
+        A data frame with one row per file where the ParamGroup column
+        indicates which group each scan is a part of.
 
     param_groups_with_counts : pd.DataFrame
         A data frame with param group summaries
@@ -310,8 +311,10 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         # If it's a fieldmap, see what key group it's intended to correct
         intended_key_groups = sorted([_file_to_key_group(intention) for
                                       intention in intentions])
-        for intention_num, intention_key_group in enumerate(intended_key_groups):
-            example_data["IntendedForKey%02d" % intention_num] = intention_key_group
+        for intention_num, intention_key_group in \
+                enumerate(intended_key_groups):
+            example_data[
+                "IntendedForKey%02d" % intention_num] = intention_key_group
 
         dfs.append(example_data)
 
@@ -326,10 +329,12 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=param_group_cols)
     value_counts = labeled_files.ParamGroup.value_counts()
-    param_group_counts = pd.DataFrame({"Counts": value_counts.to_numpy(),
-                                       "ParamGroup": value_counts.index.to_numpy()})
+    param_group_counts = pd.DataFrame(
+        {"Counts": value_counts.to_numpy(),
+         "ParamGroup": value_counts.index.to_numpy()})
 
-    param_groups_with_counts = pd.merge(deduped, param_group_counts, on=["ParamGroup"])
+    param_groups_with_counts = pd.merge(
+        deduped, param_group_counts, on=["ParamGroup"])
 
     return labeled_files, param_groups_with_counts
 
