@@ -79,11 +79,13 @@ jobs:
              conda info -a
              conda create -n bond python=3.7
              source activate bond
+             conda install -c conda-forge -y datalad
 
       - persist_to_workspace:
           root: /tmp
           paths:
             - miniconda
+
 
   install_and_test:
     machine:
@@ -112,6 +114,13 @@ jobs:
             fi
 
       - run:
+          name: Install BOnD
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            pip install .[all]
+
+      - run:
           name: Run PyTest
           command: |
             py.test -sv tests
@@ -129,11 +138,18 @@ jobs:
               echo "Skipping doc building job"
               circleci step halt
             fi
+
       - run:
           name: Check Python version and upgrade pip
           command: |
             python --version
-            sudo python -m pip install -U pip
+            sudo python -m pip install -U pip "flake8<3.0" flake8-putty
+
+      -run:
+          name: Lint code with flake8
+          command: |
+            flake8 bond
+
       - run:
           name: Install BOnD.
           command: sudo python -m pip install ".[doc]" --no-cache-dir --progress-bar off
