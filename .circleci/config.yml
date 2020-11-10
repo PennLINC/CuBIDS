@@ -64,7 +64,8 @@ jobs:
 
   setup_conda:
     machine:
-      image: ubuntu-1604:202004-01 
+      image: ubuntu-1604:202004-01
+    steps:
       - run:
            name: install miniconda
            command: |
