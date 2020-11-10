@@ -146,7 +146,7 @@ jobs:
           command: |
             python --version
             sudo python -m pip install -U pip 
-            sudo pip install "flake8<3.0" "flake8-putty<0.4.0"
+            sudo pip install flake8
 
       - run:
           name: Lint code with flake8
