@@ -309,6 +309,15 @@ workflows:
             tags:
               only: /.*/
 
+      - test_pytest:
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /docker\/.*/
+            tags:
+              only: /.*/
+
       - build_docs:
           filters:
             branches:
