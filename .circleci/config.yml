@@ -75,6 +75,37 @@ jobs:
          paths:
            - /tmp/cache/docker.tar.gz
 
+  test_pytest:
+    machine:
+      image: ubuntu-1604:202004-01
+    steps:
+      - checkout:
+          path: /home/circleci/src/BOnD
+
+      - attach_workspace:
+          at: /tmp
+
+      - restore_cache:
+          keys:
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
+
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 30m
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+
+      - run:
+          name: Run PyTest
+          command: |
+            py.test -sv tests
+
   build_docs:
     docker:
       - image: circleci/python:3.7.4
@@ -100,7 +131,6 @@ jobs:
           name: Build documentation
           no_output_timeout: 45m
           command: |
-            export NIPYPE_NO_ET=1
             make SPHINXOPTS="-W" -C docs html
       - store_artifacts:
           path: /tmp/src/BOnD/docs/_build/html
