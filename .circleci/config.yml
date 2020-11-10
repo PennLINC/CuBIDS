@@ -319,7 +319,7 @@ workflows:
             tags:
               only: /.*/
 
-      - pytest:
+      - install_and_test:
           requires:
             - build
             - setup_conda
@@ -353,7 +353,7 @@ workflows:
           requires:
             - test_deploy_pypi
             - build_docs
-            - pytest
+            - install_and_test
           filters:
             branches:
               only: master
