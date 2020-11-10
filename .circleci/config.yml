@@ -90,6 +90,7 @@ jobs:
   install_and_test:
     machine:
       image: ubuntu-1604:202004-01
+    working_directory: /tmp/src/BOnD
     steps:
       - checkout:
           path: /home/circleci/src/BOnD
