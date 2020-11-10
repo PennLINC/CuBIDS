@@ -40,9 +40,9 @@ jobs:
             # Build docker image
             e=1 && for i in {1..5}; do
               docker build \
-                --cache-from=pennlinc/BOnD \
+                --cache-from=pennlinc/bond \
                 --rm=false \
-                -t pennlinc/BOnD:latest \
+                -t pennlinc/bond:latest \
                 --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
                 --build-arg VCS_REF=`git rev-parse --short HEAD` . \
               && e=0 && break || sleep 15
@@ -53,7 +53,7 @@ jobs:
           no_output_timeout: 40m
           command: |
             mkdir -p /tmp/cache
-            docker save pennlinc/BOnD:latest \
+            docker save pennlinc/bond:latest \
             | pigz -3 > /tmp/cache/docker.tar.gz
 
       - persist_to_workspace:
@@ -288,15 +288,6 @@ workflows:
     jobs:
       - build:
           filters:
-            tags:
-              only: /.*/
-
-      - get_data:
-          filters:
-            branches:
-              ignore:
-                - /docs?\/.*/
-                - /tests?\/.*/
             tags:
               only: /.*/
 
