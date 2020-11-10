@@ -119,12 +119,13 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
-
             pip install .[all]
 
       - run:
           name: Run PyTest
           command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
             py.test -sv tests
 
   build_docs:
