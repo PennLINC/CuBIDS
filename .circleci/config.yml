@@ -143,7 +143,8 @@ jobs:
           name: Check Python version and upgrade pip
           command: |
             python --version
-            sudo python -m pip install -U pip "flake8<3.0" flake8-putty
+            sudo python -m pip install -U pip 
+            sudo pip install "flake8<3.0" "flake8-putty<0.4.0"
 
       - run:
           name: Lint code with flake8
