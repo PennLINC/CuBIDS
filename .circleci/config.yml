@@ -90,7 +90,7 @@ jobs:
   install_and_test:
     machine:
       image: ubuntu-1604:202004-01
-    working_directory: /tmp/src/BOnD
+    working_directory: /home/circleci/src/BOnD
     steps:
       - checkout:
           path: /home/circleci/src/BOnD
@@ -119,6 +119,7 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
+
             pip install .[all]
 
       - run:
