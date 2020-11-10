@@ -75,7 +75,7 @@ jobs:
          paths:
            - /tmp/cache/docker.tar.gz
 
-  test_pytest:
+  pytest:
     machine:
       image: ubuntu-1604:202004-01
     steps:
@@ -309,7 +309,7 @@ workflows:
             tags:
               only: /.*/
 
-      - test_pytest:
+      - pytest:
           filters:
             branches:
               ignore:
@@ -340,7 +340,7 @@ workflows:
           requires:
             - test_deploy_pypi
             - build_docs
-            - test_pytest
+            - pytest
           filters:
             branches:
               only: master
