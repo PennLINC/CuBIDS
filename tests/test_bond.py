@@ -32,7 +32,8 @@ def test_fill_metadata(tmp_path):
     # fill_metadata should add metadata elements to the json sidecar
     my_bond.fill_metadata(pattern="*acq-multiband_bold.nii.gz",
                           metadata={"EchoTime": 0.005})
-    # get_metadata shold return a list of dictionaries that contain metadata for
+    # get_metadata shold return a list of dictionaries that contain
+    # metadata for
     # scans matching `pattern`
     for metadata in my_bond.get_metadata(pattern="*acq-multiband_bold"):
         assert metadata['EchoTime'] == 0.005
@@ -40,7 +41,8 @@ def test_fill_metadata(tmp_path):
     # fill_metadata should add metadata elements to the json sidecar
     my_bond.fill_metadata(pattern="*acq-multiband_bold.nii.gz",
                           metadata={"EchoTime": 0.009})
-    # get_metadata shold return a list of dictionaries that contain metadata for
+    # get_metadata shold return a list of dictionaries that contain
+    # metadata for
     # scans matching `pattern`
     for metadata in my_bond.get_metadata(pattern="*acq-multiband_bold"):
         assert metadata['EchoTime'] == 0.009
@@ -60,8 +62,6 @@ def test_detect_unique_parameter_sets(bids_data):
     combinations = my_bond.find_param_sets(pattern="*_bold")
 
     assert len(true_combinations) == len(combinations)
-
-"""
 
 
 def test_rename_files(tmp_path):
@@ -83,7 +83,6 @@ def test_rename_files(tmp_path):
     assert not glob("*" + renamed_suffix + "*")
 
 
-"""
 def test_fieldmap_exists(bids_data):
     ok_data_root = op.join(bids_data + "/complete/fieldmaps")
     not_ok_data_root = op.join(bids_data + "/incomplete/fieldmaps")
