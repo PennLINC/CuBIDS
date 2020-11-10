@@ -340,18 +340,8 @@ workflows:
             tags:
               only: /.*/
 
-      - test_deploy_pypi:
-          filters:
-            branches:
-              ignore:
-                - /docs\/.*/
-                - /docker\/.*/
-            tags:
-              only: /.*/
-
       - deployable:
           requires:
-            - test_deploy_pypi
             - build_docs
             - install_and_test
           filters:

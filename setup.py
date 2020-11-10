@@ -40,6 +40,6 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     url='https://github.com/pennlinc/bond',
-    version='version='0.1.0'',
+    version='0.1.0',
     zip_safe=False,
 )
