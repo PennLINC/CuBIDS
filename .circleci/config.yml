@@ -37,14 +37,6 @@ jobs:
           name: Build Docker image
           no_output_timeout: 3h
           command: |
-            # Get version, update files.
-            THISVERSION=$( python3 get_version.py )
-            if [[ ${THISVERSION:0:1} == "0" ]] ; then
-              echo "WARNING: latest git tag could not be found"
-              echo "Please, make sure you fetch all tags from upstream with"
-              echo "the command ``git fetch --tags --verbose`` and push"
-              echo "them to your fork with ``git push origin --tags``"
-            fi
             # Build docker image
             e=1 && for i in {1..5}; do
               docker build \
@@ -52,8 +44,7 @@ jobs:
                 --rm=false \
                 -t pennlinc/BOnD:latest \
                 --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-                --build-arg VCS_REF=`git rev-parse --short HEAD` \
-                --build-arg VERSION="${CIRCLE_TAG:-$THISVERSION}" . \
+                --build-arg VCS_REF=`git rev-parse --short HEAD` . \
               && e=0 && break || sleep 15
             done && [ "$e" -eq "0" ]
 
@@ -62,7 +53,7 @@ jobs:
           no_output_timeout: 40m
           command: |
             mkdir -p /tmp/cache
-            docker save nvidia/cuda:9.1-runtime-ubuntu16.04 pennlinc/BOnD:latest \
+            docker save pennlinc/BOnD:latest \
             | pigz -3 > /tmp/cache/docker.tar.gz
 
       - persist_to_workspace:
