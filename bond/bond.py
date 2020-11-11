@@ -37,7 +37,7 @@ class BOnD(object):
         self.datalad_ready = False
         self.datalad_handle = None
 
-        # Initialize datalad if 
+        # Initialize datalad if
         if use_datalad:
             self._init_datalad()
 
