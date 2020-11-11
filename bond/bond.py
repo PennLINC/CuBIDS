@@ -65,6 +65,211 @@ class BOnD(object):
         # no intended for found
         return misfits
 
+    def merge_params(self, merge_df, files_df):
+       key_param_merge = {}
+       for i in range(len(merge_df)):
+           key_param_merge[merge_df.iloc[i]['KeyGroup'], merge_df.iloc[i]['ParamGroup']] = merge_df.iloc[i]['MergeInto']
+       pairs_to_change = list(key_param_merge.keys())
+      
+       # locate files that need to change param groups/be deleted
+       for row in range(len(files_df)):
+          
+           key = files_df.iloc[row]['KeyGroup'] 
+           param = files_df.iloc[row]['ParamGroup']
+ 
+           if (key, param) in pairs_to_change:
+               if key_param_merge[(key, param)] == 0:
+                   file_path = files_df.iloc[row]['FilePath']
+                   file_to_rem = pathlib.Path(file_path)
+                   file_to_rem.unlink()
+               #else:
+                   # need to merge the param groups
+                   # NEED TO COPY THE METADATA FROM "MergeInto" --> "ParamGroup"
+                   #self.change_metadata
+                  
+ 
+    def change_key_groups(self, og_csv_dir, new_csv_dir):
+        files_df = pd.read_csv(og_csv_dir + 'files.csv')
+        summary_df = pd.read_csv(og_csv_dir + 'summary.csv')
+    
+        merge_df = summary_df[summary_df.MergeInto.notnull()]
+        self.merge_params(merge_df, files_df)
+    
+        # grab all lines in summary with renamedkeygroups
+        # if not NaN, locate all filepaths in files_df with key and param groups
+        # that match the key group and param group from summary_df
+        # AND change those filepaths (using rename_files OG?)
+        
+        # want to create a df that has only the rows of interest
+        # rows of interest = rows where there is a renamed key group
+        change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
+    
+    
+        
+        #change_files_df = files_df[files_df.KeyGroup.isin(keys)]
+        #change_files_df = change_files_df[change_files_df.ParamGroup.isin(params)]
+    
+        
+    
+        #change_files_df = files_df[(files_df.KeyGroup.isin(keys)) & (files_df.ParamGroup.isin(params))]
+    
+        # dictionary of KEYS = (orig key group, param num) VALUES = new key group
+        key_groups = {}
+        
+        # Index dictionary by old key, param num PAIRS
+        # value = new_key 
+        # BECAUSE can have multiple new key groups for one old key group!
+    
+        for i in range(len(change_keys_df)):
+            new_key = change_keys_df.iloc[i]['RenameKeyGroup']
+            old_key = change_keys_df.iloc[i]['KeyGroup']
+            param_group = change_keys_df.iloc[i]['ParamGroup']
+            
+            # add to dictionary
+            key_groups[(old_key, param_group)] = new_key
+        
+        pairs_to_change = key_groups.keys()
+        
+        #np.where((df['Salary_in_1000']>=100) &
+    
+        
+        #change_files_df = np.where((tuple(files_df['KeyGroup', 'ParamGroup']) in pairs_to_change))
+    
+        #newEntities = []
+        #oldEntities = []
+        outputs = []
+        for row in range(len(files_df)):
+            
+            if (files_df.iloc[row]['KeyGroup'], files_df.iloc[row]['ParamGroup']) in pairs_to_change:
+                file_path = files_df.iloc[row]['FilePath']
+                orig_key = files_df.iloc[row]['KeyGroup']
+                param_num = files_df.iloc[row]['ParamGroup']
+                new_key = key_groups[(orig_key, param_num)]
+            
+                #self.change_filename(file_path, orig_key, new_key)
+                #old_entities = _key_group_to_entities(orig_key)
+                #new_entities = _key_group_to_entities(orig_key)
+                
+                new_entities = _key_group_to_entities(new_key)
+                #old_entities = _key_group_to_entities(orig_key)
+    
+                good_keys = self.change_filename(file_path, new_entities)
+                outputs.append(good_keys)
+                # now need to generate new filenames from old filenames using new key groups
+    
+            #TODO: THROW AN EXCEPTION IF NEW_KEY NOT VALID! CAN'T BE PARSED AS A DICT?
+            
+            
+    
+            # matching_files = self.layout.get(return_type="file", scope="self",
+            #                             regex_search=True, **key_entities)
+    
+            #change file name in place to incorporate new_key!
+            #replace according to "pattern", "replacement"
+            #"pattern" = orig_key "replacement" = new_key
+            
+    
+        
+    
+        self._cache_fieldmaps()
+        self.get_CSVs(new_csv_dir)
+    
+        return outputs
+    
+    
+        
+    # THIS IS NEW!!!!!!!!!!
+    def change_filename(self, filepath, entities):
+        #TODO: NEED TO RGLOB self.path??????
+        path = Path(filepath)
+        exts = path.suffixes
+        old_ext = ""
+        for ext in exts:
+            old_ext += ext
+    
+        # GET EXTENSION
+        #for i in range(len(filepath)):
+        #    if path[i]
+    
+        # first need to check the modality!
+        
+        # IF NOT ASL AND NEED TO CHANGE THE DATATYPE!
+        # get datatype, set to parent directory
+        
+    
+        # check if need to change the modality (one directory level up)
+        
+        l_keys = list(entities.keys())
+    
+        if "datatype" in l_keys:
+            # create path string a and add new modality
+            modality = entities['datatype']
+            l_keys.remove('datatype')
+        else:
+            large = str(path.parent)
+            small = str(path.parents[1]) + '/'
+            modality = large.replace(small, '')
+        # create first part of filename
+        file_entities = parse_file_entities(path.stem)
+        
+        # detect the subject/session string and keep it together
+        # front_stem is the string of subject/session paris in the filename
+        # these two entities don't change with the key group
+        front_stem = ""
+        cntr = 0
+        for char in path.stem:
+            if char == "_" and cntr == 1:
+                cntr = 2
+                break
+            if char == "_" and cntr == 0:
+                cntr += 1
+            if cntr != 2:
+                front_stem = front_stem + char
+                
+    
+        # keep sub/ses key, value pairs
+        file_keys = list(file_entities.keys())
+        #good_keys = []
+        #for key in file_keys:
+        #   if key in NON_KEY_ENTITIES:
+        #        good_keys.append(key)
+    
+        #sub_ses_path = "_".join(["{}-{}".format(key, file_entities[key]) for key in sub_ses_keys])
+    
+        new_path_front = str(path.parents[1]) + '/' + modality + '/' + front_stem
+    
+        # remove fmap (not part of filename string)
+        if "fmap" in l_keys:
+            l_keys.remove("fmap")
+        
+        # now need to create the key/value string from the keys!
+        new_filename = "_".join(["{}-{}".format(key, entities[key]) for key in l_keys])
+    
+        # shorten "acquisition" in the filename
+        new_filename = new_filename.replace("acquisition", "acq")
+        
+        # REMOVE "suffix-"
+        new_filename = new_filename.replace("suffix-", "")
+    
+        
+        new_path = new_path_front + "_" + new_filename + old_ext
+
+        path.rename(Path(new_path))
+        
+        
+    
+        #### TODO: ####
+        #### BEFORE RENAMING, CHECK IF VALID BIDS! #####
+        #### DO THIS IN A NEW FUNCTION, CALLED HERE ####
+        #### CALL PARSE FILE ENTITIES ON NEW PATH, AND IF DATATYPE = ANAT, ARE THE OTHERS CORRECT?
+        #### INFINITE NUMBER OF WAYS IT COULD BE INVALID, BUT COULD EASILY BUILD IN SOME ERROR CHECKING
+    
+        #path.rename(Path(filepath, new_path))
+        
+        #return sub_ses_path
+        return (new_path, old_ext)
+
+
     def rename_files(self, filters, pattern, replacement):
         """
         Parameters:
