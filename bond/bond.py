@@ -7,6 +7,7 @@ from bids.layout import parse_file_entities
 from bids.utils import listify
 import numpy as np
 import pandas as pd
+import datalad.api as dlapi
 from tqdm import tqdm
 
 bids.config.set_option('extension_initial_dot', True)
@@ -26,13 +27,24 @@ IMAGING_PARAMS = set([
 
 class BOnD(object):
 
-    def __init__(self, data_root):
+    def __init__(self, data_root, use_datalad=False):
 
         self.path = data_root
         self.layout = bids.BIDSLayout(self.path, validate=False)
         # dictionary of KEYS: keys groups, VALUES: list of files
         self.keys_files = {}
         self.fieldmaps_cached = False
+        self.datalad_ready = False
+        self.datalad_handle = None
+
+        # Initialize datalad if 
+        if use_datalad:
+            self._init_datalad()
+
+    def _init_datalad(self):
+        """Initializes a datalad Dataset at self.path"""
+        self.datalad_ready = True
+        self.datalad_handle = dlapi.create(self.path)
 
     def fieldmaps_ok(self):
         pass
