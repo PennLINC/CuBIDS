@@ -46,11 +46,13 @@ class BOnD(object):
         self.datalad_ready = True
         self.datalad_handle = dlapi.create(self.path)
 
-
     def merge_params(self, merge_df, files_df):
         key_param_merge = {}
         for i in range(len(merge_df)):
-            key_param_merge[merge_df.iloc[i]['KeyGroup'], merge_df.iloc[i]['ParamGroup']] = merge_df.iloc[i]['MergeInto']
+            key_group = merge_df.iloc[i]['KeyGroup']
+            param_group = merge_df.iloc[i]['ParamGroup']
+            merge_into = merge_df.iloc[i]['MergeInto']
+            key_param_merge[(key_group, param_group)] = merge_into
         pairs_to_change = list(key_param_merge.keys())
 
         # locate files that need to change param groups/be deleted
@@ -64,24 +66,25 @@ class BOnD(object):
                     file_path = files_df.iloc[row]['FilePath']
                     file_to_rem = Path(file_path)
                     file_to_rem.unlink()
-                #else:
+                # else:
                     # need to merge the param groups
-                    # NEED TO COPY THE METADATA FROM "MergeInto" --> "ParamGroup"
-                    #self.change_metadata
-
+                    # NEED TO COPY THE METADATA FROM
+                    # "MergeInto" --> "ParamGroup"
+                    # self.change_metadata
 
     def change_key_groups(self, og_csv_dir, new_csv_dir):
         files_df = pd.read_csv(og_csv_dir + 'files.csv')
         summary_df = pd.read_csv(og_csv_dir + 'summary.csv')
 
         # TODO: IMPLEMENT merge_params (above)
-        #merge_df = summary_df[summary_df.MergeInto.notnull()]
-        #self.merge_params(merge_df, files_df)
+        # merge_df = summary_df[summary_df.MergeInto.notnull()]
+        # self.merge_params(merge_df, files_df)
 
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
 
-
-        # dictionary of KEYS = (orig key group, param num) VALUES = new key group
+        # dictionary
+        # KEYS = (orig key group, param num)
+        # VALUES = new key group
         key_groups = {}
 
         for i in range(len(change_keys_df)):
@@ -97,7 +100,10 @@ class BOnD(object):
 
         for row in range(len(files_df)):
 
-            if (files_df.iloc[row]['KeyGroup'], files_df.iloc[row]['ParamGroup']) in pairs_to_change:
+            key_group = files_df.iloc[row]['KeyGroup']
+            param_group = files_df.iloc[row]['KeyGroup']
+
+            if (key_group, param_group) in pairs_to_change:
 
                 file_path = files_df.iloc[row]['FilePath']
                 orig_key = files_df.iloc[row]['KeyGroup']
@@ -110,14 +116,14 @@ class BOnD(object):
                 # change each filename according to new key group
                 self.change_filename(file_path, new_entities)
 
-        #TODO: THROW AN EXCEPTION IF NEW_KEY NOT VALID! CAN'T BE PARSED AS A DICT?
+        # TODO: THROW AN EXCEPTION IF NEW_KEY NOT VALID!
+        # OR IF KEY CAN'T BE PARSED AS A DICT?
 
-        self.layout = bids.BIDSLayout(self.path, validate = False)
+        self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_csv_dir)
 
-
     def change_filename(self, filepath, entities):
-        #TODO: NEED TO RGLOB self.path??????
+        # TODO: NEED TO RGLOB self.path??????
         path = Path(filepath)
         exts = path.suffixes
         old_ext = ""
@@ -135,11 +141,9 @@ class BOnD(object):
             large = str(path.parent)
             small = str(path.parents[1]) + '/'
             modality = large.replace(small, '')
-        # create first part of filename
-        file_entities = parse_file_entities(path.stem)
 
         # detect the subject/session string and keep it together
-        # front_stem is the string of subject/session paris in the filename
+        # front_stem is the string of subject/session paris
         # these two entities don't change with the key group
         front_stem = ""
         cntr = 0
@@ -152,17 +156,16 @@ class BOnD(object):
             if cntr != 2:
                 front_stem = front_stem + char
 
-        # keep sub/ses key, value pairs
-        file_keys = list(file_entities.keys())
-
-        new_path_front = str(path.parents[1]) + '/' + modality + '/' + front_stem
+        parent = str(path.parents[1])
+        new_path_front = parent + '/' + modality + '/' + front_stem
 
         # remove fmap (not part of filename string)
         if "fmap" in l_keys:
             l_keys.remove("fmap")
 
         # now need to create the key/value string from the keys!
-        new_filename = "_".join(["{}-{}".format(key, entities[key]) for key in l_keys])
+        new_filename = "_".join(["{}-{}".format(key, entities[key])
+                                for key in l_keys])
 
         # shorten "acquisition" in the filename
         new_filename = new_filename.replace("acquisition", "acq")
@@ -172,7 +175,6 @@ class BOnD(object):
 
         # REMOVE "suffix-"
         new_filename = new_filename.replace("suffix-", "")
-
 
         new_path = new_path_front + "_" + new_filename + old_ext
 
@@ -192,8 +194,6 @@ class BOnD(object):
             (Path(json_file.path)).rename(Path(new_json_path))
         else:
             print("FOUND IRREGULAR NUMBER OF JSONS")
-
-
 
     def fieldmaps_ok(self):
         pass
@@ -225,7 +225,6 @@ class BOnD(object):
         # return a list of all filenames where fmap file detected,
         # no intended for found
         return misfits
-
 
     def rename_files(self, filters, pattern, replacement):
         """
