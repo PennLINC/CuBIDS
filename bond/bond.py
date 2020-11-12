@@ -44,7 +44,16 @@ class BOnD(object):
     def _init_datalad(self):
         """Initializes a datalad Dataset at self.path"""
         self.datalad_ready = True
-        self.datalad_handle = dlapi.create(self.path)
+        self.datalad_handle = dlapi.create(self.path, force=True)
+
+    def datalad_clean(self):
+        """If True, no changes are detected in the datalad dataset."""
+        if not self.datalad_ready:
+            raise Exception(
+                "Datalad not initialized, can't determine status")
+        statuses = set([status['state'] for status in
+                        self.datalad_handle.status()])
+        return statuses == set(["clean"])
 
     def merge_params(self, merge_df, files_df):
         key_param_merge = {}

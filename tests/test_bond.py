@@ -2,16 +2,10 @@
 
 """Tests for `bond` package."""
 import sys
-sys.path.append("..")
-import os
-import pytest
-from pkg_resources import resource_filename as pkgrf
 import shutil
+from pkg_resources import resource_filename as pkgrf
+sys.path.append("..")
 from bond import BOnD
-import os.path as op
-from copy import deepcopy
-import base64
-from glob import glob
 
 TEST_DATA = pkgrf("bond", "testdata")
 
@@ -106,6 +100,21 @@ def test_change_key_groups(tmp_path):
     my_bond = BOnD(data_root)
     my_bond._cache_fieldmaps()
     my_bond.get_CSVs(str(tmp_path / "og_csv_dir"))
+
+
+def test_datalad_integration(tmp_path):
+    """Test the Key Group and Parameter Group creation on sample data.
+    """
+    data_root = get_data(tmp_path)
+
+    # Test the complete data
+    complete_bod = BOnD(data_root / "complete", use_datalad=True)
+
+    assert complete_bod.datalad_ready
+
+    # Test that the correct key groups are found
+    key_groups = complete_bod.get_key_groups()
+    assert key_groups == COMPLETE_KEY_GROUPS
 
 
 """
