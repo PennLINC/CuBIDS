@@ -100,6 +100,13 @@ def test_csv_creation(tmp_path):
     # But now there are more parameter groups
     assert isummary_df.shape[0] == 11
 
+def test_change_key_groups(tmp_path):
+    data_root = get_data(tmp_path)
+
+    my_bond = BOnD(data_root)
+    my_bond._cache_fieldmaps()
+    my_bond.get_CSVs(str(tmp_path / "og_csv_dir"))
+
 
 """
 def test_fill_metadata(tmp_path):
