@@ -46,7 +46,7 @@ class BOnD(object):
         self.datalad_ready = True
         self.datalad_handle = dlapi.create(self.path, force=True)
 
-    def datalad_clean(self):
+    def is_datalad_clean(self):
         """If True, no changes are detected in the datalad dataset."""
         if not self.datalad_ready:
             raise Exception(
