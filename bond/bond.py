@@ -299,6 +299,9 @@ class BOnD(object):
         -----------
             - None
         """
+
+        self._cache_fieldmaps()
+
         big_df = self.get_param_groups_dataframes()[0]
         summary = self.get_param_groups_dataframes()[1]
 
