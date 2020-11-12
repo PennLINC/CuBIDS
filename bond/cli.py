@@ -42,6 +42,26 @@ def run_validator(bidsdir, output_path=None):
             return parsed
 
 
+def bond_validate():
+    pass
+
+
+def bond_group():
+    pass
+
+
+def bond_apply():
+    pass
+
+
+def bond_undo():
+    pass
+
+
+def param_group_merge():
+    pass
+
+
 def main():
     """Console script for bond."""
     parser = argparse.ArgumentParser()

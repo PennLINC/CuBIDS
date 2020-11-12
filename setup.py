@@ -28,7 +28,11 @@ setup(
     description="BIDS On Disk Editor",
     entry_points={
         'console_scripts': [
-            'bond=bond.cli:main',
+            'bond-group=bond.cli:bond_group',
+            'bond-apply=bond.cli:bond_apply',
+            'bond-revert=bond.cli:bond_revert',
+            'bids-sidecar-merge=bond.cli:param_group_merge',
+            'bond-validate=bond.cli:bond_validate'
         ],
     },
     license="GNU General Public License v3",
