@@ -3,6 +3,7 @@
 """Tests for `bond` package."""
 import sys
 import shutil
+import json
 from pkg_resources import resource_filename as pkgrf
 sys.path.append("..")
 import pytest
@@ -104,8 +105,18 @@ def test_change_key_groups(tmp_path):
     my_bond.get_CSVs(str(tmp_path / "og_csv_dir"))
 
 
+def _edit_a_json(json_file):
+    """Open a json file, write somthing to it and save it to the same name."""
+    with open(json_file, "r") as metadatar:
+        metadata = json.load(metadatar)
+
+    metadata["THIS_IS_A_TEST"] = True
+    with open(json_file, "w") as metadataw:
+        json.dump(metadata, metadataw)
+
+
 def test_datalad_integration(tmp_path):
-    """Test the Key Group and Parameter Group creation on sample data.
+    """Test that datalad works for basic file modification operations.
     """
     data_root = get_data(tmp_path)
 
@@ -121,7 +132,6 @@ def test_datalad_integration(tmp_path):
     uninit_bond.init_datalad(save=True)
     assert uninit_bond.is_datalad_clean()
 
-
     # Now, the datalad repository is initialized and saved.
     # Make sure if we make a new BOnD object it recognizes that
     # the datalad status is OK
@@ -129,6 +139,20 @@ def test_datalad_integration(tmp_path):
 
     assert complete_bod.datalad_ready
     assert complete_bod.is_datalad_clean()
+
+    # Edit a file and make sure that it's been detected by datalad
+    _edit_a_json(str( data_root / "complete" / "sub-03" / "ses-phdiff" / "func"
+                     / "sub-03_ses-phdiff_task-rest_bold.json"))
+    assert not uninit_bond.is_datalad_clean()
+    assert not complete_bod.is_datalad_clean()
+
+    # Make sure you can't initialize a BOnD object on a dirty directory
+    with pytest.raises(Exception):
+        BOnD(data_root / "complete", use_datalad=True)
+
+    # Test BOnD.datalad_save()
+    uninit_bond.datalad_save(message="TEST SAVE!")
+
 
 
 """
