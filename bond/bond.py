@@ -39,12 +39,36 @@ class BOnD(object):
 
         # Initialize datalad if
         if use_datalad:
-            self._init_datalad()
+            self.init_datalad()
 
-    def _init_datalad(self):
-        """Initializes a datalad Dataset at self.path"""
+    def init_datalad(self, save=False, message=None):
+        """Initializes a datalad Dataset at self.path.
+
+        Parameters:
+        -----------
+
+            save: bool
+                Run datalad save to add any untracked files
+            message: str or None
+                Message to add to
+        """
         self.datalad_ready = True
-        self.datalad_handle = dlapi.create(self.path, force=True)
+        self.datalad_handle = dlapi.create(self.path,
+                                           cfg_proc='text2git',
+                                           force=True,
+                                           annex=True)
+        if save:
+            self.datalad_handle.save(message="Saved by BOnD")
+        if not save and not self.is_datalad_clean():
+            raise Exception("Unsaved changes in %s" % self.path)
+
+    def datalad_save(self, message=None):
+        if message is None:
+            message = "BOnD Save"
+        statuses = self.datalad_handle.save(message=message)
+        saved_status = set([status['status'] for status in statuses])
+        if not saved_status == set(["ok"]):
+            raise Exception("Failed to save in DataLad")
 
     def is_datalad_clean(self):
         """If True, no changes are detected in the datalad dataset."""

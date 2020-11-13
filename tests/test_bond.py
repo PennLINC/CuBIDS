@@ -5,6 +5,7 @@ import sys
 import shutil
 from pkg_resources import resource_filename as pkgrf
 sys.path.append("..")
+import pytest
 from bond import BOnD
 
 TEST_DATA = pkgrf("bond", "testdata")
@@ -108,14 +109,26 @@ def test_datalad_integration(tmp_path):
     """
     data_root = get_data(tmp_path)
 
-    # Test the complete data
+    # Test that an uninitialized BOnD raises exceptions
+    uninit_bond = BOnD(data_root / "complete", use_datalad=False)
+
+    # Ensure an exception is raised if trying to use datalad without
+    # initializing
+    with pytest.raises(Exception):
+        uninit_bond.is_datalad_clean()
+
+    # initialize the datalad repository and try again
+    uninit_bond.init_datalad(save=True)
+    assert uninit_bond.is_datalad_clean()
+
+
+    # Now, the datalad repository is initialized and saved.
+    # Make sure if we make a new BOnD object it recognizes that
+    # the datalad status is OK
     complete_bod = BOnD(data_root / "complete", use_datalad=True)
 
     assert complete_bod.datalad_ready
-
-    # Test that the correct key groups are found
-    key_groups = complete_bod.get_key_groups()
-    assert key_groups == COMPLETE_KEY_GROUPS
+    assert complete_bod.is_datalad_clean()
 
 
 """
