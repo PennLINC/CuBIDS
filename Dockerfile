@@ -1,44 +1,35 @@
-FROM python:3
-
-# install conda
-RUN curl -sSLO https://repo.continuum.io/miniconda/Miniconda3-4.5.12-Linux-x86_64.sh && \
-    bash Miniconda3-4.5.12-Linux-x86_64.sh -b -p /usr/local/miniconda && \
-    rm Miniconda3-4.5.12-Linux-x86_64.sh
-
-ENV PATH=/usr/local/miniconda/bin:$PATH
-
-# activate conda environment
-RUN echo "source activate base" > ~/.bashrc
-
-RUN which conda
+FROM ubuntu:bionic-20200921
 
 # get the validator branch skip_session_check
 RUN apt-get update && \
-    apt-get install -y git
+    apt-get install -y --no-install-recommends \
+    curl ca-certificates && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# USE CONDA FOR INSTALLING NPM
-RUN conda install nodejs
+# Installing Neurodebian and nodejs packages
+COPY neurodebian.gpg /usr/local/etc/neurodebian.gpg
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    curl -sSL "http://neuro.debian.net/lists/$( lsb_release -c | cut -f2 ).us-ca.full" >> /etc/apt/sources.list.d/neurodebian.sources.list && \
+    apt-key add /usr/local/etc/neurodebian.gpg && \
+    (apt-key adv --refresh-keys --keyserver hkp://ha.pool.sks-keyservers.net 0xA5D32F012649A5A9 || true)
 
-RUN npm --version
+# get the validator branch skip_session_check
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    datalad nodejs python3 python3-pip python3-setuptools && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN npm install -g yarn
 
-RUN mkdir -p /home/validator && \
+RUN npm install -g yarn && \
+   mkdir -p /home/validator && \
     cd /home/validator && \
-    git clone -b skip_session_checks --single-branch https://github.com/bids-standard/bids-validator.git
-
-
-RUN ls /home/validator/bids-validator
-RUN cd /home/validator/bids-validator && \
+    git clone -b skip_session_checks \
+        --single-branch https://github.com/bids-standard/bids-validator.git  && \
+    cd /home/validator/bids-validator && \
     yarn && \
-    npm install -g bids-validator
+    cd bids-validator && npm install -g
 
-RUN which bids-validator
+COPY . /src/BOnD
+RUN pip3 install --no-cache-dir "/src/BOnD"
 
-# prepare env
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-ENTRYPOINT [ "bids-validator"]
+ENTRYPOINT [ "/bin/bash"]

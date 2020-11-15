@@ -64,7 +64,6 @@ def bond_group():
                         help='file prefix to which a _summary.csv, _files.csv '
                         'and _group.csv are written.')
     parser.add_argument('--container',
-                        type=str,
                         action='store',
                         help='Docker image tag or Singularity image file.')
     parser.add_argument('--use-datalad',
