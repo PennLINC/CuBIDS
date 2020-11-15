@@ -130,6 +130,24 @@ jobs:
             git config --global user.name "CircleCI Test"
             py.test -sv tests
 
+      - run:
+          name: Test Docker integration
+          command: |
+            mkdir -p /tmp/group_testing
+            bond-group \
+              /home/circleci/src/BOnD \
+              /tmp/group_testing/docker \
+              --use-datalad \
+              --container pennlinc/bond:latest
+
+      - run:
+          name: Test direct CLI
+          command: |
+            bond-group \
+              /home/circleci/src/BOnD \
+              /tmp/group_testing/direct \
+              --use-datalad
+
   build_docs:
     docker:
       - image: circleci/python:3.7.4
