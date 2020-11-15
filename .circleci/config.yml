@@ -131,8 +131,22 @@ jobs:
             py.test -sv tests
 
       - run:
+          name: Test direct CLI
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            bond-group \
+              /home/circleci/src/BOnD/testdata/complete \
+              /tmp/group_testing/direct \
+              --use-datalad
+
+      - run:
           name: Test Docker integration
           command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
             mkdir -p /tmp/group_testing
@@ -141,15 +155,7 @@ jobs:
               /tmp/group_testing/docker \
               --container pennlinc/bond:latest
 
-      - run:
-          name: Test direct CLI
-          command: |
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
-            bond-group \
-              /home/circleci/src/BOnD/testdata/complete \
-              /tmp/group_testing/direct \
-              --use-datalad
+
 
   build_docs:
     docker:

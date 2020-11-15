@@ -2,6 +2,7 @@
 import argparse
 import subprocess
 from pathlib import Path
+import os
 import sys
 import re
 import logging
@@ -11,7 +12,7 @@ from .docker_run import (check_docker, check_image, build_validator_call,
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bond-cli')
-
+GIT_CONFIG = os.path.join(os.path.expanduser("~"))
 
 def run_validator(bidsdir, output_path=None):
     """Run the BIDS validator on a BIDS directory"""
@@ -88,10 +89,12 @@ def bond_group():
     linked_output_prefix = "/csv/" + opts.output_prefix.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
+               '-v', GIT_CONFIG+":/root/.gitconfig",
                '-v', output_dir_link, '--entrypoint', 'bond-group',
                opts.container, '/bids', linked_output_prefix]
     elif container_type == 'singularity':
-        cmd = ['singularity', 'exec', '--cleanenv', '-B', bids_dir_link,
+        cmd = ['singularity', 'exec', '--cleanenv',
+               '-B', bids_dir_link,
                '-B', output_dir_link, opts.container, 'bond-group',
                '/bids', linked_output_prefix]
     if opts.use_datalad:
