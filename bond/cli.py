@@ -12,7 +12,7 @@ from .docker_run import (check_docker, check_image, build_validator_call,
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bond-cli')
-GIT_CONFIG = os.path.join(os.path.expanduser("~"))
+GIT_CONFIG = os.path.join(os.path.expanduser("~"), '.gitconfig')
 
 
 def run_validator(bidsdir, output_path=None):
