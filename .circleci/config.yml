@@ -137,8 +137,10 @@ jobs:
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/direct
             bond-group \
-              /home/circleci/src/BOnD/testdata/complete \
+              /tmp/bids/direct \
               /tmp/group_testing/direct \
               --use-datalad
 
@@ -149,9 +151,11 @@ jobs:
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker
             mkdir -p /tmp/group_testing
             bond-group \
-              /home/circleci/src/BOnD/testdata/complete \
+              /tmp/bids/docker \
               /tmp/group_testing/docker \
               --container pennlinc/bond:latest
 
