@@ -133,6 +133,7 @@ jobs:
       - run:
           name: Test Docker integration
           command: |
+            export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
             mkdir -p /tmp/group_testing
             bond-group \
@@ -144,6 +145,7 @@ jobs:
       - run:
           name: Test direct CLI
           command: |
+            export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
             bond-group \
               /home/circleci/src/BOnD/testdata/complete \
