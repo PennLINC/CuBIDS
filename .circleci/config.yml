@@ -141,8 +141,7 @@ jobs:
             cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/direct
             bond-group \
               /tmp/bids/direct \
-              /tmp/group_testing/direct \
-              --use-datalad
+              /tmp/group_testing/direct
 
       - run:
           name: Test Docker integration
