@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bond-cli')
 GIT_CONFIG = os.path.join(os.path.expanduser("~"))
 
+
 def run_validator(bidsdir, output_path=None):
     """Run the BIDS validator on a BIDS directory"""
 
