@@ -139,7 +139,6 @@ jobs:
             bond-group \
               /home/circleci/src/BOnD/testdata/complete \
               /tmp/group_testing/docker \
-              --use-datalad \
               --container pennlinc/bond:latest
 
       - run:
