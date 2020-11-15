@@ -135,7 +135,7 @@ jobs:
           command: |
             mkdir -p /tmp/group_testing
             bond-group \
-              /home/circleci/src/BOnD \
+              /home/circleci/src/BOnD/testdata/complete \
               /tmp/group_testing/docker \
               --use-datalad \
               --container pennlinc/bond:latest
@@ -144,7 +144,7 @@ jobs:
           name: Test direct CLI
           command: |
             bond-group \
-              /home/circleci/src/BOnD \
+              /home/circleci/src/BOnD/testdata/complete \
               /tmp/group_testing/direct \
               --use-datalad
 
