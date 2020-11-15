@@ -133,6 +133,7 @@ jobs:
       - run:
           name: Test Docker integration
           command: |
+            source activate bond
             mkdir -p /tmp/group_testing
             bond-group \
               /home/circleci/src/BOnD/testdata/complete \
@@ -143,6 +144,7 @@ jobs:
       - run:
           name: Test direct CLI
           command: |
+            source activate bond
             bond-group \
               /home/circleci/src/BOnD/testdata/complete \
               /tmp/group_testing/direct \
