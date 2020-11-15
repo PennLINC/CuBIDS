@@ -74,11 +74,11 @@ def bond_group():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=opts.bids_dir,
+        bod = BOnD(data_root=str(opts.bids_dir),
                    use_datalad=opts.use_datalad)
         if opts.use_datalad and not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.get_CSVs(opts.output_prefix)
+        bod.get_CSVs(str(opts.output_prefix))
         sys.exit(0)
 
     # Run it through a container
@@ -89,10 +89,10 @@ def bond_group():
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', output_dir_link, '--entrypoint', 'bond-group',
-               opts.image_name, '/bids', linked_output_prefix]
+               opts.container, '/bids', linked_output_prefix]
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv', '-B', bids_dir_link,
-               '-B', output_dir_link, opts.image_name, 'bond-group',
+               '-B', output_dir_link, opts.container, 'bond-group',
                '/bids', linked_output_prefix]
     if opts.use_datalad:
         cmd.append("--use-datalad")
@@ -120,7 +120,7 @@ def _get_container_type(image_name):
         return "singularity"
 
     # It needs to match a docker tag pattern to be docker
-    if re.match(r"?:.+\/)?([^:]+)(?::.+)?", image_name):
+    if re.match(r"(?:.+\/)?([^:]+)(?::.+)?", image_name):
         return "docker"
 
     raise Exception("Unable to determine the container type of " + image_name)
