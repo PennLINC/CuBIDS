@@ -102,7 +102,7 @@ def bond_group():
         cmd.append("--use-datalad")
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
-    sys.exit(proc.retcode)
+    sys.exit(proc.returncode)
 
 
 def bond_apply():
