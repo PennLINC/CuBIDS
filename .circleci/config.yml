@@ -87,6 +87,64 @@ jobs:
             - miniconda
 
 
+  install_and_test_singularity:
+    machine:
+      image: ubuntu-1604:202004-01
+    working_directory: /home/circleci/src/BOnD
+    steps:
+      - checkout:
+          path: /home/circleci/src/BOnD
+
+      - attach_workspace:
+          at: /tmp
+
+      - restore_cache:
+          keys:
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
+
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 30m
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+
+      - run:
+          name: Install BOnD
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            pip install .
+
+      - run:
+          name: Install Singularity
+          command: |
+            sudo wget -O- http://neuro.debian.net/lists/xenial.us-ca.full | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list
+            sudo apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9
+            sudo apt-get update
+            sudo apt-get install -y singularity-container
+            singularity build /home/circleci/bond-latest.sif docker-daemon://pennlinc/bond:latest
+
+      - run:
+          name: Test direct CLI
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids /tmp/group_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
+            bond-group \
+              /tmp/bids/singularity \
+              /tmp/group_testing/direct \
+              --container /home/circleci/bond-latest.sif
+
+
   install_and_test:
     machine:
       image: ubuntu-1604:202004-01
@@ -119,29 +177,7 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
-            pip install .[all]
-
-      - run:
-          name: Run PyTest
-          command: |
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
-            git config --global user.email "circleci@citesting.com"
-            git config --global user.name "CircleCI Test"
-            py.test -sv tests
-
-      - run:
-          name: Test direct CLI
-          command: |
-            git config --global user.email "circleci@citesting.com"
-            git config --global user.name "CircleCI Test"
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
-            mkdir -p /tmp/bids /tmp/group_testing
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/direct
-            bond-group \
-              /tmp/bids/direct \
-              /tmp/group_testing/direct
+            pip install .
 
       - run:
           name: Test Docker integration
@@ -156,8 +192,6 @@ jobs:
               /tmp/bids/docker \
               /tmp/group_testing/docker \
               --container pennlinc/bond:latest
-
-
 
   build_docs:
     docker:
