@@ -334,12 +334,9 @@ class BOnD(object):
         """
 
         self._cache_fieldmaps()
-
-        big_df = self.get_param_groups_dataframes()[0]
-        summary = self.get_param_groups_dataframes()[1]
-
-        big_df.to_csv(path_prefix + "files.csv", index=False)
-        summary.to_csv(path_prefix + "summary.csv", index=False)
+        big_df, summary = self.get_param_groups_dataframes()
+        big_df.to_csv(path_prefix + "_files.csv", index=False)
+        summary.to_csv(path_prefix + "_summary.csv", index=False)
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)

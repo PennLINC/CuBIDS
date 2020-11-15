@@ -141,8 +141,8 @@ def test_datalad_integration(tmp_path):
     assert complete_bod.is_datalad_clean()
 
     # Edit a file and make sure that it's been detected by datalad
-    _edit_a_json(str( data_root / "complete" / "sub-03" / "ses-phdiff" / "func"
-                     / "sub-03_ses-phdiff_task-rest_bold.json"))
+    _edit_a_json(str(data_root / "complete" / "sub-03" / "ses-phdiff" / "func"
+                 / "sub-03_ses-phdiff_task-rest_bold.json"))
     assert not uninit_bond.is_datalad_clean()
     assert not complete_bod.is_datalad_clean()
 

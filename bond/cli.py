@@ -1,10 +1,13 @@
 """Console script for bond."""
 import argparse
+import subprocess
+from pathlib import Path
 import sys
+import re
 import logging
+from bond import BOnD
 from .docker_run import (check_docker, check_image, build_validator_call,
                          run, parse_validator)
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bond-cli')
@@ -47,7 +50,56 @@ def bond_validate():
 
 
 def bond_group():
-    pass
+    parser = argparse.ArgumentParser(
+        description="bond-group: find key and parameter groups in BIDS",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('bids_dir',
+                        type=Path,
+                        action='store',
+                        help='the root of a BIDS dataset. It should contain '
+                        'sub-X directories and dataset_description.json')
+    parser.add_argument('output_prefix',
+                        type=Path,
+                        action='store',
+                        help='file prefix to which a _summary.csv, _files.csv '
+                        'and _group.csv are written.')
+    parser.add_argument('--container',
+                        type=str,
+                        action='store',
+                        help='Docker image tag or Singularity image file.')
+    parser.add_argument('--use-datalad',
+                        action='store_true',
+                        help='ensure that there are no untracked changes '
+                        'before finding groups')
+    opts = parser.parse_args()
+
+    # Run directly from python using
+    if opts.container is None:
+        bod = BOnD(data_root=opts.bids_dir,
+                   use_datalad=opts.use_datalad)
+        if opts.use_datalad and not bod.is_datalad_clean():
+            raise Exception("Untracked change in " + str(opts.bids_dir))
+        bod.get_CSVs(opts.output_prefix)
+        sys.exit(0)
+
+    # Run it through a container
+    container_type = _get_container_type(opts.container)
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
+    output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/csv:rw"
+    linked_output_prefix = "/csv/" + opts.output_prefix.name
+    if container_type == 'docker':
+        cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
+               '-v', output_dir_link, '--entrypoint', 'bond-group',
+               opts.image_name, '/bids', linked_output_prefix]
+    elif container_type == 'singularity':
+        cmd = ['singularity', 'exec', '--cleanenv', '-B', bids_dir_link,
+               '-B', output_dir_link, opts.image_name, 'bond-group',
+               '/bids', linked_output_prefix]
+    if opts.use_datalad:
+        cmd.append("--use-datalad")
+    print("RUNNING: " + ' '.join(cmd))
+    retcode = subprocess.run(cmd)
+    sys.exit(retcode)
 
 
 def bond_apply():
@@ -62,17 +114,14 @@ def param_group_merge():
     pass
 
 
-def main():
-    """Console script for bond."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('_', nargs='*')
-    args = parser.parse_args()
+def _get_container_type(image_name):
 
-    print("Arguments: " + str(args._))
-    print("Replace this message by putting your code into "
-          "bond.cli.main")
-    return 0
+    # If it's a file on disk, it must be a singularity image
+    if Path(image_name).exists():
+        return "singularity"
 
+    # It needs to match a docker tag pattern to be docker
+    if re.match(r"?:.+\/)?([^:]+)(?::.+)?", image_name):
+        return "docker"
 
-if __name__ == "__main__":
-    sys.exit(main())  # pragma: no cover
+    raise Exception("Unable to determine the container type of " + image_name)
