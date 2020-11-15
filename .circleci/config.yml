@@ -137,7 +137,7 @@ jobs:
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
-            mkdir -p /tmp/bids
+            mkdir -p /tmp/bids /tmp/group_testing
             cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/direct
             bond-group \
               /tmp/bids/direct \
@@ -150,9 +150,8 @@ jobs:
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
-            mkdir -p /tmp/bids
+            mkdir -p /tmp/bids /tmp/group_testing
             cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker
-            mkdir -p /tmp/group_testing
             bond-group \
               /tmp/bids/docker \
               /tmp/group_testing/docker \
