@@ -169,7 +169,7 @@ jobs:
           command: |
               export GOPATH=$HOME/go
               cd /home/circleci
-              # tar xfz go.tar.gz
+              tar xfz go.tar.gz
               tar xfz singularity.tar.gz
               cd project/singularity/builddir
               sudo make install
