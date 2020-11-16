@@ -149,55 +149,51 @@ jobs:
             if [ ! -f /usr/local/bin/singularity ]
             then
               apt-get update && apt-get -y - wget build-essential libssl-dev uuid-dev
-              export VERSION=1.11 OS=linux ARCH=amd64 && \
-              wget https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
-              tar -C /usr/local -xzvf go$VERSION.$OS-$ARCH.tar.gz && \
-              rm go$VERSION.$OS-$ARCH.tar.gz
-              echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
-              echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc && \
-              source ~/.bashrc
-              go get -d github.com/sylabs/singularity
-              export VERSION=3.0.3 && # adjust this as necessary \
+              export GOPATH=/usr/local/go
+              export VERSION=3.6.4 && \
               mkdir -p $GOPATH/src/github.com/sylabs && \
               wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
               tar -xzf singularity-${VERSION}.tar.gz && \
               cd ./singularity && \
               ./mconfig
               cd builddir
-              make -j 2
-              make install
+              sudo make -j 2
+              sudo make install
             fi
 
       - save_cache:
          key: singularity-v1-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
          paths:
             - /usr/local/bin/singularity
-            - /usr/local/libexec/singularity/bin/starter
-            - /usr/local/libexec/singularity/bin/starter-suid
-            - /usr/local/var/singularity/mnt/session
+            - /usr/local/etc/bash_completion.d/singularity
             - /usr/local/etc/singularity/singularity.conf
+            - /usr/local/etc/singularity/remote.yaml
+            - /usr/local/libexec/singularity/cni/dhcp
+            - /usr/local/libexec/singularity/cni/host-local
+            - /usr/local/libexec/singularity/cni/static
+            - /usr/local/libexec/singularity/cni/bridge
+            - /usr/local/libexec/singularity/cni/host-device
+            - /usr/local/libexec/singularity/cni/ipvlan
+            - /usr/local/libexec/singularity/cni/loopback
+            - /usr/local/libexec/singularity/cni/macvlan
+            - /usr/local/libexec/singularity/cni/ptp
+            - /usr/local/libexec/singularity/cni/vlan
+            - /usr/local/libexec/singularity/cni/bandwidth
+            - /usr/local/libexec/singularity/cni/firewall
+            - /usr/local/libexec/singularity/cni/flannel
+            - /usr/local/libexec/singularity/cni/portmap
+            - /usr/local/libexec/singularity/cni/tuning
+            - /usr/local/libexec/singularity/bin/starter
+            - /usr/local/var/singularity/mnt/session
             - /usr/local/bin/run-singularity
             - /usr/local/etc/singularity/capability.json
             - /usr/local/etc/singularity/ecl.toml
-            - /usr/local/etc/bash_completion.d/singularity
-            - /usr/local/etc/singularity/actions
-            - /usr/local/libexec/singularity/cni/bandwidth
-            - /usr/local/libexec/singularity/cni/bridge
-            - /usr/local/libexec/singularity/cni/dhcp
-            - /usr/local/libexec/singularity/cni/flannel
-            - /usr/local/libexec/singularity/cni/host-device
-            - /usr/local/libexec/singularity/cni/host-local
-            - /usr/local/libexec/singularity/cni/ipvlan
-            - /usr/local/libexec/singularity/cni/macvlan
-            - /usr/local/libexec/singularity/cni/portmap
-            - /usr/local/libexec/singularity/cni/ptp
-            - /usr/local/libexec/singularity/cni/static
-            - /usr/local/libexec/singularity/cni/tuning
-            - /usr/local/libexec/singularity/cni/vlan
             - /usr/local/etc/singularity/seccomp-profiles/default.json
             - /usr/local/etc/singularity/nvliblist.conf
+            - /usr/local/etc/singularity/rocmliblist.conf
             - /usr/local/etc/singularity/cgroups/cgroups.toml
-            - /root/go
+            - /usr/local/libexec/singularity/bin/starter-suid
+
 
   install_and_test:
     machine:
