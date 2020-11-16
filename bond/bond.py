@@ -418,6 +418,9 @@ class BOnD(object):
                 # write out
                 _update_json(json_file.path, sidecar)
 
+    def apply_csv_changes(self, previous_output_prefix, new_output_prefix):
+        pass
+
 
 def _update_json(json_file, metadata):
 
