@@ -116,12 +116,13 @@ jobs:
               cd ./singularity
               ./mconfig && \
                 make -j2 -C ./builddir
+              rm ~/project/singularity*gz
             fi
 
       - save_cache:
          key: singularity-v3-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
          paths:
-            - /home/circleci/singularity
+            - /home/circleci/project/singularity/builddir
             - /home/circleci/go
 
 
@@ -165,7 +166,7 @@ jobs:
           name: Install Singularity
           command: |
               export GOPATH=$HOME/go
-              cd /home/circleci/singluarity
+              cd /home/circleci/project/singluarity
               sudo make -C install ./builddir
 
       - run:
