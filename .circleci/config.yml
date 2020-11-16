@@ -148,14 +148,13 @@ jobs:
           command: |
             if [ ! -f /usr/local/bin/singularity ]
             then
-              apt-get update && apt-get -y - wget build-essential libssl-dev uuid-dev
+              sudo apt-get update && apt-get -y - wget build-essential libssl-dev uuid-dev
               export GOPATH=/usr/local/go
               export VERSION=3.6.4 && \
-              mkdir -p $GOPATH/src/github.com/sylabs && \
               wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
               tar -xzf singularity-${VERSION}.tar.gz && \
               cd ./singularity && \
-              ./mconfig
+              sudo ./mconfig
               cd builddir
               sudo make -j 2
               sudo make install
