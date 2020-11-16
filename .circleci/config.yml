@@ -123,6 +123,12 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
             pip install .
+      - run:
+          name: Install Singularity
+          command: |
+              export GOPATH=$HOME/go
+              cd /home/circleci/singluarity
+              sudo make -C install ./builddir
 
       - run:
           name: Test direct CLI
@@ -167,42 +173,14 @@ jobs:
               tar -xzf singularity-${VERSION}.tar.gz
               cd ./singularity
               ./mconfig && \
-                make -C ./builddir && \
-                sudo make -C ./builddir install
+                make -C ./builddir
             fi
 
       - save_cache:
          key: singularity-v3-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
          paths:
-            - /usr/local/bin/singularity
-            - /usr/local/etc/bash_completion.d/singularity
-            - /usr/local/etc/singularity/singularity.conf
-            - /usr/local/etc/singularity/remote.yaml
-            - /usr/local/libexec/singularity/cni/dhcp
-            - /usr/local/libexec/singularity/cni/host-local
-            - /usr/local/libexec/singularity/cni/static
-            - /usr/local/libexec/singularity/cni/bridge
-            - /usr/local/libexec/singularity/cni/host-device
-            - /usr/local/libexec/singularity/cni/ipvlan
-            - /usr/local/libexec/singularity/cni/loopback
-            - /usr/local/libexec/singularity/cni/macvlan
-            - /usr/local/libexec/singularity/cni/ptp
-            - /usr/local/libexec/singularity/cni/vlan
-            - /usr/local/libexec/singularity/cni/bandwidth
-            - /usr/local/libexec/singularity/cni/firewall
-            - /usr/local/libexec/singularity/cni/flannel
-            - /usr/local/libexec/singularity/cni/portmap
-            - /usr/local/libexec/singularity/cni/tuning
-            - /usr/local/libexec/singularity/bin/starter
-            - /usr/local/var/singularity/mnt/session
-            - /usr/local/bin/run-singularity
-            - /usr/local/etc/singularity/capability.json
-            - /usr/local/etc/singularity/ecl.toml
-            - /usr/local/etc/singularity/seccomp-profiles/default.json
-            - /usr/local/etc/singularity/nvliblist.conf
-            - /usr/local/etc/singularity/rocmliblist.conf
-            - /usr/local/etc/singularity/cgroups/cgroups.toml
-            - /usr/local/libexec/singularity/bin/starter-suid
+            - /home/circleci/singularity
+            - /home/circleci/go
 
 
   install_and_test:
