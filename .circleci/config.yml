@@ -116,14 +116,15 @@ jobs:
               cd ./singularity
               ./mconfig && \
                 make -j2 -C ./builddir
-              rm ~/project/singularity*gz
+              tar cfz singularity.tar.gz project/singularity/
+              tar cfz go.tar.gz go/
             fi
 
       - save_cache:
          key: singularity-v3-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
          paths:
-            - /home/circleci/project/singularity/builddir
-            - /home/circleci/go
+            - /home/circleci/singularity.tar.gz
+            - /home/circleci/go.tar.gz
 
 
   install_and_test_singularity:
@@ -162,12 +163,16 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
             pip install .
+
       - run:
           name: Install Singularity
           command: |
               export GOPATH=$HOME/go
-              cd /home/circleci/project/singluarity
-              sudo make -C install ./builddir
+              cd /home/circleci
+              # tar xfz go.tar.gz
+              tar xfz singularity.tar.gz
+              cd project/singularity/builddir
+              sudo make install
 
       - run:
           name: Test direct CLI
