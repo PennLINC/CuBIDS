@@ -176,7 +176,15 @@ jobs:
               sudo make install
 
       - run:
-          name: Test direct CLI
+          name: Build singularity image
+          no_output_timeout: 30m
+          command: |
+              singularity build \
+                /home/circleci/bond-latest.sif \
+                docker-daemon://pennlinc/bond:latest
+
+      - run:
+          name: Test singularity
           command: |
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
