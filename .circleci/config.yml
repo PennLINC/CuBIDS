@@ -116,6 +116,7 @@ jobs:
               cd ./singularity
               ./mconfig && \
                 make -j2 -C ./builddir
+              cd $HOME
               tar cfz singularity.tar.gz project/singularity/
               tar cfz go.tar.gz go/
             fi
