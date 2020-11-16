@@ -86,6 +86,44 @@ jobs:
           paths:
             - miniconda
 
+  get_singularity:
+    machine:
+      image: ubuntu-1604:202004-01
+    steps:
+      - restore_cache:
+          keys:
+            - singularity-v3-{{ .Branch }}-{{ .Revision }}
+
+      - run:
+          name: Download Singularity
+          command: |
+            if [ ! -f /usr/local/bin/singularity ]
+            then
+              sudo apt-get update && sudo apt-get -y install build-essential \
+                libssl-dev \
+                uuid-dev \
+                libgpgme11-dev \
+                squashfs-tools \
+                libseccomp-dev \
+                pkg-config \
+                wget
+              export GOPATH=$HOME/go
+              mkdir -p $GOPATH
+              go get -u github.com/golang/dep/cmd/dep
+              export VERSION=3.6.4
+              wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
+              tar -xzf singularity-${VERSION}.tar.gz
+              cd ./singularity
+              ./mconfig && \
+                make -C -j2 ./builddir
+            fi
+
+      - save_cache:
+         key: singularity-v3-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
+         paths:
+            - /home/circleci/singularity
+            - /home/circleci/go
+
 
   install_and_test_singularity:
     machine:
@@ -144,43 +182,6 @@ jobs:
               /tmp/group_testing/direct \
               --container /home/circleci/bond-latest.sif
 
-  get_singularity:
-    machine:
-      image: ubuntu-1604:202004-01
-    steps:
-      - restore_cache:
-          keys:
-            - singularity-v3-{{ .Branch }}-{{ .Revision }}
-
-      - run:
-          name: Download Singularity
-          command: |
-            if [ ! -f /usr/local/bin/singularity ]
-            then
-              sudo apt-get update && sudo apt-get -y install build-essential \
-                libssl-dev \
-                uuid-dev \
-                libgpgme11-dev \
-                squashfs-tools \
-                libseccomp-dev \
-                pkg-config \
-                wget
-              export GOPATH=$HOME/go
-              mkdir -p $GOPATH
-              go get -u github.com/golang/dep/cmd/dep
-              export VERSION=3.6.4
-              wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
-              tar -xzf singularity-${VERSION}.tar.gz
-              cd ./singularity
-              ./mconfig && \
-                make -C ./builddir
-            fi
-
-      - save_cache:
-         key: singularity-v3-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
-         paths:
-            - /home/circleci/singularity
-            - /home/circleci/go
 
 
   install_and_test:
