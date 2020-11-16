@@ -3,3 +3,7 @@
 Dockerfile
 .DS_Store
 .gitignore
+notebooks
+tests
+docs
+
