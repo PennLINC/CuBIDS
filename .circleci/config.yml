@@ -101,6 +101,9 @@ jobs:
       - restore_cache:
           keys:
             - docker-v1-{{ .Branch }}-{{ .Revision }}
+
+      - restore_cache:
+          keys:
             - singularity-v2-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Load Docker image layer cache
