@@ -115,7 +115,7 @@ jobs:
               tar -xzf singularity-${VERSION}.tar.gz
               cd ./singularity
               ./mconfig && \
-                make -C -j2 ./builddir
+                make -j2 -C ./builddir
             fi
 
       - save_cache:
