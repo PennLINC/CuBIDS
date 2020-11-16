@@ -86,6 +86,118 @@ jobs:
           paths:
             - miniconda
 
+  get_singularity:
+    machine:
+      image: ubuntu-1604:202004-01
+    steps:
+      - restore_cache:
+          keys:
+            - singularity-v3-{{ .Branch }}-{{ .Revision }}
+
+      - run:
+          name: Download Singularity
+          command: |
+            if [ ! -f /usr/local/bin/singularity ]
+            then
+              sudo apt-get update && sudo apt-get -y install build-essential \
+                libssl-dev \
+                uuid-dev \
+                libgpgme11-dev \
+                squashfs-tools \
+                libseccomp-dev \
+                pkg-config \
+                wget
+              export GOPATH=$HOME/go
+              mkdir -p $GOPATH
+              go get -u github.com/golang/dep/cmd/dep
+              export VERSION=3.6.4
+              wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
+              tar -xzf singularity-${VERSION}.tar.gz
+              cd ./singularity
+              ./mconfig && \
+                make -j2 -C ./builddir
+              cd $HOME
+              tar cfz singularity.tar.gz project/singularity/
+              tar cfz go.tar.gz go/
+            fi
+
+      - save_cache:
+         key: singularity-v3-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
+         paths:
+            - /home/circleci/singularity.tar.gz
+            - /home/circleci/go.tar.gz
+
+
+  install_and_test_singularity:
+    machine:
+      image: ubuntu-1604:202004-01
+    working_directory: /home/circleci/src/BOnD
+    steps:
+      - checkout:
+          path: /home/circleci/src/BOnD
+
+      - attach_workspace:
+          at: /tmp
+
+      - restore_cache:
+          keys:
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
+
+      - restore_cache:
+          keys:
+            - singularity-v3-{{ .Branch }}-{{ .Revision }}
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 30m
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+
+      - run:
+          name: Install BOnD
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            pip install .
+
+      - run:
+          name: Install Singularity
+          command: |
+              export GOPATH=$HOME/go
+              cd /home/circleci
+              tar xfz go.tar.gz
+              tar xfz singularity.tar.gz
+              cd project/singularity/builddir
+              sudo make install
+
+      - run:
+          name: Build singularity image
+          no_output_timeout: 30m
+          command: |
+              singularity build \
+                /home/circleci/bond-latest.sif \
+                docker-daemon://pennlinc/bond:latest
+
+      - run:
+          name: Test singularity
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids /tmp/group_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
+            bond-group \
+              /tmp/bids/singularity \
+              /tmp/group_testing/direct \
+              --container /home/circleci/bond-latest.sif
+
+
 
   install_and_test:
     machine:
@@ -119,14 +231,21 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
-            pip install .[all]
+            pip install .
 
       - run:
-          name: Run PyTest
+          name: Test Docker integration
           command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
-            py.test -sv tests
+            mkdir -p /tmp/bids /tmp/group_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker
+            bond-group \
+              /tmp/bids/docker \
+              /tmp/group_testing/docker \
+              --container pennlinc/bond:latest
 
   build_docs:
     docker:
@@ -146,7 +265,7 @@ jobs:
           name: Check Python version and upgrade pip
           command: |
             python --version
-            sudo python -m pip install -U pip 
+            sudo python -m pip install -U pip
             sudo pip install flake8
 
       - run:
@@ -157,7 +276,7 @@ jobs:
       - run:
           name: Install BOnD.
           command: sudo python -m pip install ".[doc]" --no-cache-dir --progress-bar off
-    
+
       - run:
           name: Build documentation
           no_output_timeout: 45m
@@ -352,6 +471,30 @@ workflows:
             tags:
               only: /.*/
 
+      - get_singularity:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /docker\/.*/
+            tags:
+              only: /.*/
+
+      - install_and_test_singularity:
+          requires:
+            - build
+            - setup_conda
+            - get_singularity
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /docker\/.*/
+            tags:
+              only: /.*/
+
       - build_docs:
           filters:
             branches:
@@ -365,6 +508,7 @@ workflows:
           requires:
             - build_docs
             - install_and_test
+            - install_and_test_singularity
           filters:
             branches:
               only: master

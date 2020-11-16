@@ -7,6 +7,7 @@ from bids.layout import parse_file_entities
 from bids.utils import listify
 import numpy as np
 import pandas as pd
+import datalad.api as dlapi
 from tqdm import tqdm
 
 bids.config.set_option('extension_initial_dot', True)
@@ -26,13 +27,206 @@ IMAGING_PARAMS = set([
 
 class BOnD(object):
 
-    def __init__(self, data_root):
+    def __init__(self, data_root, use_datalad=False):
 
         self.path = data_root
         self.layout = bids.BIDSLayout(self.path, validate=False)
         # dictionary of KEYS: keys groups, VALUES: list of files
         self.keys_files = {}
         self.fieldmaps_cached = False
+        self.datalad_ready = False
+        self.datalad_handle = None
+
+        # Initialize datalad if
+        if use_datalad:
+            self.init_datalad()
+
+    def init_datalad(self, save=False, message=None):
+        """Initializes a datalad Dataset at self.path.
+
+        Parameters:
+        -----------
+
+            save: bool
+                Run datalad save to add any untracked files
+            message: str or None
+                Message to add to
+        """
+        self.datalad_ready = True
+        self.datalad_handle = dlapi.create(self.path,
+                                           cfg_proc='text2git',
+                                           force=True,
+                                           annex=True)
+        if save:
+            self.datalad_handle.save(message="Saved by BOnD")
+        if not save and not self.is_datalad_clean():
+            raise Exception("Unsaved changes in %s" % self.path)
+
+    def datalad_save(self, message=None):
+        if message is None:
+            message = "BOnD Save"
+        statuses = self.datalad_handle.save(message=message)
+        saved_status = set([status['status'] for status in statuses])
+        if not saved_status == set(["ok"]):
+            raise Exception("Failed to save in DataLad")
+
+    def is_datalad_clean(self):
+        """If True, no changes are detected in the datalad dataset."""
+        if not self.datalad_ready:
+            raise Exception(
+                "Datalad not initialized, can't determine status")
+        statuses = set([status['state'] for status in
+                        self.datalad_handle.status()])
+        return statuses == set(["clean"])
+
+    def merge_params(self, merge_df, files_df):
+        key_param_merge = {}
+        for i in range(len(merge_df)):
+            key_group = merge_df.iloc[i]['KeyGroup']
+            param_group = merge_df.iloc[i]['ParamGroup']
+            merge_into = merge_df.iloc[i]['MergeInto']
+            key_param_merge[(key_group, param_group)] = merge_into
+        pairs_to_change = list(key_param_merge.keys())
+
+        # locate files that need to change param groups/be deleted
+        for row in range(len(files_df)):
+
+            key = files_df.iloc[row]['KeyGroup']
+            param = files_df.iloc[row]['ParamGroup']
+
+            if (key, param) in pairs_to_change:
+                if key_param_merge[(key, param)] == 0:
+                    file_path = files_df.iloc[row]['FilePath']
+                    file_to_rem = Path(file_path)
+                    file_to_rem.unlink()
+                # else:
+                    # need to merge the param groups
+                    # NEED TO COPY THE METADATA FROM
+                    # "MergeInto" --> "ParamGroup"
+                    # self.change_metadata
+
+    def change_key_groups(self, og_csv_dir, new_csv_dir):
+        files_df = pd.read_csv(og_csv_dir + 'files.csv')
+        summary_df = pd.read_csv(og_csv_dir + 'summary.csv')
+
+        # TODO: IMPLEMENT merge_params (above)
+        # merge_df = summary_df[summary_df.MergeInto.notnull()]
+        # self.merge_params(merge_df, files_df)
+
+        change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
+
+        # dictionary
+        # KEYS = (orig key group, param num)
+        # VALUES = new key group
+        key_groups = {}
+
+        for i in range(len(change_keys_df)):
+            new_key = change_keys_df.iloc[i]['RenameKeyGroup']
+            old_key = change_keys_df.iloc[i]['KeyGroup']
+            param_group = change_keys_df.iloc[i]['ParamGroup']
+
+            # add to dictionary
+            key_groups[(old_key, param_group)] = new_key
+
+        # orig key/param tuples that will have new key group
+        pairs_to_change = key_groups.keys()
+
+        for row in range(len(files_df)):
+
+            key_group = files_df.iloc[row]['KeyGroup']
+            param_group = files_df.iloc[row]['KeyGroup']
+
+            if (key_group, param_group) in pairs_to_change:
+
+                file_path = files_df.iloc[row]['FilePath']
+                orig_key = files_df.iloc[row]['KeyGroup']
+                param_num = files_df.iloc[row]['ParamGroup']
+
+                new_key = key_groups[(orig_key, param_num)]
+
+                new_entities = _key_group_to_entities(new_key)
+
+                # change each filename according to new key group
+                self.change_filename(file_path, new_entities)
+
+        # TODO: THROW AN EXCEPTION IF NEW_KEY NOT VALID!
+        # OR IF KEY CAN'T BE PARSED AS A DICT?
+
+        self.layout = bids.BIDSLayout(self.path, validate=False)
+        self.get_CSVs(new_csv_dir)
+
+    def change_filename(self, filepath, entities):
+        # TODO: NEED TO RGLOB self.path??????
+        path = Path(filepath)
+        exts = path.suffixes
+        old_ext = ""
+        for ext in exts:
+            old_ext += ext
+
+        # check if need to change the modality (one directory level up)
+        l_keys = list(entities.keys())
+
+        if "datatype" in l_keys:
+            # create path string a and add new modality
+            modality = entities['datatype']
+            l_keys.remove('datatype')
+        else:
+            large = str(path.parent)
+            small = str(path.parents[1]) + '/'
+            modality = large.replace(small, '')
+
+        # detect the subject/session string and keep it together
+        # front_stem is the string of subject/session paris
+        # these two entities don't change with the key group
+        front_stem = ""
+        cntr = 0
+        for char in path.stem:
+            if char == "_" and cntr == 1:
+                cntr = 2
+                break
+            if char == "_" and cntr == 0:
+                cntr += 1
+            if cntr != 2:
+                front_stem = front_stem + char
+
+        parent = str(path.parents[1])
+        new_path_front = parent + '/' + modality + '/' + front_stem
+
+        # remove fmap (not part of filename string)
+        if "fmap" in l_keys:
+            l_keys.remove("fmap")
+
+        # now need to create the key/value string from the keys!
+        new_filename = "_".join(["{}-{}".format(key, entities[key])
+                                for key in l_keys])
+
+        # shorten "acquisition" in the filename
+        new_filename = new_filename.replace("acquisition", "acq")
+
+        # shorten "reconstruction" in the filename
+        new_filename = new_filename.replace("reconstruction", "rec")
+
+        # REMOVE "suffix-"
+        new_filename = new_filename.replace("suffix-", "")
+
+        new_path = new_path_front + "_" + new_filename + old_ext
+
+        path.rename(Path(new_path))
+
+        # now also rename json file
+        bidsfile = self.layout.get_file(filepath, scope='all')
+
+        bidsjson_file = bidsfile.get_associations()
+        if bidsjson_file:
+            json_file = [x for x in bidsjson_file if 'json' in x.filename]
+        else:
+            print("NO JSON FILES FOUND IN ASSOCIATIONS")
+        if len(json_file) == 1:
+            json_file = json_file[0]
+            new_json_path = new_path_front + "_" + new_filename + ".json"
+            (Path(json_file.path)).rename(Path(new_json_path))
+        else:
+            print("FOUND IRREGULAR NUMBER OF JSONS")
 
     def fieldmaps_ok(self):
         pass
@@ -138,11 +332,11 @@ class BOnD(object):
         -----------
             - None
         """
-        big_df = self.get_param_groups_dataframes()[0]
-        summary = self.get_param_groups_dataframes()[1]
 
-        big_df.to_csv(path_prefix + "files.csv", index=False)
-        summary.to_csv(path_prefix + "summary.csv", index=False)
+        self._cache_fieldmaps()
+        big_df, summary = self.get_param_groups_dataframes()
+        big_df.to_csv(path_prefix + "_files.csv", index=False)
+        summary.to_csv(path_prefix + "_summary.csv", index=False)
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
