@@ -104,7 +104,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - singularity-v2-{{ .Branch }}-{{ .Revision }}
+            - singularity-v3-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Load Docker image layer cache
           no_output_timeout: 30m
@@ -144,7 +144,7 @@ jobs:
     steps:
       - restore_cache:
           keys:
-            - singularity-v2-{{ .Branch }}-{{ .Revision }}
+            - singularity-v3-{{ .Branch }}-{{ .Revision }}
 
       - run:
           name: Download Singularity
@@ -172,7 +172,7 @@ jobs:
             fi
 
       - save_cache:
-         key: singularity-v2-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
+         key: singularity-v3-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
          paths:
             - /usr/local/bin/singularity
             - /usr/local/etc/bash_completion.d/singularity
@@ -203,7 +203,6 @@ jobs:
             - /usr/local/etc/singularity/rocmliblist.conf
             - /usr/local/etc/singularity/cgroups/cgroups.toml
             - /usr/local/libexec/singularity/bin/starter-suid
-            - /home/circleci/go
 
 
   install_and_test:
