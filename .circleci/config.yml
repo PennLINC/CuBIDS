@@ -146,6 +146,9 @@ jobs:
       - restore_cache:
           keys:
             - singularity-v3-{{ .Branch }}-{{ .Revision }}
+            - singularity-v3-{{ .Branch }}-
+            - singularity-v3-master-
+            - singularity-v3-
       - run:
           name: Load Docker image layer cache
           no_output_timeout: 30m
