@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import datalad.api as dlapi
 from tqdm import tqdm
-import os
+import subprocess
 
 bids.config.set_option('extension_initial_dot', True)
 
@@ -162,13 +162,15 @@ class BOnD(object):
         # self.layout = bids.BIDSLayout(self.path, validate=False)
         # self.get_CSVs(new_csv_dir)
 
-        with open("/Users/scovitz/BOnD/change_files.sh", "w") as exe_script:
+        with open("/Users/scovitz/BOnD/bond/change_files.sh", "w") \
+                as exe_script:
             for old, new in zip(self.old_filenames, self.new_filenames):
                 exe_script.write("mv %s %s\n" % (old, new))
 
-        os.system("datalad run -m 'apply csv' 'change_files.sh'")
+        my_proc = subprocess.run(
+            ['bash', '/Users/scovitz/BOnD/bond/change_files.sh'])
 
-        return self.old_filenames, self.new_filenames
+        return my_proc
 
     def change_filename(self, filepath, entities):
 
