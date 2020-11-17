@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import datalad.api as dlapi
 from tqdm import tqdm
-import subprocess
+import os
 
 bids.config.set_option('extension_initial_dot', True)
 
@@ -37,8 +37,8 @@ class BOnD(object):
         self.fieldmaps_cached = False
         self.datalad_ready = False
         self.datalad_handle = None
-        self.old_filenames = [] # files whose key groups changed
-        self.new_filenames = [] # new filenames for files to change
+        self.old_filenames = []  # files whose key groups changed
+        self.new_filenames = []  # new filenames for files to change
 
         # Initialize datalad if
         if use_datalad:
@@ -166,7 +166,7 @@ class BOnD(object):
             for old, new in zip(self.old_filenames, self.new_filenames):
                 exe_script.write("mv %s %s\n" % (old, new))
 
-        subprocess.run("datalad run -m 'apply csv' bash change_files.sh")
+        os.system("datalad run -m 'apply csv' 'change_files.sh'")
 
         return self.old_filenames, self.new_filenames
 
@@ -334,7 +334,8 @@ class BOnD(object):
                                  ignore_index=True))
 
         # create new col that strings key and param group together
-        summary["KeyParamGroup"] = summary["KeyGroup"] + '__' + summary["ParamGroup"].map(str)
+        summary["KeyParamGroup"] = summary["KeyGroup"] \
+            + '__' + summary["ParamGroup"].map(str)
 
         # move this column to the front of the dataframe
         key_param_col = summary.pop("KeyParamGroup")
