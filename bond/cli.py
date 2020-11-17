@@ -138,8 +138,6 @@ def bond_datalad_save():
     # Run directly from python using
     if opts.container is None:
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
-        if opts.use_datalad and not bod.is_datalad_clean():
-            raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.datalad_save(message=opts.m)
         sys.exit(0)
 

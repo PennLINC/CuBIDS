@@ -129,7 +129,8 @@ def test_datalad_integration(tmp_path):
         uninit_bond.is_datalad_clean()
 
     # initialize the datalad repository and try again
-    uninit_bond.init_datalad(save=True)
+    uninit_bond.init_datalad()
+    uninit_bond.datalad_save('Test save')
     assert uninit_bond.is_datalad_clean()
 
     # Now, the datalad repository is initialized and saved.
@@ -145,10 +146,6 @@ def test_datalad_integration(tmp_path):
                  / "sub-03_ses-phdiff_task-rest_bold.json"))
     assert not uninit_bond.is_datalad_clean()
     assert not complete_bod.is_datalad_clean()
-
-    # Make sure you can't initialize a BOnD object on a dirty directory
-    with pytest.raises(Exception):
-        BOnD(data_root / "complete", use_datalad=True)
 
     # Test BOnD.datalad_save()
     uninit_bond.datalad_save(message="TEST SAVE!")

@@ -269,7 +269,7 @@ jobs:
             source activate bond
             mkdir -p /tmp/bids
             cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-save
-            bond-group \
+            bond-datalad-save \
               /tmp/bids/docker-save \
               -m 'test docker save!' \
               --container pennlinc/bond:latest

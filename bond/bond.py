@@ -41,7 +41,7 @@ class BOnD(object):
         if use_datalad:
             self.init_datalad()
 
-    def init_datalad(self, save=False, message=None):
+    def init_datalad(self):
         """Initializes a datalad Dataset at self.path.
 
         Parameters:
@@ -57,10 +57,6 @@ class BOnD(object):
                                            cfg_proc='text2git',
                                            force=True,
                                            annex=True)
-        if save:
-            self.datalad_save(message)
-        if not save and not self.is_datalad_clean():
-            raise Exception("Unsaved changes in %s" % self.path)
 
     def datalad_save(self, message=None):
         """Performs a DataLad Save operation on the BIDS tree.
@@ -74,7 +70,8 @@ class BOnD(object):
                 Commit message to use with datalad save
         """
         if not self.datalad_ready:
-            raise Exception("DataLad has not been initialized. use datalad_init()")
+            raise Exception(
+                "DataLad has not been initialized. use datalad_init()")
         statuses = self.datalad_handle.save(message=message or "BOnD Save")
         saved_status = set([status['status'] for status in statuses])
         if not saved_status == set(["ok"]):
