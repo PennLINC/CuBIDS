@@ -109,10 +109,6 @@ def bond_apply():
     pass
 
 
-def bond_undo():
-    pass
-
-
 def param_group_merge():
     pass
 
@@ -154,6 +150,81 @@ def bond_datalad_save():
                '-B', bids_dir_link,
                opts.container, 'bond-datalad-save',
                '/bids', '-m', opts.m]
+    print("RUNNING: " + ' '.join(cmd))
+    proc = subprocess.run(cmd)
+    sys.exit(proc.returncode)
+
+
+def bond_datalad_clean():
+    parser = argparse.ArgumentParser(
+        description="bond-datalad-clean: clear any untracked changes",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('bids_dir',
+                        type=Path,
+                        action='store',
+                        help='the root of a BIDS dataset. It should contain '
+                        'sub-X directories and dataset_description.json')
+    parser.add_argument('--container',
+                        action='store',
+                        help='Docker image tag or Singularity image file.')
+    opts = parser.parse_args()
+
+    # Run directly from python using
+    if opts.container is None:
+        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
+        bod.clear_untracked_changes()
+        sys.exit(0)
+
+    # Run it through a container
+    container_type = _get_container_type(opts.container)
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
+    if container_type == 'docker':
+        cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
+               '-v', GIT_CONFIG+":/root/.gitconfig",
+               '--entrypoint', 'bond-datalad-clean',
+               opts.container, '/bids']
+    elif container_type == 'singularity':
+        cmd = ['singularity', 'exec', '--cleanenv',
+               '-B', bids_dir_link,
+               opts.container, 'bond-datalad-clean',
+               '/bids', '-m']
+    print("RUNNING: " + ' '.join(cmd))
+    proc = subprocess.run(cmd)
+    sys.exit(proc.returncode)
+
+
+def bond_undo():
+    parser = argparse.ArgumentParser(
+        description="bond-undo: revert most recent commit",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('bids_dir',
+                        type=Path,
+                        action='store',
+                        help='the root of a BIDS dataset. It should contain '
+                        'sub-X directories and dataset_description.json')
+    parser.add_argument('--container',
+                        action='store',
+                        help='Docker image tag or Singularity image file.')
+    opts = parser.parse_args()
+
+    # Run directly from python using
+    if opts.container is None:
+        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
+        bod.datalad_undo_last_commit()
+        sys.exit(0)
+
+    # Run it through a container
+    container_type = _get_container_type(opts.container)
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
+    if container_type == 'docker':
+        cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
+               '-v', GIT_CONFIG+":/root/.gitconfig",
+               '--entrypoint', 'bond-undo',
+               opts.container, '/bids']
+    elif container_type == 'singularity':
+        cmd = ['singularity', 'exec', '--cleanenv',
+               '-B', bids_dir_link,
+               opts.container, 'bond-undo', '/bids']
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)

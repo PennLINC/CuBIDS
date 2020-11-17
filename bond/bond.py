@@ -86,6 +86,19 @@ class BOnD(object):
                         self.datalad_handle.status()])
         return statuses == set(["clean"])
 
+    def datalad_undo_last_commit(self):
+        """Revert the most recent commit, remove it from history.
+
+        uses git reset --hard
+        """
+        pass
+
+    def clear_untracked_changes(self):
+        """Removes any untracked files or untracked changes.
+
+        uses git clean"""
+        pass
+
     def merge_params(self, merge_df, files_df):
         key_param_merge = {}
         for i in range(len(merge_df)):

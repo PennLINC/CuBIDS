@@ -97,7 +97,7 @@ jobs:
       - run:
           name: Download Singularity
           command: |
-            if [ ! -f /usr/local/bin/singularity ]
+            if [ ! -f /home/circleci/singularity.tar.gz ]
             then
               sudo apt-get update && sudo apt-get -y install build-essential \
                 libssl-dev \
