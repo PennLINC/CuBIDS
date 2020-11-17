@@ -159,8 +159,14 @@ class BOnD(object):
         # TODO: THROW AN EXCEPTION IF NEW_KEY NOT VALID!
         # OR IF KEY CAN'T BE PARSED AS A DICT?
 
-        self.layout = bids.BIDSLayout(self.path, validate=False)
-        self.get_CSVs(new_csv_dir)
+        # self.layout = bids.BIDSLayout(self.path, validate=False)
+        # self.get_CSVs(new_csv_dir)
+
+        with open("/Users/scovitz/BOnD/change_files.sh", "w") as exe_script:
+            for old, new in zip(self.old_filenames, self.new_filenames):
+                exe_script.write("mv %s %s\n" % (old, new))
+
+        subprocess.run("datalad run -m 'apply csv' bash change_files.sh")
 
         return self.old_filenames, self.new_filenames
 
@@ -358,10 +364,8 @@ class BOnD(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        big_df.to_csv(path_prefix + "_files.csv", index=False)
-        summary.to_csv(path_prefix + "_summary.csv", index=False)
-
-        return("AM I HERE")
+        big_df.to_csv(path_prefix + "files.csv", index=False)
+        summary.to_csv(path_prefix + "summary.csv", index=False)
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
