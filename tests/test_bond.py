@@ -115,6 +115,12 @@ def _edit_a_json(json_file):
         json.dump(metadata, metadataw)
 
 
+def _get_json_string(json_path):
+    with json_path.open("r") as f:
+        content = "".join(f.readlines())
+    return content
+
+
 def test_datalad_integration(tmp_path):
     """Test that datalad works for basic file modification operations.
     """
@@ -141,14 +147,33 @@ def test_datalad_integration(tmp_path):
     assert complete_bod.datalad_ready
     assert complete_bod.is_datalad_clean()
 
+    # Test clean and revert functionality
+    test_file = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
+
     # Edit a file and make sure that it's been detected by datalad
-    _edit_a_json(str(data_root / "complete" / "sub-03" / "ses-phdiff" / "func"
-                 / "sub-03_ses-phdiff_task-rest_bold.json"))
+    original_content = _get_json_string(test_file)
+    _edit_a_json(test_file)
+    edited_content = _get_json_string(test_file)
+    # Check that the file content has changed
+    assert not original_content == edited_content
+    # Check that datalad knows something has changed
     assert not uninit_bond.is_datalad_clean()
     assert not complete_bod.is_datalad_clean()
 
+    # Test clear_untracked_changes
+    uninit_bond.clear_untracked_changes()
+    assert uninit_bond.is_datalad_clean()  # should be clean now
+    cleaned_content = _get_json_string(test_file)
+    assert cleaned_content == original_content
+
     # Test BOnD.datalad_save()
+    _edit_a_json(test_file)
+    edited_content = _get_json_string(test_file)
+    # Check that the file content has changed
+    assert not original_content == edited_content
     uninit_bond.datalad_save(message="TEST SAVE!")
+    assert uninit_bond.is_datalad_clean()
 
 
 

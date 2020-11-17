@@ -1,5 +1,6 @@
 """Main module."""
 from collections import defaultdict
+import subprocess
 import bids
 import json
 from pathlib import Path
@@ -96,8 +97,13 @@ class BOnD(object):
     def clear_untracked_changes(self):
         """Removes any untracked files or untracked changes.
 
-        uses git clean"""
-        pass
+        uses git clean and git checkout --"""
+        clean_proc = subprocess.run(
+            ["git", "clean", "-df"], cwd=self.path)
+        clean_proc.check_returncode()
+        undo_proc = subprocess.run(
+            ["git", "checkout", "--", "."], cwd=self.path)
+        undo_proc.check_returncode()
 
     def merge_params(self, merge_df, files_df):
         key_param_merge = {}
