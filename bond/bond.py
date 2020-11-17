@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import datalad.api as dlapi
 from tqdm import tqdm
+import subprocess
 
 bids.config.set_option('extension_initial_dot', True)
 
@@ -36,6 +37,8 @@ class BOnD(object):
         self.fieldmaps_cached = False
         self.datalad_ready = False
         self.datalad_handle = None
+        self.old_filenames = [] # files whose key groups changed
+        self.new_filenames = [] # new filenames for files to change
 
         # Initialize datalad if
         if use_datalad:
@@ -106,6 +109,10 @@ class BOnD(object):
                     # self.change_metadata
 
     def change_key_groups(self, og_csv_dir, new_csv_dir):
+        # reset lists of old and new filenames
+        self.old_filenames = []
+        self.new_filenames = []
+
         files_df = pd.read_csv(og_csv_dir + 'files.csv')
         summary_df = pd.read_csv(og_csv_dir + 'summary.csv')
 
@@ -129,12 +136,12 @@ class BOnD(object):
             key_groups[(old_key, param_group)] = new_key
 
         # orig key/param tuples that will have new key group
-        pairs_to_change = key_groups.keys()
+        pairs_to_change = list(key_groups.keys())
 
         for row in range(len(files_df)):
 
             key_group = files_df.iloc[row]['KeyGroup']
-            param_group = files_df.iloc[row]['KeyGroup']
+            param_group = files_df.iloc[row]['ParamGroup']
 
             if (key_group, param_group) in pairs_to_change:
 
@@ -155,8 +162,10 @@ class BOnD(object):
         self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_csv_dir)
 
+        return self.old_filenames, self.new_filenames
+
     def change_filename(self, filepath, entities):
-        # TODO: NEED TO RGLOB self.path??????
+
         path = Path(filepath)
         exts = path.suffixes
         old_ext = ""
@@ -211,7 +220,8 @@ class BOnD(object):
 
         new_path = new_path_front + "_" + new_filename + old_ext
 
-        path.rename(Path(new_path))
+        self.old_filenames.append(str(path))
+        self.new_filenames.append(new_path)
 
         # now also rename json file
         bidsfile = self.layout.get_file(filepath, scope='all')
@@ -224,7 +234,8 @@ class BOnD(object):
         if len(json_file) == 1:
             json_file = json_file[0]
             new_json_path = new_path_front + "_" + new_filename + ".json"
-            (Path(json_file.path)).rename(Path(new_json_path))
+            self.old_filenames.append(json_file.path)
+            self.new_filenames.append(new_json_path)
         else:
             print("FOUND IRREGULAR NUMBER OF JSONS")
 
@@ -316,7 +327,17 @@ class BOnD(object):
         summary = _order_columns(pd.concat(param_group_summaries,
                                  ignore_index=True))
 
+        # create new col that strings key and param group together
+        summary["KeyParamGroup"] = summary["KeyGroup"] + '__' + summary["ParamGroup"].map(str)
+
+        # move this column to the front of the dataframe
+        key_param_col = summary.pop("KeyParamGroup")
+        summary.insert(0, "keyParamGroup", key_param_col)
+
+        summary.insert(0, "RenameKeyGroup", np.nan)
         summary.insert(0, "MergeInto", np.nan)
+        summary.insert(0, "ManualCheck", np.nan)
+        summary.insert(0, "Notes", np.nan)
 
         return (big_df, summary)
 
@@ -334,9 +355,13 @@ class BOnD(object):
         """
 
         self._cache_fieldmaps()
+
         big_df, summary = self.get_param_groups_dataframes()
+
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
+
+        return("AM I HERE")
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
