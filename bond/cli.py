@@ -225,12 +225,12 @@ def bond_remove_metadata_fields():
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '--entrypoint', 'bond-remove-metadata-fields',
-               opts.container, '/bids'] + opts.fields
+               opts.container, '/bids', '--fields'] + opts.fields
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                opts.container, 'bond-remove-metadata-fields',
-               '/bids'] + opts.fields
+               '/bids', '--fields'] + opts.fields
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
