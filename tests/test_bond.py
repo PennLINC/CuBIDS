@@ -3,11 +3,14 @@
 """Tests for `bond` package."""
 import sys
 import shutil
+import hashlib
 import json
 from pkg_resources import resource_filename as pkgrf
 sys.path.append("..")
 import pytest
 from bond import BOnD
+import nibabel as nb
+import numpy as np
 
 TEST_DATA = pkgrf("bond", "testdata")
 
@@ -115,6 +118,20 @@ def _edit_a_json(json_file):
         json.dump(metadata, metadataw)
 
 
+def _edit_a_nifti(nifti_file):
+    img = nb.load(nifti_file)
+    new_img = nb.Nifti1Image(np.random.rand(*img.shape),
+                             affine=img.affine,
+                             header=img.header)
+    new_img.to_filename(nifti_file)
+
+
+def file_hash(file_name):
+    with open(str(file_name), 'rb') as fcheck:
+        data = fcheck.read()
+    return hashlib.md5(data).hexdigest()
+
+
 def _get_json_string(json_path):
     with json_path.open("r") as f:
         content = "".join(f.readlines())
@@ -150,31 +167,59 @@ def test_datalad_integration(tmp_path):
     # Test clean and revert functionality
     test_file = data_root / "complete" / "sub-03" / "ses-phdiff" \
         / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
+    test_binary = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
 
-    # Edit a file and make sure that it's been detected by datalad
+    # Try editing a locked file - it should fail
+    with pytest.raises(Exception):
+        _edit_a_nifti(test_binary)
+
+    # Unlock the files so we can access their content
+    complete_bod.datalad_handle.unlock(test_binary)
+    complete_bod.datalad_handle.unlock(test_file)
+
+    # Get the contents of the original files
     original_content = _get_json_string(test_file)
+    original_binary_content = file_hash(test_binary)
+
+    # Edit the files
+    _edit_a_nifti(test_binary)
     _edit_a_json(test_file)
+
+    # Get the edited content
     edited_content = _get_json_string(test_file)
+    edited_binary_content = file_hash(test_binary)
+
     # Check that the file content has changed
     assert not original_content == edited_content
+    assert not original_binary_content == edited_binary_content
+
     # Check that datalad knows something has changed
     assert not uninit_bond.is_datalad_clean()
     assert not complete_bod.is_datalad_clean()
 
-    # Test clear_untracked_changes
-    uninit_bond.clear_untracked_changes()
-    assert uninit_bond.is_datalad_clean()  # should be clean now
-    cleaned_content = _get_json_string(test_file)
-    assert cleaned_content == original_content
+    # Attempt to undo a change before checking in changes
+    with pytest.raises(Exception):
+        uninit_bond.datalad_undo_last_commit()
 
-    # Test BOnD.datalad_save()
-    _edit_a_json(test_file)
-    edited_content = _get_json_string(test_file)
-    # Check that the file content has changed
-    assert not original_content == edited_content
+    # Perform a save
     uninit_bond.datalad_save(message="TEST SAVE!")
     assert uninit_bond.is_datalad_clean()
 
+    # Now undo the most recent save
+    uninit_bond.datalad_undo_last_commit()
+
+    # Unlock the restored files so we can access their content
+    complete_bod.datalad_handle.unlock(test_binary)
+    complete_bod.datalad_handle.unlock(test_file)
+
+    # Get the contents of the original files
+    restored_content = _get_json_string(test_file)
+    restored_binary_content = file_hash(test_binary)
+
+    # Check that the file content has returned to its original state
+    assert original_content == restored_content
+    assert original_binary_content == restored_binary_content
 
 
 """

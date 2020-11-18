@@ -92,18 +92,12 @@ class BOnD(object):
 
         uses git reset --hard
         """
-        pass
-
-    def clear_untracked_changes(self):
-        """Removes any untracked files or untracked changes.
-
-        uses git clean and git checkout --"""
-        clean_proc = subprocess.run(
-            ["git", "clean", "-df"], cwd=self.path)
-        clean_proc.check_returncode()
-        undo_proc = subprocess.run(
-            ["git", "checkout", "--", "."], cwd=self.path)
-        undo_proc.check_returncode()
+        if not self.is_datalad_clean():
+            raise Exception("Untracked changes present. "
+                            "Run clear_untracked_changes first")
+        reset_proc = subprocess.run(
+            ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
+        reset_proc.check_returncode()
 
     def merge_params(self, merge_df, files_df):
         key_param_merge = {}
