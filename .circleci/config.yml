@@ -248,7 +248,7 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
             pip install .[all]
-            py.test -svw tests
+            py.test -sv tests
 
       - run:
           name: Test Docker group
