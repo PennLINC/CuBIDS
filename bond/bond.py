@@ -108,13 +108,13 @@ class BOnD(object):
                     # "MergeInto" --> "ParamGroup"
                     # self.change_metadata
 
-    def change_key_groups(self, og_csv_dir, new_csv_dir):
+    def change_key_groups(self, og_prefix, new_prefix):
         # reset lists of old and new filenames
         self.old_filenames = []
         self.new_filenames = []
 
-        files_df = pd.read_csv(og_csv_dir + 'files.csv')
-        summary_df = pd.read_csv(og_csv_dir + 'summary.csv')
+        files_df = pd.read_csv(og_prefix + '_files.csv')
+        summary_df = pd.read_csv(og_prefix + '_summary.csv')
 
         # TODO: IMPLEMENT merge_params (above)
         # merge_df = summary_df[summary_df.MergeInto.notnull()]
@@ -122,53 +122,53 @@ class BOnD(object):
 
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
 
-        # dictionary
-        # KEYS = (orig key group, param num)
-        # VALUES = new key group
-        key_groups = {}
+        # return if nothing to change
+        if len(change_keys_df) > 0:
 
-        for i in range(len(change_keys_df)):
-            new_key = change_keys_df.iloc[i]['RenameKeyGroup']
-            old_key = change_keys_df.iloc[i]['KeyGroup']
-            param_group = change_keys_df.iloc[i]['ParamGroup']
+            # dictionary
+            # KEYS = (orig key group, param num)
+            # VALUES = new key group
+            key_groups = {}
 
-            # add to dictionary
-            key_groups[(old_key, param_group)] = new_key
+            for i in range(len(change_keys_df)):
+                new_key = change_keys_df.iloc[i]['RenameKeyGroup']
+                old_key = change_keys_df.iloc[i]['KeyGroup']
+                param_group = change_keys_df.iloc[i]['ParamGroup']
 
-        # orig key/param tuples that will have new key group
-        pairs_to_change = list(key_groups.keys())
+                # add to dictionary
+                key_groups[(old_key, param_group)] = new_key
 
-        for row in range(len(files_df)):
+            # orig key/param tuples that will have new key group
+            pairs_to_change = list(key_groups.keys())
 
-            key_group = files_df.iloc[row]['KeyGroup']
-            param_group = files_df.iloc[row]['ParamGroup']
+            for row in range(len(files_df)):
 
-            if (key_group, param_group) in pairs_to_change:
+                key_group = files_df.iloc[row]['KeyGroup']
+                param_group = files_df.iloc[row]['ParamGroup']
 
-                file_path = files_df.iloc[row]['FilePath']
-                orig_key = files_df.iloc[row]['KeyGroup']
-                param_num = files_df.iloc[row]['ParamGroup']
+                if (key_group, param_group) in pairs_to_change:
 
-                new_key = key_groups[(orig_key, param_num)]
+                    file_path = files_df.iloc[row]['FilePath']
+                    orig_key = files_df.iloc[row]['KeyGroup']
+                    param_num = files_df.iloc[row]['ParamGroup']
 
-                new_entities = _key_group_to_entities(new_key)
+                    new_key = key_groups[(orig_key, param_num)]
 
-                # change each filename according to new key group
-                self.change_filename(file_path, new_entities)
+                    new_entities = _key_group_to_entities(new_key)
 
-        # TODO: THROW AN EXCEPTION IF NEW_KEY NOT VALID!
-        # OR IF KEY CAN'T BE PARSED AS A DICT?
+                    # change each filename according to new key group
+                    self.change_filename(file_path, new_entities)
 
-        # self.layout = bids.BIDSLayout(self.path, validate=False)
-        # self.get_CSVs(new_csv_dir)
-
-        with open("/Users/scovitz/BOnD/bond/change_files.sh", "w") \
+        with open(new_prefix + '_change_files.sh', 'w') \
                 as exe_script:
             for old, new in zip(self.old_filenames, self.new_filenames):
                 exe_script.write("mv %s %s\n" % (old, new))
 
         my_proc = subprocess.run(
-            ['bash', '/Users/scovitz/BOnD/bond/change_files.sh'])
+            ['bash', new_prefix + '_change_files.sh'])
+
+        self.layout = bids.BIDSLayout(self.path, validate=False)
+        self.get_CSVs(new_prefix)
 
         return my_proc
 
@@ -367,8 +367,8 @@ class BOnD(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        big_df.to_csv(path_prefix + "files.csv", index=False)
-        summary.to_csv(path_prefix + "summary.csv", index=False)
+        big_df.to_csv(path_prefix + "_files.csv", index=False)
+        summary.to_csv(path_prefix + "_summary.csv", index=False)
 
     def get_file_params(self, key_group):
         key_entities = _key_group_to_entities(key_group)
