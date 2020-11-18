@@ -341,7 +341,15 @@ class BOnD(object):
 
         # move this column to the front of the dataframe
         key_param_col = summary.pop("KeyParamGroup")
-        summary.insert(0, "keyParamGroup", key_param_col)
+        summary.insert(0, "KeyParamGroup", key_param_col)
+
+        # do the same for the files df
+        big_df["KeyParamGroup"] = big_df["KeyGroup"] \
+            + '__' + big_df["ParamGroup"].map(str)
+
+        # move this column to the front of the dataframe
+        key_param_col = big_df.pop("KeyParamGroup")
+        big_df.insert(0, "KeyParamGroup", key_param_col)
 
         summary.insert(0, "RenameKeyGroup", np.nan)
         summary.insert(0, "MergeInto", np.nan)
