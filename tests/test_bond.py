@@ -138,6 +138,25 @@ def _get_json_string(json_path):
     return content
 
 
+def test_remove_fields(tmp_path):
+    """Test that we metadata fields are detected and removed."""
+    data_root = get_data(tmp_path)
+    bod = BOnD(data_root, use_datalad=False)
+
+    # Get the metadata fields
+    metadata_fields = bod.get_all_metadata_fields()
+    assert metadata_fields
+
+    # Simulate some fields we might want to remove
+    fields_to_remove = ["DeviceSerialNumber", "AcquisitionTime",
+                        "InstitutionAddress", "InstitutionName",
+                        "StationName", "NotARealField"]
+
+    bod.remove_metadata_fields(fields_to_remove)
+    new_fields = bod.get_all_metadata_fields()
+    assert not set(new_fields).intersection(fields_to_remove)
+
+
 def test_datalad_integration(tmp_path):
     """Test that datalad works for basic file modification operations.
     """

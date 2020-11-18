@@ -192,6 +192,89 @@ def bond_undo():
     sys.exit(proc.returncode)
 
 
+def bond_remove_metadata_fields():
+    parser = argparse.ArgumentParser(
+        description="bond-remove-metadata-fields: delete fields from "
+        "metadata",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('bids_dir',
+                        type=Path,
+                        action='store',
+                        help='the root of a BIDS dataset. It should contain '
+                        'sub-X directories and dataset_description.json')
+    parser.add_argument('--fields',
+                        nargs='+',
+                        action='store',
+                        default=[],
+                        help='space-separated list of metadata fields to '
+                        'remove.')
+    parser.add_argument('--container',
+                        action='store',
+                        help='Docker image tag or Singularity image file.')
+    opts = parser.parse_args()
+
+    # Run directly from python
+    if opts.container is None:
+        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=False)
+        bod.remove_metadata_fields(opts.fields)
+        sys.exit(0)
+
+    # Run it through a container
+    container_type = _get_container_type(opts.container)
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:rw"
+    if container_type == 'docker':
+        cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
+               '--entrypoint', 'bond-remove-metadata-fields',
+               opts.container, '/bids', '--fields'] + opts.fields
+    elif container_type == 'singularity':
+        cmd = ['singularity', 'exec', '--cleanenv',
+               '-B', bids_dir_link,
+               opts.container, 'bond-remove-metadata-fields',
+               '/bids', '--fields'] + opts.fields
+    print("RUNNING: " + ' '.join(cmd))
+    proc = subprocess.run(cmd)
+    sys.exit(proc.returncode)
+
+
+def bond_print_metadata_fields():
+    parser = argparse.ArgumentParser(
+        description="bond-print-metadata-fields: print all unique "
+        "metadata fields",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('bids_dir',
+                        type=Path,
+                        action='store',
+                        help='the root of a BIDS dataset. It should contain '
+                        'sub-X directories and dataset_description.json')
+    parser.add_argument('--container',
+                        action='store',
+                        help='Docker image tag or Singularity image file.')
+    opts = parser.parse_args()
+
+    # Run directly from python
+    if opts.container is None:
+        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=False)
+        fields = bod.get_all_metadata_fields()
+        print("\n".join(fields))
+        sys.exit(0)
+
+    # Run it through a container
+    container_type = _get_container_type(opts.container)
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
+    if container_type == 'docker':
+        cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
+               '--entrypoint', 'bond-print-metadata-fields',
+               opts.container, '/bids']
+    elif container_type == 'singularity':
+        cmd = ['singularity', 'exec', '--cleanenv',
+               '-B', bids_dir_link,
+               opts.container, 'bond-print-metadata-fields',
+               '/bids']
+    print("RUNNING: " + ' '.join(cmd))
+    proc = subprocess.run(cmd)
+    sys.exit(proc.returncode)
+
+
 def _get_container_type(image_name):
 
     # If it's a file on disk, it must be a singularity image

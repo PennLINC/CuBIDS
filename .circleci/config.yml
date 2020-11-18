@@ -93,6 +93,9 @@ jobs:
       - restore_cache:
           keys:
             - singularity-v3-{{ .Branch }}-{{ .Revision }}
+            - singularity-v3-{{ .Branch }}-
+            - singularity-v3-master-
+            - singularity-v3-
 
       - run:
           name: Download Singularity
@@ -214,6 +217,32 @@ jobs:
               -m 'test save' \
               --container /home/circleci/bond-latest.sif
 
+      - run:
+          name: Test bond-remove-metadata-fields
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/metatest
+
+            # Get the original metadata fields
+            bond-print-metadata-fields \
+              /tmp/bids/metatest \
+              --container /home/circleci/bond-latest.sif > /tmp/origmd.txt
+
+            # Remove some fields
+            bond-remove-metadata-fields \
+              /tmp/bids/metatest \
+              --container /home/circleci/bond-latest.sif \
+              --fields DeviceSerialNumber AcquisitionTime \
+                       InstitutionAddress InstitutionName \
+                       StationName NotARealField > /tmp/removedmd.txt
+
+            [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
+            exit 1
+
 
   install_and_test:
     machine:
@@ -277,6 +306,30 @@ jobs:
               /tmp/bids/docker-save \
               -m 'test docker save!' \
               --container pennlinc/bond:latest
+      - run:
+          name: Test bond-remove-metadata-fields
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/metatest
+
+            # Get the original metadata fields
+            bond-print-metadata-fields \
+              /tmp/bids/metatest \
+              --container pennlinc/bond:latest > /tmp/origmd.txt
+
+            # Remove some fields
+            bond-remove-metadata-fields \
+              /tmp/bids/metatest \
+              --container pennlinc/bond:latest \
+              --fields DeviceSerialNumber AcquisitionTime \
+                       InstitutionAddress InstitutionName \
+                       StationName NotARealField > /tmp/removedmd.txt
+
+            [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
+            exit 1
+
 
   build_docs:
     docker:
