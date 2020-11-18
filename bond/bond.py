@@ -37,6 +37,8 @@ class BOnD(object):
         self.fieldmaps_cached = False
         self.datalad_ready = False
         self.datalad_handle = None
+        self.old_filenames = []  # files whose key groups changed
+        self.new_filenames = []  # new filenames for files to change
 
         # Initialize datalad if
         if use_datalad:
@@ -125,9 +127,13 @@ class BOnD(object):
                     # "MergeInto" --> "ParamGroup"
                     # self.change_metadata
 
-    def change_key_groups(self, og_csv_dir, new_csv_dir):
-        files_df = pd.read_csv(og_csv_dir + 'files.csv')
-        summary_df = pd.read_csv(og_csv_dir + 'summary.csv')
+    def change_key_groups(self, og_prefix, new_prefix):
+        # reset lists of old and new filenames
+        self.old_filenames = []
+        self.new_filenames = []
+
+        files_df = pd.read_csv(og_prefix + '_files.csv')
+        summary_df = pd.read_csv(og_prefix + '_summary.csv')
 
         # TODO: IMPLEMENT merge_params (above)
         # merge_df = summary_df[summary_df.MergeInto.notnull()]
@@ -135,48 +141,58 @@ class BOnD(object):
 
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
 
-        # dictionary
-        # KEYS = (orig key group, param num)
-        # VALUES = new key group
-        key_groups = {}
+        # return if nothing to change
+        if len(change_keys_df) > 0:
 
-        for i in range(len(change_keys_df)):
-            new_key = change_keys_df.iloc[i]['RenameKeyGroup']
-            old_key = change_keys_df.iloc[i]['KeyGroup']
-            param_group = change_keys_df.iloc[i]['ParamGroup']
+            # dictionary
+            # KEYS = (orig key group, param num)
+            # VALUES = new key group
+            key_groups = {}
 
-            # add to dictionary
-            key_groups[(old_key, param_group)] = new_key
+            for i in range(len(change_keys_df)):
+                new_key = change_keys_df.iloc[i]['RenameKeyGroup']
+                old_key = change_keys_df.iloc[i]['KeyGroup']
+                param_group = change_keys_df.iloc[i]['ParamGroup']
 
-        # orig key/param tuples that will have new key group
-        pairs_to_change = key_groups.keys()
+                # add to dictionary
+                key_groups[(old_key, param_group)] = new_key
 
-        for row in range(len(files_df)):
+            # orig key/param tuples that will have new key group
+            pairs_to_change = list(key_groups.keys())
 
-            key_group = files_df.iloc[row]['KeyGroup']
-            param_group = files_df.iloc[row]['KeyGroup']
+            for row in range(len(files_df)):
 
-            if (key_group, param_group) in pairs_to_change:
+                key_group = files_df.iloc[row]['KeyGroup']
+                param_group = files_df.iloc[row]['ParamGroup']
 
-                file_path = files_df.iloc[row]['FilePath']
-                orig_key = files_df.iloc[row]['KeyGroup']
-                param_num = files_df.iloc[row]['ParamGroup']
+                if (key_group, param_group) in pairs_to_change:
 
-                new_key = key_groups[(orig_key, param_num)]
+                    file_path = files_df.iloc[row]['FilePath']
+                    orig_key = files_df.iloc[row]['KeyGroup']
+                    param_num = files_df.iloc[row]['ParamGroup']
 
-                new_entities = _key_group_to_entities(new_key)
+                    new_key = key_groups[(orig_key, param_num)]
 
-                # change each filename according to new key group
-                self.change_filename(file_path, new_entities)
+                    new_entities = _key_group_to_entities(new_key)
 
-        # TODO: THROW AN EXCEPTION IF NEW_KEY NOT VALID!
-        # OR IF KEY CAN'T BE PARSED AS A DICT?
+                    # change each filename according to new key group
+                    self.change_filename(file_path, new_entities)
+
+        with open(new_prefix + '_change_files.sh', 'w') \
+                as exe_script:
+            for old, new in zip(self.old_filenames, self.new_filenames):
+                exe_script.write("mv %s %s\n" % (old, new))
+
+        my_proc = subprocess.run(
+            ['bash', new_prefix + '_change_files.sh'])
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
-        self.get_CSVs(new_csv_dir)
+        self.get_CSVs(new_prefix)
+
+        return my_proc
 
     def change_filename(self, filepath, entities):
-        # TODO: NEED TO RGLOB self.path??????
+
         path = Path(filepath)
         exts = path.suffixes
         old_ext = ""
@@ -231,7 +247,8 @@ class BOnD(object):
 
         new_path = new_path_front + "_" + new_filename + old_ext
 
-        path.rename(Path(new_path))
+        self.old_filenames.append(str(path))
+        self.new_filenames.append(new_path)
 
         # now also rename json file
         bidsfile = self.layout.get_file(filepath, scope='all')
@@ -244,7 +261,8 @@ class BOnD(object):
         if len(json_file) == 1:
             json_file = json_file[0]
             new_json_path = new_path_front + "_" + new_filename + ".json"
-            (Path(json_file.path)).rename(Path(new_json_path))
+            self.old_filenames.append(json_file.path)
+            self.new_filenames.append(new_json_path)
         else:
             print("FOUND IRREGULAR NUMBER OF JSONS")
 
@@ -336,7 +354,26 @@ class BOnD(object):
         summary = _order_columns(pd.concat(param_group_summaries,
                                  ignore_index=True))
 
+        # create new col that strings key and param group together
+        summary["KeyParamGroup"] = summary["KeyGroup"] \
+            + '__' + summary["ParamGroup"].map(str)
+
+        # move this column to the front of the dataframe
+        key_param_col = summary.pop("KeyParamGroup")
+        summary.insert(0, "KeyParamGroup", key_param_col)
+
+        # do the same for the files df
+        big_df["KeyParamGroup"] = big_df["KeyGroup"] \
+            + '__' + big_df["ParamGroup"].map(str)
+
+        # move this column to the front of the dataframe
+        key_param_col = big_df.pop("KeyParamGroup")
+        big_df.insert(0, "KeyParamGroup", key_param_col)
+
+        summary.insert(0, "RenameKeyGroup", np.nan)
         summary.insert(0, "MergeInto", np.nan)
+        summary.insert(0, "ManualCheck", np.nan)
+        summary.insert(0, "Notes", np.nan)
 
         return (big_df, summary)
 
@@ -354,7 +391,9 @@ class BOnD(object):
         """
 
         self._cache_fieldmaps()
+
         big_df, summary = self.get_param_groups_dataframes()
+
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
 
@@ -438,6 +477,9 @@ class BOnD(object):
                 # write out
                 _update_json(json_file.path, sidecar)
 
+    def apply_csv_changes(self, previous_output_prefix, new_output_prefix):
+        pass
+
     def get_all_metadata_fields(self):
         found_fields = set()
         for json_file in Path(self.path).rglob("*.json"):
@@ -474,7 +516,6 @@ def _update_json(json_file, metadata):
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, ensure_ascii=False, indent=4)
     else:
-
         print("INVALID JSON DATA")
 
 

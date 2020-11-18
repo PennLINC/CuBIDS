@@ -61,7 +61,6 @@ jobs:
          paths:
            - /tmp/cache/docker.tar.gz
 
-
   setup_conda:
     machine:
       image: ubuntu-1604:202004-01
@@ -129,7 +128,6 @@ jobs:
          paths:
             - /home/circleci/singularity.tar.gz
             - /home/circleci/go.tar.gz
-
 
   install_and_test_singularity:
     machine:
@@ -242,7 +240,6 @@ jobs:
 
             [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
             exit 1
-
 
   install_and_test:
     machine:
