@@ -5,9 +5,13 @@ import sys
 import shutil
 import json
 from pkg_resources import resource_filename as pkgrf
-sys.path.append("..")
 import pytest
 from bond import BOnD
+import csv
+import os
+import filecmp
+
+sys.path.append("..")
 
 TEST_DATA = pkgrf("bond", "testdata")
 
@@ -98,11 +102,52 @@ def test_csv_creation(tmp_path):
 
 
 def test_change_key_groups(tmp_path):
-    data_root = get_data(tmp_path)
+    # set up like narrative of user using this
+    # similar to test csv creation
+    # open the csv, rename a key group
+    # save csv
+    # call change key groups
+    # give csv with no changes (make sure it does nothing)
+    # make sure files you wanted to rename exist in the bids dir
 
-    my_bond = BOnD(data_root)
-    my_bond._cache_fieldmaps()
-    my_bond.get_CSVs(str(tmp_path / "og_csv_dir"))
+    data_root = get_data(tmp_path)
+    complete_bond = BOnD(data_root / "complete")
+
+    os.mkdir(tmp_path / "originals")
+    os.mkdir(tmp_path / "modified1")
+
+    complete_bond.get_CSVs(str(tmp_path / "originals"))
+    complete_bond.change_key_groups(str(tmp_path / "originals"),
+                                    str(tmp_path / "modified1"))
+
+    # give csv with no changes (make sure it does nothing)
+    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
+                       str(tmp_path / "modified1_summary.csv"),
+                       shallow=False) == True
+
+    # edit the csv, add a RenameKeyGroup
+    _edit_csv(str(tmp_path / "originals_summary.csv"))
+    complete_bond.change_key_groups(str(tmp_path / "originals"),
+                                    str(tmp_path / "modified2"))
+
+    # show that changes happened
+    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
+                       str(tmp_path / "modified1_summary.csv"),
+                       shallow=False) == False
+
+
+def _edit_csv(summary_csv):
+    r = csv.reader(open(summary_csv))
+    lines = list(r)
+
+    # adds a new key group to the RenameKeyGroup columm
+    lines[2][3] = \
+        "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
+
+    writer = csv.writer(open(summary_csv, 'w'))
+    writer.writerows(lines)
+
+    # add new key group name to RenameKeyGroup column
 
 
 def _edit_a_json(json_file):
@@ -152,7 +197,6 @@ def test_datalad_integration(tmp_path):
 
     # Test BOnD.datalad_save()
     uninit_bond.datalad_save(message="TEST SAVE!")
-
 
 
 """
