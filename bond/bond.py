@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import datalad.api as dlapi
 from tqdm import tqdm
-import subprocess
 
 bids.config.set_option('extension_initial_dot', True)
 
@@ -478,7 +477,6 @@ class BOnD(object):
                 # write out
                 _update_json(json_file.path, sidecar)
 
-
     def apply_csv_changes(self, previous_output_prefix, new_output_prefix):
         pass
 
@@ -512,14 +510,12 @@ class BOnD(object):
                 json.dump(metadata, jsonr, indent=4)
 
 
-
 def _update_json(json_file, metadata):
 
     if _validateJSON(metadata):
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, ensure_ascii=False, indent=4)
     else:
-
         print("INVALID JSON DATA")
 
 
