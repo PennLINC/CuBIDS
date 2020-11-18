@@ -97,7 +97,7 @@ jobs:
       - run:
           name: Download Singularity
           command: |
-            if [ ! -f /usr/local/bin/singularity ]
+            if [ ! -f /home/circleci/singularity.tar.gz ]
             then
               sudo apt-get update && sudo apt-get -y install build-essential \
                 libssl-dev \
@@ -146,6 +146,9 @@ jobs:
       - restore_cache:
           keys:
             - singularity-v3-{{ .Branch }}-{{ .Revision }}
+            - singularity-v3-{{ .Branch }}-
+            - singularity-v3-master-
+            - singularity-v3-
       - run:
           name: Load Docker image layer cache
           no_output_timeout: 30m
@@ -184,19 +187,32 @@ jobs:
                 docker-daemon://pennlinc/bond:latest
 
       - run:
-          name: Test singularity
+          name: Test bond-group
           command: |
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
             mkdir -p /tmp/bids /tmp/group_testing
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/group
             bond-group \
-              /tmp/bids/singularity \
-              /tmp/group_testing/direct \
+              /tmp/bids/group \
+              /tmp/group_testing/group \
               --container /home/circleci/bond-latest.sif
 
+      - run:
+          name: Test bond-save
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
+            bond-datalad-save \
+              /tmp/bids/singularity \
+              -m 'test save' \
+              --container /home/circleci/bond-latest.sif
 
 
   install_and_test:
@@ -231,20 +247,35 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
-            pip install .
+            pip install .[all]
+            py.test -sv tests
 
       - run:
-          name: Test Docker integration
+          name: Test Docker group
           command: |
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
             source activate bond
             mkdir -p /tmp/bids /tmp/group_testing
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-group
             bond-group \
-              /tmp/bids/docker \
+              /tmp/bids/docker-group \
               /tmp/group_testing/docker \
+              --container pennlinc/bond:latest
+
+      - run:
+          name: Test Docker save
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-save
+            bond-datalad-save \
+              /tmp/bids/docker-save \
+              -m 'test docker save!' \
               --container pennlinc/bond:latest
 
   build_docs:
