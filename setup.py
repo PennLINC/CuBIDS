@@ -30,9 +30,14 @@ setup(
         'console_scripts': [
             'bond-group=bond.cli:bond_group',
             'bond-apply=bond.cli:bond_apply',
-            'bond-revert=bond.cli:bond_revert',
+            'bond-undo=bond.cli:bond_undo',
             'bids-sidecar-merge=bond.cli:param_group_merge',
-            'bond-validate=bond.cli:bond_validate'
+            'bond-validate=bond.cli:bond_validate',
+            'bond-datalad-save=bond.cli:bond_datalad_save',
+            'bond-print-metadata-fields=bond.cli:'
+            'bond_print_metadata_fields',
+            'bond-remove-metadata-fields=bond.cli:'
+            'bond_remove_metadata_fields'
         ],
     },
     license="GNU General Public License v3",

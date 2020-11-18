@@ -1,5 +1,6 @@
 """Main module."""
 from collections import defaultdict
+import subprocess
 import bids
 import json
 from pathlib import Path
@@ -44,7 +45,7 @@ class BOnD(object):
         if use_datalad:
             self.init_datalad()
 
-    def init_datalad(self, save=False, message=None):
+    def init_datalad(self):
         """Initializes a datalad Dataset at self.path.
 
         Parameters:
@@ -60,15 +61,22 @@ class BOnD(object):
                                            cfg_proc='text2git',
                                            force=True,
                                            annex=True)
-        if save:
-            self.datalad_handle.save(message="Saved by BOnD")
-        if not save and not self.is_datalad_clean():
-            raise Exception("Unsaved changes in %s" % self.path)
 
     def datalad_save(self, message=None):
-        if message is None:
-            message = "BOnD Save"
-        statuses = self.datalad_handle.save(message=message)
+        """Performs a DataLad Save operation on the BIDS tree.
+
+        Additionally a check for an active datalad handle and that the
+        status of all objects after the save is "ok".
+
+        Parameters:
+        -----------
+            message : str or None
+                Commit message to use with datalad save
+        """
+        if not self.datalad_ready:
+            raise Exception(
+                "DataLad has not been initialized. use datalad_init()")
+        statuses = self.datalad_handle.save(message=message or "BOnD Save")
         saved_status = set([status['status'] for status in statuses])
         if not saved_status == set(["ok"]):
             raise Exception("Failed to save in DataLad")
@@ -81,6 +89,18 @@ class BOnD(object):
         statuses = set([status['state'] for status in
                         self.datalad_handle.status()])
         return statuses == set(["clean"])
+
+    def datalad_undo_last_commit(self):
+        """Revert the most recent commit, remove it from history.
+
+        uses git reset --hard
+        """
+        if not self.is_datalad_clean():
+            raise Exception("Untracked changes present. "
+                            "Run clear_untracked_changes first")
+        reset_proc = subprocess.run(
+            ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
+        reset_proc.check_returncode()
 
     def merge_params(self, merge_df, files_df):
         key_param_merge = {}
@@ -458,8 +478,39 @@ class BOnD(object):
                 # write out
                 _update_json(json_file.path, sidecar)
 
+
     def apply_csv_changes(self, previous_output_prefix, new_output_prefix):
         pass
+
+    def get_all_metadata_fields(self):
+        found_fields = set()
+        for json_file in Path(self.path).rglob("*.json"):
+            with open(json_file, "r") as jsonr:
+                metadata = json.load(jsonr)
+            found_fields.update(metadata.keys())
+        return sorted(found_fields)
+
+    def remove_metadata_fields(self, fields_to_remove):
+        """Removes specific fields from all metadata files."""
+        remove_fields = set(fields_to_remove)
+        if not remove_fields:
+            return
+        for json_file in tqdm(Path(self.path).rglob("*.json")):
+            # Check for offending keys in the json file
+            with open(json_file, "r") as jsonr:
+                metadata = json.load(jsonr)
+            offending_keys = remove_fields.intersection(metadata.keys())
+            # Quit if there are none in there
+            if not offending_keys:
+                continue
+
+            # Remove the offending keys
+            for key in offending_keys:
+                del metadata[key]
+            # Write the cleaned output
+            with open(json_file, "w") as jsonr:
+                json.dump(metadata, jsonr, indent=4)
+
 
 
 def _update_json(json_file, metadata):
