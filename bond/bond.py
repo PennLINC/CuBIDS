@@ -32,7 +32,7 @@ class BOnD(object):
 
         self.path = data_root
         self.layout = bids.BIDSLayout(self.path, validate=False)
-        # dictionary of KEYS: keys groups, VALUES: list of files
+        # dictionary of KEY: keys group, VALUE: list of files
         self.keys_files = {}
         self.fieldmaps_cached = False
         self.datalad_ready = False
@@ -183,8 +183,20 @@ class BOnD(object):
             for old, new in zip(self.old_filenames, self.new_filenames):
                 exe_script.write("mv %s %s\n" % (old, new))
 
-        my_proc = subprocess.run(
-            ['bash', new_prefix + '_change_files.sh'])
+        # my_proc = subprocess.run(
+        #     ['bash', new_prefix + '_change_files.sh'])
+
+        # with open(new_prefix + '_undo_files.sh', 'w') \
+        #         as exe_script:
+        #     for new, old in zip(self.new_filenames, self.old_filenames):
+        #         exe_script.write("mv %s %s\n" % (new, old))
+
+        dlapi.save()
+        dlapi.run(cmd=new_prefix + '_change_files.sh',
+                                message='change filenames',
+                                inputs=self.old_filenames,
+                                outputs=self.new_filenames)
+
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_prefix)
@@ -297,34 +309,6 @@ class BOnD(object):
         # no intended for found
         return misfits
 
-    def rename_files(self, filters, pattern, replacement):
-        """
-        Parameters:
-        -----------
-            - filters : dictionary
-                pybids entities dictionary to find files to rename
-            - pattern : string
-                the substring of the file we would like to replace
-            - replacement : string
-                the substring that will replace "pattern"
-        Returns
-        -----------
-            - None
-        >>> my_bond = BOnD()
-        >>> my_bond.rename_files({"PhaseEncodingDirection": 'j-',
-        ...                       "EchoTime": 0.005},
-        ...                       "acq-123", "acq-12345_dir-PA"
-        ...                     )
-        """
-        files_to_change = self.layout.get(return_type='filename', **filters)
-        for bidsfile in files_to_change:
-            path = Path(bidsfile.path)
-            old_name = path.stem
-            old_ext = path.suffix
-            directory = path.parent
-            new_name = old_name.replace(pattern, replacement) + old_ext
-            path.rename(Path(directory, new_name))
-
     def get_param_groups_from_key_group(self, key_group):
         if not self.fieldmaps_cached:
             raise Exception(
@@ -423,32 +407,6 @@ class BOnD(object):
                 self.keys_files[ret].append(path)
 
         return sorted(key_groups)
-
-    def get_filenames(self, key_group):
-        # NEW - WORKS
-        return self.keys_files[key_group]
-
-    def change_filenames(self, key_group, split_params, pattern, replacement):
-        # for each filename in the key group, check if it's params match
-        # split_params if they match, perform the replacement acc to
-        # pattern/replacement
-
-        # list of file paths that incorporate the replacement
-        new_paths = []
-        # obtain the dictionary of files, param groups
-        dict_files_params = self.get_file_params(key_group)
-        for filename in dict_files_params.keys():
-            if dict_files_params[filename] == split_params:
-                # Perform the replacement if the param dictionaries match
-                path = Path(filename)
-                old_name = path.stem
-                old_ext = path.suffix
-                directory = path.parent
-                new_name = old_name.replace(pattern, replacement) + old_ext
-                path.rename(Path(directory, new_name))
-                new_paths.append(path)
-
-        return new_paths
 
     def change_metadata(self, filters, pattern, metadata):
 
