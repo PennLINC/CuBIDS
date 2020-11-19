@@ -183,8 +183,6 @@ class BOnD(object):
             for old, new in zip(self.old_filenames, self.new_filenames):
                 exe_script.write("git mv %s %s\n" % (old, new))
 
-        dlapi.save()
-
         # my_proc = subprocess.run(
         #     ['bash', new_prefix + '_change_files.sh'])
 
@@ -197,10 +195,11 @@ class BOnD(object):
                                             'chmod u+x ' + new_prefix
                                             + '_change_files.sh'])
 
-        dlapi.run(cmd=new_prefix + '_change_files.sh',
-                                message='change filenames',
-                                inputs=self.old_filenames,
-                                outputs=self.new_filenames)
+        dlapi.save()
+
+        dlapi.run(message='change filenames',
+                  cmd=new_prefix + '_change_files.sh')
+
 
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
