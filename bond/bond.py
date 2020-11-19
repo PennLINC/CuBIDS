@@ -198,7 +198,9 @@ class BOnD(object):
         dlapi.save()
 
         dlapi.run(message='change filenames',
-                  cmd=new_prefix + '_change_files.sh')
+                  cmd=new_prefix + '_change_files.sh',
+                  inputs=self.old_filenames,
+                  outputs=self.new_filenames)
 
 
 
