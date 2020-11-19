@@ -185,19 +185,22 @@ class BOnD(object):
 
         dlapi.save()
 
-        my_proc = subprocess.run(
-            ['bash', new_prefix + '_change_files.sh'])
+        # my_proc = subprocess.run(
+        #     ['bash', new_prefix + '_change_files.sh'])
 
         # with open(new_prefix + '_undo_files.sh', 'w') \
         #         as exe_script:
         #     for new, old in zip(self.new_filenames, self.old_filenames):
         #         exe_script.write("mv %s %s\n" % (new, old))
 
+        change_permissions = subprocess.run(['bash',
+                                            'chmod u+x ' + new_prefix
+                                            + '_change_files.sh'])
 
-        # dlapi.run(cmd=new_prefix + '_change_files.sh',
-        #                         message='change filenames',
-        #                         inputs=self.old_filenames,
-        #                         outputs=self.new_filenames)
+        dlapi.run(cmd=new_prefix + '_change_files.sh',
+                                message='change filenames',
+                                inputs=self.old_filenames,
+                                outputs=self.new_filenames)
 
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
