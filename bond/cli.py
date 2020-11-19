@@ -7,7 +7,7 @@ import sys
 import re
 import logging
 from bond import BOnD
-from .docker_run import (check_docker, check_image, build_validator_call,
+from .validator import (check_docker, check_image, build_validator_call,
                          run, parse_validator)
 
 logging.basicConfig(level=logging.INFO)
