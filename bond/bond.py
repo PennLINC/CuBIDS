@@ -183,6 +183,8 @@ class BOnD(object):
             for old, new in zip(self.old_filenames, self.new_filenames):
                 exe_script.write("git mv %s %s\n" % (old, new))
 
+        dlapi.save()
+
         my_proc = subprocess.run(
             ['bash', new_prefix + '_change_files.sh'])
 
@@ -191,11 +193,11 @@ class BOnD(object):
         #     for new, old in zip(self.new_filenames, self.old_filenames):
         #         exe_script.write("mv %s %s\n" % (new, old))
 
-        dlapi.save()
-        dlapi.run(cmd=new_prefix + '_change_files.sh',
-                                message='change filenames',
-                                inputs=self.old_filenames,
-                                outputs=self.new_filenames)
+
+        # dlapi.run(cmd=new_prefix + '_change_files.sh',
+        #                         message='change filenames',
+        #                         inputs=self.old_filenames,
+        #                         outputs=self.new_filenames)
 
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
