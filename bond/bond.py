@@ -181,10 +181,10 @@ class BOnD(object):
         with open(new_prefix + '_change_files.sh', 'w') \
                 as exe_script:
             for old, new in zip(self.old_filenames, self.new_filenames):
-                exe_script.write("mv %s %s\n" % (old, new))
+                exe_script.write("git mv %s %s\n" % (old, new))
 
-        # my_proc = subprocess.run(
-        #     ['bash', new_prefix + '_change_files.sh'])
+        my_proc = subprocess.run(
+            ['bash', new_prefix + '_change_files.sh'])
 
         # with open(new_prefix + '_undo_files.sh', 'w') \
         #         as exe_script:
@@ -192,7 +192,7 @@ class BOnD(object):
         #         exe_script.write("mv %s %s\n" % (new, old))
 
         dlapi.save()
-        dlapi.run(cmd='bash ' + new_prefix + '_change_files.sh',
+        dlapi.run(cmd=new_prefix + '_change_files.sh',
                                 message='change filenames',
                                 inputs=self.old_filenames,
                                 outputs=self.new_filenames)

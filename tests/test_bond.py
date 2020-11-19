@@ -116,18 +116,18 @@ def test_change_key_groups(tmp_path):
     data_root = get_data(tmp_path)
     complete_bond = BOnD(data_root / "complete", use_datalad=True)
 
-    #os.mkdir(tmp_path / "originals")
-    #os.mkdir(tmp_path / "modified1")
-    #os.mkdir(tmp_path / "modified2")
+    # os.mkdir(tmp_path / "originals")
+    # os.mkdir(tmp_path / "modified1")
+    # os.mkdir(tmp_path / "modified2")
 
     complete_bond.get_CSVs(str(tmp_path / "originals"))
-    # complete_bond.change_key_groups(str(tmp_path / "originals"),
-    #                                 str(tmp_path / "modified1"))
+    complete_bond.change_key_groups(str(tmp_path / "originals"),
+                                    str(tmp_path / "modified1"))
 
-    # # give csv with no changes (make sure it does nothing)
-    # assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
-    #                    str(tmp_path / "modified1_summary.csv"),
-    #                    shallow=False) == True
+    # give csv with no changes (make sure it does nothing)
+    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
+                       str(tmp_path / "modified1_summary.csv"),
+                       shallow=False) == True
 
     # edit the csv, add a RenameKeyGroup
     _edit_csv(str(tmp_path / "originals_summary.csv"))
@@ -138,6 +138,7 @@ def test_change_key_groups(tmp_path):
     assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
                        str(tmp_path / "modified2_summary.csv"),
                        shallow=False) == False
+
 
 
 def _edit_csv(summary_csv):
