@@ -192,7 +192,7 @@ class BOnD(object):
         #         exe_script.write("mv %s %s\n" % (new, old))
 
         dlapi.save()
-        dlapi.run(cmd=new_prefix + '_change_files.sh',
+        dlapi.run(cmd='bash ' + new_prefix + '_change_files.sh',
                                 message='change filenames',
                                 inputs=self.old_filenames,
                                 outputs=self.new_filenames)
