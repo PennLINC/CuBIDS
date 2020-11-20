@@ -106,7 +106,7 @@ def test_csv_creation(tmp_path):
     assert isummary_df.shape[0] == 11
 
 
-def test_change_key_groups(tmp_path):
+def test_apply_csv_changes(tmp_path):
     # set up like narrative of user using this
     # similar to test csv creation
     # open the csv, rename a key group
@@ -116,29 +116,35 @@ def test_change_key_groups(tmp_path):
     # make sure files you wanted to rename exist in the bids dir
 
     data_root = get_data(tmp_path)
-    complete_bond = BOnD(data_root / "complete")
-
-    os.mkdir(tmp_path / "originals")
-    os.mkdir(tmp_path / "modified1")
+    complete_bond = BOnD(data_root / "complete", use_datalad=True)
+    complete_bond.datalad_save()
 
     complete_bond.get_CSVs(str(tmp_path / "originals"))
-    complete_bond.change_key_groups(str(tmp_path / "originals"),
-                                    str(tmp_path / "modified1"))
 
     # give csv with no changes (make sure it does nothing)
-    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
-                       str(tmp_path / "modified1_summary.csv"),
-                       shallow=False) == True
+    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
+                                    str(tmp_path / "modified1"))
+
+    og_path = tmp_path / "originals_summary.csv"
+    with og_path.open("r") as f:
+        og_content = "".join(f.readlines())
+
+    mod1_path = tmp_path / "modified1_summary.csv"
+    with mod1_path.open("r") as f:
+        mod1_content = "".join(f.readlines())
+
+    assert og_content == mod1_content
 
     # edit the csv, add a RenameKeyGroup
     _edit_csv(str(tmp_path / "originals_summary.csv"))
-    complete_bond.change_key_groups(str(tmp_path / "originals"),
+    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
                                     str(tmp_path / "modified2"))
 
-    # show that changes happened
-    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
-                       str(tmp_path / "modified1_summary.csv"),
-                       shallow=False) == False
+    mod2_path = tmp_path / "modified2_summary.csv"
+    with mod2_path.open("r") as f:
+        mod2_content = "".join(f.readlines())
+
+    assert og_content != mod2_content
 
 
 def _edit_csv(summary_csv):
