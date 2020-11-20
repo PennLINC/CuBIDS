@@ -105,7 +105,7 @@ def test_csv_creation(tmp_path):
     assert isummary_df.shape[0] == 11
 
 
-def test_change_key_groups(tmp_path):
+def test_apply_csv_changes(tmp_path):
     # set up like narrative of user using this
     # similar to test csv creation
     # open the csv, rename a key group
@@ -124,7 +124,7 @@ def test_change_key_groups(tmp_path):
     complete_bond.get_CSVs(str(tmp_path / "originals"))
 
     # give csv with no changes (make sure it does nothing)
-    complete_bond.change_key_groups(str(tmp_path / "originals"),
+    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
                                     str(tmp_path / "modified1"))
 
     # diff is a dictionary that describes differences in the csvs
@@ -141,7 +141,7 @@ def test_change_key_groups(tmp_path):
 
     # edit the csv, add a RenameKeyGroup
     _edit_csv(str(tmp_path / "originals_summary.csv"))
-    complete_bond.change_key_groups(str(tmp_path / "originals"),
+    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
                                     str(tmp_path / "modified2"))
 
     # show that changes happened
