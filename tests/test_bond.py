@@ -115,10 +115,7 @@ def test_apply_csv_changes(tmp_path):
 
     data_root = get_data(tmp_path)
     complete_bond = BOnD(data_root / "complete", use_datalad=True)
-
-    # os.mkdir(tmp_path / "originals")
-    # os.mkdir(tmp_path / "modified1")
-    # os.mkdir(tmp_path / "modified2")
+    complete_bond.datalad_save()
 
     complete_bond.get_CSVs(str(tmp_path / "originals"))
 
