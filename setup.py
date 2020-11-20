@@ -37,7 +37,8 @@ setup(
             'bond-print-metadata-fields=bond.cli:'
             'bond_print_metadata_fields',
             'bond-remove-metadata-fields=bond.cli:'
-            'bond_remove_metadata_fields'
+            'bond_remove_metadata_fields',
+            'bids-merge-json=bond.cli:bids_merge_json'
         ],
     },
     license="GNU General Public License v3",
