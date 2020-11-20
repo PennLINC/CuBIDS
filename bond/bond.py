@@ -180,16 +180,23 @@ class BOnD(object):
 
             self.datalad_save()
 
+            #mv_cmd = ''
             # create string of mv command ; mv command for dlapi.run
-            mv_str = ''
-            for i in range(len(self.old_filenames)):
-                mv = 'mv ' + self.old_filenames[i] + ' ' \
-                   + self.new_filenames[i]
-                mv_str += mv
-                if i < len(self.old_filenames)-1:
-                    mv_str += ' ; '
+            move_ops = []
+            for from_file, to_file in zip(self.old_filenames,
+                                          self.new_filenames):
+                move_ops.append('mv %s %s' % (from_file, to_file))
+                mv_cmd = ' ; '.join(move_ops)
 
-            self.datalad_handle.run(mv_str)
+            # mv_str = ''
+            # for i in range(len(self.old_filenames)):
+            #     mv = 'mv ' + self.old_filenames[i] + ' ' \
+            #        + self.new_filenames[i]
+            #     mv_str += mv
+            #     if i < len(self.old_filenames)-1:
+            #         mv_str += ' ; '
+
+            self.datalad_handle.run(mv_cmd)
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_prefix)
