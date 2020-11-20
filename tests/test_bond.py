@@ -9,7 +9,7 @@ import json
 from pkg_resources import resource_filename as pkgrf
 import pytest
 from bond import BOnD
-from validator import (build_validator_call,
+from .validator import (build_validator_call,
                        run_validator, parse_validator_output)
 import csv
 import os
@@ -291,6 +291,19 @@ def test_datalad_integration(tmp_path):
 def test_validator(tmp_path):
 
     data_root = get_data(tmp_path)
+
+    # test the validator in valid dataset
+    call = build_validator_call(str(data_root) + "/complete")
+    ret = run_validator(call)
+
+    assert ret.returncode == 0
+
+    parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+
+    assert parsed.shape[1] < 1
+
+    # bungle some data and test
+
     assert 1
 
 
