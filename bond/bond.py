@@ -178,37 +178,18 @@ class BOnD(object):
                     # change each filename according to new key group
                     self.change_filename(file_path, new_entities)
 
-        with open(str(self.path) + '_change_files.sh', 'w') \
-                as exe_script:
-            for old, new in zip(self.old_filenames, self.new_filenames):
-                exe_script.write("git mv %s %s\n" % (old, new))
+            self.datalad_save()
 
-        # with open(new_prefix + '_undo_files.sh', 'w') \
-        #         as exe_script:
-        #     for new, old in zip(self.new_filenames, self.old_filenames):
-        #         exe_script.write("mv %s %s\n" % (new, old))
+            # create string of mv command ; mv command for dlapi.run
+            mv_str = ''
+            for i in range(len(self.old_filenames)):
+                mv = 'mv ' + self.old_filenames[i] + ' ' \
+                   + self.new_filenames[i]
+                mv_str += mv
+                if i < len(self.old_filenames)-1:
+                    mv_str += ' ; '
 
-        # change_permissions = subprocess.run(['bash',
-        #                                     'chmod', 'u+x', str(self.path)
-        #                                     + '_change_files.sh'])
-
-        dlapi.save()
-
-        #self.datalad_save()
-
-        # my_proc = subprocess.run(
-        #     ['bash', new_prefix + '_change_files.sh'])
-
-        # create string of mv command ; mv command for dlapi.run
-        mv_str = ''
-        for i in range(len(self.old_filenames)):
-            mv = 'mv ' + self.old_filenames[i] + ' ' \
-               + self.new_filenames[i]
-            mv_str += mv
-            if i < len(self.old_filenames)-1:
-                mv_str += ' ; '
-
-        dlapi.run(mv_str)
+            self.datalad_handle.run(mv_str)
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_prefix)
