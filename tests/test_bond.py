@@ -14,6 +14,7 @@ import os
 import filecmp
 import nibabel as nb
 import numpy as np
+from csv_diff import load_csv, compare
 
 
 TEST_DATA = pkgrf("bond", "testdata")
@@ -121,13 +122,22 @@ def test_change_key_groups(tmp_path):
     # os.mkdir(tmp_path / "modified2")
 
     complete_bond.get_CSVs(str(tmp_path / "originals"))
-    complete_bond.change_key_groups(str(tmp_path / "originals"),
-                                     str(tmp_path / "modified1"))
 
     # give csv with no changes (make sure it does nothing)
-    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
-                       str(tmp_path / "modified1_summary.csv"),
-                       shallow=False) == True
+    complete_bond.change_key_groups(str(tmp_path / "originals"),
+                                    str(tmp_path / "modified1"))
+
+    # diff is a dictionary that describes differences in the csvs
+    diff1 = compare(load_csv(open(str(tmp_path / "originals_summary.csv"))),
+                   load_csv(open(str(tmp_path / "modified1_summary.csv"))))
+
+    changes1 = False
+    for key in list(diff1.keys()):
+        if len(diff1[key]) != 0:
+            changes1 = True
+            break
+
+    assert changes1 == False
 
     # edit the csv, add a RenameKeyGroup
     _edit_csv(str(tmp_path / "originals_summary.csv"))
@@ -135,9 +145,17 @@ def test_change_key_groups(tmp_path):
                                     str(tmp_path / "modified2"))
 
     # show that changes happened
-    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
-                       str(tmp_path / "modified2_summary.csv"),
-                       shallow=False) == False
+    # diff is a dictionary that describes differences in the csvs
+    diff2 = compare(load_csv(open(str(tmp_path / "originals_summary.csv"))),
+                   load_csv(open(str(tmp_path / "modified2_summary.csv"))))
+
+    changes2 = False
+    for key in list(diff2.keys()):
+        if len(diff2[key]) != 0:
+            changes2 = True
+            break
+
+    assert changes2 == True
 
 
 def _edit_csv(summary_csv):
