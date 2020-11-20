@@ -91,7 +91,6 @@ def bond_validate():
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
 
-
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
