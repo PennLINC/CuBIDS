@@ -14,7 +14,6 @@ import os
 import filecmp
 import nibabel as nb
 import numpy as np
-from csv_diff import load_csv, compare
 
 
 TEST_DATA = pkgrf("bond", "testdata")
@@ -127,35 +126,26 @@ def test_apply_csv_changes(tmp_path):
     complete_bond.apply_csv_changes(str(tmp_path / "originals"),
                                     str(tmp_path / "modified1"))
 
-    # diff is a dictionary that describes differences in the csvs
-    diff1 = compare(load_csv(open(str(tmp_path / "originals_summary.csv"))),
-                   load_csv(open(str(tmp_path / "modified1_summary.csv"))))
+    og_path = tmp_path / "originals_summary.csv"
+    with og_path.open("r") as f:
+        og_content = "".join(f.readlines())
 
-    changes1 = False
-    for key in list(diff1.keys()):
-        if len(diff1[key]) != 0:
-            changes1 = True
-            break
+    mod1_path = tmp_path / "modified1_summary.csv"
+    with mod1_path.open("r") as f:
+        mod1_content = "".join(f.readlines())
 
-    assert changes1 == False
+    assert og_content == mod1_content
 
     # edit the csv, add a RenameKeyGroup
     _edit_csv(str(tmp_path / "originals_summary.csv"))
     complete_bond.apply_csv_changes(str(tmp_path / "originals"),
                                     str(tmp_path / "modified2"))
 
-    # show that changes happened
-    # diff is a dictionary that describes differences in the csvs
-    diff2 = compare(load_csv(open(str(tmp_path / "originals_summary.csv"))),
-                   load_csv(open(str(tmp_path / "modified2_summary.csv"))))
+    mod2_path = tmp_path / "modified2_summary.csv"
+    with mod2_path.open("r") as f:
+        mod2_content = "".join(f.readlines())
 
-    changes2 = False
-    for key in list(diff2.keys()):
-        if len(diff2[key]) != 0:
-            changes2 = True
-            break
-
-    assert changes2 == True
+    assert og_content != mod2_content
 
 
 def _edit_csv(summary_csv):
