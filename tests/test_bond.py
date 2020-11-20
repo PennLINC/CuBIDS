@@ -9,6 +9,8 @@ import json
 from pkg_resources import resource_filename as pkgrf
 import pytest
 from bond import BOnD
+from validator import (build_validator_call,
+                       run_validator, parse_validator_output)
 import csv
 import os
 import filecmp
