@@ -178,7 +178,7 @@ class BOnD(object):
                     # change each filename according to new key group
                     self.change_filename(file_path, new_entities)
 
-        with open(new_prefix + '_change_files.sh', 'w') \
+        with open(str(self.path) + '_change_files.sh', 'w') \
                 as exe_script:
             for old, new in zip(self.old_filenames, self.new_filenames):
                 exe_script.write("git mv %s %s\n" % (old, new))
@@ -189,7 +189,7 @@ class BOnD(object):
         #         exe_script.write("mv %s %s\n" % (new, old))
 
         # change_permissions = subprocess.run(['bash',
-        #                                     'chmod u+x ' + new_prefix
+        #                                     'chmod', 'u+x', str(self.path)
         #                                     + '_change_files.sh'])
 
         dlapi.save()
@@ -197,20 +197,22 @@ class BOnD(object):
         # my_proc = subprocess.run(
         #     ['bash', new_prefix + '_change_files.sh'])
 
+        # create string of mv command ; mv command for dlapi.run
+        mv_str = ''
+        for i in range(len(self.old_filenames)):
+            mv = 'mv ' + self.old_filenames[i] + ' ' \
+               + self.new_filenames[i]
+            mv_str += mv
+            if i < len(self.old_filenames)-1:
+                mv_str += ' ; '
 
 
-        dlapi.run(message='change filenames',
-                  dataset=self.path,
-                  cmd=new_prefix + '_change_files.sh',
-                  inputs=self.old_filenames,
-                  outputs=self.new_filenames)
 
-
+        dlapi.run(mv_str, inputs=self.old_filenames, outputs=self.new_filenames)
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_prefix)
 
-        return my_proc
 
     def change_filename(self, filepath, entities):
 

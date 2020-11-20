@@ -1,0 +1,6 @@
+git mv /Users/scovitz/BOnD/bond/Testdata/complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.nii.gz /Users/scovitz/BOnD/bond/Testdata/complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.nii.gz
+git mv /Users/scovitz/BOnD/bond/Testdata/complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.json /Users/scovitz/BOnD/bond/Testdata/complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.json
+git mv /Users/scovitz/BOnD/bond/Testdata/complete/sub-02/ses-phdiff/fmap/sub-02_ses-phdiff_acq-v4_magnitude1.nii.gz /Users/scovitz/BOnD/bond/Testdata/complete/sub-02/ses-phdiff/fmap/sub-02_ses-phdiff_acq-v5_magnitude1.nii.gz
+git mv /Users/scovitz/BOnD/bond/Testdata/complete/sub-02/ses-phdiff/fmap/sub-02_ses-phdiff_acq-v4_magnitude1.json /Users/scovitz/BOnD/bond/Testdata/complete/sub-02/ses-phdiff/fmap/sub-02_ses-phdiff_acq-v5_magnitude1.json
+git mv /Users/scovitz/BOnD/bond/Testdata/complete/sub-03/ses-phdiff/fmap/sub-03_ses-phdiff_acq-v4_magnitude1.nii.gz /Users/scovitz/BOnD/bond/Testdata/complete/sub-03/ses-phdiff/fmap/sub-03_ses-phdiff_acq-v5_magnitude1.nii.gz
+git mv /Users/scovitz/BOnD/bond/Testdata/complete/sub-03/ses-phdiff/fmap/sub-03_ses-phdiff_acq-v4_magnitude1.json /Users/scovitz/BOnD/bond/Testdata/complete/sub-03/ses-phdiff/fmap/sub-03_ses-phdiff_acq-v5_magnitude1.json
