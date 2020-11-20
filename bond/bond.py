@@ -200,7 +200,7 @@ class BOnD(object):
         # create string of mv command ; mv command for dlapi.run
         mv_str = ''
         for i in range(len(self.old_filenames)):
-            mv = 'git mv ' + self.old_filenames[i] + ' ' \
+            mv = 'mv ' + self.old_filenames[i] + ' ' \
                + self.new_filenames[i]
             mv_str += mv
             if i < len(self.old_filenames)-1:
