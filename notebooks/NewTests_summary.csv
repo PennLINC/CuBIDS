@@ -1,8 +1,0 @@
-Notes,ManualCheck,MergeInto,RenameKeyGroup,KeyParamGroup,KeyGroup,ParamGroup,Counts,EchoTime,EffectiveEchoSpacing,FieldmapKey00,FlipAngle,IntendedForKey00,NSliceTimes,PartialFourier,PhaseEncodingDirection,RepetitionTime,TotalReadoutTime
-,,,,acquisition-HASC55AP_datatype-dwi_suffix-dwi__1,acquisition-HASC55AP_datatype-dwi_suffix-dwi,1,3,0.089,0.000689998,acquisition-v4_datatype-fmap_fmap-phasediff_suffix-phasediff,90,,36,,j,4.2,0.0717598
-,,,acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1,acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1__1,acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1,1,3,0.004,,,60,,0,0.75,j-,1.5,
-,,,,acquisition-v4_datatype-fmap_fmap-magnitude2_suffix-magnitude2__1,acquisition-v4_datatype-fmap_fmap-magnitude2_suffix-magnitude2,1,3,0.00646,,,60,,0,0.75,j-,1.5,
-,,,,acquisition-v4_datatype-fmap_fmap-phasediff_suffix-phasediff__1,acquisition-v4_datatype-fmap_fmap-phasediff_suffix-phasediff,1,3,,,,60,acquisition-HASC55AP_datatype-dwi_suffix-dwi,0,0.75,j-,1.5,
-,,,,datatype-anat_suffix-T1w__1,datatype-anat_suffix-T1w,1,3,0.0029,,,8,,0,,i-,2.5,
-,,,,datatype-fmap_direction-PA_fmap-epi_suffix-epi__1,datatype-fmap_direction-PA_fmap-epi_suffix-epi,1,3,0.089,0.000689998,,90,datatype-func_suffix-bold_task-rest,36,,j-,4.2,0.0717598
-,,,,datatype-func_suffix-bold_task-rest__1,datatype-func_suffix-bold_task-rest,1,3,0.089,0.000689998,datatype-fmap_direction-PA_fmap-epi_suffix-epi,90,,36,,j,1,0.0717598
