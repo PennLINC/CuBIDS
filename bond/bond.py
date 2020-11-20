@@ -101,43 +101,13 @@ class BOnD(object):
             ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
-    def merge_params(self, merge_df, files_df):
-        key_param_merge = {}
-        for i in range(len(merge_df)):
-            key_group = merge_df.iloc[i]['KeyGroup']
-            param_group = merge_df.iloc[i]['ParamGroup']
-            merge_into = merge_df.iloc[i]['MergeInto']
-            key_param_merge[(key_group, param_group)] = merge_into
-        pairs_to_change = list(key_param_merge.keys())
-
-        # locate files that need to change param groups/be deleted
-        for row in range(len(files_df)):
-
-            key = files_df.iloc[row]['KeyGroup']
-            param = files_df.iloc[row]['ParamGroup']
-
-            if (key, param) in pairs_to_change:
-                if key_param_merge[(key, param)] == 0:
-                    file_path = files_df.iloc[row]['FilePath']
-                    file_to_rem = Path(file_path)
-                    file_to_rem.unlink()
-                # else:
-                    # need to merge the param groups
-                    # NEED TO COPY THE METADATA FROM
-                    # "MergeInto" --> "ParamGroup"
-                    # self.change_metadata
-
-    def change_key_groups(self, og_prefix, new_prefix):
+    def apply_csv_changes(self, og_prefix, new_prefix):
         # reset lists of old and new filenames
         self.old_filenames = []
         self.new_filenames = []
 
         files_df = pd.read_csv(og_prefix + '_files.csv')
         summary_df = pd.read_csv(og_prefix + '_summary.csv')
-
-        # TODO: IMPLEMENT merge_params (above)
-        # merge_df = summary_df[summary_df.MergeInto.notnull()]
-        # self.merge_params(merge_df, files_df)
 
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
 
@@ -177,8 +147,6 @@ class BOnD(object):
 
                     # change each filename according to new key group
                     self.change_filename(file_path, new_entities)
-
-            self.datalad_save()
 
             # create string of mv command ; mv command for dlapi.run
             move_ops = []
@@ -381,7 +349,7 @@ class BOnD(object):
 
         key_groups = set()
 
-        for path in Path(self.path).rglob("*.*"):
+        for path in Path(self.path).rglob("sub-*/**/*.*"):
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 key_groups.update((_file_to_key_group(path),))
@@ -423,9 +391,6 @@ class BOnD(object):
 
                 # write out
                 _update_json(json_file.path, sidecar)
-
-    def apply_csv_changes(self, previous_output_prefix, new_output_prefix):
-        self.change_key_groups(previous_output_prefix, new_output_prefix)
 
     def get_all_metadata_fields(self):
         found_fields = set()
