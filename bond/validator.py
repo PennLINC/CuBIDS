@@ -2,7 +2,6 @@ import subprocess
 import json
 import logging
 import pandas as pd
-from pathlib import Path
 
 logger = logging.getLogger('bond-cli')
 
@@ -38,7 +37,6 @@ def parse_validator_output(output):
     Returns
     -----------
         - Pandas DataFrame
-    >>> parse_validator()
     """
 
     def get_nested(dct, *keys):
@@ -56,7 +54,10 @@ def parse_validator_output(output):
     def parse_issue(issue_dict):
 
         return_dict = {}
-        return_dict['files'] = [get_nested(x, 'file', 'relativePath') for x in issue_dict.get('files', '')]
+        return_dict['files'] = [
+            get_nested(x, 'file', 'relativePath')
+            for x in issue_dict.get('files', '')
+            ]
         return_dict['type'] = issue_dict.get('key' '')
         return_dict['severity'] = issue_dict.get('severity', '')
         return_dict['description'] = issue_dict.get('reason', '')

@@ -8,7 +8,7 @@ import re
 import logging
 from bond import BOnD
 from .validator import (build_validator_call,
-                         run_validator, parse_validator_output)
+                        run_validator, parse_validator_output)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bond-cli')
@@ -17,7 +17,8 @@ GIT_CONFIG = os.path.join(os.path.expanduser("~"), '.gitconfig')
 
 def bond_validate():
     parser = argparse.ArgumentParser(
-        description="bond-validate: Wrapper around the official BIDS Validator",
+        description="bond-validate: Wrapper around the official "
+        "BIDS Validator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
                         type=Path,
@@ -50,7 +51,8 @@ def bond_validate():
         # parse the string output
         parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
         if parsed.shape[1] < 1:
-            logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
+            logger.info("No issues/warnings parsed, your dataset"
+            " is BIDS valid.")
             sys.exit(0)
         else:
             logger.info("BIDS issues/warnings found in the dataset")
@@ -58,7 +60,8 @@ def bond_validate():
             if opts.output_prefix:
                 # normally, write dataframe to file in CLI
                 logger.info("Writing issues out to file")
-                parsed.to_csv(str(opts.output_prefix) + "_validation.csv", index=False)
+                parsed.to_csv(str(opts.output_prefix) +
+                              "_validation.csv", index=False)
                 sys.exit(0)
             else:
                 # user may be in python session, return dataframe

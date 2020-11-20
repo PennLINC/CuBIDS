@@ -285,6 +285,13 @@ def test_datalad_integration(tmp_path):
     assert original_content == restored_content
     assert original_binary_content == restored_binary_content
 
+
+def test_validator(tmp_path):
+
+    data_root = get_data(tmp_path)
+    assert 1
+
+
 """
 def test_fill_metadata(tmp_path):
     data_root = tmp_path / "testdata"
