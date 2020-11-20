@@ -6,11 +6,14 @@ import pandas as pd
 logger = logging.getLogger('bond-cli')
 
 
-def build_validator_call(path):
+def build_validator_call(path, ignore_nifti_headers=False):
     """Build a subprocess command to the bids validator"""
 
     # build docker call
     command = ['bids-validator', '--verbose', '--json']
+
+    if ignore_nifti_headers:
+        command.append('--ignoreNiftiHeaders')
 
     command.append(path)
 
