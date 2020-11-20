@@ -80,11 +80,15 @@ def bond_validate():
                '-v', GIT_CONFIG+":/root/.gitconfig",
                '-v', output_dir_link, '--entrypoint', 'bond-validate',
                opts.container, '/bids', linked_output_prefix]
+        if opts.ignore_nifti_headers:
+            cmd.append('--ignore_nifti_headers')
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                '-B', output_dir_link, opts.container, 'bond-validate',
                '/bids', linked_output_prefix]
+        if opts.ignore_nifti_headers:
+            cmd.append('--ignore_nifti_headers')
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
