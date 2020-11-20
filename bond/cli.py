@@ -34,6 +34,7 @@ def bond_validate():
                         action='store',
                         help='Docker image tag or Singularity image file.',
                         default=None)
+
     parser.add_argument('--ignore_nifti_headers',
                         action='store_true',
                         default=False,
@@ -89,6 +90,7 @@ def bond_validate():
                '/bids', linked_output_prefix]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
+
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
