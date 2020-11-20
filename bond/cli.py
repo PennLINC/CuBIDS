@@ -34,15 +34,18 @@ def bond_validate():
                         action='store',
                         help='Docker image tag or Singularity image file.',
                         default=None)
-    '''parser.add_argument('--use-datalad',
+    parser.add_argument('--ignore_nifti_headers',
                         action='store_true',
-                        help='ensure that there are no untracked changes '
-                        'before finding groups')'''
+                        default=False,
+                        help='Disregard NIfTI header content during'
+                        ' validation',
+                        required=False)
     opts = parser.parse_args()
 
     # Run directly from python using subprocess
     if opts.container is None:
-        call = build_validator_call(str(opts.bids_dir))
+        call = build_validator_call(str(opts.bids_dir),
+                                    opts.ignore_nifti_headers)
         ret = run_validator(call)
 
         if ret.returncode != 0:
