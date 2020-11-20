@@ -121,13 +121,13 @@ def test_change_key_groups(tmp_path):
     # os.mkdir(tmp_path / "modified2")
 
     complete_bond.get_CSVs(str(tmp_path / "originals"))
-    # complete_bond.change_key_groups(str(tmp_path / "originals"),
-    #                                 str(tmp_path / "modified1"))
+    complete_bond.change_key_groups(str(tmp_path / "originals"),
+                                     str(tmp_path / "modified1"))
 
     # give csv with no changes (make sure it does nothing)
-    # assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
-    #                    str(tmp_path / "modified1_summary.csv"),
-    #                    shallow=False) == True
+    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
+                       str(tmp_path / "modified1_summary.csv"),
+                       shallow=False) == True
 
     # edit the csv, add a RenameKeyGroup
     _edit_csv(str(tmp_path / "originals_summary.csv"))
