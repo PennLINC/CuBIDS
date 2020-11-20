@@ -86,7 +86,7 @@ jobs:
              cd /home/circleci/validator && \
              git clone -b skip_session_checks \
                 --single-branch https://github.com/bids-standard/bids-validator.git  && \
-             cd /home/validator/bids-validator && \
+             cd /home/circleci/validator/bids-validator && \
              yarn && \
              cd bids-validator && npm install -g
 
