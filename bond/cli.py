@@ -52,7 +52,7 @@ def bond_validate():
         parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
         if parsed.shape[1] < 1:
             logger.info("No issues/warnings parsed, your dataset"
-            " is BIDS valid.")
+                        " is BIDS valid.")
             sys.exit(0)
         else:
             logger.info("BIDS issues/warnings found in the dataset")
