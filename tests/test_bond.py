@@ -140,7 +140,6 @@ def test_change_key_groups(tmp_path):
                        shallow=False) == False
 
 
-
 def _edit_csv(summary_csv):
     r = csv.reader(open(summary_csv))
     lines = list(r)

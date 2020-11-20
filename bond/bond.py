@@ -200,19 +200,16 @@ class BOnD(object):
         # create string of mv command ; mv command for dlapi.run
         mv_str = ''
         for i in range(len(self.old_filenames)):
-            mv = 'mv ' + self.old_filenames[i] + ' ' \
+            mv = 'git mv ' + self.old_filenames[i] + ' ' \
                + self.new_filenames[i]
             mv_str += mv
             if i < len(self.old_filenames)-1:
                 mv_str += ' ; '
 
-
-
         dlapi.run(mv_str)
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_prefix)
-
 
     def change_filename(self, filepath, entities):
 
