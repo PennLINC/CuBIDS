@@ -208,7 +208,7 @@ class BOnD(object):
 
 
 
-        dlapi.run(mv_str, inputs=self.old_filenames, outputs=self.new_filenames)
+        dlapi.run(mv_str)
 
         self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_prefix)
