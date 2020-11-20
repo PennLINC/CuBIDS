@@ -427,7 +427,7 @@ class BOnD(object):
                 _update_json(json_file.path, sidecar)
 
     def apply_csv_changes(self, previous_output_prefix, new_output_prefix):
-        pass
+        self.change_key_groups(previous_output_prefix, new_output_prefix)
 
     def get_all_metadata_fields(self):
         found_fields = set()
