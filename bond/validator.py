@@ -23,7 +23,7 @@ def run_validator(call, verbose=True):
         logger.info("Running the validator with call:")
         logger.info('\"' + ' '.join(call) + '\"')
     ret = subprocess.run(call, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE, shell=True)
     return(ret)
 
 

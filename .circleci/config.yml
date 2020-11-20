@@ -188,6 +188,20 @@ jobs:
                 docker-daemon://pennlinc/bond:latest
 
       - run:
+          name: Test bond-validate
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids /tmp/validate_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
+            bond-validate \
+              /tmp/bids/singularity \
+              /tmp/validate_testing/singularity \
+              --container /home/circleci/bond-latest.sif
+
+      - run:
           name: Test bond-group
           command: |
             git config --global user.email "circleci@citesting.com"
