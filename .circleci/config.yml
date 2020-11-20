@@ -79,11 +79,22 @@ jobs:
              conda create -n bond python=3.7
              source activate bond
              conda install -c conda-forge -y datalad
+             # Add nodejs and the validator
+             conda install nodejs
+             npm install -g yarn && \
+             mkdir -p /tmp/validator && \
+             cd /tmp/validator && \
+             git clone -b skip_session_checks \
+                --single-branch https://github.com/bids-standard/bids-validator.git  && \
+             cd /tmp/validator/bids-validator && \
+             yarn && \
+             cd bids-validator && npm install -g
 
       - persist_to_workspace:
           root: /tmp
           paths:
             - miniconda
+            - validator
 
   get_singularity:
     machine:
@@ -188,6 +199,20 @@ jobs:
                 docker-daemon://pennlinc/bond:latest
 
       - run:
+          name: Test bond-validate
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids /tmp/validate_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
+            bond-validate \
+              /tmp/bids/singularity \
+              /tmp/validate_testing/singularity \
+              --container /home/circleci/bond-latest.sif
+
+      - run:
           name: Test bond-group
           command: |
             git config --global user.email "circleci@citesting.com"
@@ -275,6 +300,20 @@ jobs:
             source activate bond
             pip install .[all]
             py.test -sv tests
+
+      - run:
+          name: Test Docker validate
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids /tmp/validate_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-validate
+            bond-validate \
+              /tmp/bids/docker-validate \
+              /tmp/validate_testing/docker \
+              --container pennlinc/bond:latest
 
       - run:
           name: Test Docker group

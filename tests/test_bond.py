@@ -9,6 +9,8 @@ import json
 from pkg_resources import resource_filename as pkgrf
 import pytest
 from bond import BOnD
+from bond.validator import (build_validator_call,
+                       run_validator, parse_validator_output)
 import csv
 import os
 import filecmp
@@ -284,6 +286,47 @@ def test_datalad_integration(tmp_path):
     # Check that the file content has returned to its original state
     assert original_content == restored_content
     assert original_binary_content == restored_binary_content
+
+def _remove_a_json(json_file):
+
+    os.remove(json_file)
+
+def test_validator(tmp_path):
+
+    data_root = get_data(tmp_path)
+
+    # test the validator in valid dataset
+    call = build_validator_call(str(data_root) + "/complete")
+    ret = run_validator(call)
+
+    assert ret.returncode == 0
+
+    parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+
+    assert parsed.shape[1] < 1
+
+    # bungle some data and test
+
+    # get data
+    test_file = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
+    test_binary = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
+
+    # Edit the files
+    _edit_a_nifti(test_binary)
+    _remove_a_json(test_file)
+
+    call = build_validator_call(str(data_root) + "/complete")
+    ret = run_validator(call)
+
+    assert ret.returncode == 1
+
+    parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+
+    assert parsed.shape[1] > 1
+
+
 
 """
 def test_fill_metadata(tmp_path):

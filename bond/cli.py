@@ -7,48 +7,85 @@ import sys
 import re
 import logging
 from bond import BOnD
-from .docker_run import (check_docker, check_image, build_validator_call,
-                         run, parse_validator)
+from .validator import (build_validator_call,
+                        run_validator, parse_validator_output)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bond-cli')
 GIT_CONFIG = os.path.join(os.path.expanduser("~"), '.gitconfig')
 
 
-def run_validator(bidsdir, output_path=None):
-    """Run the BIDS validator on a BIDS directory"""
-
-    # check for docker and the image
-    if not all([check_docker(), check_image("bond")]):
-        logger.error("Couldn't run validator! Please make sure you Docker"
-                     " installed and the correct Docker image cloned: ")
-        return 1
-
-    # build the call and run
-    call = build_validator_call(bidsdir)
-    ret = run(call)
-
-    if ret.returncode != 0:
-        logger.error("Errors returned from validator run, parsing now")
-
-    # parse the string output
-    parsed = parse_validator(ret.stdout.decode('UTF-8'))
-    if parsed.shape[1] < 1:
-        logger.info("No issues/warnings parsed, your dataset must be valid.")
-    else:
-        logger.info("BIDS issues/warnings found in the dataset")
-
-        if output_path:
-            # normally, write dataframe to file in CLI
-            logger.info("Writing issues out to file")
-            parsed.to_csv(output_path, index=False)
-        else:
-            # user may be in python session, return dataframe
-            return parsed
-
-
 def bond_validate():
-    pass
+    parser = argparse.ArgumentParser(
+        description="bond-validate: Wrapper around the official "
+        "BIDS Validator",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('bids_dir',
+                        type=Path,
+                        action='store',
+                        help='the root of a BIDS dataset. It should contain '
+                        'sub-X directories and dataset_description.json')
+    parser.add_argument('output_prefix',
+                        type=Path,
+                        action='store',
+                        help='file prefix to which tabulated validator output '
+                        'is written.')
+    parser.add_argument('--container',
+                        action='store',
+                        help='Docker image tag or Singularity image file.',
+                        default=None)
+    '''parser.add_argument('--use-datalad',
+                        action='store_true',
+                        help='ensure that there are no untracked changes '
+                        'before finding groups')'''
+    opts = parser.parse_args()
+
+    # Run directly from python using subprocess
+    if opts.container is None:
+        call = build_validator_call(str(opts.bids_dir))
+        ret = run_validator(call)
+
+        if ret.returncode != 0:
+            logger.error("Errors returned from validator run, parsing now")
+
+        # parse the string output
+        parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+        if parsed.shape[1] < 1:
+            logger.info("No issues/warnings parsed, your dataset"
+                        " is BIDS valid.")
+            sys.exit(0)
+        else:
+            logger.info("BIDS issues/warnings found in the dataset")
+
+            if opts.output_prefix:
+                # normally, write dataframe to file in CLI
+                logger.info("Writing issues out to file")
+                parsed.to_csv(str(opts.output_prefix) +
+                              "_validation.csv", index=False)
+                sys.exit(0)
+            else:
+                # user may be in python session, return dataframe
+                return parsed
+
+    # Run it through a container
+    container_type = _get_container_type(opts.container)
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
+    output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/csv:rw"
+    linked_output_prefix = "/csv/" + opts.output_prefix.name
+    if container_type == 'docker':
+        cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
+               '-v', GIT_CONFIG+":/root/.gitconfig",
+               '-v', output_dir_link, '--entrypoint', 'bond-validate',
+               opts.container, '/bids', linked_output_prefix]
+    elif container_type == 'singularity':
+        cmd = ['singularity', 'exec', '--cleanenv',
+               '-B', bids_dir_link,
+               '-B', output_dir_link, opts.container, 'bond-validate',
+               '/bids', linked_output_prefix]
+
+    print("RUNNING: " + ' '.join(cmd))
+    proc = subprocess.run(cmd)
+    sys.exit(proc.returncode)
 
 
 def bond_group():
