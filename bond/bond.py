@@ -194,7 +194,7 @@ class BOnD(object):
 
         dlapi.save()
 
-        self.datalad_save()
+        #self.datalad_save()
 
         # my_proc = subprocess.run(
         #     ['bash', new_prefix + '_change_files.sh'])
