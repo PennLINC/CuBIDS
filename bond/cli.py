@@ -69,7 +69,7 @@ def bond_validate():
 
     # Run it through a container
     container_type = _get_container_type(opts.container)
-    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
     output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/csv:rw"
     linked_output_prefix = "/csv/" + opts.output_prefix.name
     if container_type == 'docker':
