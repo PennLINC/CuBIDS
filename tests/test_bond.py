@@ -9,6 +9,8 @@ import json
 from pkg_resources import resource_filename as pkgrf
 import pytest
 from bond import BOnD
+from bond.validator import (build_validator_call,
+                       run_validator, parse_validator_output)
 import csv
 import os
 import filecmp
@@ -104,7 +106,7 @@ def test_csv_creation(tmp_path):
     assert isummary_df.shape[0] == 11
 
 
-def test_change_key_groups(tmp_path):
+def test_apply_csv_changes(tmp_path):
     # set up like narrative of user using this
     # similar to test csv creation
     # open the csv, rename a key group
@@ -114,29 +116,35 @@ def test_change_key_groups(tmp_path):
     # make sure files you wanted to rename exist in the bids dir
 
     data_root = get_data(tmp_path)
-    complete_bond = BOnD(data_root / "complete")
-
-    os.mkdir(tmp_path / "originals")
-    os.mkdir(tmp_path / "modified1")
+    complete_bond = BOnD(data_root / "complete", use_datalad=True)
+    complete_bond.datalad_save()
 
     complete_bond.get_CSVs(str(tmp_path / "originals"))
-    complete_bond.change_key_groups(str(tmp_path / "originals"),
-                                    str(tmp_path / "modified1"))
 
     # give csv with no changes (make sure it does nothing)
-    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
-                       str(tmp_path / "modified1_summary.csv"),
-                       shallow=False) == True
+    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
+                                    str(tmp_path / "modified1"))
+
+    og_path = tmp_path / "originals_summary.csv"
+    with og_path.open("r") as f:
+        og_content = "".join(f.readlines())
+
+    mod1_path = tmp_path / "modified1_summary.csv"
+    with mod1_path.open("r") as f:
+        mod1_content = "".join(f.readlines())
+
+    assert og_content == mod1_content
 
     # edit the csv, add a RenameKeyGroup
     _edit_csv(str(tmp_path / "originals_summary.csv"))
-    complete_bond.change_key_groups(str(tmp_path / "originals"),
+    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
                                     str(tmp_path / "modified2"))
 
-    # show that changes happened
-    assert filecmp.cmp(str(tmp_path / "originals_summary.csv"),
-                       str(tmp_path / "modified1_summary.csv"),
-                       shallow=False) == False
+    mod2_path = tmp_path / "modified2_summary.csv"
+    with mod2_path.open("r") as f:
+        mod2_content = "".join(f.readlines())
+
+    assert og_content != mod2_content
 
 
 def _edit_csv(summary_csv):
@@ -284,6 +292,47 @@ def test_datalad_integration(tmp_path):
     # Check that the file content has returned to its original state
     assert original_content == restored_content
     assert original_binary_content == restored_binary_content
+
+def _remove_a_json(json_file):
+
+    os.remove(json_file)
+
+def test_validator(tmp_path):
+
+    data_root = get_data(tmp_path)
+
+    # test the validator in valid dataset
+    call = build_validator_call(str(data_root) + "/complete")
+    ret = run_validator(call)
+
+    assert ret.returncode == 0
+
+    parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+
+    assert parsed.shape[1] < 1
+
+    # bungle some data and test
+
+    # get data
+    test_file = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
+    test_binary = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
+
+    # Edit the files
+    _edit_a_nifti(test_binary)
+    _remove_a_json(test_file)
+
+    call = build_validator_call(str(data_root) + "/complete")
+    ret = run_validator(call)
+
+    assert ret.returncode == 1
+
+    parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+
+    assert parsed.shape[1] > 1
+
+
 
 """
 def test_fill_metadata(tmp_path):
