@@ -9,6 +9,7 @@ import logging
 from bond import BOnD
 from .validator import (build_validator_call,
                         run_validator, parse_validator_output)
+from .metadata_merge import merge_json_into_json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bond-cli')
@@ -94,6 +95,25 @@ def bond_validate():
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
+
+
+def bids_sidecar_merge():
+    parser = argparse.ArgumentParser(
+        description="bids-sidecar-merge: merge critical keys from one "
+        "sidecar to another",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('from_json',
+                        type=Path,
+                        action='store',
+                        help='Source json file.')
+    parser.add_argument('to_json',
+                        type=Path,
+                        action='store',
+                        help='destination json. This file will have data '
+                        'from `from_json` copied into it.')
+    opts = parser.parse_args()
+
+    sys.exit(merge_json_into_json(opts.from_json, opts.to_json))
 
 
 def bond_group():

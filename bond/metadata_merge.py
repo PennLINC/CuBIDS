@@ -22,3 +22,12 @@ def check_merging_operations(action_csv):
     for _, row_needs_merge in needs_merge.iterrows():
         pass
 
+
+def merge_json_into_json(from_file, to_file):
+    with open(from_file, "r") as fromf:
+        source_metadata = json.load(from_file)
+
+    with open(to_file, "r") as tof:
+        dest_metadata = json.load(tof)
+
+    return 0

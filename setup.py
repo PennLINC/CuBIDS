@@ -31,14 +31,13 @@ setup(
             'bond-group=bond.cli:bond_group',
             'bond-apply=bond.cli:bond_apply',
             'bond-undo=bond.cli:bond_undo',
-            'bids-sidecar-merge=bond.cli:param_group_merge',
+            'bids-sidecar-merge=bond.cli:bids_sidecar_merge',
             'bond-validate=bond.cli:bond_validate',
             'bond-datalad-save=bond.cli:bond_datalad_save',
             'bond-print-metadata-fields=bond.cli:'
             'bond_print_metadata_fields',
             'bond-remove-metadata-fields=bond.cli:'
-            'bond_remove_metadata_fields',
-            'bids-merge-json=bond.cli:bids_merge_json'
+            'bond_remove_metadata_fields'
         ],
     },
     license="GNU General Public License v3",
