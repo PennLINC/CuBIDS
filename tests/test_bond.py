@@ -4,6 +4,7 @@
 import sys
 sys.path.append("..")
 import shutil
+from copy import deepcopy
 import hashlib
 import json
 from pkg_resources import resource_filename as pkgrf
@@ -11,6 +12,7 @@ import pytest
 from bond import BOnD
 from bond.validator import (build_validator_call,
                        run_validator, parse_validator_output)
+from bond.metadata_merge import merge_without_overwrite
 import csv
 import os
 import filecmp
@@ -35,6 +37,65 @@ def get_data(tmp_path):
     data_root = tmp_path / "testdata"
     shutil.copytree(TEST_DATA, str(data_root))
     return data_root
+
+
+def test_merge_without_overwrite():
+    meta1 = {
+        'ManualCheck': 1.0,
+        'RenameKeyGroup': np.nan,
+        'MergeInto': 2.0,
+        'KeyGroup': 'datatype-func_suffix-bold_task-rest',
+        'ParamGroup': 12,
+        'Counts': 2,
+        'DwellTime': 2.6e-06,
+        'EchoTime': 0.03,
+        'EffectiveEchoSpacing': 0.000580013,
+        'FieldmapKey00': 'acquisition-fMRI_datatype-fmap_direction-AP_fmap-epi_suffix-epi',
+        'FieldmapKey01': 'acquisition-fMRI_datatype-fmap_direction-PA_fmap-epi_run-1_suffix-epi',
+        'FieldmapKey02': 'acquisition-fMRI_datatype-fmap_direction-PA_fmap-epi_run-2_suffix-epi',
+        'FieldmapKey03': np.nan,
+        'FieldmapKey04': np.nan,
+        'FieldmapKey05': np.nan,
+        'FieldmapKey06': np.nan,
+        'FieldmapKey07': np.nan,
+        'FlipAngle': 31.0,
+        'IntendedForKey00': np.nan,
+        'IntendedForKey01': np.nan,
+        'IntendedForKey02': np.nan,
+        'IntendedForKey03': np.nan,
+        'IntendedForKey04': np.nan,
+        'IntendedForKey05': np.nan,
+        'IntendedForKey06': np.nan,
+        'IntendedForKey07': np.nan,
+        'IntendedForKey08': np.nan,
+        'IntendedForKey09': np.nan,
+        'MultibandAccelerationFactor': 6.0,
+        'NSliceTimes': 60,
+        'ParallelReductionFactorInPlane': np.nan,
+        'PartialFourier': 1.0,
+        'PhaseEncodingDirection': 'j-',
+        'RepetitionTime': 0.8,
+        'TotalReadoutTime': 0.0481411}
+
+    # Set a conflicting imaging param in the dest group
+    meta_overwrite = deepcopy(meta1)
+    meta_overwrite["FlipAngle"] = 62.0
+    bad_merge = merge_without_overwrite(meta1, meta_overwrite)
+    assert not bad_merge
+
+    # Suppose "PartialFourier" is missing in the dest group
+    meta_ok = deepcopy(meta1)
+    meta_ok["PartialFourier"] = np.nan
+    ok_merge = merge_without_overwrite(meta1, meta_ok)
+    assert ok_merge
+    assert ok_merge["PartialFourier"] == meta1["PartialFourier"]
+
+    # Suppose the same, but there is a different number of slice times
+    slices_bad = deepcopy(meta1)
+    slices_bad["PartialFourier"] = np.nan
+    slices_bad["NSliceTimes"] = meta1["NSliceTimes"] + 5
+    bad_slice_merge = merge_without_overwrite(meta1, slices_bad)
+    assert not bad_slice_merge
 
 
 def test_keygroups(tmp_path):
@@ -293,9 +354,11 @@ def test_datalad_integration(tmp_path):
     assert original_content == restored_content
     assert original_binary_content == restored_binary_content
 
+
 def _remove_a_json(json_file):
 
     os.remove(json_file)
+
 
 def test_validator(tmp_path):
 
@@ -331,7 +394,6 @@ def test_validator(tmp_path):
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
     assert parsed.shape[1] > 1
-
 
 
 """
