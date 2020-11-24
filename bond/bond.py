@@ -338,12 +338,12 @@ class BOnD(object):
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
 
-    def get_file_params(self, key_group):
-        key_entities = _key_group_to_entities(key_group)
-        key_entities["extension"] = ".nii[.gz]*"
-        matching_files = self.layout.get(return_type="file", scope="self",
-                                         regex_search=True, **key_entities)
-        return _get_file_params(matching_files, self.layout)
+    # def get_file_params(self, key_group):
+    #     key_entities = _key_group_to_entities(key_group)
+    #     key_entities["extension"] = ".nii[.gz]*"
+    #     matching_files = self.layout.get(return_type="file", scope="self",
+    #                                      regex_search=True, **key_entities)
+    #     return _get_file_params(matching_files, self.layout)
 
     def get_key_groups(self):
 
@@ -544,36 +544,36 @@ def _order_columns(df):
     return df[new_columns]
 
 
-def _get_file_params(files, layout):
-    """Finds a list of *parameter groups* from a list of files.
-    Parameters:
-    -----------
-    files : list
-        List of file names
-    Returns:
-    --------
-    dict_files_params : dictionary
-        A dictionary of KEYS: filenames, VALUES: their param dictionaries
-    For each file in `files`, find critical parameters for metadata. Then find
-    unique sets of these critical parameters.
-    """
-    dict_files_params = {}
+# def _get_file_params(files, layout):
+#     """Finds a list of *parameter groups* from a list of files.
+#     Parameters:
+#     -----------
+#     files : list
+#         List of file names
+#     Returns:
+#     --------
+#     dict_files_params : dictionary
+#         A dictionary of KEYS: filenames, VALUES: their param dictionaries
+#     For each file in `files`, find critical parameters for metadata. Then find
+#     unique sets of these critical parameters.
+#     """
+#     dict_files_params = {}
 
-    for path in files:
-        metadata = layout.get_metadata(path)
-        wanted_keys = metadata.keys() & IMAGING_PARAMS
-        example_data = {key: metadata[key] for key in wanted_keys}
-        # Expand slice timing to multiple columns
-        SliceTime = example_data.get('SliceTiming')
-        if SliceTime:
-            # round each slice time to one place after the decimal
-            for i in range(len(SliceTime)):
-                SliceTime[i] = round(SliceTime[i], 1)
-            example_data.update(
-                {"SliceTime%03d" % SliceNum: time for
-                 SliceNum, time in enumerate(SliceTime)})
-            del example_data['SliceTiming']
+#     for path in files:
+#         metadata = layout.get_metadata(path)
+#         wanted_keys = metadata.keys() & IMAGING_PARAMS
+#         example_data = {key: metadata[key] for key in wanted_keys}
+#         # Expand slice timing to multiple columns
+#         SliceTime = example_data.get('SliceTiming')
+#         if SliceTime:
+#             # round each slice time to one place after the decimal
+#             for i in range(len(SliceTime)):
+#                 SliceTime[i] = round(SliceTime[i], 1)
+#             example_data.update(
+#                 {"SliceTime%03d" % SliceNum: time for
+#                  SliceNum, time in enumerate(SliceTime)})
+#             del example_data['SliceTiming']
 
-        dict_files_params[path] = example_data
+#         dict_files_params[path] = example_data
 
-    return dict_files_params
+#     return dict_files_params
