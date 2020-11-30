@@ -92,7 +92,7 @@ class BOnD(object):
     def datalad_undo_last_commit(self):
         """Revert the most recent commit, remove it from history.
 
-        uses git reset --hard
+        Uses git reset --hard
         """
         if not self.is_datalad_clean():
             raise Exception("Untracked changes present. "
@@ -102,6 +102,23 @@ class BOnD(object):
         reset_proc.check_returncode()
 
     def apply_csv_changes(self, og_prefix, new_prefix):
+        """Applies changes documented in the edited _summary csv
+        and generates the new csv files..
+
+        This function looks at the RenameKeyGroup and MergeInto
+        columns and modifies the bids datset according to the
+        specified changs.
+
+        Parameters:
+        -----------
+            og_prefix : str
+                Path prefix to the directory that contains the
+                original _summary and _files csv files
+            new_prefix : str
+                Path prefix to the directory that will contain the
+                new summary and files csv files.
+        """
+
         # reset lists of old and new filenames
         self.old_filenames = []
         self.new_filenames = []
@@ -161,7 +178,20 @@ class BOnD(object):
         self.get_CSVs(new_prefix)
 
     def change_filename(self, filepath, entities):
+        """Applies changes to a filename based on the renamed
+        key groups.
 
+        This function takes into account the new key group names
+        and renames all files whose key group names changed.
+
+        Parameters:
+        -----------
+            filepath : str
+                Path prefix to a file in the affected key group change
+            entities : dictionary
+                A pybids dictionary of entities parsed from the new key
+                group name.
+        """
         path = Path(filepath)
         exts = path.suffixes
         old_ext = ""
@@ -235,12 +265,9 @@ class BOnD(object):
         else:
             print("FOUND IRREGULAR NUMBER OF JSONS")
 
-    def fieldmaps_ok(self):
-        pass
-
     def _cache_fieldmaps(self):
-        """Searches all fieldmaps and creates a lookup for each file.
-        """
+        '''Searches all fieldmaps and creates a lookup for each file.'''
+
         suffix = '(phase1|phasediff|epi|fieldmap)'
         fmap_files = self.layout.get(suffix=suffix, regex_search=True,
                                      extension=['.nii.gz', '.nii'])
@@ -267,6 +294,24 @@ class BOnD(object):
         return misfits
 
     def get_param_groups_from_key_group(self, key_group):
+        """Splits key groups into param groups based on json metadata.
+
+        Parameters:
+        -----------
+            og_prefix : str
+                Path prefix to the directory that contains the
+                original _summary and _files csv files
+            new_prefix : str
+                Path prefix to the directory that will contain the
+                new summary and files csv files.
+
+        Returns:
+        -----------
+            ret : tuple of two DataFrames
+                1. A data frame with one row per file where the ParamGroup
+                column indicates the group to which each scan belongs.
+                2. A data frame with param group summaries
+        """
         if not self.fieldmaps_cached:
             raise Exception(
                 "Fieldmaps must be cached to find parameter groups.")
@@ -274,12 +319,14 @@ class BOnD(object):
         key_entities["extension"] = ".nii[.gz]*"
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
-        return _get_param_groups(
+        ret = _get_param_groups(
             matching_files, self.layout, self.fieldmap_lookup, key_group)
 
+        return ret
+
     def get_param_groups_dataframes(self):
-        """Creates DataFrames of files x param groups and a summary
-        """
+        '''Creates DataFrames of files x param groups and a summary'''
+
         key_groups = self.get_key_groups()
         labeled_files = []
         param_group_summaries = []
@@ -319,16 +366,14 @@ class BOnD(object):
         return (big_df, summary)
 
     def get_CSVs(self, path_prefix):
-        """
+        """Creates the _summary and _files CSVs for the bids dataset.
+
         Parameters:
         -----------
             prefix_path: str
                 prefix of the path to the directory where you want
                 to save your CSVs
                 example path: /Users/Covitz/PennLINC/RBC/CCNP/
-        Returns
-        -----------
-            - None
         """
 
         self._cache_fieldmaps()
@@ -339,6 +384,7 @@ class BOnD(object):
         summary.to_csv(path_prefix + "_summary.csv", index=False)
 
     def get_key_groups(self):
+        '''Identifies the key groups for the bids dataset'''
 
         key_groups = set()
 
@@ -386,6 +432,8 @@ class BOnD(object):
                 _update_json(json_file.path, sidecar)
 
     def get_all_metadata_fields(self):
+        ''' Returns all metadata fields in a bids directory'''
+
         found_fields = set()
         for json_file in Path(self.path).rglob("*.json"):
             with open(json_file, "r") as jsonr:
@@ -394,7 +442,8 @@ class BOnD(object):
         return sorted(found_fields)
 
     def remove_metadata_fields(self, fields_to_remove):
-        """Removes specific fields from all metadata files."""
+        '''Removes specific fields from all metadata files.'''
+
         remove_fields = set(fields_to_remove)
         if not remove_fields:
             return
@@ -415,6 +464,11 @@ class BOnD(object):
                 json.dump(metadata, jsonr, indent=4)
 
 
+def _validateJSON(json_file):
+    # TODO: implement this or delete ???
+    return True
+
+
 def _update_json(json_file, metadata):
 
     if _validateJSON(metadata):
@@ -424,23 +478,23 @@ def _update_json(json_file, metadata):
         print("INVALID JSON DATA")
 
 
-def _validateJSON(json_data):
-
-    # TODO
-    return True
-
-
 def _key_group_to_entities(key_group):
+    '''Splits a key_group name into a pybids dictionary of entities.'''
+
     return dict([group.split("-") for group in key_group.split("_")])
 
 
 def _entities_to_key_group(entities):
+    '''Converts a pybids entities dictionary into a key group name.'''
+
     group_keys = sorted(entities.keys() - NON_KEY_ENTITIES)
     return "_".join(
         ["{}-{}".format(key, entities[key]) for key in group_keys])
 
 
 def _file_to_key_group(filename):
+    '''Identifies and returns the key group of a bids valid filename.'''
+
     entities = parse_file_entities(str(filename))
     return _entities_to_key_group(entities)
 
@@ -473,6 +527,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         A data frame with param group summaries
 
     """
+
     if not files:
         print("WARNING: no files for", key_group_name)
         return None, None
@@ -529,6 +584,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
 
 def _order_columns(df):
+    '''Organizes columns of the summary and files DataFrames.'''
+
     cols = set(df.columns.to_list())
     non_id_cols = cols - ID_VARS
     new_columns = ["KeyGroup", "ParamGroup"] + sorted(non_id_cols)
