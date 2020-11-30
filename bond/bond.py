@@ -72,6 +72,7 @@ class BOnD(object):
             message : str or None
                 Commit message to use with datalad save
         """
+
         if not self.datalad_ready:
             raise Exception(
                 "DataLad has not been initialized. use datalad_init()")
@@ -101,9 +102,9 @@ class BOnD(object):
             ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
-    def apply_csv_changes(self, og_prefix, new_prefix):
+    def apply_csv_changes(self, orig_prefix, new_prefix):
         """Applies changes documented in the edited _summary csv
-        and generates the new csv files..
+        and generates the new csv files.
 
         This function looks at the RenameKeyGroup and MergeInto
         columns and modifies the bids datset according to the
@@ -111,20 +112,25 @@ class BOnD(object):
 
         Parameters:
         -----------
-            og_prefix : str
-                Path prefix to the directory that contains the
-                original _summary and _files csv files
+            orig_prefix : str
+                Path prefix and file stem for the original
+                _summary and _files csvs.
+                For example, if orig_prefix is
+                '/cbica/projects/HBN/old_CSVs' then the paths to
+                the summary and files csvs will be
+                '/cbica/projects/HBN/old_CSVs_summary.csv' and
+                '/cbica/projects/HBN/old_CSVs_files.csv' respectively.
             new_prefix : str
-                Path prefix to the directory that will contain the
-                new summary and files csv files.
+                Path prefix and file stem for the new summary and
+                files csvs.
         """
 
         # reset lists of old and new filenames
         self.old_filenames = []
         self.new_filenames = []
 
-        files_df = pd.read_csv(og_prefix + '_files.csv')
-        summary_df = pd.read_csv(og_prefix + '_summary.csv')
+        files_df = pd.read_csv(orig_prefix + '_files.csv')
+        summary_df = pd.read_csv(orig_prefix + '_summary.csv')
 
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
 
@@ -266,7 +272,14 @@ class BOnD(object):
             print("FOUND IRREGULAR NUMBER OF JSONS")
 
     def _cache_fieldmaps(self):
-        '''Searches all fieldmaps and creates a lookup for each file.'''
+        """Searches all fieldmaps and creates a lookup for each file.
+
+        Returns:
+        -----------
+            misfits : list
+                A list of fmap filenames for whom BOnD has not detected
+                an IntnededFor.
+        """
 
         suffix = '(phase1|phasediff|epi|fieldmap)'
         fmap_files = self.layout.get(suffix=suffix, regex_search=True,
@@ -298,12 +311,8 @@ class BOnD(object):
 
         Parameters:
         -----------
-            og_prefix : str
-                Path prefix to the directory that contains the
-                original _summary and _files csv files
-            new_prefix : str
-                Path prefix to the directory that will contain the
-                new summary and files csv files.
+            key_group : str
+                Key group name.
 
         Returns:
         -----------
@@ -584,7 +593,9 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
 
 def _order_columns(df):
-    '''Organizes columns of the summary and files DataFrames.'''
+    '''Organizes columns of the summary and files DataFrames so that
+    KeyGroup and ParamGroup are the first two columns, FilePath is
+    the last, and the others are sorted alphabetically.'''
 
     cols = set(df.columns.to_list())
     non_id_cols = cols - ID_VARS
