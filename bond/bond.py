@@ -271,7 +271,10 @@ class BOnD(object):
             raise Exception(
                 "Fieldmaps must be cached to find parameter groups.")
         key_entities = _key_group_to_entities(key_group)
-        key_entities["extension"] = ".nii[.gz]*"
+        # key_entities["extension"] = ".nii[.gz]*"
+        # changed for abcd keys
+        key_entities["extension"] = ".json"
+
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
         return _get_param_groups(
@@ -280,7 +283,10 @@ class BOnD(object):
     def get_param_groups_dataframes(self):
         """Creates DataFrames of files x param groups and a summary
         """
-        key_groups = self.get_key_groups()
+        # key_groups = self.get_key_groups()
+        # changed for abcd
+        key_groups= self.get_abcd_keys()
+
         labeled_files = []
         param_group_summaries = []
         for key_group in key_groups:
@@ -345,6 +351,29 @@ class BOnD(object):
                                          regex_search=True, **key_entities)
         return _get_file_params(matching_files, self.layout)
 
+    def get_abcd_keys(self):
+
+        key_groups = set()
+        paths = []
+        #self.keys_files = []
+
+        for path in Path(self.path).rglob("sub-*/**/*.*"):
+
+            if str(path).endswith(".json"):
+                paths.append(str(path))
+                key_groups.update((_file_to_key_group(path),))
+
+                # Fill the dictionary of key group, list of filenames pairs
+                ret = _file_to_key_group(path)
+
+                if ret not in self.keys_files.keys():
+
+                    self.keys_files[ret] = []
+
+                self.keys_files[ret].append(path)
+
+        return sorted(key_groups)
+
     def get_key_groups(self):
 
         key_groups = set()
@@ -354,7 +383,7 @@ class BOnD(object):
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 key_groups.update((_file_to_key_group(path),))
 
-                # Fill the dictionary of key group, list of filenames pairrs
+                # Fill the dictionary of key group, list of filenames pairs
                 ret = _file_to_key_group(path)
 
                 if ret not in self.keys_files.keys():
