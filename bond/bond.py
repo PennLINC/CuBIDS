@@ -285,7 +285,7 @@ class BOnD(object):
         """
         # key_groups = self.get_key_groups()
         # changed for abcd
-        key_groups= self.get_abcd_keys()
+        key_groups = self.get_abcd_keys()
 
         labeled_files = []
         param_group_summaries = []
@@ -355,7 +355,6 @@ class BOnD(object):
 
         key_groups = set()
         paths = []
-        #self.keys_files = []
 
         for path in Path(self.path).rglob("sub-*/**/*.*"):
 
