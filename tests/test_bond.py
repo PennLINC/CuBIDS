@@ -11,6 +11,7 @@ import pytest
 from bond import BOnD
 from bond.validator import (build_validator_call,
                        run_validator, parse_validator_output)
+import subprocess
 import csv
 import os
 import filecmp
@@ -297,6 +298,42 @@ def _remove_a_json(json_file):
 
     os.remove(json_file)
 
+
+def test_docker():
+    """Verify that docker is installed and the user has permission to
+    run docker images.
+    Returns
+    -------
+    -1  Docker can't be found
+     0  Docker found, but user can't connect to daemon
+     1  Test run OK
+     """
+    try:
+
+        return_status = 1
+        ret = subprocess.run(['docker', 'version'], stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+    except OSError as e:
+        from errno import ENOENT
+        if e.errno == ENOENT:
+            print("Cannot find Docker engine!")
+            return_status = 0
+        raise e
+    if ret.stderr.startswith(b"Cannot connect to the Docker daemon."):
+        print("Cannot connect to Docker daemon!")
+        return_status = 0
+    assert return_status
+
+
+def test_image(image='pennlinc/bond:latest'):
+    """Check whether image is present on local system"""
+    ret = subprocess.run(['docker', 'images', '-q', image],
+                         stdout=subprocess.PIPE)
+
+    return_status = ret.stdout.decode('UTF-8')
+    assert return_status
+
+
 def test_validator(tmp_path):
 
     data_root = get_data(tmp_path)
@@ -331,7 +368,6 @@ def test_validator(tmp_path):
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
     assert parsed.shape[1] > 1
-
 
 
 """
