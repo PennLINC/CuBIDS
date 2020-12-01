@@ -20,13 +20,23 @@ import numpy as np
 
 TEST_DATA = pkgrf("bond", "testdata")
 
+# COMPLETE_KEY_GROUPS = [
+#     'acquisition-HASC55AP_datatype-dwi_suffix-dwi',
+#     'acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1',
+#     'acquisition-v4_datatype-fmap_fmap-magnitude2_suffix-magnitude2',
+#     'acquisition-v4_datatype-fmap_fmap-phasediff_suffix-phasediff',
+#     'datatype-anat_suffix-T1w',
+#     'datatype-fmap_direction-PA_fmap-epi_suffix-epi',
+#     'datatype-func_suffix-bold_task-rest']
+
+# CHANGED FOR ABCD
 COMPLETE_KEY_GROUPS = [
     'acquisition-HASC55AP_datatype-dwi_suffix-dwi',
-    'acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1',
-    'acquisition-v4_datatype-fmap_fmap-magnitude2_suffix-magnitude2',
-    'acquisition-v4_datatype-fmap_fmap-phasediff_suffix-phasediff',
+    'acquisition-v4_datatype-fmap_suffix-magnitude1',
+    'acquisition-v4_datatype-fmap_suffix-magnitude2',
+    'acquisition-v4_datatype-fmap_suffix-phasediff',
     'datatype-anat_suffix-T1w',
-    'datatype-fmap_direction-PA_fmap-epi_suffix-epi',
+    'datatype-fmap_direction-PA_suffix-epi',
     'datatype-func_suffix-bold_task-rest']
 
 
@@ -47,7 +57,7 @@ def test_keygroups(tmp_path):
     assert len(complete_misfit_fmaps) == 0
 
     # Test that the correct key groups are found
-    key_groups = complete_bod.get_key_groups()
+    key_groups = complete_bod.get_abcd_keys()
     assert key_groups == COMPLETE_KEY_GROUPS
 
     # Test the incomplete
@@ -56,7 +66,7 @@ def test_keygroups(tmp_path):
     assert len(inc_misfit_fmaps) == 1
 
     # There will still be the same number of key groups
-    ikey_groups = ibod.get_key_groups()
+    ikey_groups = ibod.get_abcd_keys()
     assert ikey_groups == COMPLETE_KEY_GROUPS
 
 
@@ -72,7 +82,7 @@ def test_csv_creation(tmp_path):
     assert len(complete_misfit_fmaps) == 0
 
     # Test that the correct key groups are found
-    key_groups = complete_bod.get_key_groups()
+    key_groups = complete_bod.get_abcd_keys()
     assert key_groups == COMPLETE_KEY_GROUPS
 
     # Get the CSVs from the complete data
@@ -92,7 +102,7 @@ def test_csv_creation(tmp_path):
     assert len(inc_misfit_fmaps) == 1
 
     # There will still be the same number of key groups
-    ikey_groups = ibod.get_key_groups()
+    ikey_groups = ibod.get_abcd_keys()
     assert ikey_groups == COMPLETE_KEY_GROUPS
 
     # Get the CSVs from the inconsistent data
@@ -103,7 +113,7 @@ def test_csv_creation(tmp_path):
     assert ifiles_df.shape[0] == 21
 
     # But now there are more parameter groups
-    assert isummary_df.shape[0] == 11
+    assert isummary_df.shape[0] == 7 # 11
 
 
 def test_apply_csv_changes(tmp_path):
