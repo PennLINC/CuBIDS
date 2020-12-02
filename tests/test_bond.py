@@ -13,11 +13,13 @@ from bond import BOnD
 from bond.validator import (build_validator_call,
                        run_validator, parse_validator_output)
 from bond.metadata_merge import merge_without_overwrite
+from math import nan
 import csv
 import os
 import filecmp
 import nibabel as nb
 import numpy as np
+import pandas as pd
 
 
 TEST_DATA = pkgrf("bond", "testdata")
@@ -37,6 +39,70 @@ def get_data(tmp_path):
     data_root = tmp_path / "testdata"
     shutil.copytree(TEST_DATA, str(data_root))
     return data_root
+
+
+def test_csv_merge_changes(tmp_path):
+    data_root = get_data(tmp_path)
+    bod = BOnD(data_root / "inconsistent", use_datalad=True)
+    bod.datalad_save()
+    assert bod.is_datalad_clean()
+
+    csv_prefix = str(tmp_path / "originals")
+    bod.get_CSVs(csv_prefix)
+    summary_csv = csv_prefix + "_summary.csv"
+
+    # give csv with no changes (make sure it does nothing)
+    bod.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
+                          str(tmp_path / "originals_files.csv"),
+                          str(tmp_path / "unmodified"))
+
+    assert file_hash(tmp_path / "originals_summary.csv") == \
+           file_hash(tmp_path / "unmodified_summary.csv")
+
+    summary_df = pd.read_csv(summary_csv)
+
+    # Find the dwi with no FlipAngle
+    fa_nan_dwi_row, = np.flatnonzero(
+        np.isnan(summary_df.FlipAngle) &
+        summary_df.KeyGroup.str.fullmatch(
+            "acquisition-HASC55AP_datatype-dwi_suffix-dwi"))
+    # Find the dwi with and EchoTime ==
+    complete_dwi_row, = np.flatnonzero(
+        summary_df.KeyGroup.str.fullmatch(
+            "acquisition-HASC55AP_datatype-dwi_suffix-dwi") &
+        (summary_df.FlipAngle == 90.) &
+        (summary_df.EchoTime > 0.05))
+    cant_merge_echotime_dwi_row, = np.flatnonzero(
+        summary_df.KeyGroup.str.fullmatch(
+            "acquisition-HASC55AP_datatype-dwi_suffix-dwi") &
+        (summary_df.FlipAngle == 90.) &
+        (summary_df.EchoTime < 0.05))
+
+    # Set a legal MergeInto value. This effectively fills in data
+    # where there was previously as missing FlipAngle
+    summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[
+        complete_dwi_row]
+
+    valid_csv_prefix = csv_prefix + "_valid"
+    summary_df.to_csv(valid_csv_prefix + "_summary.csv", index=False)
+
+    bod.apply_csv_changes(valid_csv_prefix + "_summary.csv",
+                          str(tmp_path / "originals_files.csv"),
+                          str(tmp_path / "ok_modified"))
+
+    assert not file_hash(tmp_path / "originals_summary.csv") == \
+           file_hash(tmp_path / "ok_modified_summary.csv")
+
+    # Add an illegal merge to MergeInto
+    summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
+        complete_dwi_row]
+    invalid_csv_file = csv_prefix + "_invalid_summary.csv"
+    summary_df.to_csv(valid_csv_prefix + "_invalid_summary.csv", index=False)
+
+    with pytest.raises(Exception):
+        bod.apply_csv_changes(invalid_csv_file,
+                              str(tmp_path / "originals_files.csv"),
+                              str(tmp_path / "ok_modified"))
 
 
 def test_merge_without_overwrite():
@@ -436,33 +502,4 @@ def test_detect_unique_parameter_sets(bids_data):
 
     assert len(true_combinations) == len(combinations)
 
-
-def test_rename_files(tmp_path):
-    data_root = tmp_path / "testdata"
-    shutil.copytree(TEST_DATA, str(data_root))
-    data_root = str(data_root / "complete")
-    my_bond = bond.BOnD(data_root)
-
-    original_suffix = "_run-01_bold"
-    renamed_suffix = "_acq-multiband_run-01_bold"
-
-    # Show that there are none of these files already there
-    assert not glob("*" + renamed_suffix + "*")
-
-    # Actually do the renaming
-    my_bond.rename_files(original_suffix, renamed_suffix)
-
-    # Show that these files are now there
-    assert not glob("*" + renamed_suffix + "*")
-
-
-def test_fieldmap_exists(bids_data):
-    ok_data_root = op.join(bids_data + "/complete/fieldmaps")
-    not_ok_data_root = op.join(bids_data + "/incomplete/fieldmaps")
-
-    ok_bond = bond.BOnD(ok_data_root)
-    assert ok_bond.fieldmaps_ok()
-
-    not_ok_bond = bond.BOnD(not_ok_data_root)
-    assert not not_ok_bond.fieldmaps_ok()
 """

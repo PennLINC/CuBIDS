@@ -10,20 +10,9 @@ import numpy as np
 import pandas as pd
 import datalad.api as dlapi
 from tqdm import tqdm
-
+from .constants import ID_VARS, NON_KEY_ENTITIES, IMAGING_PARAMS
+from .metadata_merge import check_merging_operations
 bids.config.set_option('extension_initial_dot', True)
-
-ID_VARS = set(["KeyGroup", "ParamGroup", "FilePath"])
-NON_KEY_ENTITIES = set(["subject", "session", "extension"])
-# Multi-dimensional keys SliceTiming
-IMAGING_PARAMS = set([
-    "ParallelReductionFactorInPlane", "ParallelAcquisitionTechnique",
-    "ParallelAcquisitionTechnique", "PartialFourier", "PhaseEncodingDirection",
-    "EffectiveEchoSpacing", "TotalReadoutTime", "EchoTime",
-    "SliceEncodingDirection", "DwellTime", "FlipAngle",
-    "MultibandAccelerationFactor", "RepetitionTime",
-    "VolumeTiming", "NumberOfVolumesDiscardedByScanner",
-    "NumberOfVolumesDiscardedByUser"])
 
 
 class BOnD(object):
@@ -101,16 +90,24 @@ class BOnD(object):
             ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
-    def apply_csv_changes(self, og_prefix, new_prefix):
+    def apply_csv_changes(self, summary_csv, files_csv, new_prefix,
+                          raise_on_error=True):
         # reset lists of old and new filenames
         self.old_filenames = []
         self.new_filenames = []
 
-        files_df = pd.read_csv(og_prefix + '_files.csv')
-        summary_df = pd.read_csv(og_prefix + '_summary.csv')
+        files_df = pd.read_csv(files_csv)
+        summary_df = pd.read_csv(summary_csv)
+
+        # Check that the MergeInto column only contains valid merges
+        ok_merges = check_merging_operations(
+            summary_csv, raise_on_error=raise_on_error)
+        merge_commands = []
+        for source_id, dest_id in ok_merges:
+            pass
+        merge_command = "; ".join(merge_commands)
 
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
-
         # return if nothing to change
         if len(change_keys_df) > 0:
 
