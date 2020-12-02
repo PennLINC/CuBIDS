@@ -12,7 +12,8 @@ import pytest
 from bond import BOnD
 from bond.validator import (build_validator_call,
                        run_validator, parse_validator_output)
-from bond.metadata_merge import merge_without_overwrite
+from bond.metadata_merge import (
+    merge_without_overwrite, merge_json_into_json)
 from math import nan
 import csv
 import os
@@ -41,7 +42,36 @@ def get_data(tmp_path):
     return data_root
 
 
-def test_csv_merge_changes(tmp_path):
+def test_ok_json_merge(tmp_path):
+    data_root = get_data(tmp_path)
+
+    # Test that a successful merge can happen
+    dest_json = data_root / "inconsistent" / "sub-02" / \
+        "ses-phdiff" / "dwi" / "sub-02_ses-phdiff_acq-HASC55AP_dwi.json"
+    orig_dest_json_content = _get_json_string(dest_json)
+    source_json = data_root / "inconsistent" / "sub-03" / \
+        "ses-phdiff" / "dwi" / "sub-03_ses-phdiff_acq-HASC55AP_dwi.json"
+
+    merge_return = merge_json_into_json(source_json, dest_json)
+    assert merge_return == 0
+    assert not _get_json_string(dest_json) == orig_dest_json_content
+
+
+def test_bad_json_merge(tmp_path):
+    data_root = get_data(tmp_path)
+
+    # Test that a successful merge can happen
+    dest_json = data_root / "inconsistent" / "sub-02" / \
+        "ses-phdiff" / "dwi" / "sub-02_ses-phdiff_acq-HASC55AP_dwi.json"
+    orig_dest_json_content = _get_json_string(dest_json)
+    invalid_source_json = data_root / "inconsistent" / "sub-01" / \
+        "ses-phdiff" / "dwi" / "sub-01_ses-phdiff_acq-HASC55AP_dwi.json"
+
+    assert merge_json_into_json(invalid_source_json, dest_json) > 0
+    assert _get_json_string(dest_json) == orig_dest_json_content
+
+
+def est_csv_merge_changes(tmp_path):
     data_root = get_data(tmp_path)
     bod = BOnD(data_root / "inconsistent", use_datalad=True)
     bod.datalad_save()
@@ -230,7 +260,7 @@ def test_csv_creation(tmp_path):
     assert ifiles_df.shape[0] == 21
 
     # But now there are more parameter groups
-    assert isummary_df.shape[0] == 11
+    assert isummary_df.shape[0] == 12
 
 
 def test_apply_csv_changes(tmp_path):
@@ -249,7 +279,8 @@ def test_apply_csv_changes(tmp_path):
     complete_bond.get_CSVs(str(tmp_path / "originals"))
 
     # give csv with no changes (make sure it does nothing)
-    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
+    complete_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
+                                    str(tmp_path / "originals_files.csv"),
                                     str(tmp_path / "modified1"))
 
     og_path = tmp_path / "originals_summary.csv"
@@ -264,7 +295,8 @@ def test_apply_csv_changes(tmp_path):
 
     # edit the csv, add a RenameKeyGroup
     _edit_csv(str(tmp_path / "originals_summary.csv"))
-    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
+    complete_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
+                                    str(tmp_path / "originals_files.csv"),
                                     str(tmp_path / "modified2"))
 
     mod2_path = tmp_path / "modified2_summary.csv"

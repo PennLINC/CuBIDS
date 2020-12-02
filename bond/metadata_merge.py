@@ -2,6 +2,7 @@
 import json
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 from math import isnan, nan
 from .constants import IMAGING_PARAMS
 DIRECT_IMAGING_PARAMS = IMAGING_PARAMS - set(["NSliceTimes"])
@@ -83,9 +84,10 @@ def merge_without_overwrite(source_meta, dest_meta, raise_on_error=False):
     if not source_meta.get("NSliceTimes") == dest_meta.get("NSliceTimes"):
         if raise_on_error:
             raise Exception("Value for NSliceTimes is %d in destination "
-                                    "but %d in source"
-                                    % (source_meta.get("NSliceTimes"),
-                                       source_meta.get("NSliceTimes")))
+                            "but %d in source"
+                            % (source_meta.get("NSliceTimes"),
+                            source_meta.get("NSliceTimes")))
+        return {}
     for parameter in DIRECT_IMAGING_PARAMS:
         source_value = source_meta.get(parameter, nan)
         dest_value = dest_meta.get(parameter, nan)
@@ -115,16 +117,19 @@ def merge_json_into_json(from_file, to_file,
 
     with open(to_file, "r") as tof:
         dest_metadata = json.load(tof)
+    orig_dest_metadata = deepcopy(dest_metadata)
 
     merged_metadata = merge_without_overwrite(
         source_metadata, dest_metadata)
+
     if not merged_metadata:
         if exception_on_error:
             raise Exception("Unable to perform metadata merge")
         return 255
 
     # Only write if the data has changed
-    if not merged_metadata == dest_metadata:
+    if not merged_metadata == orig_dest_metadata:
+        print("OVERWRITING", to_file)
         with open(to_file, "w") as tofw:
             json.dump(merged_metadata, tofw, indent=4)
 

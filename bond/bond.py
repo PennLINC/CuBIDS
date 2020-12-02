@@ -102,12 +102,25 @@ class BOnD(object):
         # Check that the MergeInto column only contains valid merges
         ok_merges = check_merging_operations(
             summary_csv, raise_on_error=raise_on_error)
+
         merge_commands = []
         for source_id, dest_id in ok_merges:
-            pass
-        merge_command = "; ".join(merge_commands)
+            dest_files = files_df.loc[
+                (files_df[["ParamGroup", "KeyGroup"]] == dest_id).all(1)]
+            source_files = files_df.loc[
+                (files_df[["ParamGroup", "KeyGroup"]] == source_id).all(1)]
 
+            # Get a source json file
+            source_json = source_files.iloc[0].FilePath
+            for dest_json in dest_files.FilePath:
+                merge_commands.append(
+                    'bids-sidecar-merge %s %s'
+                    % (source_json, img_to_json(dest_json)))
+        print("Performing %d merges" % len(merge_commands))
+
+        # Now do the file renaming
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
+        move_ops = []
         # return if nothing to change
         if len(change_keys_df) > 0:
 
@@ -146,15 +159,19 @@ class BOnD(object):
                     self.change_filename(file_path, new_entities)
 
             # create string of mv command ; mv command for dlapi.run
-            move_ops = []
             for from_file, to_file in zip(self.old_filenames,
                                           self.new_filenames):
                 move_ops.append('mv %s %s' % (from_file, to_file))
-                mv_cmd = ' ; '.join(move_ops)
+        print("Performing %d renamings" % len(move_ops))
 
-            self.datalad_handle.run(mv_cmd)
+        full_cmd = "; ".join(move_ops + merge_commands)
+        if full_cmd:
+            print("RUNNING:\n\n", full_cmd)
+            self.datalad_handle.run(full_cmd)
+            self.layout = bids.BIDSLayout(self.path, validate=False)
+        else:
+            print("Not running any commands")
 
-        self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_prefix)
 
     def change_filename(self, filepath, entities):
@@ -574,3 +591,7 @@ def _get_file_params(files, layout):
         dict_files_params[path] = example_data
 
     return dict_files_params
+
+
+def img_to_json(img_path):
+    return img_path.replace(".nii.gz", "").replace(".nii", "") + ".json"
