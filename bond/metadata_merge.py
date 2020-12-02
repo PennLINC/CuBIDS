@@ -112,6 +112,8 @@ def print_merges(merge_list):
 
 def merge_json_into_json(from_file, to_file,
                          exception_on_error=False):
+    print("Merging imaging metadata from %s to %s"
+          % (from_file, to_file))
     with open(from_file, "r") as fromf:
         source_metadata = json.load(fromf)
 
@@ -120,11 +122,9 @@ def merge_json_into_json(from_file, to_file,
     orig_dest_metadata = deepcopy(dest_metadata)
 
     merged_metadata = merge_without_overwrite(
-        source_metadata, dest_metadata)
+        source_metadata, dest_metadata, raise_on_error=exception_on_error)
 
     if not merged_metadata:
-        if exception_on_error:
-            raise Exception("Unable to perform metadata merge")
         return 255
 
     # Only write if the data has changed

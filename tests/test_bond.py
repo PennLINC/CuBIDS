@@ -21,6 +21,7 @@ import filecmp
 import nibabel as nb
 import numpy as np
 import pandas as pd
+import subprocess
 
 
 TEST_DATA = pkgrf("bond", "testdata")
@@ -57,6 +58,22 @@ def test_ok_json_merge(tmp_path):
     assert not _get_json_string(dest_json) == orig_dest_json_content
 
 
+def test_ok_json_merge_cli(tmp_path):
+    data_root = get_data(tmp_path)
+
+    # Test that a successful merge can happen
+    dest_json = data_root / "inconsistent" / "sub-02" / \
+        "ses-phdiff" / "dwi" / "sub-02_ses-phdiff_acq-HASC55AP_dwi.json"
+    orig_dest_json_content = _get_json_string(dest_json)
+    source_json = data_root / "inconsistent" / "sub-03" / \
+        "ses-phdiff" / "dwi" / "sub-03_ses-phdiff_acq-HASC55AP_dwi.json"
+
+    merge_proc = subprocess.run(
+        ['bids-sidecar-merge', str(source_json), str(dest_json)])
+    assert merge_proc.returncode == 0
+    assert not _get_json_string(dest_json) == orig_dest_json_content
+
+
 def test_bad_json_merge(tmp_path):
     data_root = get_data(tmp_path)
 
@@ -71,27 +88,44 @@ def test_bad_json_merge(tmp_path):
     assert _get_json_string(dest_json) == orig_dest_json_content
 
 
-def est_csv_merge_changes(tmp_path):
+def test_bad_json_merge_cli(tmp_path):
+    data_root = get_data(tmp_path)
+
+    # Test that a successful merge can happen
+    dest_json = data_root / "inconsistent" / "sub-02" / \
+        "ses-phdiff" / "dwi" / "sub-02_ses-phdiff_acq-HASC55AP_dwi.json"
+    orig_dest_json_content = _get_json_string(dest_json)
+    invalid_source_json = data_root / "inconsistent" / "sub-01" / \
+        "ses-phdiff" / "dwi" / "sub-01_ses-phdiff_acq-HASC55AP_dwi.json"
+
+    merge_proc = subprocess.run(
+        ['bids-sidecar-merge', str(invalid_source_json), str(dest_json)])
+    assert merge_proc.returncode > 0
+    assert _get_json_string(dest_json) == orig_dest_json_content
+
+
+def test_csv_merge_changes(tmp_path):
     data_root = get_data(tmp_path)
     bod = BOnD(data_root / "inconsistent", use_datalad=True)
     bod.datalad_save()
     assert bod.is_datalad_clean()
 
+    # Get an initial grouping summary and files list
     csv_prefix = str(tmp_path / "originals")
     bod.get_CSVs(csv_prefix)
-    summary_csv = csv_prefix + "_summary.csv"
+    original_summary_csv = csv_prefix + "_summary.csv"
+    original_files_csv = csv_prefix + "_files.csv"
 
     # give csv with no changes (make sure it does nothing)
-    bod.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
-                          str(tmp_path / "originals_files.csv"),
+    bod.apply_csv_changes(original_summary_csv,
+                          original_files_csv,
                           str(tmp_path / "unmodified"))
 
-    assert file_hash(tmp_path / "originals_summary.csv") == \
+    assert file_hash(original_summary_csv) == \
            file_hash(tmp_path / "unmodified_summary.csv")
 
-    summary_df = pd.read_csv(summary_csv)
-
     # Find the dwi with no FlipAngle
+    summary_df = pd.read_csv(original_summary_csv)
     fa_nan_dwi_row, = np.flatnonzero(
         np.isnan(summary_df.FlipAngle) &
         summary_df.KeyGroup.str.fullmatch(
@@ -113,21 +147,21 @@ def est_csv_merge_changes(tmp_path):
     summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[
         complete_dwi_row]
 
-    valid_csv_prefix = csv_prefix + "_valid"
-    summary_df.to_csv(valid_csv_prefix + "_summary.csv", index=False)
+    valid_csv_file = csv_prefix + "_valid_summary.csv"
+    summary_df.to_csv(valid_csv_file, index=False)
 
-    bod.apply_csv_changes(valid_csv_prefix + "_summary.csv",
-                          str(tmp_path / "originals_files.csv"),
+    bod.apply_csv_changes(valid_csv_file,
+                          original_files_csv,
                           str(tmp_path / "ok_modified"))
 
-    assert not file_hash(tmp_path / "originals_summary.csv") == \
+    assert not file_hash(original_summary_csv) == \
            file_hash(tmp_path / "ok_modified_summary.csv")
 
     # Add an illegal merge to MergeInto
     summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
         complete_dwi_row]
     invalid_csv_file = csv_prefix + "_invalid_summary.csv"
-    summary_df.to_csv(valid_csv_prefix + "_invalid_summary.csv", index=False)
+    summary_df.to_csv(invalid_csv_file, index=False)
 
     with pytest.raises(Exception):
         bod.apply_csv_changes(invalid_csv_file,
@@ -492,46 +526,3 @@ def test_validator(tmp_path):
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
     assert parsed.shape[1] > 1
-
-
-"""
-def test_fill_metadata(tmp_path):
-    data_root = tmp_path / "testdata"
-    shutil.copytree(TEST_DATA, str(data_root))
-    data_root = op.join(bids_data + "/incomplete/fill-metadata")
-    my_bond = bond.BOnD(data_root)
-    # fill_metadata should add metadata elements to the json sidecar
-    my_bond.fill_metadata(pattern="*acq-multiband_bold.nii.gz",
-                          metadata={"EchoTime": 0.005})
-    # get_metadata shold return a list of dictionaries that contain
-    # metadata for
-    # scans matching `pattern`
-    for metadata in my_bond.get_metadata(pattern="*acq-multiband_bold"):
-        assert metadata['EchoTime'] == 0.005
-
-    # fill_metadata should add metadata elements to the json sidecar
-    my_bond.fill_metadata(pattern="*acq-multiband_bold.nii.gz",
-                          metadata={"EchoTime": 0.009})
-    # get_metadata shold return a list of dictionaries that contain
-    # metadata for
-    # scans matching `pattern`
-    for metadata in my_bond.get_metadata(pattern="*acq-multiband_bold"):
-        assert metadata['EchoTime'] == 0.009
-
-
-def test_detect_unique_parameter_sets(bids_data):
-    data_root = op.join(bids_data + "/incomplete/multi_param_sets")
-    my_bond = bond.BOnD(data_root)
-
-    # Ground truth groups
-    true_combinations = [
-        {"EchoTime": 0.005, "PhaseEncodingDirection": "j"},
-        {"EchoTime": 0.005, "PhaseEncodingDirection": "j-"}
-    ]
-
-    # Find param sets from the data on
-    combinations = my_bond.find_param_sets(pattern="*_bold")
-
-    assert len(true_combinations) == len(combinations)
-
-"""

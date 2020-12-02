@@ -112,8 +112,9 @@ def bids_sidecar_merge():
                         help='destination json. This file will have data '
                         'from `from_json` copied into it.')
     opts = parser.parse_args()
-
-    sys.exit(merge_json_into_json(opts.from_json, opts.to_json))
+    merge_status = merge_json_into_json(opts.from_json, opts.to_json,
+                                        exception_on_error=False)
+    sys.exit(merge_status)
 
 
 def bond_group():
@@ -241,10 +242,6 @@ def bond_apply():
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
-
-
-def param_group_merge():
-    pass
 
 
 def bond_datalad_save():

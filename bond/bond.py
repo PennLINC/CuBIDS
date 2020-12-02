@@ -111,7 +111,7 @@ class BOnD(object):
                 (files_df[["ParamGroup", "KeyGroup"]] == source_id).all(1)]
 
             # Get a source json file
-            source_json = source_files.iloc[0].FilePath
+            source_json = img_to_json(source_files.iloc[0].FilePath)
             for dest_json in dest_files.FilePath:
                 merge_commands.append(
                     'bids-sidecar-merge %s %s'
