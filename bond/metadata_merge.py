@@ -86,7 +86,7 @@ def merge_without_overwrite(source_meta, dest_meta, raise_on_error=False):
             raise Exception("Value for NSliceTimes is %d in destination "
                             "but %d in source"
                             % (source_meta.get("NSliceTimes"),
-                            source_meta.get("NSliceTimes")))
+                               source_meta.get("NSliceTimes")))
         return {}
     for parameter in DIRECT_IMAGING_PARAMS:
         source_value = source_meta.get(parameter, nan)
