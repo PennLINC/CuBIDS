@@ -212,9 +212,10 @@ def bond_apply():
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
         if not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.apply_csv_changes(str(opts.edited_sumary_csv),
+        bod.apply_csv_changes(str(opts.edited_summary_csv),
                               str(opts.files_csv),
-                              str(opts.new_csv_prefix))
+                              str(opts.new_csv_prefix),
+                              raise_on_error=False)
         sys.exit(0)
 
     # Run it through a container
@@ -226,7 +227,8 @@ def bond_apply():
         opts.edited_csv_prefix.parent.absolute()) + ":/in_files_csv:ro"
     output_csv_dir_link = str(
         opts.new_csv_prefix.parent.absolute()) + ":/out_csv:rw"
-    linked_input_summary_csv = "/in_summary_csv/" + opts.edited_csv_prefix.name
+    linked_input_summary_csv = "/in_summary_csv/" \
+        + opts.edited_summary_csv.name
     linked_input_files_csv = "/in_files_csv/" + opts.files_csv.name
     linked_output_prefix = "/out_csv/" + opts.new_csv_prefix.name
     if container_type == 'docker':

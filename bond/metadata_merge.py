@@ -33,6 +33,10 @@ def check_merging_operations(action_csv, raise_on_error=False):
         dest_metadata = row_needs_merge.to_dict()
         source_row = actions.loc[
             (actions[["ParamGroup", "KeyGroup"]] == source_param_key).all(1)]
+
+        if source_param_key[0] == 0:
+            print("going to delete ", dest_param_key)
+            continue
         if not source_row.shape[0] == 1:
             raise Exception("Could not identify a unique source group")
         source_metadata = source_row.iloc[0].to_dict()
