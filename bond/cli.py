@@ -227,7 +227,8 @@ def bond_apply():
         opts.edited_csv_prefix.parent.absolute()) + ":/in_files_csv:ro"
     output_csv_dir_link = str(
         opts.new_csv_prefix.parent.absolute()) + ":/out_csv:rw"
-    linked_input_summary_csv = "/in_summary_csv/" + opts.edited_summary_csv.name
+    linked_input_summary_csv = "/in_summary_csv/" \
+        + opts.edited_summary_csv.name
     linked_input_files_csv = "/in_files_csv/" + opts.files_csv.name
     linked_output_prefix = "/out_csv/" + opts.new_csv_prefix.name
     if container_type == 'docker':
