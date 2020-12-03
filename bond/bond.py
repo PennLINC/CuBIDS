@@ -9,11 +9,12 @@ from bids.utils import listify
 import numpy as np
 import pandas as pd
 import datalad.api as dlapi
+import ipdb
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES, IMAGING_PARAMS
 from .metadata_merge import check_merging_operations
 bids.config.set_option('extension_initial_dot', True)
-import ipdb
+
 
 class BOnD(object):
 
@@ -269,24 +270,22 @@ class BOnD(object):
         self.new_filenames.append(new_path)
 
         # now also rename json file
-        bidsfile = self.layout.get_file(filepath, scope='all')
-        try:
-            bidsjson_file = bidsfile.get_associations()
-        except Exception as e: 
-            # currently failing bidsfile=NONE
-            ipdb.set_trace()
-
-        if bidsjson_file:
-            json_file = [x for x in bidsjson_file if 'json' in x.filename]
-        else:
-            print("NO JSON FILES FOUND IN ASSOCIATIONS")
-        if len(json_file) == 1:
-            json_file = json_file[0]
+        # bidsfile = self.layout.get_file(filepath, scope='all')
+        json_file = img_to_json(filepath)
+        # bidsjson_file = bidsfile.get_associations()
+        # currently failing bidsfile=NONE
+        
+        # if bidsjson_file:
+        #    json_file = [x for x in bidsjson_file if 'json' in x.filename]
+        # else:
+        #    print("NO JSON FILES FOUND IN ASSOCIATIONS")
+        #if len(json_file) == 1:
+        if Path(json_file).exists():
             new_json_path = new_path_front + "_" + new_filename + ".json"
-            self.old_filenames.append(json_file.path)
+            self.old_filenames.append(json_file)
             self.new_filenames.append(new_json_path)
-        else:
-            print("FOUND IRREGULAR NUMBER OF JSONS")
+        #else:
+        #    print("FOUND IRREGULAR NUMBER OF JSONS")
 
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
