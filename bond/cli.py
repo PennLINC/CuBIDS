@@ -17,6 +17,8 @@ GIT_CONFIG = os.path.join(os.path.expanduser("~"), '.gitconfig')
 
 
 def bond_validate():
+    '''Command Line Interface function for running the bids validator.'''
+
     parser = argparse.ArgumentParser(
         description="bond-validate: Wrapper around the official "
         "BIDS Validator",
@@ -118,6 +120,8 @@ def bids_sidecar_merge():
 
 
 def bond_group():
+    '''Command Line Interface function for finding key and param groups.'''
+
     parser = argparse.ArgumentParser(
         description="bond-group: find key and parameter groups in BIDS",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -172,6 +176,8 @@ def bond_group():
 
 
 def bond_apply():
+    ''' Command Line Interface funciton for applying the csv changes.'''
+
     parser = argparse.ArgumentParser(
         description="bond-apply: apply the changes specified in a csv "
         "to a BIDS directory",
@@ -249,6 +255,8 @@ def bond_apply():
 
 
 def bond_datalad_save():
+    ''' Command Line Interfcae function for performing datalad save.'''
+
     parser = argparse.ArgumentParser(
         description="bond-datalad-save: perform a DataLad save on a BIDS "
         "directory",
@@ -291,6 +299,8 @@ def bond_datalad_save():
 
 
 def bond_undo():
+    ''' Command Line Interface function for reverting a commit.'''
+
     parser = argparse.ArgumentParser(
         description="bond-undo: revert most recent commit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -328,6 +338,8 @@ def bond_undo():
 
 
 def bond_remove_metadata_fields():
+    ''' Command Line Interface function for deteling fields from metadata.'''
+
     parser = argparse.ArgumentParser(
         description="bond-remove-metadata-fields: delete fields from "
         "metadata",
@@ -372,6 +384,8 @@ def bond_remove_metadata_fields():
 
 
 def bond_print_metadata_fields():
+    '''Command Line Interface function that prints unique metadata fields.'''
+
     parser = argparse.ArgumentParser(
         description="bond-print-metadata-fields: print all unique "
         "metadata fields",
@@ -411,6 +425,7 @@ def bond_print_metadata_fields():
 
 
 def _get_container_type(image_name):
+    '''Gets and returns the container type.'''
 
     # If it's a file on disk, it must be a singularity image
     if Path(image_name).exists():
