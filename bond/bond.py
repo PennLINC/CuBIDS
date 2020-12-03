@@ -13,7 +13,7 @@ from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES, IMAGING_PARAMS
 from .metadata_merge import check_merging_operations
 bids.config.set_option('extension_initial_dot', True)
-
+import ipdb
 
 class BOnD(object):
 
@@ -270,8 +270,12 @@ class BOnD(object):
 
         # now also rename json file
         bidsfile = self.layout.get_file(filepath, scope='all')
+        try:
+            bidsjson_file = bidsfile.get_associations()
+        except Exception as e: 
+            # currently failing bidsfile=NONE
+            ipdb.set_trace()
 
-        bidsjson_file = bidsfile.get_associations()
         if bidsjson_file:
             json_file = [x for x in bidsjson_file if 'json' in x.filename]
         else:
