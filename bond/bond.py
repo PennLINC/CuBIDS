@@ -10,20 +10,9 @@ import numpy as np
 import pandas as pd
 import datalad.api as dlapi
 from tqdm import tqdm
-
+from .constants import ID_VARS, NON_KEY_ENTITIES, IMAGING_PARAMS
+from .metadata_merge import check_merging_operations
 bids.config.set_option('extension_initial_dot', True)
-
-ID_VARS = set(["KeyGroup", "ParamGroup", "FilePath"])
-NON_KEY_ENTITIES = set(["subject", "session", "extension"])
-# Multi-dimensional keys SliceTiming
-IMAGING_PARAMS = set([
-    "ParallelReductionFactorInPlane", "ParallelAcquisitionTechnique",
-    "ParallelAcquisitionTechnique", "PartialFourier", "PhaseEncodingDirection",
-    "EffectiveEchoSpacing", "TotalReadoutTime", "EchoTime",
-    "SliceEncodingDirection", "DwellTime", "FlipAngle",
-    "MultibandAccelerationFactor", "RepetitionTime",
-    "VolumeTiming", "NumberOfVolumesDiscardedByScanner",
-    "NumberOfVolumesDiscardedByUser"])
 
 
 class BOnD(object):
@@ -102,7 +91,8 @@ class BOnD(object):
             ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
-    def apply_csv_changes(self, orig_prefix, new_prefix):
+    def apply_csv_changes(self, summary_csv, files_csv, new_prefix,
+                          raise_on_error=True):
         """Applies changes documented in the edited _summary csv
         and generates the new csv files.
 
@@ -124,16 +114,35 @@ class BOnD(object):
                 Path prefix and file stem for the new summary and
                 files csvs.
         """
-
         # reset lists of old and new filenames
         self.old_filenames = []
         self.new_filenames = []
 
-        files_df = pd.read_csv(orig_prefix + '_files.csv')
-        summary_df = pd.read_csv(orig_prefix + '_summary.csv')
+        files_df = pd.read_csv(files_csv)
+        summary_df = pd.read_csv(summary_csv)
 
+        # Check that the MergeInto column only contains valid merges
+        ok_merges = check_merging_operations(
+            summary_csv, raise_on_error=raise_on_error)
+
+        merge_commands = []
+        for source_id, dest_id in ok_merges:
+            dest_files = files_df.loc[
+                (files_df[["ParamGroup", "KeyGroup"]] == dest_id).all(1)]
+            source_files = files_df.loc[
+                (files_df[["ParamGroup", "KeyGroup"]] == source_id).all(1)]
+
+            # Get a source json file
+            source_json = img_to_json(source_files.iloc[0].FilePath)
+            for dest_json in dest_files.FilePath:
+                merge_commands.append(
+                    'bids-sidecar-merge %s %s'
+                    % (source_json, img_to_json(dest_json)))
+        print("Performing %d merges" % len(merge_commands))
+
+        # Now do the file renaming
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
-
+        move_ops = []
         # return if nothing to change
         if len(change_keys_df) > 0:
 
@@ -172,15 +181,19 @@ class BOnD(object):
                     self.change_filename(file_path, new_entities)
 
             # create string of mv command ; mv command for dlapi.run
-            move_ops = []
             for from_file, to_file in zip(self.old_filenames,
                                           self.new_filenames):
                 move_ops.append('mv %s %s' % (from_file, to_file))
-                mv_cmd = ' ; '.join(move_ops)
+        print("Performing %d renamings" % len(move_ops))
 
-            self.datalad_handle.run(mv_cmd)
+        full_cmd = "; ".join(move_ops + merge_commands)
+        if full_cmd:
+            print("RUNNING:\n\n", full_cmd)
+            self.datalad_handle.run(full_cmd)
+            self.layout = bids.BIDSLayout(self.path, validate=False)
+        else:
+            print("Not running any commands")
 
-        self.layout = bids.BIDSLayout(self.path, validate=False)
         self.get_CSVs(new_prefix)
 
     def change_filename(self, filepath, entities):
@@ -603,3 +616,7 @@ def _order_columns(df):
     if "FilePath" in cols:
         new_columns.append("FilePath")
     return df[new_columns]
+
+
+def img_to_json(img_path):
+    return img_path.replace(".nii.gz", "").replace(".nii", "") + ".json"

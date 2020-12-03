@@ -4,6 +4,7 @@
 import sys
 sys.path.append("..")
 import shutil
+from copy import deepcopy
 import hashlib
 import json
 from pkg_resources import resource_filename as pkgrf
@@ -11,12 +12,17 @@ import pytest
 from bond import BOnD
 from bond.validator import (build_validator_call,
                        run_validator, parse_validator_output)
+from bond.metadata_merge import (
+    merge_without_overwrite, merge_json_into_json)
+from math import nan
 import subprocess
 import csv
 import os
 import filecmp
 import nibabel as nb
 import numpy as np
+import pandas as pd
+import subprocess
 
 
 TEST_DATA = pkgrf("bond", "testdata")
@@ -36,6 +42,191 @@ def get_data(tmp_path):
     data_root = tmp_path / "testdata"
     shutil.copytree(TEST_DATA, str(data_root))
     return data_root
+
+
+def test_ok_json_merge(tmp_path):
+    data_root = get_data(tmp_path)
+
+    # Test that a successful merge can happen
+    dest_json = data_root / "inconsistent" / "sub-02" / \
+        "ses-phdiff" / "dwi" / "sub-02_ses-phdiff_acq-HASC55AP_dwi.json"
+    orig_dest_json_content = _get_json_string(dest_json)
+    source_json = data_root / "inconsistent" / "sub-03" / \
+        "ses-phdiff" / "dwi" / "sub-03_ses-phdiff_acq-HASC55AP_dwi.json"
+
+    merge_return = merge_json_into_json(source_json, dest_json)
+    assert merge_return == 0
+    assert not _get_json_string(dest_json) == orig_dest_json_content
+
+
+def test_ok_json_merge_cli(tmp_path):
+    data_root = get_data(tmp_path)
+
+    # Test that a successful merge can happen
+    dest_json = data_root / "inconsistent" / "sub-02" / \
+        "ses-phdiff" / "dwi" / "sub-02_ses-phdiff_acq-HASC55AP_dwi.json"
+    orig_dest_json_content = _get_json_string(dest_json)
+    source_json = data_root / "inconsistent" / "sub-03" / \
+        "ses-phdiff" / "dwi" / "sub-03_ses-phdiff_acq-HASC55AP_dwi.json"
+
+    merge_proc = subprocess.run(
+        ['bids-sidecar-merge', str(source_json), str(dest_json)])
+    assert merge_proc.returncode == 0
+    assert not _get_json_string(dest_json) == orig_dest_json_content
+
+
+def test_bad_json_merge(tmp_path):
+    data_root = get_data(tmp_path)
+
+    # Test that a successful merge can happen
+    dest_json = data_root / "inconsistent" / "sub-02" / \
+        "ses-phdiff" / "dwi" / "sub-02_ses-phdiff_acq-HASC55AP_dwi.json"
+    orig_dest_json_content = _get_json_string(dest_json)
+    invalid_source_json = data_root / "inconsistent" / "sub-01" / \
+        "ses-phdiff" / "dwi" / "sub-01_ses-phdiff_acq-HASC55AP_dwi.json"
+
+    assert merge_json_into_json(invalid_source_json, dest_json) > 0
+    assert _get_json_string(dest_json) == orig_dest_json_content
+
+
+def test_bad_json_merge_cli(tmp_path):
+    data_root = get_data(tmp_path)
+
+    # Test that a successful merge can happen
+    dest_json = data_root / "inconsistent" / "sub-02" / \
+        "ses-phdiff" / "dwi" / "sub-02_ses-phdiff_acq-HASC55AP_dwi.json"
+    orig_dest_json_content = _get_json_string(dest_json)
+    invalid_source_json = data_root / "inconsistent" / "sub-01" / \
+        "ses-phdiff" / "dwi" / "sub-01_ses-phdiff_acq-HASC55AP_dwi.json"
+
+    merge_proc = subprocess.run(
+        ['bids-sidecar-merge', str(invalid_source_json), str(dest_json)])
+    assert merge_proc.returncode > 0
+    assert _get_json_string(dest_json) == orig_dest_json_content
+
+
+def test_csv_merge_changes(tmp_path):
+    data_root = get_data(tmp_path)
+    bod = BOnD(data_root / "inconsistent", use_datalad=True)
+    bod.datalad_save()
+    assert bod.is_datalad_clean()
+
+    # Get an initial grouping summary and files list
+    csv_prefix = str(tmp_path / "originals")
+    bod.get_CSVs(csv_prefix)
+    original_summary_csv = csv_prefix + "_summary.csv"
+    original_files_csv = csv_prefix + "_files.csv"
+
+    # give csv with no changes (make sure it does nothing)
+    bod.apply_csv_changes(original_summary_csv,
+                          original_files_csv,
+                          str(tmp_path / "unmodified"))
+
+    assert file_hash(original_summary_csv) == \
+           file_hash(tmp_path / "unmodified_summary.csv")
+
+    # Find the dwi with no FlipAngle
+    summary_df = pd.read_csv(original_summary_csv)
+    fa_nan_dwi_row, = np.flatnonzero(
+        np.isnan(summary_df.FlipAngle) &
+        summary_df.KeyGroup.str.fullmatch(
+            "acquisition-HASC55AP_datatype-dwi_suffix-dwi"))
+    # Find the dwi with and EchoTime ==
+    complete_dwi_row, = np.flatnonzero(
+        summary_df.KeyGroup.str.fullmatch(
+            "acquisition-HASC55AP_datatype-dwi_suffix-dwi") &
+        (summary_df.FlipAngle == 90.) &
+        (summary_df.EchoTime > 0.05))
+    cant_merge_echotime_dwi_row, = np.flatnonzero(
+        summary_df.KeyGroup.str.fullmatch(
+            "acquisition-HASC55AP_datatype-dwi_suffix-dwi") &
+        (summary_df.FlipAngle == 90.) &
+        (summary_df.EchoTime < 0.05))
+
+    # Set a legal MergeInto value. This effectively fills in data
+    # where there was previously as missing FlipAngle
+    summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[
+        complete_dwi_row]
+
+    valid_csv_file = csv_prefix + "_valid_summary.csv"
+    summary_df.to_csv(valid_csv_file, index=False)
+
+    bod.apply_csv_changes(valid_csv_file,
+                          original_files_csv,
+                          str(tmp_path / "ok_modified"))
+
+    assert not file_hash(original_summary_csv) == \
+           file_hash(tmp_path / "ok_modified_summary.csv")
+
+    # Add an illegal merge to MergeInto
+    summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
+        complete_dwi_row]
+    invalid_csv_file = csv_prefix + "_invalid_summary.csv"
+    summary_df.to_csv(invalid_csv_file, index=False)
+
+    with pytest.raises(Exception):
+        bod.apply_csv_changes(invalid_csv_file,
+                              str(tmp_path / "originals_files.csv"),
+                              str(tmp_path / "ok_modified"))
+
+
+def test_merge_without_overwrite():
+    meta1 = {
+        'ManualCheck': 1.0,
+        'RenameKeyGroup': np.nan,
+        'MergeInto': 2.0,
+        'KeyGroup': 'datatype-func_suffix-bold_task-rest',
+        'ParamGroup': 12,
+        'Counts': 2,
+        'DwellTime': 2.6e-06,
+        'EchoTime': 0.03,
+        'EffectiveEchoSpacing': 0.000580013,
+        'FieldmapKey00': 'acquisition-fMRI_datatype-fmap_direction-AP_fmap-epi_suffix-epi',
+        'FieldmapKey01': 'acquisition-fMRI_datatype-fmap_direction-PA_fmap-epi_run-1_suffix-epi',
+        'FieldmapKey02': 'acquisition-fMRI_datatype-fmap_direction-PA_fmap-epi_run-2_suffix-epi',
+        'FieldmapKey03': np.nan,
+        'FieldmapKey04': np.nan,
+        'FieldmapKey05': np.nan,
+        'FieldmapKey06': np.nan,
+        'FieldmapKey07': np.nan,
+        'FlipAngle': 31.0,
+        'IntendedForKey00': np.nan,
+        'IntendedForKey01': np.nan,
+        'IntendedForKey02': np.nan,
+        'IntendedForKey03': np.nan,
+        'IntendedForKey04': np.nan,
+        'IntendedForKey05': np.nan,
+        'IntendedForKey06': np.nan,
+        'IntendedForKey07': np.nan,
+        'IntendedForKey08': np.nan,
+        'IntendedForKey09': np.nan,
+        'MultibandAccelerationFactor': 6.0,
+        'NSliceTimes': 60,
+        'ParallelReductionFactorInPlane': np.nan,
+        'PartialFourier': 1.0,
+        'PhaseEncodingDirection': 'j-',
+        'RepetitionTime': 0.8,
+        'TotalReadoutTime': 0.0481411}
+
+    # Set a conflicting imaging param in the dest group
+    meta_overwrite = deepcopy(meta1)
+    meta_overwrite["FlipAngle"] = 62.0
+    bad_merge = merge_without_overwrite(meta1, meta_overwrite)
+    assert not bad_merge
+
+    # Suppose "PartialFourier" is missing in the dest group
+    meta_ok = deepcopy(meta1)
+    meta_ok["PartialFourier"] = np.nan
+    ok_merge = merge_without_overwrite(meta1, meta_ok)
+    assert ok_merge
+    assert ok_merge["PartialFourier"] == meta1["PartialFourier"]
+
+    # Suppose the same, but there is a different number of slice times
+    slices_bad = deepcopy(meta1)
+    slices_bad["PartialFourier"] = np.nan
+    slices_bad["NSliceTimes"] = meta1["NSliceTimes"] + 5
+    bad_slice_merge = merge_without_overwrite(meta1, slices_bad)
+    assert not bad_slice_merge
 
 
 def test_keygroups(tmp_path):
@@ -104,7 +295,7 @@ def test_csv_creation(tmp_path):
     assert ifiles_df.shape[0] == 21
 
     # But now there are more parameter groups
-    assert isummary_df.shape[0] == 11
+    assert isummary_df.shape[0] == 12
 
 
 def test_apply_csv_changes(tmp_path):
@@ -123,7 +314,8 @@ def test_apply_csv_changes(tmp_path):
     complete_bond.get_CSVs(str(tmp_path / "originals"))
 
     # give csv with no changes (make sure it does nothing)
-    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
+    complete_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
+                                    str(tmp_path / "originals_files.csv"),
                                     str(tmp_path / "modified1"))
 
     og_path = tmp_path / "originals_summary.csv"
@@ -138,7 +330,8 @@ def test_apply_csv_changes(tmp_path):
 
     # edit the csv, add a RenameKeyGroup
     _edit_csv(str(tmp_path / "originals_summary.csv"))
-    complete_bond.apply_csv_changes(str(tmp_path / "originals"),
+    complete_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
+                                    str(tmp_path / "originals_files.csv"),
                                     str(tmp_path / "modified2"))
 
     mod2_path = tmp_path / "modified2_summary.csv"
@@ -294,6 +487,7 @@ def test_datalad_integration(tmp_path):
     assert original_content == restored_content
     assert original_binary_content == restored_binary_content
 
+
 def _remove_a_json(json_file):
 
     os.remove(json_file)
@@ -368,75 +562,3 @@ def test_validator(tmp_path):
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
     assert parsed.shape[1] > 1
-
-
-"""
-def test_fill_metadata(tmp_path):
-    data_root = tmp_path / "testdata"
-    shutil.copytree(TEST_DATA, str(data_root))
-    data_root = op.join(bids_data + "/incomplete/fill-metadata")
-    my_bond = bond.BOnD(data_root)
-    # fill_metadata should add metadata elements to the json sidecar
-    my_bond.fill_metadata(pattern="*acq-multiband_bold.nii.gz",
-                          metadata={"EchoTime": 0.005})
-    # get_metadata shold return a list of dictionaries that contain
-    # metadata for
-    # scans matching `pattern`
-    for metadata in my_bond.get_metadata(pattern="*acq-multiband_bold"):
-        assert metadata['EchoTime'] == 0.005
-
-    # fill_metadata should add metadata elements to the json sidecar
-    my_bond.fill_metadata(pattern="*acq-multiband_bold.nii.gz",
-                          metadata={"EchoTime": 0.009})
-    # get_metadata shold return a list of dictionaries that contain
-    # metadata for
-    # scans matching `pattern`
-    for metadata in my_bond.get_metadata(pattern="*acq-multiband_bold"):
-        assert metadata['EchoTime'] == 0.009
-
-
-def test_detect_unique_parameter_sets(bids_data):
-    data_root = op.join(bids_data + "/incomplete/multi_param_sets")
-    my_bond = bond.BOnD(data_root)
-
-    # Ground truth groups
-    true_combinations = [
-        {"EchoTime": 0.005, "PhaseEncodingDirection": "j"},
-        {"EchoTime": 0.005, "PhaseEncodingDirection": "j-"}
-    ]
-
-    # Find param sets from the data on
-    combinations = my_bond.find_param_sets(pattern="*_bold")
-
-    assert len(true_combinations) == len(combinations)
-
-
-def test_rename_files(tmp_path):
-    data_root = tmp_path / "testdata"
-    shutil.copytree(TEST_DATA, str(data_root))
-    data_root = str(data_root / "complete")
-    my_bond = bond.BOnD(data_root)
-
-    original_suffix = "_run-01_bold"
-    renamed_suffix = "_acq-multiband_run-01_bold"
-
-    # Show that there are none of these files already there
-    assert not glob("*" + renamed_suffix + "*")
-
-    # Actually do the renaming
-    my_bond.rename_files(original_suffix, renamed_suffix)
-
-    # Show that these files are now there
-    assert not glob("*" + renamed_suffix + "*")
-
-
-def test_fieldmap_exists(bids_data):
-    ok_data_root = op.join(bids_data + "/complete/fieldmaps")
-    not_ok_data_root = op.join(bids_data + "/incomplete/fieldmaps")
-
-    ok_bond = bond.BOnD(ok_data_root)
-    assert ok_bond.fieldmaps_ok()
-
-    not_ok_bond = bond.BOnD(not_ok_data_root)
-    assert not not_ok_bond.fieldmaps_ok()
-"""

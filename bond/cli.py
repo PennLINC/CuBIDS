@@ -9,6 +9,7 @@ import logging
 from bond import BOnD
 from .validator import (build_validator_call,
                         run_validator, parse_validator_output)
+from .metadata_merge import merge_json_into_json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bond-cli')
@@ -98,6 +99,26 @@ def bond_validate():
     sys.exit(proc.returncode)
 
 
+def bids_sidecar_merge():
+    parser = argparse.ArgumentParser(
+        description="bids-sidecar-merge: merge critical keys from one "
+        "sidecar to another",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('from_json',
+                        type=Path,
+                        action='store',
+                        help='Source json file.')
+    parser.add_argument('to_json',
+                        type=Path,
+                        action='store',
+                        help='destination json. This file will have data '
+                        'from `from_json` copied into it.')
+    opts = parser.parse_args()
+    merge_status = merge_json_into_json(opts.from_json, opts.to_json,
+                                        exception_on_error=False)
+    sys.exit(merge_status)
+
+
 def bond_group():
     '''Command Line Interface function for finding key and param groups.'''
 
@@ -166,11 +187,16 @@ def bond_apply():
                         action='store',
                         help='the root of a BIDS dataset. It should contain '
                         'sub-X directories and dataset_description.json')
-    parser.add_argument('edited_csv_prefix',
+    parser.add_argument('edited_summary_csv',
                         type=Path,
                         action='store',
-                        help='file prefix used to store the _summary.csv, '
-                        '_files.csv and _group.csv that have been edited.')
+                        help='the _summary.csv that has been edited in the '
+                        'MergeInto and RenameKeyGroup columns.')
+    parser.add_argument('files_csv',
+                        type=Path,
+                        action='store',
+                        help='the _files.csv that the _summary.csv '
+                        'corresponds to.')
     parser.add_argument('new_csv_prefix',
                         type=Path,
                         action='store',
@@ -179,58 +205,53 @@ def bond_apply():
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
-    parser.add_argument('--use-datalad',
-                        action='store_true',
-                        help='ensure that there are no untracked changes '
-                        'before applying changes')
     opts = parser.parse_args()
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir),
-                   use_datalad=opts.use_datalad)
-        if opts.use_datalad and not bod.is_datalad_clean():
+        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
+        if not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.apply_csv_changes(str(opts.edited_csv_prefix),
+        bod.apply_csv_changes(str(opts.edited_sumary_csv),
+                              str(opts.files_csv),
                               str(opts.new_csv_prefix))
         sys.exit(0)
 
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
-    input_csv_dir_link = str(opts.edited_csv_prefix.parent.absolute()) \
-        + ":/in_csv:ro"
-    output_csv_dir_link = str(opts.new_csv_prefix.parent.absolute()) \
-        + ":/out_csv:rw"
-    linked_input_prefix = "/out_csv/" + opts.edited_csv_prefix.name
+    input_summary_csv_dir_link = str(
+        opts.edited_csv_prefix.parent.absolute()) + ":/in_summary_csv:ro"
+    input_files_csv_dir_link = str(
+        opts.edited_csv_prefix.parent.absolute()) + ":/in_files_csv:ro"
+    output_csv_dir_link = str(
+        opts.new_csv_prefix.parent.absolute()) + ":/out_csv:rw"
+    linked_input_summary_csv = "/in_summary_csv/" + opts.edited_csv_prefix.name
+    linked_input_files_csv = "/in_files_csv/" + opts.files_csv.name
     linked_output_prefix = "/out_csv/" + opts.new_csv_prefix.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm',
                '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', input_csv_dir_link,
+               '-v', input_summary_csv_dir_link,
+               '-v', input_files_csv_dir_link,
                '-v', output_csv_dir_link,
                '--entrypoint', 'bond-apply',
-               opts.container, '/bids', linked_input_prefix,
-               linked_output_prefix]
+               opts.container, '/bids', linked_input_summary_csv,
+               linked_input_files_csv, linked_output_prefix]
 
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               '-B', input_csv_dir_link,
+               '-B', input_summary_csv_dir_link,
+               '-B', input_files_csv_dir_link,
                '-B', output_csv_dir_link,
                opts.container, 'bond-apply',
-               '/bids', linked_input_prefix,
-               linked_output_prefix]
-    if opts.use_datalad:
-        cmd.append("--use-datalad")
+               '/bids', linked_input_summary_csv,
+               linked_input_files_csv, linked_output_prefix]
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
-
-
-def param_group_merge():
-    pass
 
 
 def bond_datalad_save():
@@ -414,4 +435,5 @@ def _get_container_type(image_name):
     if re.match(r"(?:.+\/)?([^:]+)(?::.+)?", image_name):
         return "docker"
 
-    raise Exception("Unable to determine the container type of " + image_name)
+    raise Exception("Unable to determine the container type of "
+                    + image_name)
