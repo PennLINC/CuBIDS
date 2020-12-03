@@ -616,3 +616,7 @@ def _order_columns(df):
     if "FilePath" in cols:
         new_columns.append("FilePath")
     return df[new_columns]
+
+
+def img_to_json(img_path):
+    return img_path.replace(".nii.gz", "").replace(".nii", "") + ".json"

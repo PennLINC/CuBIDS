@@ -220,12 +220,12 @@ def bond_apply():
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
-    input_summary_csv_dir_link = str(opts.edited_csv_prefix.parent.absolute()) \
-        + ":/in_summary_csv:ro"
-    input_files_csv_dir_link = str(opts.edited_csv_prefix.parent.absolute()) \
-        + ":/in_files_csv:ro"
-    output_csv_dir_link = str(opts.new_csv_prefix.parent.absolute()) \
-        + ":/out_csv:rw"
+    input_summary_csv_dir_link = str(
+        opts.edited_csv_prefix.parent.absolute()) + ":/in_summary_csv:ro"
+    input_files_csv_dir_link = str(
+        opts.edited_csv_prefix.parent.absolute()) + ":/in_files_csv:ro"
+    output_csv_dir_link = str(
+        opts.new_csv_prefix.parent.absolute()) + ":/out_csv:rw"
     linked_input_summary_csv = "/in_summary_csv/" + opts.edited_csv_prefix.name
     linked_input_files_csv = "/in_files_csv/" + opts.files_csv.name
     linked_output_prefix = "/out_csv/" + opts.new_csv_prefix.name
@@ -435,4 +435,5 @@ def _get_container_type(image_name):
     if re.match(r"(?:.+\/)?([^:]+)(?::.+)?", image_name):
         return "docker"
 
-    raise Exception("Unable to determine the container type of " + image_name)
+    raise Exception("Unable to determine the container type of "
+                    + image_name)
