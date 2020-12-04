@@ -84,7 +84,7 @@ class BOnD(object):
     def datalad_undo_last_commit(self):
         """Revert the most recent commit, remove it from history.
 
-        Uses git reset --hard
+        Uses git reset --hard to revert to the previous commit.
         """
         if not self.is_datalad_clean():
             raise Exception("Untracked changes present. "
