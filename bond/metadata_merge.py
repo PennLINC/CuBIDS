@@ -96,10 +96,13 @@ def merge_without_overwrite(source_meta, dest_meta, raise_on_error=False):
     for parameter in DIRECT_IMAGING_PARAMS:
         source_value = source_meta.get(parameter, nan)
         dest_value = dest_meta.get(parameter, nan)
-        if isnan(dest_val) and not isnan(source_val):
-            raise Exception("Cannot overwrite a number with a nan")
+
+        # cannot merge num --> num
+        # exception should only be raised
+        # IF someone tries to replace a num (dest)
+        # with a num (src)
         if isinstance(dest_value, float) and not isnan(dest_value):
-            if not source_value == dest_value:
+            if not isnan(source_value) and not source_value == dest_value:
                 if raise_on_error:
                     raise Exception("Value for %s is %.3f in destination "
                                     "but %.3f in source"
