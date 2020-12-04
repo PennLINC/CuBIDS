@@ -22,8 +22,7 @@ class BOnD(object):
     def __init__(self, data_root, use_datalad=False):
 
         self.path = data_root
-        self.layout = bids.BIDSLayout(self.path, validate=False)
-        # dictionary of KEY: keys group, VALUE: list of files
+        self._layout = None
         self.keys_files = {}
         self.fieldmaps_cached = False
         self.datalad_ready = False
@@ -34,6 +33,15 @@ class BOnD(object):
         # Initialize datalad if
         if use_datalad:
             self.init_datalad()
+
+    @property
+    def layout(self):
+        if self._layout is None:
+            self.reset_bids_layout()
+        return self._layout
+
+    def reset_bids_layout(self, validate=False):
+        self._layout = bids.BIDSLayout(self.path, validate=validate)
 
     def init_datalad(self):
         """Initializes a datalad Dataset at self.path.
@@ -84,7 +92,7 @@ class BOnD(object):
     def datalad_undo_last_commit(self):
         """Revert the most recent commit, remove it from history.
 
-        Uses git reset --hard
+        Uses git reset --hard to revert to the previous commit.
         """
         if not self.is_datalad_clean():
             raise Exception("Untracked changes present. "
@@ -124,7 +132,7 @@ class BOnD(object):
         summary_df = pd.read_csv(summary_csv)
 
         # Check that the MergeInto column only contains valid merges
-        ok_merges = check_merging_operations(
+        ok_merges, deletions = check_merging_operations(
             summary_csv, raise_on_error=raise_on_error)
 
         merge_commands = []
@@ -143,6 +151,16 @@ class BOnD(object):
                         'bids-sidecar-merge %s %s'
                         % (source_json, dest_json))
         print("Performing %d merges" % len(merge_commands))
+
+        # Get the delete commands
+        delete_commands = []
+        for rm_id in deletions:
+            files_to_rm = files_df.loc[
+                (files_df[["ParamGroup", "KeyGroup"]] == rm_id).all(1)]
+            for rm_me in files_to_rm.FilePath:
+                if Path(rm_me).exists():
+                    delete_commands.append("rm " + rm_me)
+        print("Deleting %d files" % len(delete_commands))
 
         # Now do the file renaming
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
@@ -191,11 +209,11 @@ class BOnD(object):
                     move_ops.append('mv %s %s' % (from_file, to_file))
         print("Performing %d renamings" % len(move_ops))
 
-        full_cmd = "; ".join(move_ops + merge_commands)
+        full_cmd = "; ".join(merge_commands + delete_commands + move_ops)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
             self.datalad_handle.run(full_cmd)
-            self.layout = bids.BIDSLayout(self.path, validate=False)
+            self.reset_bids_layout()
         else:
             print("Not running any commands")
 
