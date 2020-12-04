@@ -136,10 +136,12 @@ class BOnD(object):
 
             # Get a source json file
             source_json = img_to_json(source_files.iloc[0].FilePath)
-            for dest_json in dest_files.FilePath:
-                merge_commands.append(
-                    'bids-sidecar-merge %s %s'
-                    % (source_json, img_to_json(dest_json)))
+            for dest_nii in dest_files.FilePath:
+                dest_json = img_to_json(dest_nii)
+                if Path(dest_json).exists() and Path(source_json).exists():
+                    merge_commands.append(
+                        'bids-sidecar-merge %s %s'
+                        % (source_json, dest_json))
         print("Performing %d merges" % len(merge_commands))
 
         # Now do the file renaming
@@ -185,7 +187,8 @@ class BOnD(object):
             # create string of mv command ; mv command for dlapi.run
             for from_file, to_file in zip(self.old_filenames,
                                           self.new_filenames):
-                move_ops.append('mv %s %s' % (from_file, to_file))
+                if Path(from_file).exists() and Path(to_file).exists():
+                    move_ops.append('mv %s %s' % (from_file, to_file))
         print("Performing %d renamings" % len(move_ops))
 
         full_cmd = "; ".join(move_ops + merge_commands)
