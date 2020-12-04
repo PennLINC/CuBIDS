@@ -142,6 +142,16 @@ class BOnD(object):
                     % (source_json, img_to_json(dest_json)))
         print("Performing %d merges" % len(merge_commands))
 
+        # Get the delete commands
+        delete_commands = []
+        for rm_id in deletions:
+            files_to_rm = files_df.loc[
+                (files_df[["ParamGroup", "KeyGroup"]] == rm_id).all(1)]
+            for rm_me in files_to_rm.FilePath:
+                if Path(rm_me).exists():
+                    delete_commands.append("rm " + rm_me)
+        print("Deleting %d files" % len(delete_commands))
+
         # Now do the file renaming
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
         move_ops = []
@@ -188,7 +198,7 @@ class BOnD(object):
                 move_ops.append('mv %s %s' % (from_file, to_file))
         print("Performing %d renamings" % len(move_ops))
 
-        full_cmd = "; ".join(move_ops + merge_commands)
+        full_cmd = "; ".join(merge_commands + delete_commands + move_ops)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
             self.datalad_handle.run(full_cmd)
