@@ -169,6 +169,9 @@ def test_csv_merge_changes(tmp_path):
                               str(tmp_path / "originals_files.csv"),
                               str(tmp_path / "ok_modified"))
 
+    # Make sure MergeInto == 0 deletes the param group
+
+
 
 def test_merge_without_overwrite():
     meta1 = {
@@ -207,6 +210,12 @@ def test_merge_without_overwrite():
         'PhaseEncodingDirection': 'j-',
         'RepetitionTime': 0.8,
         'TotalReadoutTime': 0.0481411}
+
+    # Suppose User tries to overwrite num with NaN (allowed)
+    meta_NaN = deepcopy(meta1)
+    meta_NaN["FlipAngle"] = np.nan
+    valid_merge = merge_without_overwrite(meta_NaN, meta1)
+    assert valid_merge
 
     # Set a conflicting imaging param in the dest group
     meta_overwrite = deepcopy(meta1)
