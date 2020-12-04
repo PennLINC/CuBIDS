@@ -103,7 +103,7 @@ def merge_without_overwrite(source_meta, dest_meta, raise_on_error=False):
         # IF someone tries to replace a num (dest)
         # with a num (src)
         if isinstance(dest_value, float) and not isnan(dest_value):
-            if not isnan(source_value) and source_value != dest_value:
+            if source_value != dest_value:
                 if raise_on_error:
                     raise Exception("Value for %s is %.3f in destination "
                                     "but %.3f in source"
