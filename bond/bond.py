@@ -22,8 +22,7 @@ class BOnD(object):
     def __init__(self, data_root, use_datalad=False):
 
         self.path = data_root
-        self.layout = bids.BIDSLayout(self.path, validate=False)
-        # dictionary of KEY: keys group, VALUE: list of files
+        self._layout = None
         self.keys_files = {}
         self.fieldmaps_cached = False
         self.datalad_ready = False
@@ -34,6 +33,15 @@ class BOnD(object):
         # Initialize datalad if
         if use_datalad:
             self.init_datalad()
+
+    @property
+    def layout(self):
+        if self._layout is None:
+            self.reset_bids_layout()
+        return self._layout
+
+    def reset_bids_layout(self, validate=False):
+        self._layout = bids.BIDSLayout(self.path, validate=validate)
 
     def init_datalad(self):
         """Initializes a datalad Dataset at self.path.
@@ -192,7 +200,7 @@ class BOnD(object):
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
             self.datalad_handle.run(full_cmd)
-            self.layout = bids.BIDSLayout(self.path, validate=False)
+            self.reset_bids_layout()
         else:
             print("Not running any commands")
 
