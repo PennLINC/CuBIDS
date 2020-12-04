@@ -4,7 +4,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 from copy import deepcopy
-from math import isnan, nan
+from math import nan, isnan
 from .constants import IMAGING_PARAMS
 DIRECT_IMAGING_PARAMS = IMAGING_PARAMS - set(["NSliceTimes"])
 
@@ -80,13 +80,16 @@ def check_merging_operations(action_csv, raise_on_error=False):
     return ok_merges, deletions
 
 
-def merge_without_overwrite(source_meta, dest_meta, raise_on_error=False):
+def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
     """Performs a safe metadata copy.
 
     Here, "safe" means that no non-NaN values in `dest_meta` are
     overwritten by the merge. If any overwrites occur an empty
     dictionary is returned.
     """
+    # copy the original json params
+    dest_meta = deepcopy(dest_meta_orig)
+
     if not source_meta.get("NSliceTimes") == dest_meta.get("NSliceTimes"):
         if raise_on_error:
             raise Exception("Value for NSliceTimes is %d in destination "
@@ -102,16 +105,24 @@ def merge_without_overwrite(source_meta, dest_meta, raise_on_error=False):
         # exception should only be raised
         # IF someone tries to replace a num (dest)
         # with a num (src)
-        if isinstance(dest_value, float) and not isnan(dest_value):
-            if source_value != dest_value:
-                if not isnan(source_value):
-                    if raise_on_error:
-                        raise Exception("Value for %s is %.3f in destination "
-                                        "but %.3f in source"
-                                        % (parameter, dest_value, source_value))
-                    return {}
+        if not is_nan(source_value):
+            # need to figure out if we can merge
+            if not is_nan(dest_value) and source_value != dest_value:
+                if raise_on_error:
+                    raise Exception("Value for %s is %s in destination "
+                                    "but %s in source"
+                                    % (parameter, str(dest_value),
+                                       str(source_value)))
+                return {}
         dest_meta[parameter] = source_value
     return dest_meta
+
+
+def is_nan(val):
+    '''Returns True if val is nan'''
+    if not isinstance(val, float):
+        return False
+    return isnan(val)
 
 
 def print_merges(merge_list):
@@ -123,7 +134,7 @@ def print_merges(merge_list):
 
 
 def merge_json_into_json(from_file, to_file,
-                         exception_on_error=False):
+                         raise_on_error=False):
     print("Merging imaging metadata from %s to %s"
           % (from_file, to_file))
     with open(from_file, "r") as fromf:
@@ -134,7 +145,7 @@ def merge_json_into_json(from_file, to_file,
     orig_dest_metadata = deepcopy(dest_metadata)
 
     merged_metadata = merge_without_overwrite(
-        source_metadata, dest_metadata, raise_on_error=exception_on_error)
+        source_metadata, dest_metadata, raise_on_error=raise_on_error)
 
     if not merged_metadata:
         return 255

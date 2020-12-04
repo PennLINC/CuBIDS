@@ -104,6 +104,7 @@ def test_bad_json_merge_cli(tmp_path):
     assert merge_proc.returncode > 0
     assert _get_json_string(dest_json) == orig_dest_json_content
 
+#TODO: add tests that return an error for invalid merge
 
 def test_csv_merge_changes(tmp_path):
     data_root = get_data(tmp_path)
@@ -170,8 +171,16 @@ def test_csv_merge_changes(tmp_path):
                               str(tmp_path / "ok_modified"))
 
     # Make sure MergeInto == 0 deletes the param group
+    # summary_df = pd.read_csv(original_summary_csv)
     # summary_df.loc[fa_nan_dwi_row, "MergeInto"] = 0
-    # to_delete = summary_df.loc[fa_nan_dwi_row, "KeyParamGroup"]
+    # delete_group = summary_df.loc[fa_nan_dwi_row, "KeyParamGroup"]
+
+    # # files_df = pd.read_csv(original_files_csv)
+    # # for row in files_df:
+    # #     if files_df.iloc[row]['KeyParamGroup'] == delete_group:
+    # #         filename = files_df.iloc[row]['FilePath']
+    # #         file_to_rem = Path(filename)
+    # #         file_to_rem.unlink()
 
     # delete_csv_file = csv_prefix + "_delete_summary.csv"
     # summary_df.to_csv(delete_csv_file, index=False)
@@ -180,7 +189,12 @@ def test_csv_merge_changes(tmp_path):
     #                       original_files_csv,
     #                       str(tmp_path / "ok_deleted"))
 
-    # assert to_delete not in tmp_path / "ok_deleted_summary.csv"
+    # del_summary_csv = str(tmp_path / "ok_deleted")
+
+    # original_summary_csv = csv_prefix + "_summary.csv"
+    # original_files_csv = csv_prefix + "_files.csv"
+
+    # assert delete_group not in tmp_path / "ok_deleted_summary.csv"
 
 def test_merge_without_overwrite():
     meta1 = {
@@ -221,10 +235,10 @@ def test_merge_without_overwrite():
         'TotalReadoutTime': 0.0481411}
 
     # Suppose User tries to overwrite num with NaN (allowed)
-    # meta_NaN = deepcopy(meta1)
-    # meta_NaN["FlipAngle"] = np.nan
-    # valid_merge = merge_without_overwrite(meta_NaN, meta1)
-    # assert not valid_merge
+    meta_NaN = deepcopy(meta1)
+    meta_NaN["FlipAngle"] = np.nan
+    valid_merge = merge_without_overwrite(meta_NaN, meta1)
+    assert valid_merge
 
     # Set a conflicting imaging param in the dest group
     meta_overwrite = deepcopy(meta1)
