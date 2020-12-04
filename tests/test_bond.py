@@ -372,6 +372,26 @@ def test_apply_csv_changes(tmp_path):
 
     assert og_content != mod2_content
 
+    # check that MergeInto = 0 delete
+    deleted_keyparam = _add_deletion(mod2_path)
+    assert deleted_keyparam in mod2_content
+
+    # apply deletion
+    complete_bond.apply_csv_changes(mod2_path,
+                                    str(tmp_path / "modified2_files.csv"),
+                                    str(tmp_path / "deleted"))
+
+    deleted = tmp_path / "deleted_summary.csv"
+    with deleted.open("r") as f:
+        deleted_content = "".join(f.readlines())
+    assert deleted_keyparam not in deleted_content
+
+def _add_deletion(summary_csv):
+    df = pd.read_csv(summary_csv)
+    df.loc[3, 'MergeInto'] = 0
+    df.to_csv(summary_csv, index=False)
+    return df.loc[3, 'KeyParamGroup']
+
 
 def _edit_csv(summary_csv):
     r = csv.reader(open(summary_csv))
