@@ -115,7 +115,7 @@ def bids_sidecar_merge():
                         'from `from_json` copied into it.')
     opts = parser.parse_args()
     merge_status = merge_json_into_json(opts.from_json, opts.to_json,
-                                        exception_on_error=False)
+                                        raise_on_error=False)
     sys.exit(merge_status)
 
 
