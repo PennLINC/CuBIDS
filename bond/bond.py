@@ -205,7 +205,7 @@ class BOnD(object):
             # create string of mv command ; mv command for dlapi.run
             for from_file, to_file in zip(self.old_filenames,
                                           self.new_filenames):
-                if Path(from_file).exists() and Path(to_file).exists():
+                if Path(from_file).exists():
                     move_ops.append('mv %s %s' % (from_file, to_file))
         print("Performing %d renamings" % len(move_ops))
 
