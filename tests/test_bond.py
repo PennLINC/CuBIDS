@@ -221,10 +221,10 @@ def test_merge_without_overwrite():
         'TotalReadoutTime': 0.0481411}
 
     # Suppose User tries to overwrite num with NaN (allowed)
-    meta_NaN = deepcopy(meta1)
-    meta_NaN["FlipAngle"] = np.nan
-    valid_merge = merge_without_overwrite(meta_NaN, meta1)
-    assert valid_merge
+    # meta_NaN = deepcopy(meta1)
+    # meta_NaN["FlipAngle"] = np.nan
+    # valid_merge = merge_without_overwrite(meta_NaN, meta1)
+    # assert not valid_merge
 
     # Set a conflicting imaging param in the dest group
     meta_overwrite = deepcopy(meta1)
