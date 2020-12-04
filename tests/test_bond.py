@@ -170,8 +170,17 @@ def test_csv_merge_changes(tmp_path):
                               str(tmp_path / "ok_modified"))
 
     # Make sure MergeInto == 0 deletes the param group
+    # summary_df.loc[fa_nan_dwi_row, "MergeInto"] = 0
+    # to_delete = summary_df.loc[fa_nan_dwi_row, "KeyParamGroup"]
 
+    # delete_csv_file = csv_prefix + "_delete_summary.csv"
+    # summary_df.to_csv(delete_csv_file, index=False)
 
+    # bod.apply_csv_changes(delete_csv_file,
+    #                       original_files_csv,
+    #                       str(tmp_path / "ok_deleted"))
+
+    # assert to_delete not in tmp_path / "ok_deleted_summary.csv"
 
 def test_merge_without_overwrite():
     meta1 = {
