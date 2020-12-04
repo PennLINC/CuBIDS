@@ -16,6 +16,7 @@ def check_merging_operations(action_csv, raise_on_error=False):
     """
     actions = pd.read_csv(action_csv)
     ok_merges = []
+    deletions = []
     overwrite_merges = []
     sdc_incompatible = []
 
@@ -37,7 +38,7 @@ def check_merging_operations(action_csv, raise_on_error=False):
 
         if source_param_key[0] == 0:
             print("going to delete ", dest_param_key)
-            continue
+            deletions.append(dest_param_key)
         if not source_row.shape[0] == 1:
             raise Exception("Could not identify a unique source group")
         source_metadata = source_row.iloc[0].to_dict()
@@ -76,7 +77,7 @@ def check_merging_operations(action_csv, raise_on_error=False):
         if raise_on_error:
             raise Exception(error_message)
         print(error_message)
-    return ok_merges
+    return ok_merges, deletions
 
 
 def merge_without_overwrite(source_meta, dest_meta, raise_on_error=False):
@@ -114,7 +115,7 @@ def merge_without_overwrite(source_meta, dest_meta, raise_on_error=False):
 
 def print_merges(merge_list):
     """Print formatted text of merges"""
-    return "\n\t".join(
+    return "\n\t" + "\n\t".join(
         ["%s \n\t\t-> %s" % ("%s:%d" % src_id[::-1],
          "%s:%d" % dest_id[::-1]) for
          src_id, dest_id in merge_list])

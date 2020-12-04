@@ -124,7 +124,7 @@ class BOnD(object):
         summary_df = pd.read_csv(summary_csv)
 
         # Check that the MergeInto column only contains valid merges
-        ok_merges = check_merging_operations(
+        ok_merges, deletions = check_merging_operations(
             summary_csv, raise_on_error=raise_on_error)
 
         merge_commands = []
