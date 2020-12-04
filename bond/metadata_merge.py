@@ -96,6 +96,8 @@ def merge_without_overwrite(source_meta, dest_meta, raise_on_error=False):
     for parameter in DIRECT_IMAGING_PARAMS:
         source_value = source_meta.get(parameter, nan)
         dest_value = dest_meta.get(parameter, nan)
+        if isnan(dest_val) and not isnan(source_val):
+            raise Exception("Cannot overwrite a number with a nan")
         if isinstance(dest_value, float) and not isnan(dest_value):
             if not source_value == dest_value:
                 if raise_on_error:
