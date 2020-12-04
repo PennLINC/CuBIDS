@@ -150,7 +150,8 @@ def group_by_acquisition_sets(files_csv, output_prefix, split_session=True):
         file_entities = parse_file_entities(row.FilePath)
 
         if split_session:
-            acq_id = (file_entities.get("subject"), file_entities.get("session"))
+            acq_id = (file_entities.get("subject"),
+                      file_entities.get("session"))
             acq_groups[acq_id].append((row.KeyGroup, row.ParamGroup))
         else:
             acq_id = (file_entities.get("subject"), None)
