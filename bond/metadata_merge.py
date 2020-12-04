@@ -1,5 +1,6 @@
 """Main module."""
 import json
+from collections import defaultdict
 import numpy as np
 import pandas as pd
 from copy import deepcopy
@@ -134,3 +135,60 @@ def merge_json_into_json(from_file, to_file,
             json.dump(merged_metadata, tofw, indent=4)
 
     return 0
+
+
+def group_by_acquisition_sets(files_csv, output_prefix, split_session=True):
+    '''Finds unique sets of Key/Param groups across subjects.
+    '''
+    from bids.layout import parse_file_entities
+    from bids import config
+    config.set_option('extension_initial_dot', True)
+
+    files_df = pd.read_csv(files_csv)
+    acq_groups = defaultdict(list)
+    for _, row in files_df.iterrows():
+        file_entities = parse_file_entities(row.FilePath)
+
+        if split_session:
+            acq_id = (file_entities.get("subject"), file_entities.get("session"))
+            acq_groups[acq_id].append((row.KeyGroup, row.ParamGroup))
+        else:
+            acq_id = (file_entities.get("subject"), None)
+            acq_groups[acq_id].append((row.KeyGroup, row.ParamGroup,
+                                       file_entities.get("session")))
+
+    # Map the contents to a list of subjects/sessions
+    contents_to_subjects = defaultdict(list)
+    for key, value in acq_groups.items():
+        contents_to_subjects[tuple(sorted(value))].append(key)
+
+    # Sort them based on how many have that group
+    content_ids = []
+    content_id_counts = []
+    for key, value in contents_to_subjects.items():
+        content_ids.append(key)
+        content_id_counts.append(len(value))
+
+    descending_order = np.argsort(content_id_counts)[::-1]
+
+    # Create a dataframe with the subject, session, groupnum
+    grouped_sub_sess = []
+    acq_group_info = []
+    for groupnum, content_id_row in enumerate(descending_order, start=1):
+        content_id = content_ids[content_id_row]
+        acq_group_info.append(
+            (groupnum, content_id_counts[content_id_row]) + content_id)
+        for subject, session in contents_to_subjects[content_id]:
+            grouped_sub_sess.append(
+                {"subject": subject,
+                 "session": session,
+                 "AcqGroup": groupnum})
+
+    # Write the mapping of subject/session to
+    acq_group_df = pd.DataFrame(grouped_sub_sess)
+    acq_group_df.to_csv(output_prefix + "_AcqGrouping.csv", index=False)
+
+    # Write the summary of acq groups to a text file
+    with open(output_prefix + "_AcqGroupInfo.txt", "w") as infotxt:
+        infotxt.write(
+            "\n".join([" ".join(map(str, line)) for line in acq_group_info]))

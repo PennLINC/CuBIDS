@@ -11,7 +11,8 @@ import pandas as pd
 import datalad.api as dlapi
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES, IMAGING_PARAMS
-from .metadata_merge import check_merging_operations
+from .metadata_merge import (
+    check_merging_operations, group_by_acquisition_sets)
 bids.config.set_option('extension_initial_dot', True)
 
 
@@ -387,7 +388,7 @@ class BOnD(object):
 
         return (big_df, summary)
 
-    def get_CSVs(self, path_prefix):
+    def get_CSVs(self, path_prefix, split_by_session=True):
         """Creates the _summary and _files CSVs for the bids dataset.
 
         Parameters:
@@ -404,6 +405,10 @@ class BOnD(object):
 
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
+
+        # Calculate the acq groups
+        group_by_acquisition_sets(path_prefix + "_files.csv", path_prefix,
+                                  split_session=split_by_session)
 
     def get_key_groups(self):
         '''Identifies the key groups for the bids dataset'''
