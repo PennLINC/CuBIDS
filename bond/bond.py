@@ -417,8 +417,13 @@ class BOnD(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
+        # sort summary csv by count in descending order
+        summary = summary.sort_values(by=['KeyGroup', 'Counts'],
+                                      ascending=[True,False])
+
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
+
 
         # Calculate the acq groups
         group_by_acquisition_sets(path_prefix + "_files.csv", path_prefix,
