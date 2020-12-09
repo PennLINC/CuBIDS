@@ -379,6 +379,10 @@ class BOnD(object):
         summary = _order_columns(pd.concat(param_group_summaries,
                                  ignore_index=True))
 
+        # sort summary csv by count in descending order
+        summary = summary.sort_values(by=['KeyGroup', 'Counts'],
+                                      ascending=[True, False])
+
         # create new col that strings key and param group together
         summary["KeyParamGroup"] = summary["KeyGroup"] \
             + '__' + summary["ParamGroup"].map(str)
@@ -416,10 +420,6 @@ class BOnD(object):
         self._cache_fieldmaps()
 
         big_df, summary = self.get_param_groups_dataframes()
-
-        # sort summary csv by count in descending order
-        summary = summary.sort_values(by=['KeyGroup', 'Counts'],
-                                      ascending=[True, False])
 
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
