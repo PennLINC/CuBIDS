@@ -379,10 +379,6 @@ class BOnD(object):
         summary = _order_columns(pd.concat(param_group_summaries,
                                  ignore_index=True))
 
-        # sort summary csv by count in descending order
-        summary = summary.sort_values(by=['KeyGroup', 'Counts'],
-                                      ascending=[True, False])
-
         # create new col that strings key and param group together
         summary["KeyParamGroup"] = summary["KeyGroup"] \
             + '__' + summary["ParamGroup"].map(str)
@@ -622,10 +618,14 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         {"Counts": value_counts.to_numpy(),
          "ParamGroup": value_counts.index.to_numpy()})
 
-    param_groups_with_counts = pd.merge(
+    param_w_counts = pd.merge(
         deduped, param_group_counts, on=["ParamGroup"])
 
-    return labeled_files, param_groups_with_counts
+    # sort by count in descending order
+    param_w_counts = param_w_counts.sort_values(by=['KeyGroup', 'Counts'],
+                                                ascending=[True, False])
+
+    return labeled_files, param_w_counts
 
 
 def _order_columns(df):
@@ -638,6 +638,9 @@ def _order_columns(df):
     new_columns = ["KeyGroup", "ParamGroup"] + sorted(non_id_cols)
     if "FilePath" in cols:
         new_columns.append("FilePath")
+
+    df = df[new_columns]
+
     return df[new_columns]
 
 
