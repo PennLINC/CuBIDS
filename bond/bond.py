@@ -614,16 +614,27 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=param_group_cols)
     value_counts = labeled_files.ParamGroup.value_counts()
+
+    # sort labeled_files by ParamGroup counts in descending order
+    labeled_files = labeled_files.iloc[labeled_files.groupby('ParamGroup')
+                                                    .ParamGroup
+                                                    .transform('size').mul(-1)
+                                                    .argsort(kind='mergesort')]
+
+    # Get the unique param groups again (after sorting)
+    deduped_sorted = labeled_files.drop('FilePath', axis=1) \
+                                  .drop_duplicates(ignore_index=True)
+    deduped_sorted["ParamGroup"] = np.arange(deduped.shape[0]) + 1
+
+    # merge again, this time with sorted param groups
+    labeled_files = pd.merge(df, deduped_sorted, on=param_group_cols)
+
     param_group_counts = pd.DataFrame(
         {"Counts": value_counts.to_numpy(),
          "ParamGroup": value_counts.index.to_numpy()})
 
     param_w_counts = pd.merge(
         deduped, param_group_counts, on=["ParamGroup"])
-
-    # sort by count in descending order
-    param_w_counts = param_w_counts.sort_values(by=['KeyGroup', 'Counts'],
-                                                ascending=[True, False])
 
     return labeled_files, param_w_counts
 
