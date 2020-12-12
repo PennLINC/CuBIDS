@@ -504,6 +504,16 @@ class BOnD(object):
             with open(json_file, "w") as jsonr:
                 json.dump(metadata, jsonr, indent=4)
 
+    # # # # FOR TESTING # # # #
+    def get_filenames(self):
+        return self.keys_files
+
+    def get_fieldmap_lookup(self):
+        return self.fieldmap_lookup
+
+    def get_layout(self):
+        return self.layout
+
 
 def _validateJSON(json_file):
     # TODO: implement this or delete ???
@@ -613,7 +623,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=param_group_cols)
-    value_counts = labeled_files.ParamGroup.value_counts()
+    # value_counts = labeled_files.ParamGroup.value_counts()
 
     # sort labeled_files by ParamGroup counts in descending order
     labeled_files = labeled_files.iloc[labeled_files.groupby('ParamGroup')
@@ -624,20 +634,25 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     # Get the unique param groups again (after sorting)
     deduped_sorted = labeled_files.drop('FilePath', axis=1) \
                                   .drop_duplicates(ignore_index=True)
+
+    # rename the param groups based on new sorted order
     deduped_sorted["ParamGroup"] = np.arange(deduped_sorted.shape[0]) + 1
 
     # merge again, this time with sorted param groups
-    files_merged = pd.merge(df, deduped_sorted, on=param_group_cols)
+    files_merged = pd.merge(labeled_files, deduped_sorted, on=param_group_cols)
+
+    files_merged = files_merged.rename(columns={'ParamGroup_y': 'ParamGroup'})
+    files_merged = files_merged.drop('ParamGroup_x', axis=1)
 
     # get the counts again, now that everything is in the right order
-    value_counts = labeled_files.ParamGroup.value_counts()
+    value_counts2 = files_merged.ParamGroup.value_counts()
 
     param_group_counts = pd.DataFrame(
-        {"Counts": value_counts.to_numpy(),
-         "ParamGroup": value_counts.index.to_numpy()})
+        {"Counts": value_counts2.to_numpy(),
+         "ParamGroup": value_counts2.index.to_numpy()})
 
     param_w_counts = pd.merge(
-        deduped, param_group_counts, on=["ParamGroup"])
+        deduped_sorted, param_group_counts, on=["ParamGroup"])
 
     return files_merged, param_w_counts
 
