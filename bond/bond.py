@@ -623,7 +623,6 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=param_group_cols)
-    # value_counts = labeled_files.ParamGroup.value_counts()
 
     # sort labeled_files by ParamGroup counts in descending order
     labeled_files = labeled_files.iloc[labeled_files.groupby('ParamGroup')

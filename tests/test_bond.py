@@ -331,7 +331,9 @@ def test_csv_creation(tmp_path):
 
     # check that summary csv param group nums are in the right order
     # and check that param groups are sorted by count vals
-    for i in range(len(isummary_df)-1):
+    for i, (index, row) in enumerate(isummary_df.iterrows()):
+        if i == len(isummary_df) -1:
+            break
         # if key groups in rows i and i+1 are the same
         if isummary_df.iloc[i]['KeyGroup'] == \
             isummary_df.iloc[i+1]['KeyGroup']:
@@ -343,7 +345,9 @@ def test_csv_creation(tmp_path):
                 isummary_df.iloc[i+1]['Counts']
 
     # check that files csv param group nums are in the right order
-    for i in range(len(ifiles_df)-1):
+    for i, (index, row) in enumerate(ifiles_df.iterrows()):
+        if i == len(ifiles_df) -1:
+            break
         # if key groups in rows i and i+1 are the same
         if ifiles_df.iloc[i]['KeyGroup'] == \
             ifiles_df.iloc[i+1]['KeyGroup']:
