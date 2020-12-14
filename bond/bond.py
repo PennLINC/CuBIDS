@@ -623,37 +623,30 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=param_group_cols)
-
-    # sort labeled_files by ParamGroup counts in descending order
-    labeled_files = labeled_files.iloc[labeled_files.groupby('ParamGroup')
-                                                    .ParamGroup
-                                                    .transform('size').mul(-1)
-                                                    .argsort(kind='mergesort')]
-
-    # Get the unique param groups again (after sorting)
-    deduped_sorted = labeled_files.drop('FilePath', axis=1) \
-                                  .drop_duplicates(ignore_index=True)
-
-    # rename the param groups based on new sorted order
-    deduped_sorted["ParamGroup"] = np.arange(deduped_sorted.shape[0]) + 1
-
-    # merge again, this time with sorted param groups
-    files_merged = pd.merge(labeled_files, deduped_sorted, on=param_group_cols)
-
-    files_merged = files_merged.rename(columns={'ParamGroup_y': 'ParamGroup'})
-    files_merged = files_merged.drop('ParamGroup_x', axis=1)
-
-    # get the counts again, now that everything is in the right order
-    value_counts2 = files_merged.ParamGroup.value_counts()
+    value_counts = labeled_files.ParamGroup.value_counts()
 
     param_group_counts = pd.DataFrame(
-        {"Counts": value_counts2.to_numpy(),
-         "ParamGroup": value_counts2.index.to_numpy()})
+        {"Counts": value_counts.to_numpy(),
+         "ParamGroup": value_counts.index.to_numpy()})
 
-    param_w_counts = pd.merge(
-        deduped_sorted, param_group_counts, on=["ParamGroup"])
+    param_groups_with_counts = pd.merge(
+        deduped, param_group_counts, on=["ParamGroup"])
 
-    return files_merged, param_w_counts
+    # Sort by counts and relabel the param groups
+    param_groups_with_counts.sort_values(by=['Counts'], inplace=True,
+                                         ascending=False)
+    param_groups_with_counts["ParamGroup"] = np.arange(
+        param_groups_with_counts.shape[0]) + 1
+
+    # Send the new, ordered param group ids to the files list
+    ordered_labeled_files = pd.merge(df, param_groups_with_counts,
+                                     on=param_group_cols)
+
+    # sort ordered_labeled_files by param group
+    ordered_labeled_files.sort_values(by=['Counts'], inplace=True,
+                                      ascending=False)
+
+    return ordered_labeled_files, param_groups_with_counts
 
 
 def _order_columns(df):
