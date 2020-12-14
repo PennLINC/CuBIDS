@@ -618,10 +618,21 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         {"Counts": value_counts.to_numpy(),
          "ParamGroup": value_counts.index.to_numpy()})
 
+    # Add the counts to the ParamGroup summary df
     param_groups_with_counts = pd.merge(
         deduped, param_group_counts, on=["ParamGroup"])
 
-    return labeled_files, param_groups_with_counts
+    # Sort by counts and relabel the param groups
+    param_groups_with_counts.sort(by=['Counts'], inplace=True,
+                                  ascending=False)
+    param_groups_with_counts["ParamGroup"] = np.arange(
+        param_groups_with_counts.shape[0]) + 1
+
+    # Send the new, ordered param group ids to the files list
+    ordered_labeled_files = pd.merge(df, param_groups_with_counts,
+                                     on=param_group_cols)
+
+    return ordered_labeled_files, param_groups_with_counts
 
 
 def _order_columns(df):
