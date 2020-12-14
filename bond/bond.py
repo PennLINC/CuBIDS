@@ -504,6 +504,16 @@ class BOnD(object):
             with open(json_file, "w") as jsonr:
                 json.dump(metadata, jsonr, indent=4)
 
+    # # # # FOR TESTING # # # #
+    def get_filenames(self):
+        return self.keys_files
+
+    def get_fieldmap_lookup(self):
+        return self.fieldmap_lookup
+
+    def get_layout(self):
+        return self.layout
+
 
 def _validateJSON(json_file):
     # TODO: implement this or delete ???
@@ -614,6 +624,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=param_group_cols)
     value_counts = labeled_files.ParamGroup.value_counts()
+
     param_group_counts = pd.DataFrame(
         {"Counts": value_counts.to_numpy(),
          "ParamGroup": value_counts.index.to_numpy()})
@@ -621,7 +632,21 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
     param_groups_with_counts = pd.merge(
         deduped, param_group_counts, on=["ParamGroup"])
 
-    return labeled_files, param_groups_with_counts
+    # Sort by counts and relabel the param groups
+    param_groups_with_counts.sort_values(by=['Counts'], inplace=True,
+                                         ascending=False)
+    param_groups_with_counts["ParamGroup"] = np.arange(
+        param_groups_with_counts.shape[0]) + 1
+
+    # Send the new, ordered param group ids to the files list
+    ordered_labeled_files = pd.merge(df, param_groups_with_counts,
+                                     on=param_group_cols)
+
+    # sort ordered_labeled_files by param group
+    ordered_labeled_files.sort_values(by=['Counts'], inplace=True,
+                                      ascending=False)
+
+    return ordered_labeled_files, param_groups_with_counts
 
 
 def _order_columns(df):
@@ -634,6 +659,9 @@ def _order_columns(df):
     new_columns = ["KeyGroup", "ParamGroup"] + sorted(non_id_cols)
     if "FilePath" in cols:
         new_columns.append("FilePath")
+
+    df = df[new_columns]
+
     return df[new_columns]
 
 

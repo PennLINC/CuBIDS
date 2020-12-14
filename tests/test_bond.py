@@ -329,6 +329,32 @@ def test_csv_creation(tmp_path):
     # But now there are more parameter groups
     assert isummary_df.shape[0] == 12
 
+    # check that summary csv param group nums are in the right order
+    # and check that param groups are sorted by count vals
+    for i, (index, row) in enumerate(isummary_df.iterrows()):
+        if i == len(isummary_df) -1:
+            break
+        # if key groups in rows i and i+1 are the same
+        if isummary_df.iloc[i]['KeyGroup'] == \
+            isummary_df.iloc[i+1]['KeyGroup']:
+            # param group i = param group i+1
+            assert isummary_df.iloc[i]['ParamGroup'] == \
+                isummary_df.iloc[i+1]['ParamGroup'] - 1
+            # and count i < count i + 1
+            assert isummary_df.iloc[i]['Counts'] >= \
+                isummary_df.iloc[i+1]['Counts']
+
+    # check that files csv param group nums are in the right order
+    for i, (index, row) in enumerate(ifiles_df.iterrows()):
+        if i == len(ifiles_df) -1:
+            break
+        # if key groups in rows i and i+1 are the same
+        if ifiles_df.iloc[i]['KeyGroup'] == \
+            ifiles_df.iloc[i+1]['KeyGroup']:
+            # param group i = param group i+1
+            assert ifiles_df.iloc[i]['ParamGroup'] <= \
+                ifiles_df.iloc[i+1]['ParamGroup']
+
 
 def test_apply_csv_changes(tmp_path):
     # set up like narrative of user using this
