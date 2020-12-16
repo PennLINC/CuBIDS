@@ -143,9 +143,10 @@ class BOnD(object):
                 (files_df[["ParamGroup", "KeyGroup"]] == source_id).all(1)]
 
             # Get a source json file
-            source_json = img_to_json(source_files.iloc[0].FilePath)
+            source_json = img_to_new_ext(source_files.iloc[0].FilePath,
+                                         '.json')
             for dest_nii in dest_files.FilePath:
-                dest_json = img_to_json(dest_nii)
+                dest_json = img_to_new_ext(dest_nii, '.json')
                 if Path(dest_json).exists() and Path(source_json).exists():
                     merge_commands.append(
                         'bids-sidecar-merge %s %s'
@@ -291,13 +292,14 @@ class BOnD(object):
         self.old_filenames.append(str(path))
         self.new_filenames.append(new_path)
 
-        # now also rename json file
-        json_file = img_to_json(filepath)
-
-        if Path(json_file).exists():
-            new_json_path = new_path_front + "_" + new_filename + ".json"
-            self.old_filenames.append(json_file)
-            self.new_filenames.append(new_json_path)
+        # now also rename files with same stem diff extension
+        extensions = ['.json', '.bval', '.bvec', '.tsv']
+        for ext in extensions:
+            ext_file = img_to_new_ext(filepath, ext)
+            if Path(ext_file).exists():
+                new_ext_path = new_path_front + "_" + new_filename + ext
+                self.old_filenames.append(ext_file)
+                self.new_filenames.append(new_ext_path)
 
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
@@ -665,5 +667,5 @@ def _order_columns(df):
     return df[new_columns]
 
 
-def img_to_json(img_path):
-    return img_path.replace(".nii.gz", "").replace(".nii", "") + ".json"
+def img_to_new_ext(img_path, new_ext):
+    return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
