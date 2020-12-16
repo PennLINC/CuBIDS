@@ -300,7 +300,7 @@ class BOnD(object):
             if Path(ext_file).exists():
                 if ext == '.tsv':
                     # remove suffix for .tsv files
-                    # then check if the sub_ses_acq string exists in the filepath
+                    # then check if the sub_ses_acq string exists in the path
                     new_filename = new_filename.rpartition('_')[0] + '_events'
                 elif ext == '.tsv.gz':
                     new_filename = new_filename.rpartition('_')[0] + '_physio'
