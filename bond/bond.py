@@ -293,10 +293,17 @@ class BOnD(object):
         self.new_filenames.append(new_path)
 
         # now also rename files with same stem diff extension
-        extensions = ['.json', '.bval', '.bvec', '.tsv']
+        extensions = ['.json', '.bval', '.bvec', '.tsv', '.tsv.gz']
         for ext in extensions:
             ext_file = img_to_new_ext(filepath, ext)
+
             if Path(ext_file).exists():
+                if ext == '.tsv':
+                    # remove suffix for .tsv files
+                    # then check if the sub_ses_acq string exists in the filepath
+                    new_filename = new_filename.rpartition('_')[0] + '_events'
+                elif ext == '.tsv.gz':
+                    new_filename = new_filename.rpartition('_')[0] + '_physio'
                 new_ext_path = new_path_front + "_" + new_filename + ext
                 self.old_filenames.append(ext_file)
                 self.new_filenames.append(new_ext_path)
@@ -668,4 +675,11 @@ def _order_columns(df):
 
 
 def img_to_new_ext(img_path, new_ext):
-    return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
+    # handle .tsv edge case
+    if new_ext == '.tsv':
+        # take out suffix
+        return img_path.rpartition('_')[0] + '_events' + new_ext
+    elif new_ext == 'tsv.gz':
+        return img_path.rpartition('_')[0] + '_physio' + new_ext
+    else:
+        return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
