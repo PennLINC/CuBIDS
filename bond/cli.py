@@ -44,12 +44,19 @@ def bond_validate():
                         help='Disregard NIfTI header content during'
                         ' validation',
                         required=False)
+    parser.add_argument('--ignore_subject_consistency',
+                        action='store_true',
+                        default=True,
+                        help='Skip checking that any given file for one'
+                        ' subject is present for all other subjects',
+                        required=False)
     opts = parser.parse_args()
 
     # Run directly from python using subprocess
     if opts.container is None:
         call = build_validator_call(str(opts.bids_dir),
-                                    opts.ignore_nifti_headers)
+                                    opts.ignore_nifti_headers,
+                                    opts.ignore_subject_consistency)
         ret = run_validator(call)
 
         if ret.returncode != 0:
@@ -86,6 +93,8 @@ def bond_validate():
                opts.container, '/bids', linked_output_prefix]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
+        if opts.ignore_subject_consistency:
+            cmd.append('--ignore_subject_consistency')
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
@@ -93,6 +102,8 @@ def bond_validate():
                '/bids', linked_output_prefix]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
+        if opts.ignore_subject_consistency:
+            cmd.append('--ignore_subject_consistency')
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
