@@ -371,6 +371,8 @@ def test_apply_csv_changes(tmp_path):
     # add extension files
     path_to_img = str(data_root / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.nii.gz")
     _add_ext_files(path_to_img)
+    assert Path(data_root /
+        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz").exists() == True
 
     complete_bond = BOnD(data_root / "complete", use_datalad=True)
     complete_bond.datalad_save()
@@ -409,7 +411,7 @@ def test_apply_csv_changes(tmp_path):
     assert Path(data_root /
         "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_events.tsv").exists() == True
     assert Path(data_root /
-        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_physio.tsv.gz").exists() == True
+         "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_physio.tsv.gz").exists() == True
 
     mod2_path = tmp_path / "modified2_summary.csv"
     with mod2_path.open("r") as f:
@@ -456,9 +458,12 @@ def _add_ext_files(img_path):
     for ext in exts:
         ext_file = img_path.replace(".nii.gz", "").replace(".nii", "") + ext
 
-        if ext in ['.tsv', 'tzv.gz']:
+        if ext == '.tsv':
             no_suffix = ext_file.rpartition('_')[0]
             ext_file = no_suffix + '_events' + ext
+        if ext == '.tsv.gz':
+            no_suffix = ext_file.rpartition('_')[0]
+            ext_file = no_suffix + '_physio' + ext
         # save ext file in img_path's parent dir
         Path(ext_file).touch()
 

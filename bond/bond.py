@@ -254,7 +254,7 @@ class BOnD(object):
             modality = large.replace(small, '')
 
         # detect the subject/session string and keep it together
-        # front_stem is the string of subject/session paris
+        # front_stem is the string of subject/session pairs
         # these two entities don't change with the key group
         front_stem = ""
         cntr = 0
@@ -297,12 +297,12 @@ class BOnD(object):
         for ext in extensions:
             ext_file = img_to_new_ext(filepath, ext)
 
+            # check if ext_file exists in the bids dir
             if Path(ext_file).exists():
+                # need to remove suffix for .tsv and .tsv.gz files
                 if ext == '.tsv':
-                    # remove suffix for .tsv files
-                    # then check if the sub_ses_acq string exists in the path
                     new_filename = new_filename.rpartition('_')[0] + '_events'
-                elif ext == '.tsv.gz':
+                if ext == '.tsv.gz':
                     new_filename = new_filename.rpartition('_')[0] + '_physio'
                 new_ext_path = new_path_front + "_" + new_filename + ext
                 self.old_filenames.append(ext_file)
@@ -679,7 +679,7 @@ def img_to_new_ext(img_path, new_ext):
     if new_ext == '.tsv':
         # take out suffix
         return img_path.rpartition('_')[0] + '_events' + new_ext
-    elif new_ext == 'tsv.gz':
+    if new_ext == '.tsv.gz':
         return img_path.rpartition('_')[0] + '_physio' + new_ext
     else:
         return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
