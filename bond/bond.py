@@ -185,22 +185,23 @@ class BOnD(object):
             pairs_to_change = list(key_groups.keys())
 
             for row in range(len(files_df)):
+                file_path = files_df.iloc[row]['FilePath']
+                if Path(file_path).exists():
 
-                key_group = files_df.iloc[row]['KeyGroup']
-                param_group = files_df.iloc[row]['ParamGroup']
+                    key_group = files_df.iloc[row]['KeyGroup']
+                    param_group = files_df.iloc[row]['ParamGroup']
 
-                if (key_group, param_group) in pairs_to_change:
+                    if (key_group, param_group) in pairs_to_change:
 
-                    file_path = files_df.iloc[row]['FilePath']
-                    orig_key = files_df.iloc[row]['KeyGroup']
-                    param_num = files_df.iloc[row]['ParamGroup']
+                        orig_key = files_df.iloc[row]['KeyGroup']
+                        param_num = files_df.iloc[row]['ParamGroup']
 
-                    new_key = key_groups[(orig_key, param_num)]
+                        new_key = key_groups[(orig_key, param_num)]
 
-                    new_entities = _key_group_to_entities(new_key)
+                        new_entities = _key_group_to_entities(new_key)
 
-                    # change each filename according to new key group
-                    self.change_filename(file_path, new_entities)
+                        # change each filename according to new key group
+                        self.change_filename(file_path, new_entities)
 
             # create string of mv command ; mv command for dlapi.run
             for from_file, to_file in zip(self.old_filenames,
