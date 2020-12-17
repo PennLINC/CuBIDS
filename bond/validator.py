@@ -6,14 +6,16 @@ import pandas as pd
 logger = logging.getLogger('bond-cli')
 
 
-def build_validator_call(path, ignore_nifti_headers=False):
-    '''Build a subprocess command to the bids validator.'''
+def build_validator_call(path, ignore_headers=False, ignore_subject=True):
+    """Build a subprocess command to the bids validator"""
 
     # build docker call
     command = ['bids-validator', '--verbose', '--json']
 
-    if ignore_nifti_headers:
+    if ignore_headers:
         command.append('--ignoreNiftiHeaders')
+    if ignore_subject:
+        command.append('--ignoreSubjectConsistency')
 
     command.append(path)
 
@@ -21,7 +23,7 @@ def build_validator_call(path, ignore_nifti_headers=False):
 
 
 def run_validator(call, verbose=True):
-    '''Run the validator with subprocess.'''
+    """Run the validator with subprocess"""
     if verbose:
         logger.info("Running the validator with call:")
         logger.info('\"' + ' '.join(call) + '\"')
@@ -31,7 +33,7 @@ def run_validator(call, verbose=True):
 
 
 def parse_validator_output(output):
-    """Parse the JSON output of the BIDS validator into a pandas dataframe.
+    """Parse the JSON output of the BIDS validator into a pandas dataframe
 
     Parameters:
     -----------
