@@ -93,6 +93,8 @@ def bond_validate():
                opts.container, '/bids', linked_output_prefix]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
+        if opts.ignore_subject_consistency:
+            cmd.append('--ignore_subject_consistency')
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
@@ -100,6 +102,8 @@ def bond_validate():
                '/bids', linked_output_prefix]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
+        if opts.ignore_subject_consistency:
+            cmd.append('--ignore_subject_consistency')
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
