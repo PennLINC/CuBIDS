@@ -7,6 +7,7 @@ import shutil
 from copy import deepcopy
 import hashlib
 import json
+from pathlib import Path
 from pkg_resources import resource_filename as pkgrf
 import pytest
 from bond import BOnD
@@ -366,6 +367,13 @@ def test_apply_csv_changes(tmp_path):
     # make sure files you wanted to rename exist in the bids dir
 
     data_root = get_data(tmp_path)
+
+    # add extension files
+    path_to_img = str(data_root / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.nii.gz")
+    _add_ext_files(path_to_img)
+    assert Path(data_root /
+        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz").exists() == True
+
     complete_bond = BOnD(data_root / "complete", use_datalad=True)
     complete_bond.datalad_save()
 
@@ -387,10 +395,23 @@ def test_apply_csv_changes(tmp_path):
     assert og_content == mod1_content
 
     # edit the csv, add a RenameKeyGroup
+    # make sure extension files also get renamed
+
     _edit_csv(str(tmp_path / "originals_summary.csv"))
     complete_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
                                     str(tmp_path / "originals_files.csv"),
                                     str(tmp_path / "modified2"))
+
+    # check files df to make sure extension files also got renmaed
+    mod_files = tmp_path / "modified2_files.csv"
+    assert Path(data_root /
+        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.bval").exists() == True
+    assert Path(data_root /
+        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.bvec").exists() == True
+    assert Path(data_root /
+        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_events.tsv").exists() == True
+    assert Path(data_root /
+         "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_physio.tsv.gz").exists() == True
 
     mod2_path = tmp_path / "modified2_summary.csv"
     with mod2_path.open("r") as f:
@@ -412,6 +433,7 @@ def test_apply_csv_changes(tmp_path):
         deleted_content = "".join(f.readlines())
     assert deleted_keyparam not in deleted_content
 
+
 def _add_deletion(summary_csv):
     df = pd.read_csv(summary_csv)
     df.loc[3, 'MergeInto'] = 0
@@ -429,6 +451,22 @@ def _edit_csv(summary_csv):
 
     writer = csv.writer(open(summary_csv, 'w'))
     writer.writerows(lines)
+
+def _add_ext_files(img_path):
+    # add and save extension files in
+    exts = ['.bval', '.bvec', '.tsv', '.tsv.gz']
+    for ext in exts:
+        ext_file = img_path.replace(".nii.gz", "").replace(".nii", "") + ext
+
+        if ext == '.tsv':
+            no_suffix = ext_file.rpartition('_')[0]
+            ext_file = no_suffix + '_events' + ext
+        if ext == '.tsv.gz':
+            no_suffix = ext_file.rpartition('_')[0]
+            ext_file = no_suffix + '_physio' + ext
+        # save ext file in img_path's parent dir
+        Path(ext_file).touch()
+
 
     # add new key group name to RenameKeyGroup column
 

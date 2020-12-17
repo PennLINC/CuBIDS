@@ -143,9 +143,10 @@ class BOnD(object):
                 (files_df[["ParamGroup", "KeyGroup"]] == source_id).all(1)]
 
             # Get a source json file
-            source_json = img_to_json(source_files.iloc[0].FilePath)
+            source_json = img_to_new_ext(source_files.iloc[0].FilePath,
+                                         '.json')
             for dest_nii in dest_files.FilePath:
-                dest_json = img_to_json(dest_nii)
+                dest_json = img_to_new_ext(dest_nii, '.json')
                 if Path(dest_json).exists() and Path(source_json).exists():
                     merge_commands.append(
                         'bids-sidecar-merge %s %s'
@@ -253,7 +254,7 @@ class BOnD(object):
             modality = large.replace(small, '')
 
         # detect the subject/session string and keep it together
-        # front_stem is the string of subject/session paris
+        # front_stem is the string of subject/session pairs
         # these two entities don't change with the key group
         front_stem = ""
         cntr = 0
@@ -291,13 +292,21 @@ class BOnD(object):
         self.old_filenames.append(str(path))
         self.new_filenames.append(new_path)
 
-        # now also rename json file
-        json_file = img_to_json(filepath)
+        # now also rename files with same stem diff extension
+        extensions = ['.json', '.bval', '.bvec', '.tsv', '.tsv.gz']
+        for ext in extensions:
+            ext_file = img_to_new_ext(filepath, ext)
 
-        if Path(json_file).exists():
-            new_json_path = new_path_front + "_" + new_filename + ".json"
-            self.old_filenames.append(json_file)
-            self.new_filenames.append(new_json_path)
+            # check if ext_file exists in the bids dir
+            if Path(ext_file).exists():
+                # need to remove suffix for .tsv and .tsv.gz files
+                if ext == '.tsv':
+                    new_filename = new_filename.rpartition('_')[0] + '_events'
+                if ext == '.tsv.gz':
+                    new_filename = new_filename.rpartition('_')[0] + '_physio'
+                new_ext_path = new_path_front + "_" + new_filename + ext
+                self.old_filenames.append(ext_file)
+                self.new_filenames.append(new_ext_path)
 
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
@@ -665,5 +674,12 @@ def _order_columns(df):
     return df[new_columns]
 
 
-def img_to_json(img_path):
-    return img_path.replace(".nii.gz", "").replace(".nii", "") + ".json"
+def img_to_new_ext(img_path, new_ext):
+    # handle .tsv edge case
+    if new_ext == '.tsv':
+        # take out suffix
+        return img_path.rpartition('_')[0] + '_events' + new_ext
+    if new_ext == '.tsv.gz':
+        return img_path.rpartition('_')[0] + '_physio' + new_ext
+    else:
+        return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
