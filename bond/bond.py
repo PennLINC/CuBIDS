@@ -219,7 +219,13 @@ class BOnD(object):
         else:
             print("Not running any commands")
 
+        # NOW rename all references to renamed files in IntendedFors
+        self.rename_IntendedFor(self)
+
         self.get_CSVs(new_prefix)
+
+    def rename_IntendedFor(self):
+        return
 
     def change_filename(self, filepath, entities):
         """Applies changes to a filename based on the renamed
