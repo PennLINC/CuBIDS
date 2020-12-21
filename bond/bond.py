@@ -220,7 +220,7 @@ class BOnD(object):
             print("Not running any commands")
 
         # NOW rename all references to renamed files in IntendedFors
-        self.rename_IntendedFor(self)
+        self.rename_IntendedFor()
 
         self.get_CSVs(new_prefix)
 
