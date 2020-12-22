@@ -197,6 +197,11 @@ def test_csv_merge_changes(tmp_path):
 
     # assert delete_group not in tmp_path / "ok_deleted_summary.csv"
 
+def test_rename_intendedfor():
+    # get intended for of a file that got renamed
+    # and assert that the renamed name is there
+    # and assert that the old name is GONE
+
 def test_merge_without_overwrite():
     meta1 = {
         'ManualCheck': 1.0,

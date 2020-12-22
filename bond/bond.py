@@ -209,6 +209,9 @@ class BOnD(object):
                                           self.new_filenames):
                 if Path(from_file).exists():
                     move_ops.append('mv %s %s' % (from_file, to_file))
+
+                    # NOW RENAME INTENDED FOR REFERENCES
+                    self.rename_IntendedFor(from_file, to_file)
         print("Performing %d renamings" % len(move_ops))
 
         full_cmd = "; ".join(merge_commands + delete_commands + move_ops)
@@ -219,13 +222,36 @@ class BOnD(object):
         else:
             print("Not running any commands")
 
-        # NOW rename all references to renamed files in IntendedFors
-        self.rename_IntendedFor()
-
         self.get_CSVs(new_prefix)
 
-    def rename_IntendedFor(self):
-        return
+    def rename_IntendedFor(self, old, new):
+        # get entities
+        # get fmap dir
+        # get each json in the fmap dir
+        # go through each json and check if intendedfor has old_filename
+        # if yes, replace old_filename with new_fileanme
+        sub = "sub-%s" % self.old.entities['subject']
+        ses = "ses-%s" % self.old.entities['session']
+        fmap_dir = self.path + '/' + sub + '/' + ses + 'fmap/'
+        for f in fmap_dir.iterdir():
+            if f.endswith('.json'):
+                json_path = str(f)
+
+                # load json
+                with open(json_path) as f:
+                    data = json.load(f)
+
+                # replace old filename with new
+                for item in data['IntendedFor']:
+                    if item == old:
+                        data['IntendedFor'].replace(item, new)
+
+                # replace the IntendedFor list of files with the new list
+                with open(json_path, 'w') as file:
+                    json.dump(data, file, indent=4)
+
+
+
 
     def change_filename(self, filepath, entities):
         """Applies changes to a filename based on the renamed
