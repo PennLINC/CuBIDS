@@ -311,6 +311,16 @@ def test_csv_creation(tmp_path):
     # groups as key groups
     assert csummary_df.shape[0] == len(COMPLETE_KEY_GROUPS)
 
+    # Test that the voxel sizes are there
+    summary_cols = csummary_df.columns
+    files_cols = cfiles_df.columns
+    assert 'VoxelSizeDim1' in summary_cols
+    assert 'VoxelSizeDim1' in files_cols
+    assert 'Dim1Size' in summary_cols
+    assert 'Dim1Size' in files_cols
+    assert 'Obliquity' in summary_cols
+    assert 'Obliquity' in files_cols
+
     # Test the incomplete
     ibod = BOnD(data_root / "inconsistent")
     inc_misfit_fmaps = ibod._cache_fieldmaps()
