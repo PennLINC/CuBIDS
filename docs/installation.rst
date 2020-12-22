@@ -31,3 +31,9 @@ Once you have a copy of the source, you can install it with:
 
 .. _Github repo: https://github.com/PennLINC/BOnD
 .. _tarball: https://github.com/PennLINC/BOnD/tarball/master
+
+For running ``bond-validate``, we recommend pulling our Docker image to use the most appropriate version of the validator:
+
+.. code-block:: console
+
+    $ docker pull pennlinc/bond
