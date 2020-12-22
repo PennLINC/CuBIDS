@@ -250,9 +250,6 @@ class BOnD(object):
                 with open(json_path, 'w') as file:
                     json.dump(data, file, indent=4)
 
-
-
-
     def change_filename(self, filepath, entities):
         """Applies changes to a filename based on the renamed
         key groups.
