@@ -316,6 +316,8 @@ def test_csv_creation(tmp_path):
     files_cols = cfiles_df.columns
     assert 'VoxelSizeDim1' in summary_cols
     assert 'VoxelSizeDim1' in files_cols
+    assert 'RepetitionTime' in summary_cols
+    assert 'RepetitionTime' in files_cols
     assert 'Dim1Size' in summary_cols
     assert 'Dim1Size' in files_cols
     assert 'Obliquity' in summary_cols

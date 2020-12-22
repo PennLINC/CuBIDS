@@ -621,7 +621,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
 
         voxel_sizes = img.header.get_zooms()
         matrix_dims = img.shape
-
+        example_data["RepetitionTime"] = metadata.get("RepetitionTime")
         example_data["VoxelSizeDim1"] = voxel_sizes[0]
         example_data["Dim1Size"] = matrix_dims[0]
         example_data["VoxelSizeDim2"] = voxel_sizes[1]
