@@ -211,7 +211,7 @@ class BOnD(object):
                     move_ops.append('mv %s %s' % (from_file, to_file))
 
                     # NOW RENAME INTENDED FOR REFERENCES
-                    self.rename_IntendedFor(from_file, to_file)
+                    # self.rename_IntendedFor(from_file, to_file)
         print("Performing %d renamings" % len(move_ops))
 
         full_cmd = "; ".join(merge_commands + delete_commands + move_ops)
