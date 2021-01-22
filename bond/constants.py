@@ -8,4 +8,6 @@ IMAGING_PARAMS = set([
     "SliceEncodingDirection", "DwellTime", "FlipAngle",
     "MultibandAccelerationFactor", "RepetitionTime",
     "VolumeTiming", "NumberOfVolumesDiscardedByScanner",
-    "NumberOfVolumesDiscardedByUser"])
+    "NumberOfVolumesDiscardedByUser", "Obliquity", "VoxelSizeDim1",
+    "VoxelSizeDim2", "VoxelSizeDim3", "Dim1Size", "Dim2Size", "Dim3Size",
+    "NumVolumes"])
