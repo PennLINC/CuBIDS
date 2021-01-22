@@ -9,4 +9,5 @@ IMAGING_PARAMS = set([
     "MultibandAccelerationFactor", "RepetitionTime",
     "VolumeTiming", "NumberOfVolumesDiscardedByScanner",
     "NumberOfVolumesDiscardedByUser", "Obliquity", "VoxelSizeDim1",
-    "VoxelSizeDim2","VoxelSizeDim3","Dim1Size","Dim2Size","Dim3Size","NumVolumes"])
+    "VoxelSizeDim2", "VoxelSizeDim3", "Dim1Size", "Dim2Size", "Dim3Size",
+    "NumVolumes"])
