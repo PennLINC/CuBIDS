@@ -1,4 +1,10 @@
-"""Main module."""
+"""
+CuBIDS Main Module
+Curation of Brain Imaging Data Structure Data
+Relax, we’ve got your BIDS data covered!
+
+"""
+
 from collections import defaultdict
 import subprocess
 import bids
@@ -7,7 +13,6 @@ from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
 import numpy as np
-import nibabel as nb
 import pandas as pd
 import datalad.api as dlapi
 # import ipdb
@@ -614,22 +619,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         example_data["NSliceTimes"] = len(slice_times)
         example_data["FilePath"] = path
 
-        # Add num volumes, voxel sizes, and obliquity
-        img = nb.load(path)
-        example_data["Obliquity"] = np.any(nb.affines.obliquity(img.affine)
-                                           > 1e-4)
-
-        voxel_sizes = img.header.get_zooms()
-        matrix_dims = img.shape
+        # Add Repetition Time
         example_data["RepetitionTime"] = metadata.get("RepetitionTime")
-        example_data["VoxelSizeDim1"] = voxel_sizes[0]
-        example_data["Dim1Size"] = matrix_dims[0]
-        example_data["VoxelSizeDim2"] = voxel_sizes[1]
-        example_data["Dim2Size"] = matrix_dims[1]
-        example_data["VoxelSizeDim3"] = voxel_sizes[2]
-        example_data["Dim3Size"] = matrix_dims[2]
-        if img.ndim == 4:
-            example_data["NumVolumes"] = matrix_dims[3]
 
         # If it's a fieldmap, see what key group it's intended to correct
         intended_key_groups = sorted([_file_to_key_group(intention) for

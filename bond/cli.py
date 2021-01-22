@@ -10,6 +10,7 @@ from bond import BOnD
 from .validator import (build_validator_call,
                         run_validator, parse_validator_output)
 from .metadata_merge import merge_json_into_json
+from .add_nifti_info import nifti_info_to_json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bond-cli')
@@ -129,6 +130,57 @@ def bids_sidecar_merge():
                                         raise_on_error=False)
     sys.exit(merge_status)
 
+
+def bond_add_nifti_info():
+    '''Command line Interface function for adding nifti info to sidecars'''
+
+    parser = argparse.ArgumentParser(
+        description="bond-add-nifti-info: add key nifti params to sidecars:"
+        "voxel size, number of volumes, dimensions of image matrix",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('bids_dir',
+                        type=Path,
+                        action='store',
+                        help='the root of a BIDS dataset. It should contain '
+                        'sub-X directories and dataset_description.json')
+    parser.add_argument('--container',
+                        action='store',
+                        help='Docker image tag or Singularity image file.')
+    parser.add_argument('--use-datalad',
+                        action='store_true',
+                        help='ensure that there are no untracked changes '
+                        'before finding groups')
+    opts = parser.parse_args()
+
+    # Run directly from python using
+    if opts.container is None:
+
+        # bod = BOnD(data_root=str(opts.bids_dir),
+        #            use_datalad=opts.use_datalad)
+        # if opts.use_datalad and not bod.is_datalad_clean():
+        #     raise Exception("Untracked change in " + str(opts.bids_dir))
+
+        nifti_info_to_json(str(opts.bids_dir))
+        sys.exit(0)
+
+    # Run it through a container
+    container_type = _get_container_type(opts.container)
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
+    if container_type == 'docker':
+        cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
+               '-v', GIT_CONFIG+":/root/.gitconfig",
+               'bond-add-nifti-info',
+               opts.container, '/bids']
+    elif container_type == 'singularity':
+        cmd = ['singularity', 'exec', '--cleanenv',
+               '-B', bids_dir_link,
+               '-B', output_dir_link, opts.container, 'bond-add-nifti-info',
+               '/bids']
+    if opts.use_datalad:
+        cmd.append("--use-datalad")
+    print("RUNNING: " + ' '.join(cmd))
+    proc = subprocess.run(cmd)
+    sys.exit(proc.returncode)
 
 def bond_group():
     '''Command Line Interface function for finding key and param groups.'''
