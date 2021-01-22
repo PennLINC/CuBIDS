@@ -1,6 +1,5 @@
 '''Adds nifti voxel size/spacial matrix dimensions to sidecars.'''
 
-import bids
 from pathlib import Path
 import json
 import nibabel as nb
@@ -11,12 +10,13 @@ import numpy as np
 # get all sidecars
 # for each sidecar, add the important nift params
 
+
 def img_to_json(img_path):
     return img_path.replace(".nii.gz", "").replace(".nii", "") + ".json"
 
+
 def nifti_info_to_json(path):
     bids_dir = path
-    layout = bids.BIDSLayout(bids_dir)
 
     # loop through all niftis in the bids dir
     for path in Path(bids_dir).rglob("sub-*/**/*.*"):
@@ -25,7 +25,7 @@ def nifti_info_to_json(path):
 
             # get important info from niftis
             obliquity = np.any(nb.affines.obliquity(img.affine)
-                                                > 1e-4)
+                               > 1e-4)
             voxel_sizes = img.header.get_zooms()
             matrix_dims = img.shape
 
@@ -37,19 +37,15 @@ def nifti_info_to_json(path):
 
                 with open(sidecar) as f:
                     data = json.load(f)
-
+                data["Obliquity"] = str(obliquity)
                 data["VoxelSizeDim1"] = float(voxel_sizes[0])
-                data["Dim1Size"] = matrix_dims[0]
-                data["VoxelSizeDim2"] = float(voxel_sizes[1])
-                data["Dim2Size"] = matrix_dims[1]
                 data["VoxelSizeDim3"] = float(voxel_sizes[2])
+                data["VoxelSizeDim2"] = float(voxel_sizes[1])
+                data["Dim1Size"] = matrix_dims[0]
+                data["Dim2Size"] = matrix_dims[1]
                 data["Dim3Size"] = matrix_dims[2]
                 if img.ndim == 4:
                     data["NumVolumes"] = matrix_dims[3]
 
                 with open(sidecar, 'w') as file:
                     json.dump(data, file, indent=4)
-
-
-
-

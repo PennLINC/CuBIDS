@@ -174,13 +174,14 @@ def bond_add_nifti_info():
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               '-B', output_dir_link, opts.container, 'bond-add-nifti-info',
+               '-B', opts.container, 'bond-add-nifti-info',
                '/bids']
     if opts.use_datalad:
         cmd.append("--use-datalad")
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
+
 
 def bond_group():
     '''Command Line Interface function for finding key and param groups.'''
