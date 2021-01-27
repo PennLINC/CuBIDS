@@ -603,6 +603,22 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         example_data = {key: metadata[key] for key in wanted_keys}
         example_data["KeyGroup"] = key_group_name
 
+        # round voxel size to four places after the decimal
+        if "VoxelSizeDim1" in wanted_keys:
+            voxel_size1 = example_data["VoxelSizeDim1"]
+            voxel_size1 = np.round(voxel_size1, decimals=3)
+            example_data["VoxelSizeDim1"] = voxel_size1
+
+        if "VoxelSizeDim2" in wanted_keys:
+            voxel_size2 = example_data["VoxelSizeDim2"]
+            voxel_size2 = np.round(voxel_size2, decimals=3)
+            example_data["VoxelSizeDim2"] = voxel_size2
+
+        if "VoxelSizeDim3" in wanted_keys:
+            voxel_size3 = example_data["VoxelSizeDim3"]
+            voxel_size3 = np.round(voxel_size3, decimals=3)
+            example_data["VoxelSizeDim3"] = voxel_size3
+
         # Get the fieldmaps out and add their types
         fieldmap_types = sorted([_file_to_key_group(fmap.path) for
                                  fmap in fieldmap_lookup[path]])
