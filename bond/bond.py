@@ -684,7 +684,7 @@ def format_params(param_group_df, config):
             continue
         if 'precision' in column_fmt:
             param_group_df[column_name] = \
-                param_group_df.round(column_fmt['precision'])
+                param_group_df[column_name].round(column_fmt['precision'])
 
     return param_group_df
 
