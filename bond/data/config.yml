@@ -1,0 +1,45 @@
+# These are non-BIDS fields that can be added by CuBIDS
+derived_params:
+  Dim1Size: {}
+  Dim2Size: {}
+  Dim3Size: {}
+  NSliceTimes: {}
+  NumVolumes: {}
+  Obliquity: {}
+  VoxelSizeDim1:
+    precision: 3
+  VoxelSizeDim2:
+    precision: 3
+  VoxelSizeDim3:
+    precision: 3
+  NSliceTimes: {}
+
+# These fields reflect relationships between images.
+relational_params:
+  FieldmapKey: {}
+  IntendedForKey: {}
+
+
+# BIDS fields to directly include in the Parameter Groupings
+sidecar_params:
+  DwellTime:
+    precision: 6
+  EchoTime:
+    precision: 3
+  EffectiveEchoSpacing:
+    precision: 5
+  FlipAngle: {}
+  MultibandAccelerationFactor: {}
+  NumberOfVolumesDiscardedByScanner: {}
+  NumberOfVolumesDiscardedByUser: {}
+  ParallelAcquisitionTechnique: {}
+  ParallelReductionFactorInPlane: {}
+  PartialFourier: {}
+  PhaseEncodingDirection: {}
+  RepetitionTime:
+    precision: 6
+  SliceEncodingDirection: {}
+  TotalReadoutTime:
+    precision: 3
+  VolumeTiming:
+    precision: 6

@@ -153,6 +153,10 @@ def bond_group():
                         action='store_true',
                         help='ensure that there are no untracked changes '
                         'before finding groups')
+    parser.add_argument('--config',
+                        action='store',
+                        type=Path,
+                        help='path to a config file for grouping')
     opts = parser.parse_args()
 
     # Run directly from python using
@@ -161,24 +165,39 @@ def bond_group():
                    use_datalad=opts.use_datalad)
         if opts.use_datalad and not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.get_CSVs(str(opts.output_prefix))
+        bod.get_CSVs(str(opts.output_prefix), )
         sys.exit(0)
 
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
     output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/csv:rw"
+    input_config_dir_link = str(
+        opts.config.parent.absolute()) + ":/in_config:ro"
     linked_output_prefix = "/csv/" + opts.output_prefix.name
+    linked_input_config = "/in_config/" + opts.config.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', output_dir_link, '--entrypoint', 'bond-group',
+               '-v', output_dir_link,
+               '--entrypoint', 'bond-group',
                opts.container, '/bids', linked_output_prefix]
+        if opts.config.exists():
+            cmd.insert(3, '-v')
+            cmd.insert(4, input_config_dir_link)
+            cmd += ['--config', linked_input_config]
+
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               '-B', output_dir_link, opts.container, 'bond-group',
+               '-B', output_dir_link,
+               opts.container, 'bond-group',
                '/bids', linked_output_prefix]
+        if opts.config.exists():
+            cmd.insert(3, '-B')
+            cmd.insert(4, input_config_dir_link)
+            cmd += ['--config', linked_input_config]
+
     if opts.use_datalad:
         cmd.append("--use-datalad")
     print("RUNNING: " + ' '.join(cmd))
