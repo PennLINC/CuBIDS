@@ -162,7 +162,8 @@ def bond_group():
     # Run directly from python using
     if opts.container is None:
         bod = BOnD(data_root=str(opts.bids_dir),
-                   use_datalad=opts.use_datalad)
+                   use_datalad=opts.use_datalad,
+                   grouping_config=opts.config)
         if opts.use_datalad and not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.get_CSVs(str(opts.output_prefix), )
