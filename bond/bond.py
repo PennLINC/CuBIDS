@@ -603,6 +603,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     imaging_params = grouping_config.get('sidecar_params', {})
     relational_params = grouping_config.get('relational_params', {})
     derived_params = grouping_config.get('derived_params')
+    imaging_params.update(derived_params)
 
     dfs = []
     # path needs to be relative to the root with no leading prefix
@@ -630,7 +631,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         # If it's a fieldmap, see what key group it's intended to correct
         if "IntendedForKey" in relational_params:
             intended_key_groups = sorted([_file_to_key_group(intention) for
-                                        intention in intentions])
+                                          intention in intentions])
             for intention_num, intention_key_group in \
                     enumerate(intended_key_groups):
                 example_data[
@@ -639,7 +640,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         dfs.append(example_data)
 
     # Assign each file to a ParamGroup
-    df = pd.DataFrame(dfs)
+    df = format_params(pd.DataFrame(dfs), grouping_config)
     param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
