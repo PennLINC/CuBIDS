@@ -258,6 +258,14 @@ def bond_apply():
         opts.edited_csv_prefix.parent.absolute()) + ":/in_files_csv:ro"
     output_csv_dir_link = str(
         opts.new_csv_prefix.parent.absolute()) + ":/out_csv:rw"
+
+    # FROM BOND-GROUP
+    input_config_dir_link = str(
+        opts.config.parent.absolute()) + ":/in_config:ro"
+    linked_output_prefix = "/csv/" + opts.output_prefix.name
+    linked_input_config = "/in_config/" + opts.config.name
+    ####
+
     linked_input_summary_csv = "/in_summary_csv/" \
         + opts.edited_summary_csv.name
     linked_input_files_csv = "/in_files_csv/" + opts.files_csv.name
@@ -272,6 +280,10 @@ def bond_apply():
                '--entrypoint', 'bond-apply',
                opts.container, '/bids', linked_input_summary_csv,
                linked_input_files_csv, linked_output_prefix]
+        if opts.config.exists():
+            cmd.insert(3, '-v')
+            cmd.insert(4, input_config_dir_link)
+            cmd += ['--config', linked_input_config]
 
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
@@ -282,6 +294,10 @@ def bond_apply():
                opts.container, 'bond-apply',
                '/bids', linked_input_summary_csv,
                linked_input_files_csv, linked_output_prefix]
+        if opts.config.exists():
+            cmd.insert(3, '-B')
+            cmd.insert(4, input_config_dir_link)
+            cmd += ['--config', linked_input_config]
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
