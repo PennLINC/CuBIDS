@@ -173,8 +173,12 @@ def bond_group():
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
     output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/csv:rw"
-    input_config_dir_link = str(
-        opts.config.parent.absolute()) + ":/in_config:ro"
+
+    apply_config = opts.config is not None
+    if apply_config:
+        input_config_dir_link = str(
+            opts.config.parent.absolute()) + ":/in_config:ro"
+
     linked_output_prefix = "/csv/" + opts.output_prefix.name
     linked_input_config = "/in_config/" + opts.config.name
     if container_type == 'docker':
@@ -183,7 +187,7 @@ def bond_group():
                '-v', output_dir_link,
                '--entrypoint', 'bond-group',
                opts.container, '/bids', linked_output_prefix]
-        if opts.config.exists():
+        if apply_config:
             cmd.insert(3, '-v')
             cmd.insert(4, input_config_dir_link)
             cmd += ['--config', linked_input_config]
@@ -194,7 +198,7 @@ def bond_group():
                '-B', output_dir_link,
                opts.container, 'bond-group',
                '/bids', linked_output_prefix]
-        if opts.config.exists():
+        if apply_config:
             cmd.insert(3, '-B')
             cmd.insert(4, input_config_dir_link)
             cmd += ['--config', linked_input_config]
@@ -260,8 +264,10 @@ def bond_apply():
         opts.new_csv_prefix.parent.absolute()) + ":/out_csv:rw"
 
     # FROM BOND-GROUP
-    input_config_dir_link = str(
-        opts.config.parent.absolute()) + ":/in_config:ro"
+    apply_config = opts.config is not None
+    if apply_config:
+        input_config_dir_link = str(
+            opts.config.parent.absolute()) + ":/in_config:ro"
     linked_output_prefix = "/csv/" + opts.output_prefix.name
     linked_input_config = "/in_config/" + opts.config.name
     ####
@@ -280,7 +286,7 @@ def bond_apply():
                '--entrypoint', 'bond-apply',
                opts.container, '/bids', linked_input_summary_csv,
                linked_input_files_csv, linked_output_prefix]
-        if opts.config.exists():
+        if apply_config:
             cmd.insert(3, '-v')
             cmd.insert(4, input_config_dir_link)
             cmd += ['--config', linked_input_config]
@@ -294,7 +300,7 @@ def bond_apply():
                opts.container, 'bond-apply',
                '/bids', linked_input_summary_csv,
                linked_input_files_csv, linked_output_prefix]
-        if opts.config.exists():
+        if apply_config:
             cmd.insert(3, '-B')
             cmd.insert(4, input_config_dir_link)
             cmd += ['--config', linked_input_config]
