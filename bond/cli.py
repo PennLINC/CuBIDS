@@ -178,9 +178,9 @@ def bond_group():
     if apply_config:
         input_config_dir_link = str(
             opts.config.parent.absolute()) + ":/in_config:ro"
+        linked_input_config = "/in_config/" + opts.config.name
 
     linked_output_prefix = "/csv/" + opts.output_prefix.name
-    linked_input_config = "/in_config/" + opts.config.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
@@ -268,8 +268,10 @@ def bond_apply():
     if apply_config:
         input_config_dir_link = str(
             opts.config.parent.absolute()) + ":/in_config:ro"
+        linked_input_config = "/in_config/" + opts.config.name
+
     linked_output_prefix = "/csv/" + opts.output_prefix.name
-    linked_input_config = "/in_config/" + opts.config.name
+
     ####
 
     linked_input_summary_csv = "/in_summary_csv/" \
