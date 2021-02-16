@@ -153,32 +153,56 @@ def bond_group():
                         action='store_true',
                         help='ensure that there are no untracked changes '
                         'before finding groups')
+    parser.add_argument('--config',
+                        action='store',
+                        type=Path,
+                        help='path to a config file for grouping')
     opts = parser.parse_args()
 
     # Run directly from python using
     if opts.container is None:
         bod = BOnD(data_root=str(opts.bids_dir),
-                   use_datalad=opts.use_datalad)
+                   use_datalad=opts.use_datalad,
+                   grouping_config=opts.config)
         if opts.use_datalad and not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.get_CSVs(str(opts.output_prefix))
+        bod.get_CSVs(str(opts.output_prefix), )
         sys.exit(0)
 
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
     output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/csv:rw"
+
+    apply_config = opts.config is not None
+    if apply_config:
+        input_config_dir_link = str(
+            opts.config.parent.absolute()) + ":/in_config:ro"
+        linked_input_config = "/in_config/" + opts.config.name
+
     linked_output_prefix = "/csv/" + opts.output_prefix.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', output_dir_link, '--entrypoint', 'bond-group',
+               '-v', output_dir_link,
+               '--entrypoint', 'bond-group',
                opts.container, '/bids', linked_output_prefix]
+        if apply_config:
+            cmd.insert(3, '-v')
+            cmd.insert(4, input_config_dir_link)
+            cmd += ['--config', linked_input_config]
+
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               '-B', output_dir_link, opts.container, 'bond-group',
+               '-B', output_dir_link,
+               opts.container, 'bond-group',
                '/bids', linked_output_prefix]
+        if apply_config:
+            cmd.insert(3, '-B')
+            cmd.insert(4, input_config_dir_link)
+            cmd += ['--config', linked_input_config]
+
     if opts.use_datalad:
         cmd.append("--use-datalad")
     print("RUNNING: " + ' '.join(cmd))
@@ -238,6 +262,18 @@ def bond_apply():
         opts.edited_csv_prefix.parent.absolute()) + ":/in_files_csv:ro"
     output_csv_dir_link = str(
         opts.new_csv_prefix.parent.absolute()) + ":/out_csv:rw"
+
+    # FROM BOND-GROUP
+    apply_config = opts.config is not None
+    if apply_config:
+        input_config_dir_link = str(
+            opts.config.parent.absolute()) + ":/in_config:ro"
+        linked_input_config = "/in_config/" + opts.config.name
+
+    linked_output_prefix = "/csv/" + opts.output_prefix.name
+
+    ####
+
     linked_input_summary_csv = "/in_summary_csv/" \
         + opts.edited_summary_csv.name
     linked_input_files_csv = "/in_files_csv/" + opts.files_csv.name
@@ -252,6 +288,10 @@ def bond_apply():
                '--entrypoint', 'bond-apply',
                opts.container, '/bids', linked_input_summary_csv,
                linked_input_files_csv, linked_output_prefix]
+        if apply_config:
+            cmd.insert(3, '-v')
+            cmd.insert(4, input_config_dir_link)
+            cmd += ['--config', linked_input_config]
 
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
@@ -262,6 +302,10 @@ def bond_apply():
                opts.container, 'bond-apply',
                '/bids', linked_input_summary_csv,
                linked_input_files_csv, linked_output_prefix]
+        if apply_config:
+            cmd.insert(3, '-B')
+            cmd.insert(4, input_config_dir_link)
+            cmd += ['--config', linked_input_config]
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
