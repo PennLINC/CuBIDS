@@ -20,6 +20,8 @@ bids.config.set_option('extension_initial_dot', True)
 
 class BOnD(object):
 
+    # NEED TO CHANGE ALL INSTANCES OF 'BOND' TO 'CUBIDS' CASE SENSISTIVE
+
     def __init__(self, data_root, use_datalad=False, grouping_config=None):
 
         self.path = data_root
