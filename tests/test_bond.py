@@ -101,24 +101,6 @@ def test_purge(tmp_path):
     assert not Path(scan_name).exists()
     assert not Path(json_name).exists()
 
-def test_purge_cli(tmp_path):
-    data_root = get_data(tmp_path)
-
-    # Test that a successful purge can happen
-    scans = []
-    scan_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
-        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
-    json_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
-        / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
-    scans.append(scan_name)
-    purge_path = str(tmp_path / "purge_scans.txt")
-
-    merge_proc = subprocess.run(
-        ['bond-purge', data_root / "complete", purge_path])
-    assert merge_proc.returncode == 0
-    assert not Path(scan_name).exists()
-    assert not Path(json_name).exists()
-
 
 def test_bad_json_merge(tmp_path):
     data_root = get_data(tmp_path)
