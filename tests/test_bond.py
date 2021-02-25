@@ -75,6 +75,50 @@ def test_ok_json_merge_cli(tmp_path):
     assert merge_proc.returncode == 0
     assert not _get_json_string(dest_json) == orig_dest_json_content
 
+def test_purge(tmp_path):
+    data_root = get_data(tmp_path)
+    scans = []
+    scan_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
+    json_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
+    scans.append(scan_name)
+    purge_path = str(tmp_path / "purge_scans.txt")
+
+    with open(purge_path, 'w') as filehandle:
+        for listitem in scans:
+            filehandle.write('%s\n' % listitem)
+    bod = BOnD(data_root / "complete", use_datalad=True)
+    bod.datalad_save()
+
+    assert bod.is_datalad_clean()
+    assert Path(scan_name).exists()
+    assert Path(json_name).exists()
+
+    # create and save .txt with list of scans
+    bod.purge_associations(purge_path)
+
+    assert not Path(scan_name).exists()
+    assert not Path(json_name).exists()
+
+def test_purge_cli(tmp_path):
+    data_root = get_data(tmp_path)
+
+    # Test that a successful purge can happen
+    scans = []
+    scan_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
+    json_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
+    scans.append(scan_name)
+    purge_path = str(tmp_path / "purge_scans.txt")
+
+    merge_proc = subprocess.run(
+        ['bond-purge', data_root / "complete", purge_path])
+    assert merge_proc.returncode == 0
+    assert not Path(scan_name).exists()
+    assert not Path(json_name).exists()
+
 
 def test_bad_json_merge(tmp_path):
     data_root = get_data(tmp_path)

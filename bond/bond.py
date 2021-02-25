@@ -310,7 +310,7 @@ class BOnD(object):
                 self.old_filenames.append(ext_file)
                 self.new_filenames.append(new_ext_path)
 
-    def purge_associations(self, scans_txt):
+    def purge_associations(self, scans_txt, raise_on_error=True):
         " Purges all associations of a nifti from the bids dataset"
 
         scans = []
@@ -320,19 +320,21 @@ class BOnD(object):
                 scans.append(row[0])
 
         # get fmap jsons and find intended for references (OK NOT DATALAD RUN?)
-        for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
 
-            with open(path) as f:
-                data = json.load(f)
+        # for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
 
-            # remove asl references in the IntendedFor
-            for item in data['IntendedFor']:
-                if item in _get_intended_for_reference(scans):
-                    data['IntendedFor'].remove(item)
+        #     with open(path) as f:
+        #         data = json.load(f)
 
-            # replace the IntendedFor list of files with the new list
-            with open(path, 'w') as file:
-                json.dump(data, file, indent=4)
+        #     # remove scan references in the IntendedFor
+        #     if 'IntendedFor' in data.keys():
+        #         for item in data['IntendedFor']:
+        #             if item in _get_intended_for_reference(scans):
+        #                 data['IntendedFor'].remove(item)
+
+        #     # replace the IntendedFor list of files with the new list
+        #     with open(path, 'w') as file:
+        #         json.dump(data, file, indent=4)
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
 
