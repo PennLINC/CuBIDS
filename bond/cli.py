@@ -349,6 +349,7 @@ def bond_undo():
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
 
+
 def bond_purge():
     ''' Command Line Interface function for purging scan associations.'''
 
@@ -363,8 +364,8 @@ def bond_purge():
     parser.add_argument('scans',
                         type=Path,
                         action='store',
-                        help='path to the txt file of scans whose associations '
-                        'should be purged from the BIDS dataset')
+                        help='path to the txt file of scans whose '
+                        'associations should be purged.')
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
@@ -376,7 +377,7 @@ def bond_purge():
         if not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.purge_associations(str(opts.scans_txt),
-                              raise_on_error=False)
+                               raise_on_error=False)
         sys.exit(0)
 
     # Run it through a container
@@ -390,18 +391,17 @@ def bond_purge():
                '-v', GIT_CONFIG+":/root/.gitconfig",
                '-v', input_scans_link,
                '--entrypoint', 'bond-purge',
-               opts.container, '/bids', linked_input_scans]
+               opts.container, '/bids', input_scans_link]
 
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                '-B', input_scans_link,
                opts.container, 'bond-purge',
-               '/bids', linked_input_scans]
+               '/bids', input_scans_link]
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
-
 
 
 def bond_remove_metadata_fields():

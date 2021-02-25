@@ -327,7 +327,6 @@ class BOnD(object):
 
             # remove asl references in the IntendedFor
             for item in data['IntendedFor']:
-                #print(item)
                 if item in _get_intended_for_reference(scans):
                     data['IntendedFor'].remove(item)
 
@@ -350,7 +349,7 @@ class BOnD(object):
 
         # create rm commands for all files that need to be purged
         purge_commands = []
-        for rm_me in to_delete:
+        for rm_me in to_remove:
             if Path(rm_me).exists():
                 purge_commands.append("rm " + rm_me)
         print("Deleting %d files" % len(purge_commands))
@@ -363,7 +362,6 @@ class BOnD(object):
             self.reset_bids_layout()
         else:
             print("Not running any commands")
-
 
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
@@ -614,6 +612,7 @@ def _file_to_key_group(filename):
 
     entities = parse_file_entities(str(filename))
     return _entities_to_key_group(entities)
+
 
 def _get_intended_for_reference(scans):
     ses_mod_files = []
