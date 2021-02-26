@@ -13,7 +13,8 @@ import pandas as pd
 import datalad.api as dlapi
 # import ipdb
 from tqdm import tqdm
-from .constants import ID_VARS, NON_KEY_ENTITIES, IMAGING_PARAMS
+from .constants import ID_VARS, NON_KEY_ENTITIES
+from .config import load_config
 from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 bids.config.set_option('extension_initial_dot', True)
@@ -21,7 +22,7 @@ bids.config.set_option('extension_initial_dot', True)
 
 class BOnD(object):
 
-    def __init__(self, data_root, use_datalad=False):
+    def __init__(self, data_root, use_datalad=False, grouping_config=None):
 
         self.path = data_root
         self._layout = None
@@ -31,7 +32,7 @@ class BOnD(object):
         self.datalad_handle = None
         self.old_filenames = []  # files whose key groups changed
         self.new_filenames = []  # new filenames for files to change
-
+        self.grouping_config = load_config(grouping_config)
         # Initialize datalad if
         if use_datalad:
             self.init_datalad()
@@ -446,7 +447,8 @@ class BOnD(object):
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
         ret = _get_param_groups(
-            matching_files, self.layout, self.fieldmap_lookup, key_group)
+            matching_files, self.layout, self.fieldmap_lookup, key_group,
+            self.grouping_config)
 
         return ret
 
@@ -638,7 +640,7 @@ def _file_to_key_group(filename):
     entities = parse_file_entities(str(filename))
     return _entities_to_key_group(entities)
 
-
+  
 def _get_intended_for_reference(scans):
     ses_mod_files = []
     for i in range(len(scans)):
@@ -646,7 +648,9 @@ def _get_intended_for_reference(scans):
     return ses_mod_files
 
 
-def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
+def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
+                      grouping_config):
+  
     """Finds a list of *parameter groups* from a list of files.
 
     For each file in `files`, find critical parameters for metadata. Then find
@@ -664,6 +668,9 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         mapping of filename strings relative to the bids root
         (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
 
+    grouping_config : dict
+        configuration for defining parameter groups
+
     Returns:
     --------
     labeled_files : pd.DataFrame
@@ -679,54 +686,48 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
         print("WARNING: no files for", key_group_name)
         return None, None
 
+    # Split the config into separate parts
+    imaging_params = grouping_config.get('sidecar_params', {})
+    relational_params = grouping_config.get('relational_params', {})
+    derived_params = grouping_config.get('derived_params')
+    imaging_params.update(derived_params)
+
     dfs = []
     # path needs to be relative to the root with no leading prefix
     for path in files:
         metadata = layout.get_metadata(path)
         intentions = metadata.get("IntendedFor", [])
         slice_times = metadata.get("SliceTiming", [])
-        wanted_keys = metadata.keys() & IMAGING_PARAMS
+
+        wanted_keys = metadata.keys() & imaging_params
         example_data = {key: metadata[key] for key in wanted_keys}
         example_data["KeyGroup"] = key_group_name
 
-        # round voxel size to four places after the decimal
-        if "VoxelSizeDim1" in wanted_keys:
-            voxel_size1 = example_data["VoxelSizeDim1"]
-            voxel_size1 = np.round(voxel_size1, decimals=3)
-            example_data["VoxelSizeDim1"] = voxel_size1
-
-        if "VoxelSizeDim2" in wanted_keys:
-            voxel_size2 = example_data["VoxelSizeDim2"]
-            voxel_size2 = np.round(voxel_size2, decimals=3)
-            example_data["VoxelSizeDim2"] = voxel_size2
-
-        if "VoxelSizeDim3" in wanted_keys:
-            voxel_size3 = example_data["VoxelSizeDim3"]
-            voxel_size3 = np.round(voxel_size3, decimals=3)
-            example_data["VoxelSizeDim3"] = voxel_size3
-
         # Get the fieldmaps out and add their types
-        fieldmap_types = sorted([_file_to_key_group(fmap.path) for
-                                 fmap in fieldmap_lookup[path]])
-        for fmap_num, fmap_type in enumerate(fieldmap_types):
-            example_data['FieldmapKey%02d' % fmap_num] = fmap_type
+        if 'FieldmapKey' in relational_params:
+            fieldmap_types = sorted([_file_to_key_group(fmap.path) for
+                                    fmap in fieldmap_lookup[path]])
+            for fmap_num, fmap_type in enumerate(fieldmap_types):
+                example_data['FieldmapKey%02d' % fmap_num] = fmap_type
 
         # Add the number of slice times specified
-        example_data["NSliceTimes"] = len(slice_times)
+        if "NSliceTimes" in derived_params:
+            example_data["NSliceTimes"] = len(slice_times)
         example_data["FilePath"] = path
 
         # If it's a fieldmap, see what key group it's intended to correct
-        intended_key_groups = sorted([_file_to_key_group(intention) for
-                                      intention in intentions])
-        for intention_num, intention_key_group in \
-                enumerate(intended_key_groups):
-            example_data[
-                "IntendedForKey%02d" % intention_num] = intention_key_group
+        if "IntendedForKey" in relational_params:
+            intended_key_groups = sorted([_file_to_key_group(intention) for
+                                          intention in intentions])
+            for intention_num, intention_key_group in \
+                    enumerate(intended_key_groups):
+                example_data[
+                    "IntendedForKey%02d" % intention_num] = intention_key_group
 
         dfs.append(example_data)
 
     # Assign each file to a ParamGroup
-    df = pd.DataFrame(dfs)
+    df = format_params(pd.DataFrame(dfs), grouping_config)
     param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
@@ -759,6 +760,20 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name):
                                       ascending=False)
 
     return ordered_labeled_files, param_groups_with_counts
+
+
+def format_params(param_group_df, config):
+    to_format = config['sidecar_params']
+    to_format.update(config['derived_params'])
+
+    for column_name, column_fmt in to_format.items():
+        if column_name not in param_group_df:
+            continue
+        if 'precision' in column_fmt:
+            param_group_df[column_name] = \
+                param_group_df[column_name].round(column_fmt['precision'])
+
+    return param_group_df
 
 
 def _order_columns(df):
