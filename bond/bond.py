@@ -339,19 +339,24 @@ class BOnD(object):
             data = json_file.get_dict()
 
             # remove scan references in the IntendedFor
+            num_changes = 0
             if 'IntendedFor' in data.keys():
                 for item in data['IntendedFor']:
                     if item in _get_intended_for_reference(scans):
                         print("IntendedFor Reference", str(path))
                         data['IntendedFor'].remove(item)
+                        num_changes += 1
 
                         # update the json with the new data dictionary
                         _update_json(json_file.path, data)
 
             # save IntendedFor purges so that you can datalad run the
             # remove association file commands on a clean dataset
-        self.datalad_save(message="Purged IntendedFors")
-        self.reset_bids_layout()
+        if num_changes > 0:
+            self.datalad_save(message="Purged IntendedFors")
+            self.reset_bids_layout()
+        else:
+            print("No IntendedFor References")
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
 
@@ -387,7 +392,7 @@ class BOnD(object):
             self.datalad_handle.run(full_cmd)
             self.reset_bids_layout()
         else:
-            print("Not running any commands")
+            print("Not running any association removals")
 
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
