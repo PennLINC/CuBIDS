@@ -420,7 +420,7 @@ def bond_purge():
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
         if not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.purge_associations(str(opts.scans_txt),
+        bod.purge_associations(str(opts.scans),
                                raise_on_error=False)
         sys.exit(0)
 
