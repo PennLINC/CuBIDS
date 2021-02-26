@@ -394,6 +394,60 @@ def bond_undo():
     sys.exit(proc.returncode)
 
 
+def bond_purge():
+    ''' Command Line Interface function for purging scan associations.'''
+
+    parser = argparse.ArgumentParser(
+        description="bond-purge: purge associations from the dataset",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('bids_dir',
+                        type=Path,
+                        action='store',
+                        help='the root of a BIDS dataset. It should contain '
+                        'sub-X directories and dataset_description.json')
+    parser.add_argument('scans',
+                        type=Path,
+                        action='store',
+                        help='path to the txt file of scans whose '
+                        'associations should be purged.')
+    parser.add_argument('--container',
+                        action='store',
+                        help='Docker image tag or Singularity image file.')
+    opts = parser.parse_args()
+
+    # Run directly from python using
+    if opts.container is None:
+        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
+        if not bod.is_datalad_clean():
+            raise Exception("Untracked change in " + str(opts.bids_dir))
+        bod.purge_associations(str(opts.scans_txt),
+                               raise_on_error=False)
+        sys.exit(0)
+
+    # Run it through a container
+    container_type = _get_container_type(opts.container)
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
+    input_scans_link = str(
+        opts.scans.parent.absolute()) + ":/in_scans:ro"
+    if container_type == 'docker':
+        cmd = ['docker', 'run', '--rm',
+               '-v', bids_dir_link,
+               '-v', GIT_CONFIG+":/root/.gitconfig",
+               '-v', input_scans_link,
+               '--entrypoint', 'bond-purge',
+               opts.container, '/bids', input_scans_link]
+
+    elif container_type == 'singularity':
+        cmd = ['singularity', 'exec', '--cleanenv',
+               '-B', bids_dir_link,
+               '-B', input_scans_link,
+               opts.container, 'bond-purge',
+               '/bids', input_scans_link]
+    print("RUNNING: " + ' '.join(cmd))
+    proc = subprocess.run(cmd)
+    sys.exit(proc.returncode)
+
+
 def bond_remove_metadata_fields():
     ''' Command Line Interface function for deteling fields from metadata.'''
 

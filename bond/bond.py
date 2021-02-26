@@ -2,7 +2,9 @@
 from collections import defaultdict
 import subprocess
 import bids
+import bids.layout
 import json
+import csv
 from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
@@ -310,6 +312,83 @@ class BOnD(object):
                 self.old_filenames.append(ext_file)
                 self.new_filenames.append(new_ext_path)
 
+    def purge_associations(self, scans_txt, raise_on_error=True):
+        """Purges all associations of desired scans from a bids dataset.
+
+        Parameters:
+        -----------
+            scans_txt: str
+                path to the .txt file that lists the scans
+                you want to be deleted from the dataset, along
+                with thier associations.
+                example path: /Users/Covitz/CCNP/scans_to_delete.txt
+        """
+
+        scans = []
+        with open(scans_txt, 'r') as fd:
+            reader = csv.reader(fd)
+            for row in reader:
+                scans.append(str(row[0]))
+
+        # PURGE FMAP JSONS' INTENDED FOR REFERENCES
+        for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
+
+            # with open(path) as f:
+            #     data = json.load(f)
+            json_file = self.layout.get_file(str(path))
+            data = json_file.get_dict()
+
+            # remove scan references in the IntendedFor
+            if 'IntendedFor' in data.keys():
+                for item in data['IntendedFor']:
+                    if item in _get_intended_for_reference(scans):
+                        print("IntendedFor Reference", str(path))
+                        data['IntendedFor'].remove(item)
+
+                        # update the json with the new data dictionary
+                        _update_json(json_file.path, data)
+
+            # save IntendedFor purges so that you can datalad run the
+            # remove association file commands on a clean dataset
+        self.datalad_save(message="Purged IntendedFors")
+        self.reset_bids_layout()
+
+        # NOW WE WANT TO PURGE ALL ASSOCIATIONS
+
+        to_remove = []
+        for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
+            if str(path) in scans:
+                bids_file = self.layout.get_file(str(path))
+                print("SCAN: ", bids_file)
+                associations = bids_file.get_associations()
+                for assoc in associations:
+                    filepath = assoc.path
+                    print("ASSOC: ", filepath)
+                    if '/fmap/' not in str(filepath):
+                        to_remove.append(filepath)
+                if '/dwi/' in str(path):
+                    # add the bval and bvec if there
+                    to_remove.append(img_to_new_ext(str(path), '.bval'))
+                    to_remove.append(img_to_new_ext(str(path), '.bvec'))
+        to_remove += scans
+
+        # create rm commands for all files that need to be purged
+        purge_commands = []
+        for rm_me in to_remove:
+            if Path(rm_me).exists():
+                purge_commands.append("rm " + rm_me)
+        print("Deleting %d files" % len(purge_commands))
+        print(to_remove)
+
+        # datalad run the file deletions (purges)
+        full_cmd = "; ".join(purge_commands)
+        if full_cmd:
+            print("RUNNING:\n\n", full_cmd)
+            self.datalad_handle.run(full_cmd)
+            self.reset_bids_layout()
+        else:
+            print("Not running any commands")
+
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
 
@@ -562,8 +641,16 @@ def _file_to_key_group(filename):
     return _entities_to_key_group(entities)
 
 
+def _get_intended_for_reference(scans):
+    ses_mod_files = []
+    for i in range(len(scans)):
+        ses_mod_files.append('/'.join(Path(scans[i]).parts[-3:]))
+    return ses_mod_files
+
+
 def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
                       grouping_config):
+
     """Finds a list of *parameter groups* from a list of files.
 
     For each file in `files`, find critical parameters for metadata. Then find
