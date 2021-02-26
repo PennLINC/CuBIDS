@@ -2,6 +2,7 @@
 from collections import defaultdict
 import subprocess
 import bids
+import bids.layout
 import json
 import csv
 from pathlib import Path
@@ -311,30 +312,45 @@ class BOnD(object):
                 self.new_filenames.append(new_ext_path)
 
     def purge_associations(self, scans_txt, raise_on_error=True):
-        " Purges all associations of a nifti from the bids dataset"
+        """Purges all associations of desired scans from a bids dataset.
+
+        Parameters:
+        -----------
+            scans_txt: str
+                path to the .txt file that lists the scans
+                you want to be deleted from the dataset, along
+                with thier associations.
+                example path: /Users/Covitz/CCNP/scans_to_delete.txt
+        """
 
         scans = []
         with open(scans_txt, 'r') as fd:
             reader = csv.reader(fd)
             for row in reader:
-                scans.append(row[0])
+                scans.append(str(row[0]))
 
-        # get fmap jsons and find intended for references (OK NOT DATALAD RUN?)
+        # PURGE FMAP JSONS' INTENDED FOR REFERENCES
+        for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
 
-        # for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
+            # with open(path) as f:
+            #     data = json.load(f)
+            json_file = self.layout.get_file(str(path))
+            data = json_file.get_dict()
 
-        #     with open(path) as f:
-        #         data = json.load(f)
+            # remove scan references in the IntendedFor
+            if 'IntendedFor' in data.keys():
+                for item in data['IntendedFor']:
+                    if item in _get_intended_for_reference(scans):
+                        print("IntendedFor Reference", str(path))
+                        data['IntendedFor'].remove(item)
 
-        #     # remove scan references in the IntendedFor
-        #     if 'IntendedFor' in data.keys():
-        #         for item in data['IntendedFor']:
-        #             if item in _get_intended_for_reference(scans):
-        #                 data['IntendedFor'].remove(item)
+                        # update the json with the new data dictionary
+                        _update_json(json_file.path, data)
 
-        #     # replace the IntendedFor list of files with the new list
-        #     with open(path, 'w') as file:
-        #         json.dump(data, file, indent=4)
+            # save IntendedFor purges so that you can datalad run the
+            # remove association file commands on a clean dataset
+        self.datalad_save(message="Purged IntendedFors")
+        self.reset_bids_layout()
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
 
@@ -342,11 +358,17 @@ class BOnD(object):
         for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
             if str(path) in scans:
                 bids_file = self.layout.get_file(str(path))
-                assoc = bids_file.get_associations()
-                for i in range(len(assoc)):
-                    filepath = assoc[i].path
-                    if 'fmap' not in str(filepath):
+                print("SCAN: ", bids_file)
+                associations = bids_file.get_associations()
+                for assoc in associations:
+                    filepath = assoc.path
+                    print("ASSOC: ", filepath)
+                    if '/fmap/' not in str(filepath):
                         to_remove.append(filepath)
+                if '/dwi/' in str(path):
+                    # add the bval and bvec if there
+                    to_remove.append(img_to_new_ext(str(path), '.bval'))
+                    to_remove.append(img_to_new_ext(str(path), '.bvec'))
         to_remove += scans
 
         # create rm commands for all files that need to be purged
@@ -355,6 +377,7 @@ class BOnD(object):
             if Path(rm_me).exists():
                 purge_commands.append("rm " + rm_me)
         print("Deleting %d files" % len(purge_commands))
+        print(to_remove)
 
         # datalad run the file deletions (purges)
         full_cmd = "; ".join(purge_commands)
