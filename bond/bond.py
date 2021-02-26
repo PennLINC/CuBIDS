@@ -640,7 +640,7 @@ def _file_to_key_group(filename):
     entities = parse_file_entities(str(filename))
     return _entities_to_key_group(entities)
 
-  
+
 def _get_intended_for_reference(scans):
     ses_mod_files = []
     for i in range(len(scans)):
@@ -650,7 +650,7 @@ def _get_intended_for_reference(scans):
 
 def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
                       grouping_config):
-  
+
     """Finds a list of *parameter groups* from a list of files.
 
     For each file in `files`, find critical parameters for metadata. Then find
