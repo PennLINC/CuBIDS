@@ -403,12 +403,13 @@ def bond_purge():
     parser.add_argument('bids_dir',
                         type=Path,
                         action='store',
-                        help='the root of a BIDS dataset. It should contain '
-                        'sub-X directories and dataset_description.json')
+                        help='absolute path to the root of a BIDS dataset. '
+                        'It should contain sub-X directories and '
+                        'dataset_description.json.')
     parser.add_argument('scans',
                         type=Path,
                         action='store',
-                        help='path to the txt file of scans whose '
+                        help='absolute path to the txt file of scans whose '
                         'associations should be purged.')
     parser.add_argument('--container',
                         action='store',

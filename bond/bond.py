@@ -339,20 +339,19 @@ class BOnD(object):
             data = json_file.get_dict()
 
             # remove scan references in the IntendedFor
-            num_changes = 0
+
             if 'IntendedFor' in data.keys():
                 for item in data['IntendedFor']:
                     if item in _get_intended_for_reference(scans):
                         print("IntendedFor Reference", str(path))
                         data['IntendedFor'].remove(item)
-                        num_changes += 1
 
                         # update the json with the new data dictionary
                         _update_json(json_file.path, data)
 
             # save IntendedFor purges so that you can datalad run the
             # remove association file commands on a clean dataset
-        if num_changes > 0:
+        if not self.is_datalad_clean():
             self.datalad_save(message="Purged IntendedFors")
             self.reset_bids_layout()
         else:
