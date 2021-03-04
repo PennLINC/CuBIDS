@@ -407,11 +407,6 @@ def bond_copy_exemplars():
                         help='absolute path to the root of a BIDS dataset. '
                         'It should contain sub-X directories and '
                         'dataset_description.json.')
-    parser.add_argument('exemplars_csv',
-                        type=Path,
-                        action='store',
-                        help='absolute path to the csv file of scans whose '
-                        'associations should be purged.')
     parser.add_argument('exemplars_dir',
                         type=Path,
                         action='store',
@@ -419,6 +414,11 @@ def bond_copy_exemplars():
                         'containing one subject from each Acquisition Group. '
                         'It should contain sub-X directories and '
                         'dataset_description.json.')
+    parser.add_argument('exemplars_csv',
+                        type=Path,
+                        action='store',
+                        help='absolute path to the csv file of scans whose '
+                        'associations should be purged.')
     parser.add_argument('--use-datalad',
                         action='store_true',
                         help='ensure that there are no untracked changes '

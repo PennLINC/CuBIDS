@@ -11,7 +11,7 @@ from bids.utils import listify
 import numpy as np
 import pandas as pd
 import datalad.api as dlapi
-from shutil import copytree
+from shutil import copytree, copyfile
 # import ipdb
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES
@@ -342,13 +342,16 @@ class BOnD(object):
         for subid in unique_subs:
             source = self.path + '/' + 'sub-' + str(subid)
             if force_unlock:
-                # SUBPROCESS.RUN DATALAD UNLOCK on each sub_path WITH BLOCKING!
+                # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
                 subprocess.run(["datalad", "unlock", 'sub-' + str(subid)],
                                cwd=self.path)
 
             dest = exemplars_dir + '/' + 'sub-' + str(subid)
             # Copy the content of source to destination
             copytree(source, dest)
+            # Copy the dataset_description.json
+            copyfile(self.path + '/' + 'dataset_description.json',
+                     exemplars_dir + '/' + 'dataset_description.json')
 
     def purge_associations(self, scans_txt, raise_on_error=True):
         """Purges all associations of desired scans from a bids dataset.
