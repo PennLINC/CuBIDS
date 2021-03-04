@@ -393,6 +393,7 @@ def bond_undo():
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
 
+
 def bond_copy_exemplars():
     ''' Command Line Interface function for purging scan associations.'''
 
@@ -423,10 +424,10 @@ def bond_copy_exemplars():
                         help='ensure that there are no untracked changes '
                         'before finding groups')
     parser.add_argument('--force_unlock',
-                    action='store_true',
-                    default=False,
-                    help='unlock exemplar subject directories before copying ',
-                    required=False)
+                        action='store_true',
+                        default=False,
+                        help='unlock exemplar subjects before copying ',
+                        required=False)
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
@@ -438,8 +439,8 @@ def bond_copy_exemplars():
         if bod.is_datalad_clean():
             raise Exception("Need to unlock " + str(opts.bids_dir))
         bod.copy_exemplars(str(opts.exemplars_dir), str(opts.exemplars_csv),
-                               force_unlock=opts.force_unlock,
-                               raise_on_error=True)
+                           force_unlock=opts.force_unlock,
+                           raise_on_error=True)
         sys.exit(0)
 
     # if opts.container is None:
@@ -452,27 +453,27 @@ def bond_copy_exemplars():
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
     exemplars_dir_link = str(opts.exemplars_dir.absolute()) + ":/exemplars:ro"
-    input_exemplars_link = str(opts.exemplars_csv.parent.absolute()) + ":/in_exemplars:ro"
+    exemplars_csv_link = str(opts.exemplars_csv.absolute()) + ":/in_csv:ro"
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
-               '-v', input_exemplars_link,
+               '-v', exemplars_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', exemplars_dir_link, '--entrypoint', 'bond-copy-exemplars',
+               '-v', exemplars_csv_link, '--entrypoint', 'bond-copy-exemplars',
                opts.container, '/bids', '/exemplars', '/in_exemplars']
         if opts.force_unlock:
             cmd.append('--force_unlock')
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               '-B', output_dir_link, opts.container, 'bond-copy-exemplars',
-               '/bids', linked_output_prefix]
+               '-B', exemplars_dir_link,
+               '-B', exemplars_csv_link, opts.container, 'bond-copy-exemplars',
+               '/bids', '/exemplars', '/in_csv']
         if opts.force_unlock:
             cmd.append('--force_unlock')
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
-
 
 
 def bond_purge():
@@ -503,8 +504,7 @@ def bond_purge():
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
         if not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.copy_exemplars(str(opts.scans),
-                               raise_on_error=False)
+        bod.copy_exemplars(str(opts.scans), raise_on_error=False)
         sys.exit(0)
 
     # Run it through a container
