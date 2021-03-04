@@ -393,6 +393,87 @@ def bond_undo():
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
 
+def bond_copy_exemplars():
+    ''' Command Line Interface function for purging scan associations.'''
+
+    parser = argparse.ArgumentParser(
+        description="bond-copy-exemplars: create and save a directory with "
+        " one subject from each Acquisition Group in the BIDS dataset",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('bids_dir',
+                        type=Path,
+                        action='store',
+                        help='absolute path to the root of a BIDS dataset. '
+                        'It should contain sub-X directories and '
+                        'dataset_description.json.')
+    parser.add_argument('exemplars_csv',
+                        type=Path,
+                        action='store',
+                        help='absolute path to the csv file of scans whose '
+                        'associations should be purged.')
+    parser.add_argument('exemplars_dir',
+                        type=Path,
+                        action='store',
+                        help='absolute path to the root of a BIDS dataset '
+                        'containing one subject from each Acquisition Group. '
+                        'It should contain sub-X directories and '
+                        'dataset_description.json.')
+    parser.add_argument('--use-datalad',
+                        action='store_true',
+                        help='ensure that there are no untracked changes '
+                        'before finding groups')
+    parser.add_argument('--force_unlock',
+                    action='store_true',
+                    default=False,
+                    help='unlock exemplar subject directories before copying ',
+                    required=False)
+    parser.add_argument('--container',
+                        action='store',
+                        help='Docker image tag or Singularity image file.')
+    opts = parser.parse_args()
+
+    # Run directly from python using
+    if opts.container is None:
+        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
+        if bod.is_datalad_clean():
+            raise Exception("Need to unlock " + str(opts.bids_dir))
+        bod.copy_exemplars(str(opts.exemplars_dir), str(opts.exemplars_csv),
+                               force_unlock=opts.force_unlock,
+                               raise_on_error=True)
+        sys.exit(0)
+
+    # if opts.container is None:
+    #     call = build_validator_call(str(opts.bids_dir),
+    #                             opts.ignore_nifti_headers,
+    #                             opts.ignore_subject_consistency)
+    # ret = run_validator(call)
+
+    # Run it through a container
+    container_type = _get_container_type(opts.container)
+    bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
+    exemplars_dir_link = str(opts.exemplars_dir.absolute()) + ":/exemplars:ro"
+    input_exemplars_link = str(opts.exemplars_csv.parent.absolute()) + ":/in_exemplars:ro"
+    if container_type == 'docker':
+        cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
+               '-v', input_exemplars_link,
+               '-v', GIT_CONFIG+":/root/.gitconfig",
+               '-v', exemplars_dir_link, '--entrypoint', 'bond-copy-exemplars',
+               opts.container, '/bids', '/exemplars', '/in_exemplars']
+        if opts.force_unlock:
+            cmd.append('--force_unlock')
+    elif container_type == 'singularity':
+        cmd = ['singularity', 'exec', '--cleanenv',
+               '-B', bids_dir_link,
+               '-B', output_dir_link, opts.container, 'bond-copy-exemplars',
+               '/bids', linked_output_prefix]
+        if opts.force_unlock:
+            cmd.append('--force_unlock')
+
+    print("RUNNING: " + ' '.join(cmd))
+    proc = subprocess.run(cmd)
+    sys.exit(proc.returncode)
+
+
 
 def bond_purge():
     ''' Command Line Interface function for purging scan associations.'''
@@ -418,10 +499,11 @@ def bond_purge():
 
     # Run directly from python using
     if opts.container is None:
+        # TODO: NEED TO CHECK IF THE FLAG IS SET, THEN USE_DATALAD=TRUE?
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
         if not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.purge_associations(str(opts.scans),
+        bod.copy_exemplars(str(opts.scans),
                                raise_on_error=False)
         sys.exit(0)
 

@@ -11,6 +11,8 @@ from bids.utils import listify
 import numpy as np
 import pandas as pd
 import datalad.api as dlapi
+import os
+from shutil import copytree
 # import ipdb
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES
@@ -311,6 +313,43 @@ class BOnD(object):
                 new_ext_path = new_path_front + "_" + new_filename + ext
                 self.old_filenames.append(ext_file)
                 self.new_filenames.append(new_ext_path)
+
+
+    def copy_exemplars(self, exemplars_dir, exemplars_csv, force_unlock, raise_on_error=True):
+        """Copies one subject from each Acquisition Group into a new directory
+        for testing *preps, raises an error if the subjects are not unlocked,
+        unlocks each subject before copying if --force_unlock is set.
+
+        Parameters:
+        -----------
+            exemplars_dir: str
+                path to the directory that will contain one subject
+                from each Acqusition Gorup (*_AcqGrouping.csv)
+                example path: /Users/Covitz/CSVs/CCNP_Acq_Groups/
+
+            exemplars_csv: str
+                path to the .csv file that lists one subject
+                from each Acqusition Gorup (*_AcqGrouping.csv)
+                from the bond-group output
+                example path: /Users/Covitz/CSVs/CCNP_Acq_Grouping.csv
+        """
+
+        # load the exemplars csv
+        subs = pd.read_csv(exemplars_csv)
+        unique = subs.drop_duplicates(subset = ["AcqGroup"])
+        unique_subs = unique['subject'].tolist()
+
+        # DO THE COPY USING SHUTIL
+        for sub in unique_subs:
+            source = self.path + '/' + 'sub-' + str(subid)
+            if force_unlock == True:
+                # SUBPROCESS.RUN DATALAD UNLOCK on each sub_path WITH BLOCKING!
+                subprocess.run(["datalad", "unlock", 'sub'+ str(subid)],
+                               cwd=self.path)
+
+            dest = exemplars_dir + '/' + 'sub-' + str(subid)
+            # Copy the content of source to destination
+            copytree(source, dest)
 
     def purge_associations(self, scans_txt, raise_on_error=True):
         """Purges all associations of desired scans from a bids dataset.
