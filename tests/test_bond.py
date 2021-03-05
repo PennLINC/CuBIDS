@@ -24,7 +24,7 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import subprocess
-import pdb
+#import pdb
 
 
 TEST_DATA = pkgrf("bond", "testdata")
@@ -86,7 +86,7 @@ def test_copy_exemplars(tmp_path):
     exemplars_dir = str(tmp_path / "exemplars")
     print('EXEMPLARS DIR: ', exemplars_dir)
     df = pd.read_csv(acq_group_csv)
-    pdb.set_trace()
+    #pdb.set_trace()
     bod.copy_exemplars(exemplars_dir, acq_group_csv, force_unlock=True)
 
     # check exemplar dir got created and has the correct number of subs
