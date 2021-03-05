@@ -204,7 +204,7 @@ def group_by_acquisition_sets(files_csv, output_prefix, split_session=True):
             (groupnum, content_id_counts[content_id_row]) + content_id)
         for subject, session in contents_to_subjects[content_id]:
             grouped_sub_sess.append(
-                {"subject": subject,
+                {"subject": 'sub-' + subject,
                  "session": session,
                  "AcqGroup": groupnum})
 

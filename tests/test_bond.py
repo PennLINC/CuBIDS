@@ -24,6 +24,7 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import subprocess
+#import pdb
 
 
 TEST_DATA = pkgrf("bond", "testdata")
@@ -74,6 +75,29 @@ def test_ok_json_merge_cli(tmp_path):
         ['bids-sidecar-merge', str(source_json), str(dest_json)])
     assert merge_proc.returncode == 0
     assert not _get_json_string(dest_json) == orig_dest_json_content
+
+def test_copy_exemplars(tmp_path):
+    data_root = get_data(tmp_path)
+    bod = BOnD(data_root / "complete", use_datalad=True)
+    csv_prefix = str(tmp_path / "csvs")
+    bod.get_CSVs(csv_prefix)
+    acq_group_csv = csv_prefix + "_AcqGrouping.csv"
+    print("ACQ GROUP PATH: ", acq_group_csv)
+    exemplars_dir = str(tmp_path / "exemplars")
+    print('EXEMPLARS DIR: ', exemplars_dir)
+    df = pd.read_csv(acq_group_csv)
+    #pdb.set_trace()
+    bod.copy_exemplars(exemplars_dir, acq_group_csv, force_unlock=True)
+
+    # check exemplar dir got created and has the correct number of subs
+    cntr = 0
+    for path in Path(exemplars_dir).glob("sub-*"):
+        cntr += 1
+    assert cntr == len(df.drop_duplicates(subset=["AcqGroup"]))
+
+    # check that dataset_description.json got added
+    assert Path(exemplars_dir + '/dataset_description.json').exists()
+
 
 def test_purge(tmp_path):
     data_root = get_data(tmp_path)

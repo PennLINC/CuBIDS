@@ -31,6 +31,7 @@ setup(
             'bond-group=bond.cli:bond_group',
             'bond-apply=bond.cli:bond_apply',
             'bond-purge=bond.cli:bond_purge',
+            'bond-copy-exemplars=bond.cli:bond_copy_exemplars',
             'bond-undo=bond.cli:bond_undo',
             'bids-sidecar-merge=bond.cli:bids_sidecar_merge',
             'bond-validate=bond.cli:bond_validate',
