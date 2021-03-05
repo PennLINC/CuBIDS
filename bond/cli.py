@@ -436,18 +436,13 @@ def bond_copy_exemplars():
     # Run directly from python using
     if opts.container is None:
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
-        if bod.is_datalad_clean():
-            raise Exception("Need to unlock " + str(opts.bids_dir))
+        if opts.use_datalad:
+            if bod.is_datalad_clean() and not opts.force_unlock:
+                raise Exception("Need to unlock " + str(opts.bids_dir))
         bod.copy_exemplars(str(opts.exemplars_dir), str(opts.exemplars_csv),
                            force_unlock=opts.force_unlock,
                            raise_on_error=True)
         sys.exit(0)
-
-    # if opts.container is None:
-    #     call = build_validator_call(str(opts.bids_dir),
-    #                             opts.ignore_nifti_headers,
-    #                             opts.ignore_subject_consistency)
-    # ret = run_validator(call)
 
     # Run it through a container
     container_type = _get_container_type(opts.container)
@@ -459,7 +454,8 @@ def bond_copy_exemplars():
                '-v', exemplars_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
                '-v', exemplars_csv_link, '--entrypoint', 'bond-copy-exemplars',
-               opts.container, '/bids', '/exemplars', '/in_exemplars']
+               opts.container, '/bids', '/exemplars', '/in_csv']
+
         if opts.force_unlock:
             cmd.append('--force_unlock')
     elif container_type == 'singularity':
@@ -500,11 +496,10 @@ def bond_purge():
 
     # Run directly from python using
     if opts.container is None:
-        # TODO: NEED TO CHECK IF THE FLAG IS SET, THEN USE_DATALAD=TRUE?
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
         if not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.copy_exemplars(str(opts.scans), raise_on_error=False)
+        bod.purge(str(opts.scans), raise_on_error=False)
         sys.exit(0)
 
     # Run it through a container
