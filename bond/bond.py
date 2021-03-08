@@ -352,7 +352,7 @@ class BOnD(object):
         copyfile(str(self.path) + '/' + 'dataset_description.json',
                  exemplars_dir + '/' + 'dataset_description.json')
 
-    def purge_associations(self, scans_txt, raise_on_error=True):
+    def purge(self, scans_txt, raise_on_error=True):
         """Purges all associations of desired scans from a bids dataset.
 
         Parameters:

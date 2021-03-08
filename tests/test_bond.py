@@ -120,7 +120,7 @@ def test_purge(tmp_path):
     assert Path(json_name).exists()
 
     # create and save .txt with list of scans
-    bod.purge_associations(purge_path)
+    bod.purge(purge_path)
 
     assert not Path(scan_name).exists()
     assert not Path(json_name).exists()
