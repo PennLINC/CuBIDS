@@ -22,8 +22,6 @@ relational_params:
 
 # BIDS fields to directly include in the Parameter Groupings
 sidecar_params:
-  DwellTime:
-    precision: 6
   EchoTime:
     precision: 3
   EffectiveEchoSpacing:
