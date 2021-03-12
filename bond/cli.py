@@ -249,8 +249,9 @@ def bond_apply():
     # Run directly from python using
     if opts.container is None:
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
-        if not bod.is_datalad_clean():
-            raise Exception("Untracked change in " + str(opts.bids_dir))
+        if opts.use_datalad == True:
+            if not bod.is_datalad_clean():
+                raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.apply_csv_changes(str(opts.edited_summary_csv),
                               str(opts.files_csv),
                               str(opts.new_csv_prefix),
@@ -496,6 +497,10 @@ def bond_purge():
                         action='store',
                         help='absolute path to the txt file of scans whose '
                         'associations should be purged.')
+    parser.add_argument('--use-datalad',
+                        action='store_true',
+                        help='ensure that there are no untracked changes '
+                        'before finding groups')
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
@@ -503,9 +508,10 @@ def bond_purge():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
-        if not bod.is_datalad_clean():
-            raise Exception("Untracked change in " + str(opts.bids_dir))
+        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
+        if opts.use_datalad == True:
+            if not bod.is_datalad_clean():
+                raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.purge(str(opts.scans), raise_on_error=False)
         sys.exit(0)
 
@@ -529,6 +535,8 @@ def bond_purge():
                opts.container, 'bond-purge',
                '/bids', input_scans_link]
     print("RUNNING: " + ' '.join(cmd))
+    if opts.use_datalad:
+        cmd.append("--use-datalad")
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
 

@@ -34,8 +34,8 @@ class BOnD(object):
         self.old_filenames = []  # files whose key groups changed
         self.new_filenames = []  # new filenames for files to change
         self.grouping_config = load_config(grouping_config)
-        # Initialize datalad if
-        self.use_datalad = use_datalad # True if flag set, False if flag unset
+
+        self.use_datalad = use_datalad  # True if flag set, False if flag unset
         if self.use_datalad:
             self.init_datalad()
 
@@ -222,7 +222,7 @@ class BOnD(object):
             if self.use_datalad:
                 self.datalad_handle.run(full_cmd)
             else:
-                subprocess.run(full_cmd)
+                process = subprocess.run(full_cmd,stdout=subprocess.PIPE, shell=True)
             self.reset_bids_layout()
         else:
             print("Not running any commands")
@@ -395,11 +395,12 @@ class BOnD(object):
 
             # save IntendedFor purges so that you can datalad run the
             # remove association file commands on a clean dataset
-        if not self.is_datalad_clean():
-            self.datalad_save(message="Purged IntendedFors")
-            self.reset_bids_layout()
-        else:
-            print("No IntendedFor References")
+        if self.use_datalad:
+            if not self.is_datalad_clean():
+                self.datalad_save(message="Purged IntendedFors")
+                self.reset_bids_layout()
+            else:
+                print("No IntendedFor References")
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
 
@@ -435,7 +436,7 @@ class BOnD(object):
             if self.use_datalad:
                 self.datalad_handle.run(full_cmd)
             else:
-                subprocess.run(full_cmd)
+                process = subprocess.run(full_cmd,stdout=subprocess.PIPE, shell=True)
             self.reset_bids_layout()
         else:
             print("Not running any association removals")
