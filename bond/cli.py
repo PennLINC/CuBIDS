@@ -249,7 +249,7 @@ def bond_apply():
     # Run directly from python using
     if opts.container is None:
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
-        if opts.use_datalad == True:
+        if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.apply_csv_changes(str(opts.edited_summary_csv),
@@ -509,7 +509,7 @@ def bond_purge():
     # Run directly from python using
     if opts.container is None:
         bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
-        if opts.use_datalad == True:
+        if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.purge(str(opts.scans), raise_on_error=False)

@@ -222,7 +222,7 @@ class BOnD(object):
             if self.use_datalad:
                 self.datalad_handle.run(full_cmd)
             else:
-                process = subprocess.run(full_cmd,stdout=subprocess.PIPE, shell=True)
+                subprocess.run(full_cmd, stdout=subprocess.PIPE, shell=True)
             self.reset_bids_layout()
         else:
             print("Not running any commands")
@@ -436,7 +436,7 @@ class BOnD(object):
             if self.use_datalad:
                 self.datalad_handle.run(full_cmd)
             else:
-                process = subprocess.run(full_cmd,stdout=subprocess.PIPE, shell=True)
+                subprocess.run(full_cmd, stdout=subprocess.PIPE, shell=True)
             self.reset_bids_layout()
         else:
             print("Not running any association removals")
