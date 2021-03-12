@@ -35,7 +35,8 @@ class BOnD(object):
         self.new_filenames = []  # new filenames for files to change
         self.grouping_config = load_config(grouping_config)
         # Initialize datalad if
-        if use_datalad:
+        self.use_datalad = use_datalad # True if flag set, False if flag unset
+        if self.use_datalad:
             self.init_datalad()
 
     @property
@@ -218,7 +219,10 @@ class BOnD(object):
         full_cmd = "; ".join(merge_commands + delete_commands + move_ops)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
-            self.datalad_handle.run(full_cmd)
+            if self.use_datalad:
+                self.datalad_handle.run(full_cmd)
+            else:
+                subprocess.run(full_cmd)
             self.reset_bids_layout()
         else:
             print("Not running any commands")
@@ -428,7 +432,10 @@ class BOnD(object):
         full_cmd = "; ".join(purge_commands)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
-            self.datalad_handle.run(full_cmd)
+            if self.use_datalad:
+                self.datalad_handle.run(full_cmd)
+            else:
+                subprocess.run(full_cmd)
             self.reset_bids_layout()
         else:
             print("Not running any association removals")

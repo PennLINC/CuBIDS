@@ -237,6 +237,10 @@ def bond_apply():
                         action='store',
                         help='file prefix for writing the new _summary.csv, '
                         '_files.csv and _group.csv that have been edited.')
+    parser.add_argument('--use-datalad',
+                        action='store_true',
+                        help='ensure that there are no untracked changes '
+                        'before finding groups')
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
@@ -244,7 +248,7 @@ def bond_apply():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
+        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
         if not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.apply_csv_changes(str(opts.edited_summary_csv),
@@ -306,6 +310,9 @@ def bond_apply():
             cmd.insert(3, '-B')
             cmd.insert(4, input_config_dir_link)
             cmd += ['--config', linked_input_config]
+
+    if opts.use_datalad:
+        cmd.append("--use-datalad")
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
