@@ -428,6 +428,7 @@ class BOnD(object):
         full_cmd = "; ".join(purge_commands)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
+
             self.datalad_handle.run(full_cmd)
             self.reset_bids_layout()
         else:
@@ -534,6 +535,27 @@ class BOnD(object):
         summary.insert(0, "MergeInto", np.nan)
         summary.insert(0, "ManualCheck", np.nan)
         summary.insert(0, "Notes", np.nan)
+
+        # NOW THAT DFS HAVE BEEN CREATED, WE WANT TO AUTOMATE RENAMES
+        # AUTOMATE RENAMES IFF THE VARIANT STRING ISN'T ALREADY IN THERE
+        og_summary = summary
+        og_summary['RenameKeyGroup'] = og_summary['RenameKeyGroup'].apply(str)
+
+        # get all FieldmapKeyXX
+        filter_col = [col for col in og_summary if col.startswith('FieldmapKey')]
+        fmap_keys = og_summary[filter_col].keys().tolist()
+
+        # get all IntendedForXX
+        filter_col = [col for col in og_summary if col.startswith('IntendedForKey')]
+        if_keys = og_summary[filter_col].keys().tolist()
+
+        imaging_params = self.grouping_config.get('sidecar_params', {})
+        relational_params = self.grouping_config.get('relational_params', {})
+        derived_params = self.grouping_config.get('derived_params')
+
+        print(imaging_params.keys())
+        print(relational_params.keys())
+        print(derived_params.keys())
 
         return (big_df, summary)
 
