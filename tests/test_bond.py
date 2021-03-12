@@ -24,7 +24,6 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import subprocess
-#import pdb
 
 
 TEST_DATA = pkgrf("bond", "testdata")
@@ -86,7 +85,7 @@ def test_copy_exemplars(tmp_path):
     exemplars_dir = str(tmp_path / "exemplars")
     print('EXEMPLARS DIR: ', exemplars_dir)
     df = pd.read_csv(acq_group_csv)
-    #pdb.set_trace()
+
     bod.copy_exemplars(exemplars_dir, acq_group_csv, force_unlock=True)
 
     # check exemplar dir got created and has the correct number of subs
@@ -98,6 +97,31 @@ def test_copy_exemplars(tmp_path):
     # check that dataset_description.json got added
     assert Path(exemplars_dir + '/dataset_description.json').exists()
 
+def test_purge_no_datalad(tmp_path):
+    data_root = get_data(tmp_path)
+    scans = []
+    scan_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
+    json_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
+        / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
+    scans.append(scan_name)
+    purge_path = str(tmp_path / "purge_scans.txt")
+
+    with open(purge_path, 'w') as filehandle:
+        for listitem in scans:
+            filehandle.write('%s\n' % listitem)
+    bod = BOnD(data_root / "complete", use_datalad=False)
+    #bod.datalad_save()
+
+    #assert bod.is_datalad_clean()
+    assert Path(scan_name).exists()
+    assert Path(json_name).exists()
+
+    # create and save .txt with list of scans
+    bod.purge(purge_path)
+
+    assert not Path(scan_name).exists()
+    assert not Path(json_name).exists()
 
 def test_purge(tmp_path):
     data_root = get_data(tmp_path)
@@ -156,6 +180,69 @@ def test_bad_json_merge_cli(tmp_path):
     assert _get_json_string(dest_json) == orig_dest_json_content
 
 #TODO: add tests that return an error for invalid merge
+def test_csv_merge_no_datalad(tmp_path):
+    data_root = get_data(tmp_path)
+    bod = BOnD(data_root / "inconsistent", use_datalad=False)
+
+    # Get an initial grouping summary and files list
+    csv_prefix = str(tmp_path / "originals")
+    bod.get_CSVs(csv_prefix)
+    original_summary_csv = csv_prefix + "_summary.csv"
+    original_files_csv = csv_prefix + "_files.csv"
+
+    # give csv with no changes (make sure it does nothing)
+    bod.apply_csv_changes(original_summary_csv,
+                          original_files_csv,
+                          str(tmp_path / "unmodified"))
+
+    assert file_hash(original_summary_csv) == \
+           file_hash(tmp_path / "unmodified_summary.csv")
+
+    # Find the dwi with no FlipAngle
+    summary_df = pd.read_csv(original_summary_csv)
+    fa_nan_dwi_row, = np.flatnonzero(
+        np.isnan(summary_df.FlipAngle) &
+        summary_df.KeyGroup.str.fullmatch(
+            "acquisition-HASC55AP_datatype-dwi_suffix-dwi"))
+    # Find the dwi with and EchoTime ==
+    complete_dwi_row, = np.flatnonzero(
+        summary_df.KeyGroup.str.fullmatch(
+            "acquisition-HASC55AP_datatype-dwi_suffix-dwi") &
+        (summary_df.FlipAngle == 90.) &
+        (summary_df.EchoTime > 0.05))
+    cant_merge_echotime_dwi_row, = np.flatnonzero(
+        summary_df.KeyGroup.str.fullmatch(
+            "acquisition-HASC55AP_datatype-dwi_suffix-dwi") &
+        (summary_df.FlipAngle == 90.) &
+        (summary_df.EchoTime < 0.05))
+
+    # Set a legal MergeInto value. This effectively fills in data
+    # where there was previously as missing FlipAngle
+    summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[
+        complete_dwi_row]
+
+    valid_csv_file = csv_prefix + "_valid_summary.csv"
+    summary_df.to_csv(valid_csv_file, index=False)
+
+    # about to apply merges!
+
+    bod.apply_csv_changes(valid_csv_file,
+                          original_files_csv,
+                          str(tmp_path / "ok_modified"))
+
+    assert not file_hash(original_summary_csv) == \
+           file_hash(tmp_path / "ok_modified_summary.csv")
+
+    # Add an illegal merge to MergeInto
+    summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
+        complete_dwi_row]
+    invalid_csv_file = csv_prefix + "_invalid_summary.csv"
+    summary_df.to_csv(invalid_csv_file, index=False)
+
+    with pytest.raises(Exception):
+        bod.apply_csv_changes(invalid_csv_file,
+                              str(tmp_path / "originals_files.csv"),
+                              str(tmp_path / "ok_modified"))
 
 def test_csv_merge_changes(tmp_path):
     data_root = get_data(tmp_path)
@@ -203,6 +290,7 @@ def test_csv_merge_changes(tmp_path):
     valid_csv_file = csv_prefix + "_valid_summary.csv"
     summary_df.to_csv(valid_csv_file, index=False)
 
+    # about to merge
     bod.apply_csv_changes(valid_csv_file,
                           original_files_csv,
                           str(tmp_path / "ok_modified"))
