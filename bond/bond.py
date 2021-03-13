@@ -545,16 +545,20 @@ class BOnD(object):
 
         # NOW THAT DFS HAVE BEEN CREATED, WE WANT TO AUTOMATE RENAMES
         # AUTOMATE RENAMES IFF THE VARIANT STRING ISN'T ALREADY IN THERE
-        og_summary = summary
-        og_summary['RenameKeyGroup'] = og_summary['RenameKeyGroup'].apply(str)
+        # og_summary = summary
+        # og_summary['RenameKeyGroup'] =
+        #    og_summary['RenameKeyGroup'].apply(str)
 
-        # get all FieldmapKeyXX
-        filter_col = [col for col in og_summary if col.startswith('FieldmapKey')]
-        fmap_keys = og_summary[filter_col].keys().tolist()
+        # # get all FieldmapKeyXX
+        # fmap_col = [col for col in og_summary
+        #               if col.startswith('FieldmapKey')]
 
-        # get all IntendedForXX
-        filter_col = [col for col in og_summary if col.startswith('IntendedForKey')]
-        if_keys = og_summary[filter_col].keys().tolist()
+        # # get all IntendedForXX
+        # if_col = [col for col in og_summary
+        #               if col.startswith('IntendedForKey')]
+
+        # if_keys = og_summary[fmap_col].keys().tolist()
+        # fmap_keys = og_summary[if_col].keys().tolist()
 
         imaging_params = self.grouping_config.get('sidecar_params', {})
         relational_params = self.grouping_config.get('relational_params', {})
