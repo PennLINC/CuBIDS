@@ -34,8 +34,9 @@ class BOnD(object):
         self.old_filenames = []  # files whose key groups changed
         self.new_filenames = []  # new filenames for files to change
         self.grouping_config = load_config(grouping_config)
-        # Initialize datalad if
-        if use_datalad:
+
+        self.use_datalad = use_datalad  # True if flag set, False if flag unset
+        if self.use_datalad:
             self.init_datalad()
 
     @property
@@ -218,7 +219,10 @@ class BOnD(object):
         full_cmd = "; ".join(merge_commands + delete_commands + move_ops)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
-            self.datalad_handle.run(full_cmd)
+            if self.use_datalad:
+                self.datalad_handle.run(full_cmd)
+            else:
+                subprocess.run(full_cmd, stdout=subprocess.PIPE, shell=True)
             self.reset_bids_layout()
         else:
             print("Not running any commands")
@@ -391,11 +395,12 @@ class BOnD(object):
 
             # save IntendedFor purges so that you can datalad run the
             # remove association file commands on a clean dataset
-        if not self.is_datalad_clean():
-            self.datalad_save(message="Purged IntendedFors")
-            self.reset_bids_layout()
-        else:
-            print("No IntendedFor References")
+        if self.use_datalad:
+            if not self.is_datalad_clean():
+                self.datalad_save(message="Purged IntendedFors")
+                self.reset_bids_layout()
+            else:
+                print("No IntendedFor References")
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
 
@@ -428,8 +433,10 @@ class BOnD(object):
         full_cmd = "; ".join(purge_commands)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
-
-            self.datalad_handle.run(full_cmd)
+            if self.use_datalad:
+                self.datalad_handle.run(full_cmd)
+            else:
+                subprocess.run(full_cmd, stdout=subprocess.PIPE, shell=True)
             self.reset_bids_layout()
         else:
             print("Not running any association removals")
