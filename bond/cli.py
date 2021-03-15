@@ -431,7 +431,7 @@ def bond_copy_exemplars():
                         action='store_true',
                         help='ensure that there are no untracked changes '
                         'before finding groups')
-    parser.add_argument('--force_unlock',
+    parser.add_argument('--force-unlock',
                         action='store_true',
                         default=False,
                         help='unlock exemplar subjects before copying ',
@@ -465,7 +465,7 @@ def bond_copy_exemplars():
                opts.container, '/bids', '/exemplars', '/in_csv']
 
         if opts.force_unlock:
-            cmd.append('--force_unlock')
+            cmd.append('--force-unlock')
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
@@ -473,7 +473,7 @@ def bond_copy_exemplars():
                '-B', exemplars_csv_link, opts.container, 'bond-copy-exemplars',
                '/bids', '/exemplars', '/in_csv']
         if opts.force_unlock:
-            cmd.append('--force_unlock')
+            cmd.append('--force-unlock')
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
@@ -497,10 +497,10 @@ def bond_add_nifti_info():
                         action='store_true',
                         help='ensure that there are no untracked changes '
                         'before finding groups')
-    parser.add_argument('--force_unlock',
+    parser.add_argument('--force-unlock',
                         action='store_true',
                         default=False,
-                        help='unlock exemplar subjects before copying ',
+                        help='unlock dataset before adding nift info ',
                         required=False)
     parser.add_argument('--container',
                         action='store',
@@ -513,8 +513,7 @@ def bond_add_nifti_info():
         if opts.use_datalad:
             if bod.is_datalad_clean() and not opts.force_unlock:
                 raise Exception("Need to unlock " + str(opts.bids_dir))
-        bod.add_nifti_info(force_unlock=opts.force_unlock,
-                           raise_on_error=True)
+        bod.add_nifti_info(force_unlock=opts.force_unlock, raise_on_error=True)
         sys.exit(0)
 
     # Run it through a container
@@ -527,14 +526,14 @@ def bond_add_nifti_info():
                opts.container, '/bids']
 
         if opts.force_unlock:
-            cmd.append('--force_unlock')
+            cmd.append('--force-unlock')
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                opts.container, 'bond-add-nifti-info',
                '/bids']
         if opts.force_unlock:
-            cmd.append('--force_unlock')
+            cmd.append('--force-unlock')
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)

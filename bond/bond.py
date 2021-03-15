@@ -13,7 +13,6 @@ import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
 from shutil import copytree, copyfile
-# import ipdb
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES
 from .config import load_config
@@ -112,8 +111,7 @@ class BOnD(object):
         # check if force_unlock is set
         if force_unlock:
             # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
-            subprocess.run(["datalad", "unlock", str(self.path)],
-                           cwd=self.path)
+            subprocess.run(["datalad", "unlock"], cwd=self.path)
 
         # loop through all niftis in the bids dir
         for path in Path(self.path).rglob("sub-*/**/*.*"):
@@ -152,6 +150,10 @@ class BOnD(object):
                             data["NumVolumes"] = 1.0
                         with open(sidecar, 'w') as file:
                             json.dump(data, file, indent=4)
+
+        if self.use_datalad:
+            self.datalad_save(message="Added nifti info to sidecars")
+            self.reset_bids_layout()
 
     def apply_csv_changes(self, summary_csv, files_csv, new_prefix,
                           raise_on_error=True):
