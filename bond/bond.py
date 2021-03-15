@@ -107,11 +107,17 @@ class BOnD(object):
             ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
-    def add_nifti_info(self):
+    def add_nifti_info(self, force_unlock, raise_on_error=True):
         """Adds info from nifti files to json sidecars."""
+        # check if force_unlock is set
+        if force_unlock:
+            # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
+            subprocess.run(["datalad", "unlock", str(self.path)],
+                           cwd=self.path)
 
         # loop through all niftis in the bids dir
         for path in Path(self.path).rglob("sub-*/**/*.*"):
+
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 try:
                     img = nb.load(str(path))
@@ -142,7 +148,8 @@ class BOnD(object):
                         data["Dim3Size"] = matrix_dims[2]
                         if img.ndim == 4:
                             data["NumVolumes"] = matrix_dims[3]
-
+                        elif img.ndim == 3:
+                            data["NumVolumes"] = 1.0
                         with open(sidecar, 'w') as file:
                             json.dump(data, file, indent=4)
 
