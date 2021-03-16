@@ -486,9 +486,9 @@ def test_csv_creation(tmp_path):
     bool_IF = False
     bool_FMAP = False
     for row in range(len(csummary_df)):
-        if str(csummary_df.loc[row, "IntendedForKey"]) == "True":
+        if str(csummary_df.loc[row, "UsedAsFieldmap"]) == "True":
             bool_IF = True
-        if str(csummary_df.loc[row, "FieldmapKey"]) == "True":
+        if str(csummary_df.loc[row, "HasFieldmap"]) == "True":
             bool_FMAP = True
     assert bool_IF == True
     assert bool_FMAP == True
