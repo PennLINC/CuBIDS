@@ -870,7 +870,6 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
 
         dfs.append(example_data)
 
-
     # Assign each file to a ParamGroup
     df = format_params(pd.DataFrame(dfs), grouping_config)
     param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
