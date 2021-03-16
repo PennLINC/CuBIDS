@@ -811,7 +811,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
             for fmap_num, fmap_type in enumerate(fieldmap_types):
 
                 # check if config says columns or bool
-                if relational_params['IntendedForKey']['display_mode'] == 'bool':
+                if relational_params['IntendedForKey']['display_mode'] == \
+                        'bool':
                     fmap_type = True
 
                 example_data['FieldmapKey%02d' % fmap_num] = fmap_type
@@ -829,7 +830,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
                     enumerate(intended_key_groups):
 
                 # check if config says columns or bool
-                if relational_params['IntendedForKey']['display_mode'] == 'bool':
+                if relational_params['IntendedForKey']['display_mode'] == \
+                        'bool':
                     intention_key_group = True
 
                 example_data[
