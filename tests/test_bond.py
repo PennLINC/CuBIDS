@@ -482,6 +482,17 @@ def test_csv_creation(tmp_path):
     # groups as key groups
     assert csummary_df.shape[0] == len(COMPLETE_KEY_GROUPS)
 
+    # check IntendedForXX and FieldmapKeyXX are boolean now
+    bool_IF = False
+    bool_FMAP = False
+    for row in range(len(csummary_df)):
+        if str(csummary_df.loc[row, "IntendedForKey00"]) == "True":
+            bool_IF = True
+        if str(csummary_df.loc[row, "FieldmapKey00"]) == "True":
+            bool_FMAP = True
+    assert bool_IF == True
+    assert bool_FMAP == True
+
     # Test the incomplete
     ibod = BOnD(data_root / "inconsistent")
     inc_misfit_fmaps = ibod._cache_fieldmaps()

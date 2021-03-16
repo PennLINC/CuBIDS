@@ -850,7 +850,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
             fieldmap_types = sorted([_file_to_key_group(fmap.path) for
                                     fmap in fieldmap_lookup[path]])
             for fmap_num, fmap_type in enumerate(fieldmap_types):
-                example_data['FieldmapKey%02d' % fmap_num] = fmap_type
+
+                example_data['FieldmapKey%02d' % fmap_num] = True
 
         # Add the number of slice times specified
         if "NSliceTimes" in derived_params:
@@ -863,10 +864,12 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
                                           intention in intentions])
             for intention_num, intention_key_group in \
                     enumerate(intended_key_groups):
+
                 example_data[
-                    "IntendedForKey%02d" % intention_num] = intention_key_group
+                    "IntendedForKey%02d" % intention_num] = True
 
         dfs.append(example_data)
+
 
     # Assign each file to a ParamGroup
     df = format_params(pd.DataFrame(dfs), grouping_config)
