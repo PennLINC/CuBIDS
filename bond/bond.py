@@ -808,8 +808,15 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         if 'FieldmapKey' in relational_params:
             fieldmap_types = sorted([_file_to_key_group(fmap.path) for
                                     fmap in fieldmap_lookup[path]])
-            for fmap_num, fmap_type in enumerate(fieldmap_types):
-                example_data['FieldmapKey%02d' % fmap_num] = fmap_type
+
+            # check if config says columns or bool
+            if relational_params['IntendedForKey']['display_mode'] == \
+                    'bool' and len(fieldmap_types) > 0:
+                example_data['HasFieldmap'] = True
+
+            else:
+                for fmap_num, fmap_type in enumerate(fieldmap_types):
+                    example_data['FieldmapKey%02d' % fmap_num] = fmap_type
 
         # Add the number of slice times specified
         if "NSliceTimes" in derived_params:
@@ -820,10 +827,18 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         if "IntendedForKey" in relational_params:
             intended_key_groups = sorted([_file_to_key_group(intention) for
                                           intention in intentions])
-            for intention_num, intention_key_group in \
-                    enumerate(intended_key_groups):
-                example_data[
-                    "IntendedForKey%02d" % intention_num] = intention_key_group
+
+            # check if config says columns or bool
+            if relational_params['IntendedForKey']['display_mode'] == \
+                    'bool' and len(intended_key_groups) > 0:
+                example_data["UsedAsFieldmap"] = True
+
+            else:
+                for intention_num, intention_key_group in \
+                        enumerate(intended_key_groups):
+                    example_data[
+                        "IntendedForKey%02d" % intention_num] = \
+                                intention_key_group
 
         dfs.append(example_data)
 

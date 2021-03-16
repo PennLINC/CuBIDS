@@ -1,43 +1,72 @@
 # These are non-BIDS fields that can be added by CuBIDS
 derived_params:
-  Dim1Size: {}
-  Dim2Size: {}
-  Dim3Size: {}
-  NSliceTimes: {}
-  NumVolumes: {}
-  Obliquity: {}
+  Dim1Size:
+    suggest_variant_rename: yes
+  Dim2Size:
+    suggest_variant_rename: yes
+  Dim3Size:
+    suggest_variant_rename: yes
+  NSliceTimes:
+    suggest_variant_rename: yes
+  NumVolumes:
+    suggest_variant_rename: yes
+  Obliquity:
+    suggest_variant_rename: yes
   VoxelSizeDim1:
     precision: 3
+    suggest_variant_rename: yes
   VoxelSizeDim2:
     precision: 3
+    suggest_variant_rename: yes
   VoxelSizeDim3:
     precision: 3
-  NSliceTimes: {}
-
+    suggest_variant_rename: yes
+  NSliceTimes:
+    suggest_variant_rename: yes
 # These fields reflect relationships between images.
 relational_params:
-  FieldmapKey: {}
-  IntendedForKey: {}
-
-
+  FieldmapKey:
+    # can be
+    # "bool": a single column with true if an IntendedFor is present
+    # "columns": List all intended key groups in separate columns (IntendedForXX)
+    display_mode: bool
+  IntendedForKey:
+    # can be
+    # "bool": a single column with true if an IntendedFor is present
+    # "columns": List all intended key groups in separate columns (IntendedForXX)
+    display_mode: bool
 # BIDS fields to directly include in the Parameter Groupings
 sidecar_params:
   EchoTime:
     precision: 3
+    suggest_variant_rename: yes
   EffectiveEchoSpacing:
     precision: 5
-  FlipAngle: {}
-  MultibandAccelerationFactor: {}
-  NumberOfVolumesDiscardedByScanner: {}
-  NumberOfVolumesDiscardedByUser: {}
-  ParallelAcquisitionTechnique: {}
-  ParallelReductionFactorInPlane: {}
-  PartialFourier: {}
-  PhaseEncodingDirection: {}
+    suggest_variant_rename: yes
+  FlipAngle:
+    suggest_variant_rename: yes
+  MultibandAccelerationFactor:
+    suggest_variant_rename: yes
+  NumberOfVolumesDiscardedByScanner:
+    suggest_variant_rename: yes
+  NumberOfVolumesDiscardedByUser:
+    suggest_variant_rename: yes
+  ParallelAcquisitionTechnique:
+    suggest_variant_rename: yes
+  ParallelReductionFactorInPlane:
+    suggest_variant_rename: yes
+  PartialFourier:
+    suggest_variant_rename: yes
+  PhaseEncodingDirection:
+    suggest_variant_rename: yes
   RepetitionTime:
     precision: 6
-  SliceEncodingDirection: {}
+    suggest_variant_rename: yes
+  SliceEncodingDirection:
+    suggest_variant_rename: yes
   TotalReadoutTime:
     precision: 3
+    suggest_variant_rename: yes
   VolumeTiming:
     precision: 6
+    suggest_variant_rename: yes
