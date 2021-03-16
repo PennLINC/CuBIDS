@@ -810,7 +810,11 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
                                     fmap in fieldmap_lookup[path]])
             for fmap_num, fmap_type in enumerate(fieldmap_types):
 
-                example_data['FieldmapKey%02d' % fmap_num] = True
+                # check if config says columns or bool
+                if relational_params['IntendedForKey']['display_mode'] == 'bool':
+                    fmap_type = True
+
+                example_data['FieldmapKey%02d' % fmap_num] = fmap_type
 
         # Add the number of slice times specified
         if "NSliceTimes" in derived_params:
@@ -824,8 +828,12 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
             for intention_num, intention_key_group in \
                     enumerate(intended_key_groups):
 
+                # check if config says columns or bool
+                if relational_params['IntendedForKey']['display_mode'] == 'bool':
+                    intention_key_group = True
+
                 example_data[
-                    "IntendedForKey%02d" % intention_num] = True
+                    "IntendedForKey%02d" % intention_num] = intention_key_group
 
         dfs.append(example_data)
 
