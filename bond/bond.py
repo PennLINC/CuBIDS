@@ -592,47 +592,6 @@ class BOnD(object):
         summary.insert(0, "ManualCheck", np.nan)
         summary.insert(0, "Notes", np.nan)
 
-        # NOW THAT DFS HAVE BEEN CREATED, WE WANT TO AUTOMATE RENAMES
-        # AUTOMATE RENAMES IFF THE VARIANT STRING ISN'T ALREADY IN THERE
-        # og_summary = summary
-        # og_summary['RenameKeyGroup'] =
-        #    og_summary['RenameKeyGroup'].apply(str)
-
-        # # get all FieldmapKeyXX
-        # fmap_col = [col for col in og_summary
-        #               if col.startswith('FieldmapKey')]
-
-        # # get all IntendedForXX
-        # if_col = [col for col in og_summary
-        #               if col.startswith('IntendedForKey')]
-
-        # # list of all dominant row dictionaries in the dataset
-        # dom_dicts = []
-        # for row in range(len(og_summary)):
-        #     # if num_volumes is nan, change to 1.0
-        #     if og_summary.loc[row, "NumVolumes"] == 'nan':
-        #         og_summary.at[row, "NumVolumes"] = 1.0
-
-        #     if og_summary.loc[row, 'ParamGroup'] == 1:
-        #         # grab dominant param group, send all vals to dict
-        #         d = og_summary.loc[row].to_dict()
-        #         dom_dicts.append(d)
-
-        # now need to loop through the entire dataset again
-        # check if row dict matches a dom dict
-        # if it doesn't, get keys that are diff!
-
-        # if_keys = og_summary[fmap_col].keys().tolist()
-        # fmap_keys = og_summary[if_col].keys().tolist()
-
-        # imaging_params = self.grouping_config.get('sidecar_params', {})
-        # relational_params = self.grouping_config.get('relational_params', {})
-        # derived_params = self.grouping_config.get('derived_params')
-
-        # print(imaging_params.keys())
-        # print(relational_params.keys())
-        # print(derived_params.keys())
-
         return (big_df, summary)
 
     def get_CSVs(self, path_prefix, split_by_session=True):
