@@ -10,9 +10,9 @@ from bids.layout import parse_file_entities
 from bids.utils import listify
 import numpy as np
 import pandas as pd
+import nibabel as nb
 import datalad.api as dlapi
 from shutil import copytree, copyfile
-# import ipdb
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES
 from .config import load_config
@@ -105,6 +105,55 @@ class BOnD(object):
         reset_proc = subprocess.run(
             ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
+
+    def add_nifti_info(self, force_unlock, raise_on_error=True):
+        """Adds info from nifti files to json sidecars."""
+        # check if force_unlock is set
+        if force_unlock:
+            # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
+            subprocess.run(["datalad", "unlock"], cwd=self.path)
+
+        # loop through all niftis in the bids dir
+        for path in Path(self.path).rglob("sub-*/**/*.*"):
+
+            if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
+                try:
+                    img = nb.load(str(path))
+                except Exception:
+                    print("Empty Nifti File: ", str(path))
+                    continue
+                # get important info from niftis
+                obliquity = np.any(nb.affines.obliquity(img.affine)
+                                   > 1e-4)
+                voxel_sizes = img.header.get_zooms()
+                matrix_dims = img.shape
+                # add nifti info to corresponding sidecars​
+                sidecar = img_to_new_ext(str(path), '.json')
+                if Path(sidecar).exists():
+
+                    with open(sidecar) as f:
+                        data = json.load(f)
+
+                    if "Obliquity" not in data.keys():
+                        print("Added info from ", path)
+
+                        data["Obliquity"] = str(obliquity)
+                        data["VoxelSizeDim1"] = float(voxel_sizes[0])
+                        data["VoxelSizeDim3"] = float(voxel_sizes[2])
+                        data["VoxelSizeDim2"] = float(voxel_sizes[1])
+                        data["Dim1Size"] = matrix_dims[0]
+                        data["Dim2Size"] = matrix_dims[1]
+                        data["Dim3Size"] = matrix_dims[2]
+                        if img.ndim == 4:
+                            data["NumVolumes"] = matrix_dims[3]
+                        elif img.ndim == 3:
+                            data["NumVolumes"] = 1.0
+                        with open(sidecar, 'w') as file:
+                            json.dump(data, file, indent=4)
+
+        if self.use_datalad:
+            self.datalad_save(message="Added nifti info to sidecars")
+            self.reset_bids_layout()
 
     def apply_csv_changes(self, summary_csv, files_csv, new_prefix,
                           raise_on_error=True):

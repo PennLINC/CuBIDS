@@ -179,6 +179,39 @@ def test_bad_json_merge_cli(tmp_path):
     assert merge_proc.returncode > 0
     assert _get_json_string(dest_json) == orig_dest_json_content
 
+def test_add_nifti_info_datalad(tmp_path):
+    data_root = get_data(tmp_path)
+    bod = BOnD(data_root / "complete", use_datalad=True)
+    csv_prefix = str(tmp_path / "csvs")
+    bod.get_CSVs(csv_prefix)
+    summary_csv = csv_prefix + "_summary.csv"
+    summary_df = pd.read_csv(summary_csv)
+    l_cols = summary_df.columns.tolist()
+    assert 'NumVolumes' not in l_cols
+    assert 'Obliquity' not in l_cols
+
+    # now add nifti info
+    bod.add_nifti_info(force_unlock=True)
+    nifti_csv_prefix = str(tmp_path / "nifti_csvs")
+    bod.get_CSVs(nifti_csv_prefix)
+    nifti_summary_csv = nifti_csv_prefix + "_summary.csv"
+    nifti_summary_df = pd.read_csv(nifti_summary_csv)
+    nifti_l_cols = nifti_summary_df.columns.tolist()
+    assert 'NumVolumes' in nifti_l_cols
+    assert 'Obliquity' in nifti_l_cols
+
+def test_add_nifti_info_no_datalad(tmp_path):
+    data_root = get_data(tmp_path)
+    bod = BOnD(data_root / "complete", use_datalad=False)
+    bod.add_nifti_info(force_unlock=False)
+    csv_prefix = str(tmp_path / "csvs")
+    bod.get_CSVs(csv_prefix)
+    summary_csv = csv_prefix + "_summary.csv"
+    summary_df = pd.read_csv(summary_csv)
+    l_cols = summary_df.columns.tolist()
+    assert 'NumVolumes' in l_cols
+    assert 'Obliquity' in l_cols
+
 #TODO: add tests that return an error for invalid merge
 def test_csv_merge_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
