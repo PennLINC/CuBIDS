@@ -6,8 +6,7 @@ derived_params:
     suggest_variant_rename: yes
   Dim3Size:
     suggest_variant_rename: yes
-  NSliceTimes:
-    suggest_variant_rename: yes
+  NSliceTimes: {}
   NumVolumes:
     suggest_variant_rename: yes
   Obliquity:
@@ -20,8 +19,6 @@ derived_params:
     suggest_variant_rename: yes
   VoxelSizeDim3:
     precision: 3
-    suggest_variant_rename: yes
-  NSliceTimes:
     suggest_variant_rename: yes
 # These fields reflect relationships between images.
 relational_params:

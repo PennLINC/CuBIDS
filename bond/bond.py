@@ -593,6 +593,10 @@ class BOnD(object):
         summary.insert(0, "Notes", np.nan)
 
         # NOW WANT TO AUTOMATE RENAME!
+        # loop though imaging and derrived param keys,
+        # check if 'suggest_variant_rename' in values
+        # check if value of value == 'yes'
+        # then save the column name
 
         return (big_df, summary)
 
