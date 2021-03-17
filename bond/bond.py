@@ -592,6 +592,8 @@ class BOnD(object):
         summary.insert(0, "ManualCheck", np.nan)
         summary.insert(0, "Notes", np.nan)
 
+        # NOW WANT TO AUTOMATE RENAME!
+
         return (big_df, summary)
 
     def get_CSVs(self, path_prefix, split_by_session=True):

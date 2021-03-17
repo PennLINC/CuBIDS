@@ -39,34 +39,21 @@ relational_params:
 sidecar_params:
   EchoTime:
     precision: 3
-    suggest_variant_rename: yes
   EffectiveEchoSpacing:
     precision: 5
-    suggest_variant_rename: yes
-  FlipAngle:
-    suggest_variant_rename: yes
-  MultibandAccelerationFactor:
-    suggest_variant_rename: yes
-  NumberOfVolumesDiscardedByScanner:
-    suggest_variant_rename: yes
-  NumberOfVolumesDiscardedByUser:
-    suggest_variant_rename: yes
-  ParallelAcquisitionTechnique:
-    suggest_variant_rename: yes
-  ParallelReductionFactorInPlane:
-    suggest_variant_rename: yes
-  PartialFourier:
-    suggest_variant_rename: yes
-  PhaseEncodingDirection:
-    suggest_variant_rename: yes
+  FlipAngle: {}
+  MultibandAccelerationFactor: {}
+  NumberOfVolumesDiscardedByScanner: {}
+  NumberOfVolumesDiscardedByUser: {}
+  ParallelAcquisitionTechnique: {}
+  ParallelReductionFactorInPlane: {}
+  PartialFourier: {}
+  PhaseEncodingDirection: {}
   RepetitionTime:
     precision: 6
     suggest_variant_rename: yes
-  SliceEncodingDirection:
-    suggest_variant_rename: yes
+  SliceEncodingDirection: {}
   TotalReadoutTime:
     precision: 3
-    suggest_variant_rename: yes
   VolumeTiming:
     precision: 6
-    suggest_variant_rename: yes
