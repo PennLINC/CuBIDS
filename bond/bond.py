@@ -5,6 +5,7 @@ import bids
 import bids.layout
 import json
 import csv
+import pdb
 from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
@@ -594,31 +595,34 @@ class BOnD(object):
 
         # NOW WANT TO AUTOMATE RENAME!
         # loop though imaging and derrived param keys
-        derived = self.grouping_config.get('derived_params')
+        # derived = self.grouping_config.get('derived_params')
         sidecar = self.grouping_config.get('sidecar_params')
         relational = self.grouping_config.get('relational_params')
-        # list of columns names that we account for in 3suggested renaming
+        pdb.set_trace()
+        # list of columns names that we account for in suggested renaming
         og_summary = summary
         og_summary['RenameKeyGroup'] = og_summary['RenameKeyGroup'].apply(str)
 
         rename_cols = []
-        for col in derived.keys():
-            if 'suggest_variant_rename' in derived[col].keys():
-                if derived[col]['suggest_variant_rename'] \
-                        and col in og_summary.columns:
-                    rename_cols.append(col)
+        # for col in derived.keys():
+        #     if 'suggest_variant_rename' in derived[col].keys():
+        #         if derived[col]['suggest_variant_rename'] \
+        #                 and col in og_summary.columns:
+        #             rename_cols.append(col)
+        # pdb.set_trace()
         for col in sidecar.keys():
             if 'suggest_variant_rename' in sidecar[col].keys():
                 if sidecar[col]['suggest_variant_rename'] \
                         and col in og_summary.columns:
                     rename_cols.append(col)
-
+        #pdb.set_trace()
         # # deal with Fmap!
         if 'FieldmapKey' in relational:
             if 'suggest_variant_rename' in relational['FieldmapKey'].keys():
                 # check if 'bool' or 'columns'
                 if relational['FieldmapKey']['display_mode'] == 'bool':
                     rename_cols.append("HasFieldmap")
+        #pdb.set_trace()
 
         dom_dict = {}
         # loop through summary csv and create dom_dict
