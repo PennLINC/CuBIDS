@@ -597,7 +597,7 @@ class BOnD(object):
 
         sidecar = self.grouping_config.get('sidecar_params')
         relational = self.grouping_config.get('relational_params')
-        pdb.set_trace()
+
         # list of columns names that we account for in suggested renaming
         og_summary = summary
         og_summary['RenameKeyGroup'] = og_summary['RenameKeyGroup'].apply(str)
