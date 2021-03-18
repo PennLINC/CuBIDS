@@ -596,13 +596,10 @@ class BOnD(object):
         # loop though imaging and derrived param keys
         derived = self.grouping_config.get('derived_params')
         sidecar = self.grouping_config.get('sidecar_params')
-        # relational = self.grouping_config.get('relational_params')
+        relational = self.grouping_config.get('relational_params')
         # list of columns names that we account for in 3suggested renaming
         og_summary = summary
         og_summary['RenameKeyGroup'] = og_summary['RenameKeyGroup'].apply(str)
-        fmap_keys = [col for col in og_summary if 'Fieldmap' in col]
-        for key in fmap_keys:
-            og_summary[key] = og_summary[key].apply(str)
 
         rename_cols = []
         for col in derived.keys():
@@ -617,9 +614,12 @@ class BOnD(object):
                     rename_cols.append(col)
 
         # # deal with Fmap!
-        # if 'FieldmapKey' in relational:
-        #     if 'suggest_variant_rename' in relational['FieldmapKey'].keys():
-        #         # check if 'bool' or 'columns'
+        if 'FieldmapKey' in relational:
+            if 'suggest_variant_rename' in relational['FieldmapKey'].keys():
+                # check if 'bool' or 'columns'
+                if relational['FieldmapKey']['display_mode'] == 'bool':
+                    rename_cols.append("HasFieldmap")
+
         dom_dict = {}
         # loop through summary csv and create dom_dict
         for row in range(len(og_summary)):
@@ -643,9 +643,7 @@ class BOnD(object):
             renamed = False
             entities = _key_group_to_entities(og_summary.loc[row, "KeyGroup"])
             if 'acquisition' in entities.keys():
-                if 'VARIANT' in entities['acquisition'] or \
-                        'NoFmap' in entities['acquisition'] or \
-                        'HasFmap' in entities['acquisition']:
+                if 'VARIANT' in entities['acquisition']:
                     renamed = True
 
             if og_summary.loc[row, "ParamGroup"] != 1 and not renamed:
@@ -656,7 +654,14 @@ class BOnD(object):
                 for col in rename_cols:
                     og_summary[col] = og_summary[col].apply(str)
                     if og_summary.loc[row, col] != dom_dict[key][col]:
-                        acq_str = acq_str + col
+                        if col == 'HasFieldmap':
+
+                            if dom_dict[key][col] == 'True':
+                                acq_str = acq_str + 'NoFmap'
+                            else:
+                                acq_str = acq_str + 'HasFmap'
+                        else:
+                            acq_str = acq_str + col
                 if acq_str == 'VARIANT':
                     acq_str = acq_str + 'Other'
 
