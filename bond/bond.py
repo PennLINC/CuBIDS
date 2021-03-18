@@ -5,7 +5,6 @@ import bids
 import bids.layout
 import json
 import csv
-import pdb
 from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
