@@ -208,7 +208,7 @@ class BOnD(object):
         print("Performing %d merges" % len(merge_commands))
 
         # Get the delete commands
-        #delete_commands = []
+        # delete_commands = []
         to_remove = []
         for rm_id in deletions:
             files_to_rm = files_df.loc[
@@ -216,11 +216,10 @@ class BOnD(object):
             for rm_me in files_to_rm.FilePath:
                 if Path(rm_me).exists():
                     to_remove.append(rm_me)
-                    #delete_commands.append("rm " + rm_me)
+                    # delete_commands.append("rm " + rm_me)
         print("Deleting %d files" % len(to_remove))
         # call purge associations on list of files to remove
         self.purge_associations(to_remove)
-
 
         # Now do the file renaming
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
@@ -498,7 +497,6 @@ class BOnD(object):
             self.reset_bids_layout()
         else:
             print("Not running any association removals")
-
 
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
