@@ -592,7 +592,93 @@ class BOnD(object):
         summary.insert(0, "ManualCheck", np.nan)
         summary.insert(0, "Notes", np.nan)
 
-        return (big_df, summary)
+        # NOW WANT TO AUTOMATE RENAME!
+        # loop though imaging and derrived param keys
+
+        sidecar = self.grouping_config.get('sidecar_params')
+        relational = self.grouping_config.get('relational_params')
+
+        # list of columns names that we account for in suggested renaming
+        og_summary = summary
+        og_summary['RenameKeyGroup'] = og_summary['RenameKeyGroup'].apply(str)
+
+        rename_cols = []
+
+        for col in sidecar.keys():
+            if 'suggest_variant_rename' in sidecar[col].keys():
+                if sidecar[col]['suggest_variant_rename'] \
+                        and col in og_summary.columns:
+                    rename_cols.append(col)
+
+        # deal with Fmap!
+        if 'FieldmapKey' in relational:
+            if 'suggest_variant_rename' in relational['FieldmapKey'].keys():
+                # check if 'bool' or 'columns'
+                if relational['FieldmapKey']['display_mode'] == 'bool':
+                    rename_cols.append("HasFieldmap")
+
+        dom_dict = {}
+        # loop through summary csv and create dom_dict
+        for row in range(len(og_summary)):
+            if 'NumVolumes' in og_summary.columns \
+                    and str(og_summary.loc[row, "NumVolumes"]) == 'nan':
+                og_summary.at[row, "NumVolumes"] = 1.0
+
+            # if dominant group identified
+            if str(og_summary.loc[row, 'ParamGroup']) == '1':
+                val = {}
+                # grab col, all vals send to dict
+                key = og_summary.loc[row, "KeyGroup"]
+                for col in rename_cols:
+                    og_summary[col] = og_summary[col].apply(str)
+                    val[col] = og_summary.loc[row, col]
+                dom_dict[key] = val
+
+        # now loop through again and ID variance
+        for row in range(len(og_summary)):
+            # check to see if renaming has already happened
+            renamed = False
+            entities = _key_group_to_entities(og_summary.loc[row, "KeyGroup"])
+            if 'acquisition' in entities.keys():
+                if 'VARIANT' in entities['acquisition']:
+                    renamed = True
+
+            if og_summary.loc[row, "ParamGroup"] != 1 and not renamed:
+                acq_str = 'VARIANT'
+                # now we know we have a deviant param group
+                # check if TR is same as param group 1
+                key = og_summary.loc[row, "KeyGroup"]
+                for col in rename_cols:
+                    og_summary[col] = og_summary[col].apply(str)
+                    if og_summary.loc[row, col] != dom_dict[key][col]:
+                        if col == 'HasFieldmap':
+
+                            if dom_dict[key][col] == 'True':
+                                acq_str = acq_str + 'NoFmap'
+                            else:
+                                acq_str = acq_str + 'HasFmap'
+                        else:
+                            acq_str = acq_str + col
+                if acq_str == 'VARIANT':
+                    acq_str = acq_str + 'Other'
+
+                if 'acquisition' in entities.keys():
+                    acq = 'acquisition-%s' % entities['acquisition'] + acq_str
+
+                    new_name = og_summary.loc[row, "KeyGroup"].replace(
+                            'acquisition-%s' % entities['acquisition'], acq)
+                else:
+                    acq = 'acquisition-%s' % acq_str
+                    new_name = acq + '_' + og_summary.loc[row, "KeyGroup"]
+
+                og_summary.at[row, 'RenameKeyGroup'] = new_name
+
+            # convert all "nan" to empty str
+            # so they don't show up in the summary csv
+            if og_summary.loc[row, "RenameKeyGroup"] == 'nan':
+                og_summary.at[row, "RenameKeyGroup"] = ''
+
+        return (big_df, og_summary)
 
     def get_CSVs(self, path_prefix, split_by_session=True):
         """Creates the _summary and _files CSVs for the bids dataset.
@@ -810,7 +896,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
                                     fmap in fieldmap_lookup[path]])
 
             # check if config says columns or bool
-            if relational_params['IntendedForKey']['display_mode'] == \
+            if relational_params['FieldmapKey']['display_mode'] == \
                     'bool':
                 if len(fieldmap_types) > 0:
                     example_data['HasFieldmap'] = True
