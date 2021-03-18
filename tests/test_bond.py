@@ -228,7 +228,8 @@ def test_csv_merge_no_datalad(tmp_path):
                           original_files_csv,
                           str(tmp_path / "unmodified"))
 
-    assert file_hash(original_summary_csv) == \
+    # these will no longer be equivalent because we automated rename suggest
+    assert file_hash(original_summary_csv) != \
            file_hash(tmp_path / "unmodified_summary.csv")
 
     # Find the dwi with no FlipAngle
@@ -294,7 +295,8 @@ def test_csv_merge_changes(tmp_path):
                           original_files_csv,
                           str(tmp_path / "unmodified"))
 
-    assert file_hash(original_summary_csv) == \
+    # will no longer be equal because of auto rename!
+    assert file_hash(original_summary_csv)!= \
            file_hash(tmp_path / "unmodified_summary.csv")
 
     # Find the dwi with no FlipAngle
