@@ -8,6 +8,7 @@ import csv
 from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
+# import pdb
 import numpy as np
 import pandas as pd
 import nibabel as nb
@@ -593,10 +594,51 @@ class BOnD(object):
         summary.insert(0, "Notes", np.nan)
 
         # NOW WANT TO AUTOMATE RENAME!
-        # loop though imaging and derrived param keys,
-        # check if 'suggest_variant_rename' in values
-        # check if value of value == 'yes'
-        # then save the column name
+        # loop though imaging and derrived param keys
+        derived = self.grouping_config.get('derived_params')
+        sidecar = self.grouping_config.get('sidecar_params')
+        # relational = self.grouping_config.get('relational_params')
+        # list of columns names that we account for in 3suggested renaming
+        og_summary = summary
+        og_summary['RenameKeyGroup'] = og_summary['RenameKeyGroup'].apply(str)
+        fmap_keys = [col for col in og_summary if 'Fieldmap' in col]
+        for key in fmap_keys:
+            og_summary[key] = og_summary[key].apply(str)
+
+        rename_cols = []
+        for col in derived.keys():
+            if 'suggest_variant_rename' in derived[col].keys():
+                if derived[col]['suggest_variant_rename'] \
+                        and col in og_summary.columns:
+                    rename_cols.append(col)
+        for col in sidecar.keys():
+            if 'suggest_variant_rename' in sidecar[col].keys():
+                if sidecar[col]['suggest_variant_rename'] \
+                        and col in og_summary.columns:
+                    rename_cols.append(col)
+
+        # # deal with Fmap!
+        # if 'FieldmapKey' in relational:
+        #     if 'suggest_variant_rename' in relational['FieldmapKey'].keys():
+        #         # check if 'bool' or 'columns'
+        dom_dict = {}
+        # loop through summary csv and create dom_dict
+        for row in range(len(og_summary)):
+            # if str(og_summary.loc[row, "NumVolumes"]) == 'nan':
+            #     og_summary.at[row, "NumVolumes"] = 1.0
+
+            # if dominant group identified
+            if str(og_summary.loc[row, 'ParamGroup']) == '1':
+                val = []
+                # grab col, all vals send to dict
+                key = og_summary.loc[row, "KeyGroup"]
+                for col in rename_cols:
+                    val.append(og_summary.loc[row, col])
+                dom_dict[key] = val
+        # pdb.set_trace()
+
+        # now loop through again and ID variance
+        # for row in range(len(og_summary)):
 
         return (big_df, summary)
 
@@ -816,7 +858,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
                                     fmap in fieldmap_lookup[path]])
 
             # check if config says columns or bool
-            if relational_params['IntendedForKey']['display_mode'] == \
+            if relational_params['FieldmapKey']['display_mode'] == \
                     'bool':
                 if len(fieldmap_types) > 0:
                     example_data['HasFieldmap'] = True

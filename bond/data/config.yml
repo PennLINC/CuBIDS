@@ -27,6 +27,7 @@ relational_params:
     # "bool": a single column with true if an IntendedFor is present
     # "columns": List all intended key groups in separate columns (IntendedForXX)
     display_mode: bool
+    suggest_variant_rename: yes
   IntendedForKey:
     # can be
     # "bool": a single column with true if an IntendedFor is present
