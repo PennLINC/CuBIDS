@@ -290,10 +290,27 @@ def test_csv_merge_changes(tmp_path):
     original_summary_csv = csv_prefix + "_summary.csv"
     original_files_csv = csv_prefix + "_files.csv"
 
-    # give csv with no changes (make sure it does nothing)
+    # give csv with no changes (make sure it does nothing except rename)
     bod.apply_csv_changes(original_summary_csv,
                           original_files_csv,
                           str(tmp_path / "unmodified"))
+    orig = pd.read_csv(original_summary_csv)
+    # TEST RenameKeyGroup column got populated CORRECTLY
+    for row in range(len(orig)):
+        if orig.loc[row, 'ParamGroup'] != 1:
+            assert str(orig.loc[row, 'RenameKeyGroup']) != 'nan'
+
+    # TESTING RENAMES GOT APPLIED
+    # applied = pd.read_csv(str(tmp_path / "unmodified_summary.csv"))
+    # assert len(orig) == len(applied)
+    # renamed = True
+    # new_keys = applied['KeyGroup'].tolist()
+    # for row in range(len(orig)):
+    #     if str(orig.loc[row, 'RenameKeyGroup']) != 'nan' \
+    #             and str(orig.loc[row, 'RenameKeyGroup']) not in new_keys:
+    #         print(orig.loc[row, 'RenameKeyGroup'])
+    #         renamed = False
+    # assert renamed == True
 
     # will no longer be equal because of auto rename!
     assert file_hash(original_summary_csv)!= \
