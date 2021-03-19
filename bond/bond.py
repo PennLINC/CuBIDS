@@ -219,7 +219,8 @@ class BOnD(object):
                     # delete_commands.append("rm " + rm_me)
         print("Deleting %d files" % len(to_remove))
         # call purge associations on list of files to remove
-        self.purge_associations(to_remove)
+
+        self._purge_associations(to_remove)
 
         # Now do the file renaming
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
@@ -427,9 +428,9 @@ class BOnD(object):
             for row in reader:
                 scans.append(str(row[0]))
 
-        self.purge_associations(scans)
+        self._purge_associations(scans)
 
-    def purge_associations(self, scans):
+    def _purge_associations(self, scans):
 
         # PURGE FMAP JSONS' INTENDED FOR REFERENCES
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
@@ -466,11 +467,13 @@ class BOnD(object):
             if str(path) in scans:
                 bids_file = self.layout.get_file(str(path))
                 print("SCAN: ", bids_file)
+
                 associations = bids_file.get_associations()
                 for assoc in associations:
                     filepath = assoc.path
                     print("ASSOC: ", filepath)
-                    if '/fmap/' not in str(filepath):
+                    # ensure association is not an IntendedFor reference!
+                    if '.nii' not in str(filepath):
                         to_remove.append(filepath)
                 if '/dwi/' in str(path):
                     # add the bval and bvec if there
