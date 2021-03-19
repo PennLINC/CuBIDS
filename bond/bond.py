@@ -208,14 +208,19 @@ class BOnD(object):
         print("Performing %d merges" % len(merge_commands))
 
         # Get the delete commands
-        delete_commands = []
+        # delete_commands = []
+        to_remove = []
         for rm_id in deletions:
             files_to_rm = files_df.loc[
                 (files_df[["ParamGroup", "KeyGroup"]] == rm_id).all(1)]
             for rm_me in files_to_rm.FilePath:
                 if Path(rm_me).exists():
-                    delete_commands.append("rm " + rm_me)
-        print("Deleting %d files" % len(delete_commands))
+                    to_remove.append(rm_me)
+                    # delete_commands.append("rm " + rm_me)
+        print("Deleting %d files" % len(to_remove))
+        # call purge associations on list of files to remove
+
+        self._purge_associations(to_remove)
 
         # Now do the file renaming
         change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
@@ -265,7 +270,7 @@ class BOnD(object):
                     move_ops.append('mv %s %s' % (from_file, to_file))
         print("Performing %d renamings" % len(move_ops))
 
-        full_cmd = "; ".join(merge_commands + delete_commands + move_ops)
+        full_cmd = "; ".join(merge_commands + move_ops)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
             if self.use_datalad:
@@ -423,6 +428,10 @@ class BOnD(object):
             for row in reader:
                 scans.append(str(row[0]))
 
+        self._purge_associations(scans)
+
+    def _purge_associations(self, scans):
+
         # PURGE FMAP JSONS' INTENDED FOR REFERENCES
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
 
@@ -458,11 +467,13 @@ class BOnD(object):
             if str(path) in scans:
                 bids_file = self.layout.get_file(str(path))
                 print("SCAN: ", bids_file)
+
                 associations = bids_file.get_associations()
                 for assoc in associations:
                     filepath = assoc.path
                     print("ASSOC: ", filepath)
-                    if '/fmap/' not in str(filepath):
+                    # ensure association is not an IntendedFor reference!
+                    if '.nii' not in str(filepath):
                         to_remove.append(filepath)
                 if '/dwi/' in str(path):
                     # add the bval and bvec if there
