@@ -380,12 +380,13 @@ class BOnD(object):
             old_suffix = parse_file_entities(filepath)['suffix']
             scan_end = '_' + old_suffix + old_ext
 
-            old_events = filepath.replace(scan_end, '_events.tsv')
-            if Path(old_events).exists():
-                self.old_filenames.append(old_events)
-                new_scan_end = '_' + suffix + old_ext
-                new_events = new_path.replace(new_scan_end, '_events.tsv')
-                self.new_filenames.append(new_events)
+            if '_task-' in filepath:
+                old_events = filepath.replace(scan_end, '_events.tsv')
+                if Path(old_events).exists():
+                    self.old_filenames.append(old_events)
+                    new_scan_end = '_' + suffix + old_ext
+                    new_events = new_path.replace(new_scan_end, '_events.tsv')
+                    self.new_filenames.append(new_events)
 
             old_physio = filepath.replace(scan_end, '_physio.tsv.gz')
             if Path(old_physio).exists():
