@@ -281,6 +281,122 @@ class BOnD(object):
     def change_filename(self, filepath, entities):
         """Applies changes to a filename based on the renamed
         key groups.
+        This function takes into account the new key group names
+        and renames all files whose key group names changed.
+        Parameters:
+        -----------
+            filepath : str
+                Path prefix to a file in the affected key group change
+            entities : dictionary
+                A pybids dictionary of entities parsed from the new key
+                group name.
+        """
+        exts = Path(filepath).suffixes
+        old_ext = ""
+        for ext in exts:
+            old_ext += ext
+
+        suffix = entities['suffix']
+        entity_file_keys = []
+        file_keys = ['task', 'acquisition', 'direction',
+                     'reconstruction', 'run']
+
+        for key in file_keys:
+            if key in list(entities.keys()):
+                entity_file_keys.append(key)
+
+        sub = get_key_name(filepath, 'sub')
+        ses = get_key_name(filepath, 'ses')
+        sub_ses = sub + '_' + ses
+
+        if 'run' in list(entities.keys()) and 'run-0' in filepath:
+            entities['run'] = '0' + str(entities['run'])
+
+        filename = "_".join(["{}-{}".format(key, entities[key])
+                             for key in entity_file_keys])
+        filename = filename.replace('acquisition', 'acq') \
+            .replace('direction', 'dir') \
+            .replace('reconstruction', 'rec')
+        if len(filename) > 0:
+            filename = sub_ses + '_' + filename + '_' + suffix + old_ext
+        else:
+            filename = sub_ses + filename + '_' + suffix + old_ext
+
+        # CHECK TO SEE IF DATATYPE CHANGED
+        dtypes = ['anat', 'func', 'perf', 'fmap', 'dwi']
+        old = ''
+        for dtype in dtypes:
+            if dtype in filepath:
+                old = dtype
+
+        if 'datatype' in entities.keys():
+            dtype = entities['datatype']
+            if entities['datatype'] != old:
+                print("WARNING: DATATYPE CHANGE DETECETD")
+        else:
+            dtype = old
+        new_path = str(self.path) + '/' + sub + '/' + ses \
+            + '/' + dtype + '/' + filename
+
+        self.old_filenames.append(filepath)
+        self.new_filenames.append(new_path)
+
+        # NOW NEED TO RENAME ASSOCIATIONS
+        bids_file = self.layout.get_file(filepath)
+        associations = bids_file.get_associations()
+        for assoc in associations:
+            assoc_path = assoc.path
+            if Path(assoc_path).exists():
+                print("FILE: ", filepath)
+                print("ASSOC: ", assoc.path)
+                # ensure association is not an IntendedFor reference!
+                if '.nii' not in str(assoc_path):
+                    self.old_filenames.append(assoc_path)
+                    new_ext_path = img_to_new_ext(new_path,
+                                                  ''.join(Path(assoc.path)
+                                                          .suffixes))
+                    self.new_filenames.append(new_ext_path)
+
+            # MAKE SURE THESE AREN'T COVERED BY get_associations!!!
+            if '/dwi/' in filepath:
+                # add the bval and bvec if there
+                if Path(img_to_new_ext(filepath, '.bval')).exists() \
+                        and img_to_new_ext(filepath, '.bval') \
+                        not in self.old_filenames:
+                    self.old_filenames.append(img_to_new_ext(filepath,
+                                                             '.bval'))
+                    self.new_filenames.append(img_to_new_ext(new_path,
+                                                             '.bval'))
+
+                if Path(img_to_new_ext(filepath, '.bvec')).exists() \
+                        and img_to_new_ext(filepath, '.bvec') \
+                        not in self.old_filenames:
+                    self.old_filenames.append(img_to_new_ext(filepath,
+                                                             '.bvec'))
+                    self.new_filenames.append(img_to_new_ext(new_path,
+                                                             '.bvec'))
+
+            # now rename _events and _physio files!
+            old_suffix = parse_file_entities(filepath)['suffix']
+            scan_end = '_' + old_suffix + old_ext
+
+            old_events = filepath.replace(scan_end, '_events.tsv')
+            if Path(old_events).exists():
+                self.old_filenames.append(old_events)
+                new_scan_end = '_' + suffix + old_ext
+                new_events = new_path.replace(new_scan_end, '_events.tsv')
+                self.new_filenames.append(new_events)
+
+            old_physio = filepath.replace(scan_end, '_physio.tsv.gz')
+            if Path(old_physio).exists():
+                self.old_filenames.append(old_physio)
+                new_scan_end = '_' + suffix + old_ext
+                new_physio = new_path.replace(new_scan_end, '_physio.tsv.gz')
+                self.new_filenames.append(new_physio)
+
+    def old_change_filename(self, filepath, entities):
+        """Applies changes to a filename based on the renamed
+        key groups.
 
         This function takes into account the new key group names
         and renames all files whose key group names changed.
@@ -1007,3 +1123,11 @@ def img_to_new_ext(img_path, new_ext):
         return img_path.rpartition('_')[0] + '_physio' + new_ext
     else:
         return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
+
+
+def get_key_name(path, key):
+    # given a filepath and BIDS key name, return value
+    parts = Path(path).parts
+    for part in parts:
+        if part.startswith(key + '-'):
+            return part
