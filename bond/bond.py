@@ -625,9 +625,16 @@ class BOnD(object):
             if f_key_group == key_group:
                 to_include.append(filepath)
 
+        # get the modality associated with the key group
+        rel_path = filepath.replace(str(self.path), '')
+        modality = Path(rel_path).parts[3]
+        modalities = ['dwi', 'anat', 'func', 'perf', 'fmap']
+        if modality not in modalities:
+            print("Warning: unusual modality detected!")
+
         ret = _get_param_groups(
             to_include, self.layout, self.fieldmap_lookup, key_group,
-            self.grouping_config)
+            self.grouping_config, modality)
 
         return ret
 
@@ -779,6 +786,9 @@ class BOnD(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
+        summary = summary.sort_values(by=['Modality'])
+        big_df = big_df.sort_values(by=['Modality'])
+
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
 
@@ -919,7 +929,7 @@ def _get_intended_for_reference(scan):
 
 
 def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
-                      grouping_config):
+                      grouping_config, modality):
 
     """Finds a list of *parameter groups* from a list of files.
 
@@ -1022,6 +1032,9 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
     deduped = df.drop('FilePath', axis=1).drop_duplicates(ignore_index=True)
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
+
+    # add the modality as a column
+    deduped["Modality"] = modality
 
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=param_group_cols)

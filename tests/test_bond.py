@@ -709,7 +709,7 @@ def _edit_csv(summary_csv):
     lines = list(r)
 
     # adds a new key group to the RenameKeyGroup columm
-    lines[2][3] = \
+    lines[3][3] = \
         "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
 
     writer = csv.writer(open(summary_csv, 'w'))
