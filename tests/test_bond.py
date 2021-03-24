@@ -377,7 +377,7 @@ def test_csv_merge_changes(tmp_path):
                               str(tmp_path / "originals_files.csv"),
                               str(tmp_path / "ok_modified"))
 
-    # Make sure MergeInto == 0 deletes the param group
+    # Make sure MergeInto == 0 deletes the param group and all associations
     # summary_df = pd.read_csv(original_summary_csv)
     # summary_df.loc[fa_nan_dwi_row, "MergeInto"] = 0
     # delete_group = summary_df.loc[fa_nan_dwi_row, "KeyParamGroup"]
@@ -651,21 +651,50 @@ def test_apply_csv_changes(tmp_path):
 
     assert og_content != mod2_content
 
-    # check that MergeInto = 0 delete
+    # check that MergeInto = 0 deletes scan and associations
     deleted_keyparam = _add_deletion(mod2_path)
     assert deleted_keyparam in mod2_content
+
+    # check to delete keyparam  exist
+    mod2_files = tmp_path / "modified2_files.csv"
+    with mod2_files.open("r") as f:
+        mod2_f_content = "".join(f.readlines())
+    assert deleted_keyparam in mod2_f_content
+
+    # check scans and associations to be deleted are currently in the bids dir
+    mod2_summary_df = pd.read_csv(mod2_path)
+    mod2_files_df = pd.read_csv(str(tmp_path / "modified2_files.csv"))
+    deleted_f = []
+
+    for row in range(len(mod2_files_df)):
+        if mod2_files_df.loc[row, 'KeyParamGroup'] == deleted_keyparam:
+            deleted_f.append(mod2_files_df.loc[row, 'FilePath'])
+
+    for f in deleted_f:
+        assert Path(f).exists() == True
+        assert Path(f.replace('nii.gz', 'json')).exists() == True
 
     # apply deletion
     complete_bond.apply_csv_changes(mod2_path,
                                     str(tmp_path / "modified2_files.csv"),
                                     str(tmp_path / "deleted"))
 
+    # make sure deleted_keyparam gone from files_csv
     deleted = tmp_path / "deleted_summary.csv"
     with deleted.open("r") as f:
         deleted_content = "".join(f.readlines())
     assert deleted_keyparam not in deleted_content
 
-    # TODO: CHECK ASSOCIATIONS ALSO DELETED!
+    # make sure deleted_keyparam gone from summary csv
+    deleted_files = tmp_path / "deleted_files.csv"
+    with deleted_files.open("r") as f:
+        deleted_f_content = "".join(f.readlines())
+    assert deleted_keyparam not in deleted_f_content
+
+    # make sure deleted files are gone
+    for f in deleted_f:
+        assert Path(f).exists() == False
+        assert Path(f.replace('nii.gz', 'json')).exists() == False
 
 
 def _add_deletion(summary_csv):
