@@ -440,8 +440,8 @@ class BOnD(object):
 
             exemplars_csv: str
                 path to the .csv file that lists one subject
-                from each Acqusition Gorup (*_AcqGrouping.csv)
-                from the bond-group output
+                from each Acqusition Group (*_AcqGrouping.csv
+                from the bond-group output)
                 example path: /Users/Covitz/CSVs/CCNP_Acq_Grouping.csv
         """
 

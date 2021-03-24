@@ -425,8 +425,9 @@ def bond_copy_exemplars():
     parser.add_argument('exemplars_csv',
                         type=Path,
                         action='store',
-                        help='absolute path to the csv file of scans whose '
-                        'associations should be purged.')
+                        help='absolute path to the .csv file that lists one '
+                        'subject from each Acqusition Group '
+                        '(*_AcqGrouping.csv from the bond-group output)')
     parser.add_argument('--use-datalad',
                         action='store_true',
                         help='ensure that there are no untracked changes '
