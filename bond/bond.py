@@ -228,44 +228,39 @@ class BOnD(object):
         # return if nothing to change
         if len(change_keys_df) > 0:
 
-            # dictionary
-            # KEYS = (orig key group, param num)
-            # VALUES = new key group
             key_groups = {}
 
             for i in range(len(change_keys_df)):
                 new_key = change_keys_df.iloc[i]['RenameKeyGroup']
-                old_key = change_keys_df.iloc[i]['KeyGroup']
-                param_group = change_keys_df.iloc[i]['ParamGroup']
+                old_key_param = change_keys_df.iloc[i]['KeyParamGroup']
 
                 # add to dictionary
-                key_groups[(old_key, param_group)] = new_key
+                key_groups[old_key_param] = new_key
 
             # orig key/param tuples that will have new key group
-            pairs_to_change = list(key_groups.keys())
+            to_change = list(key_groups.keys())
 
             for row in range(len(files_df)):
-                file_path = files_df.iloc[row]['FilePath']
+                file_path = files_df.loc[row, 'FilePath']
                 if Path(file_path).exists():
 
-                    key_group = files_df.iloc[row]['KeyGroup']
-                    param_group = files_df.iloc[row]['ParamGroup']
+                    key_param_group = files_df.loc[row, 'KeyParamGroup']
 
-                    if (key_group, param_group) in pairs_to_change:
+                    if key_param_group in to_change:
 
-                        orig_key = files_df.iloc[row]['KeyGroup']
-                        param_num = files_df.iloc[row]['ParamGroup']
+                        orig_key_param = files_df.loc[row, 'KeyParamGroup']
 
-                        new_key = key_groups[(orig_key, param_num)]
+                        new_key = key_groups[orig_key_param]
 
                         new_entities = _key_group_to_entities(new_key)
 
-                        # change each filename according to new key group
+                        # generate new filenames according to new key group
                         self.change_filename(file_path, new_entities)
 
             # create string of mv command ; mv command for dlapi.run
             for from_file, to_file in zip(self.old_filenames,
                                           self.new_filenames):
+
                 if Path(from_file).exists():
                     move_ops.append('mv %s %s' % (from_file, to_file))
         print("Performing %d renamings" % len(move_ops))
@@ -277,19 +272,19 @@ class BOnD(object):
                 self.datalad_handle.run(full_cmd)
             else:
                 subprocess.run(full_cmd, stdout=subprocess.PIPE, shell=True)
-            self.reset_bids_layout()
         else:
             print("Not running any commands")
 
+        # DATALAD RUN SAVES RIGHT? BUT IS IT BLOCKING?!!!!!!
+        # TRY COMMENTING OUT RE-GROUP PART AND JUST RUNNING GROUP AFTER....
+        self.reset_bids_layout()
         self.get_CSVs(new_prefix)
 
     def change_filename(self, filepath, entities):
         """Applies changes to a filename based on the renamed
         key groups.
-
         This function takes into account the new key group names
         and renames all files whose key group names changed.
-
         Parameters:
         -----------
             filepath : str
@@ -298,78 +293,137 @@ class BOnD(object):
                 A pybids dictionary of entities parsed from the new key
                 group name.
         """
-        path = Path(filepath)
-        exts = path.suffixes
+        exts = Path(filepath).suffixes
         old_ext = ""
         for ext in exts:
             old_ext += ext
 
-        # check if need to change the modality (one directory level up)
-        l_keys = list(entities.keys())
+        suffix = entities['suffix']
+        entity_file_keys = []
+        file_keys = ['task', 'acquisition', 'direction',
+                     'reconstruction', 'run']
 
-        if "datatype" in l_keys:
-            # create path string a and add new modality
-            modality = entities['datatype']
-            l_keys.remove('datatype')
+        for key in file_keys:
+            if key in list(entities.keys()):
+                entity_file_keys.append(key)
+
+        sub = get_key_name(filepath, 'sub')
+        ses = get_key_name(filepath, 'ses')
+        sub_ses = sub + '_' + ses
+
+        if 'run' in list(entities.keys()) and 'run-0' in filepath:
+            entities['run'] = '0' + str(entities['run'])
+
+        filename = "_".join(["{}-{}".format(key, entities[key])
+                             for key in entity_file_keys])
+        filename = filename.replace('acquisition', 'acq') \
+            .replace('direction', 'dir') \
+            .replace('reconstruction', 'rec')
+        if len(filename) > 0:
+            filename = sub_ses + '_' + filename + '_' + suffix + old_ext
         else:
-            large = str(path.parent)
-            small = str(path.parents[1]) + '/'
-            modality = large.replace(small, '')
+            filename = sub_ses + filename + '_' + suffix + old_ext
 
-        # detect the subject/session string and keep it together
-        # front_stem is the string of subject/session pairs
-        # these two entities don't change with the key group
-        front_stem = ""
-        cntr = 0
-        for char in path.stem:
-            if char == "_" and cntr == 1:
-                cntr = 2
-                break
-            if char == "_" and cntr == 0:
-                cntr += 1
-            if cntr != 2:
-                front_stem = front_stem + char
+        # CHECK TO SEE IF DATATYPE CHANGED
+        dtypes = ['anat', 'func', 'perf', 'fmap', 'dwi']
+        old = ''
+        for dtype in dtypes:
+            if dtype in filepath:
+                old = dtype
 
-        parent = str(path.parents[1])
-        new_path_front = parent + '/' + modality + '/' + front_stem
+        if 'datatype' in entities.keys():
+            dtype = entities['datatype']
+            if entities['datatype'] != old:
+                print("WARNING: DATATYPE CHANGE DETECETD")
+        else:
+            dtype = old
+        new_path = str(self.path) + '/' + sub + '/' + ses \
+            + '/' + dtype + '/' + filename
 
-        # remove fmap (not part of filename string)
-        if "fmap" in l_keys:
-            l_keys.remove("fmap")
-
-        # now need to create the key/value string from the keys!
-        new_filename = "_".join(["{}-{}".format(key, entities[key])
-                                for key in l_keys])
-
-        # shorten "acquisition" in the filename
-        new_filename = new_filename.replace("acquisition", "acq")
-
-        # shorten "reconstruction" in the filename
-        new_filename = new_filename.replace("reconstruction", "rec")
-
-        # REMOVE "suffix-"
-        new_filename = new_filename.replace("suffix-", "")
-
-        new_path = new_path_front + "_" + new_filename + old_ext
-
-        self.old_filenames.append(str(path))
+        # add the scan path + new path to the lists of old, new filenames
+        self.old_filenames.append(filepath)
         self.new_filenames.append(new_path)
 
-        # now also rename files with same stem diff extension
-        extensions = ['.json', '.bval', '.bvec', '.tsv', '.tsv.gz']
-        for ext in extensions:
-            ext_file = img_to_new_ext(filepath, ext)
+        # NOW NEED TO RENAME ASSOCIATIONS
+        bids_file = self.layout.get_file(filepath)
+        associations = bids_file.get_associations()
+        for assoc in associations:
+            assoc_path = assoc.path
+            if Path(assoc_path).exists():
+                print("FILE: ", filepath)
+                print("ASSOC: ", assoc.path)
+                # ensure association is not an IntendedFor reference!
+                if '.nii' not in str(assoc_path):
+                    self.old_filenames.append(assoc_path)
+                    new_ext_path = img_to_new_ext(new_path,
+                                                  ''.join(Path(assoc.path)
+                                                          .suffixes))
+                    self.new_filenames.append(new_ext_path)
 
-            # check if ext_file exists in the bids dir
-            if Path(ext_file).exists():
-                # need to remove suffix for .tsv and .tsv.gz files
-                if ext == '.tsv':
-                    new_filename = new_filename.rpartition('_')[0] + '_events'
-                if ext == '.tsv.gz':
-                    new_filename = new_filename.rpartition('_')[0] + '_physio'
-                new_ext_path = new_path_front + "_" + new_filename + ext
-                self.old_filenames.append(ext_file)
-                self.new_filenames.append(new_ext_path)
+        # MAKE SURE THESE AREN'T COVERED BY get_associations!!!
+        if '/dwi/' in filepath:
+            # add the bval and bvec if there
+            if Path(img_to_new_ext(filepath, '.bval')).exists() \
+                    and img_to_new_ext(filepath, '.bval') \
+                    not in self.old_filenames:
+                self.old_filenames.append(img_to_new_ext(filepath,
+                                                         '.bval'))
+                self.new_filenames.append(img_to_new_ext(new_path,
+                                                         '.bval'))
+
+            if Path(img_to_new_ext(filepath, '.bvec')).exists() \
+                    and img_to_new_ext(filepath, '.bvec') \
+                    not in self.old_filenames:
+                self.old_filenames.append(img_to_new_ext(filepath,
+                                                         '.bvec'))
+                self.new_filenames.append(img_to_new_ext(new_path,
+                                                         '.bvec'))
+
+        # now rename _events and _physio files!
+        old_suffix = parse_file_entities(filepath)['suffix']
+        scan_end = '_' + old_suffix + old_ext
+
+        if '_task-' in filepath:
+            old_events = filepath.replace(scan_end, '_events.tsv')
+            if Path(old_events).exists():
+                self.old_filenames.append(old_events)
+                new_scan_end = '_' + suffix + old_ext
+                new_events = new_path.replace(new_scan_end, '_events.tsv')
+                self.new_filenames.append(new_events)
+
+        old_physio = filepath.replace(scan_end, '_physio.tsv.gz')
+        if Path(old_physio).exists():
+            self.old_filenames.append(old_physio)
+            new_scan_end = '_' + suffix + old_ext
+            new_physio = new_path.replace(new_scan_end, '_physio.tsv.gz')
+            self.new_filenames.append(new_physio)
+
+        # RENAME INTENDED FORS!
+        for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
+
+            json_file = self.layout.get_file(str(path))
+            data = json_file.get_dict()
+
+            if 'IntendedFor' in data.keys():
+                for item in data['IntendedFor']:
+                    if item in _get_intended_for_reference(filepath):
+
+                        # remove old filename
+                        data['IntendedFor'].remove(item)
+                        # add new filename
+                        data['IntendedFor'].append(_get_intended_for_reference
+                                                   (new_path))
+                        # update the json with the new data dictionary
+                        _update_json(json_file.path, data)
+
+        # save IntendedFor purges so that you can datalad run the
+        # remove association file commands on a clean dataset
+        if self.use_datalad:
+            if not self.is_datalad_clean():
+                self.datalad_save(message="Renamed IntendedFors")
+                self.reset_bids_layout()
+            else:
+                print("No IntendedFor References to Rename")
 
     def copy_exemplars(self, exemplars_dir, exemplars_csv, force_unlock,
                        raise_on_error=True):
@@ -433,10 +487,15 @@ class BOnD(object):
     def _purge_associations(self, scans):
 
         # PURGE FMAP JSONS' INTENDED FOR REFERENCES
+
+        # truncate all paths to intendedfor reference format
+        # sub, ses, modality only (no self.path)
+        if_scans = []
+        for scan in scans:
+            if_scans.append(_get_intended_for_reference(scan))
+
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
 
-            # with open(path) as f:
-            #     data = json.load(f)
             json_file = self.layout.get_file(str(path))
             data = json_file.get_dict()
 
@@ -444,21 +503,18 @@ class BOnD(object):
 
             if 'IntendedFor' in data.keys():
                 for item in data['IntendedFor']:
-                    if item in _get_intended_for_reference(scans):
-                        print("IntendedFor Reference", str(path))
+                    if item in if_scans:
                         data['IntendedFor'].remove(item)
 
                         # update the json with the new data dictionary
                         _update_json(json_file.path, data)
 
-            # save IntendedFor purges so that you can datalad run the
-            # remove association file commands on a clean dataset
+        # save IntendedFor purges so that you can datalad run the
+        # remove association file commands on a clean dataset
         if self.use_datalad:
             if not self.is_datalad_clean():
                 self.datalad_save(message="Purged IntendedFors")
                 self.reset_bids_layout()
-            else:
-                print("No IntendedFor References")
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
 
@@ -466,11 +522,11 @@ class BOnD(object):
         for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
             if str(path) in scans:
                 bids_file = self.layout.get_file(str(path))
-                print("SCAN: ", bids_file)
 
                 associations = bids_file.get_associations()
                 for assoc in associations:
                     filepath = assoc.path
+
                     print("ASSOC: ", filepath)
                     # ensure association is not an IntendedFor reference!
                     if '.nii' not in str(filepath):
@@ -556,10 +612,21 @@ class BOnD(object):
                 "Fieldmaps must be cached to find parameter groups.")
         key_entities = _key_group_to_entities(key_group)
         key_entities["extension"] = ".nii[.gz]*"
+
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
+
+        # ensure files who's entities contain key_entities but include other
+        # entities do not also get added to matching_files
+        to_include = []
+        for filepath in matching_files:
+            f_key_group = _file_to_key_group(filepath)
+
+            if f_key_group == key_group:
+                to_include.append(filepath)
+
         ret = _get_param_groups(
-            matching_files, self.layout, self.fieldmap_lookup, key_group,
+            to_include, self.layout, self.fieldmap_lookup, key_group,
             self.grouping_config)
 
         return ret
@@ -610,15 +677,14 @@ class BOnD(object):
         relational = self.grouping_config.get('relational_params')
 
         # list of columns names that we account for in suggested renaming
-        og_summary = summary
-        og_summary['RenameKeyGroup'] = og_summary['RenameKeyGroup'].apply(str)
+        summary['RenameKeyGroup'] = summary['RenameKeyGroup'].apply(str)
 
         rename_cols = []
 
         for col in sidecar.keys():
             if 'suggest_variant_rename' in sidecar[col].keys():
                 if sidecar[col]['suggest_variant_rename'] \
-                        and col in og_summary.columns:
+                        and col in summary.columns:
                     rename_cols.append(col)
 
         # deal with Fmap!
@@ -630,38 +696,40 @@ class BOnD(object):
 
         dom_dict = {}
         # loop through summary csv and create dom_dict
-        for row in range(len(og_summary)):
-            if 'NumVolumes' in og_summary.columns \
-                    and str(og_summary.loc[row, "NumVolumes"]) == 'nan':
-                og_summary.at[row, "NumVolumes"] = 1.0
+        for row in range(len(summary)):
+            if 'NumVolumes' in summary.columns \
+                    and str(summary.loc[row, "NumVolumes"]) == 'nan':
+                summary.at[row, "NumVolumes"] = 1.0
 
             # if dominant group identified
-            if str(og_summary.loc[row, 'ParamGroup']) == '1':
+            if str(summary.loc[row, 'ParamGroup']) == '1':
                 val = {}
                 # grab col, all vals send to dict
-                key = og_summary.loc[row, "KeyGroup"]
+                key = summary.loc[row, "KeyGroup"]
                 for col in rename_cols:
-                    og_summary[col] = og_summary[col].apply(str)
-                    val[col] = og_summary.loc[row, col]
+                    summary[col] = summary[col].apply(str)
+                    val[col] = summary.loc[row, col]
                 dom_dict[key] = val
 
         # now loop through again and ID variance
-        for row in range(len(og_summary)):
+        for row in range(len(summary)):
             # check to see if renaming has already happened
             renamed = False
-            entities = _key_group_to_entities(og_summary.loc[row, "KeyGroup"])
-            if 'acquisition' in entities.keys():
-                if 'VARIANT' in entities['acquisition']:
-                    renamed = True
+            entities = _key_group_to_entities(summary.loc[row, "KeyGroup"])
+            if 'VARIANT' in summary.loc[row, 'KeyGroup']:
+                renamed = True
+            # if 'acquisition' in entities.keys():
+            #     if 'VARIANT' in entities['acquisition']:
+            #        renamed = True
 
-            if og_summary.loc[row, "ParamGroup"] != 1 and not renamed:
+            if summary.loc[row, "ParamGroup"] != 1 and not renamed:
                 acq_str = 'VARIANT'
                 # now we know we have a deviant param group
                 # check if TR is same as param group 1
-                key = og_summary.loc[row, "KeyGroup"]
+                key = summary.loc[row, "KeyGroup"]
                 for col in rename_cols:
-                    og_summary[col] = og_summary[col].apply(str)
-                    if og_summary.loc[row, col] != dom_dict[key][col]:
+                    summary[col] = summary[col].apply(str)
+                    if summary.loc[row, col] != dom_dict[key][col]:
                         if col == 'HasFieldmap':
 
                             if dom_dict[key][col] == 'True':
@@ -670,26 +738,31 @@ class BOnD(object):
                                 acq_str = acq_str + 'HasFmap'
                         else:
                             acq_str = acq_str + col
+
                 if acq_str == 'VARIANT':
                     acq_str = acq_str + 'Other'
 
                 if 'acquisition' in entities.keys():
                     acq = 'acquisition-%s' % entities['acquisition'] + acq_str
 
-                    new_name = og_summary.loc[row, "KeyGroup"].replace(
+                    new_name = summary.loc[row, "KeyGroup"].replace(
                             'acquisition-%s' % entities['acquisition'], acq)
                 else:
                     acq = 'acquisition-%s' % acq_str
-                    new_name = acq + '_' + og_summary.loc[row, "KeyGroup"]
+                    new_name = acq + '_' + summary.loc[row, "KeyGroup"]
 
-                og_summary.at[row, 'RenameKeyGroup'] = new_name
+                summary.at[row, 'RenameKeyGroup'] = new_name
 
             # convert all "nan" to empty str
             # so they don't show up in the summary csv
-            if og_summary.loc[row, "RenameKeyGroup"] == 'nan':
-                og_summary.at[row, "RenameKeyGroup"] = ''
+            if summary.loc[row, "RenameKeyGroup"] == 'nan':
+                summary.at[row, "RenameKeyGroup"] = ''
 
-        return (big_df, og_summary)
+            for col in rename_cols:
+                if summary.loc[row, col] == 'nan':
+                    summary.at[row, col] = ''
+
+        return (big_df, summary)
 
     def get_CSVs(self, path_prefix, split_by_session=True):
         """Creates the _summary and _files CSVs for the bids dataset.
@@ -715,6 +788,8 @@ class BOnD(object):
 
     def get_key_groups(self):
         '''Identifies the key groups for the bids dataset'''
+        # reset self.keys_files
+        self.keys_files = {}
 
         key_groups = set()
 
@@ -839,11 +914,8 @@ def _file_to_key_group(filename):
     return _entities_to_key_group(entities)
 
 
-def _get_intended_for_reference(scans):
-    ses_mod_files = []
-    for i in range(len(scans)):
-        ses_mod_files.append('/'.join(Path(scans[i]).parts[-3:]))
-    return ses_mod_files
+def _get_intended_for_reference(scan):
+    return '/'.join(Path(scan).parts[-3:])
 
 
 def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
@@ -1018,3 +1090,11 @@ def img_to_new_ext(img_path, new_ext):
         return img_path.rpartition('_')[0] + '_physio' + new_ext
     else:
         return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
+
+
+def get_key_name(path, key):
+    # given a filepath and BIDS key name, return value
+    parts = Path(path).parts
+    for part in parts:
+        if part.startswith(key + '-'):
+            return part

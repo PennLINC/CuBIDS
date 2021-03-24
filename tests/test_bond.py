@@ -228,7 +228,7 @@ def test_csv_merge_no_datalad(tmp_path):
                           original_files_csv,
                           str(tmp_path / "unmodified"))
 
-    # these will no longer be equivalent because we automated rename suggest
+    # these will not actually be equivalent because of the auto renames
     assert file_hash(original_summary_csv) != \
            file_hash(tmp_path / "unmodified_summary.csv")
 
@@ -301,16 +301,32 @@ def test_csv_merge_changes(tmp_path):
             assert str(orig.loc[row, 'RenameKeyGroup']) != 'nan'
 
     # TESTING RENAMES GOT APPLIED
-    # applied = pd.read_csv(str(tmp_path / "unmodified_summary.csv"))
-    # assert len(orig) == len(applied)
-    # renamed = True
-    # new_keys = applied['KeyGroup'].tolist()
-    # for row in range(len(orig)):
-    #     if str(orig.loc[row, 'RenameKeyGroup']) != 'nan' \
-    #             and str(orig.loc[row, 'RenameKeyGroup']) not in new_keys:
-    #         print(orig.loc[row, 'RenameKeyGroup'])
-    #         renamed = False
-    # assert renamed == True
+    applied = pd.read_csv(str(tmp_path / "unmodified_summary.csv"))
+
+    applied_f = pd.read_csv(str(tmp_path / "unmodified_files.csv"))
+    odd = []
+    for row in range(len(applied_f)):
+        if 'VARIANT' in applied_f.loc[row, 'FilePath'] and 'VARIANT' not in applied_f.loc[row, 'KeyParamGroup']:
+            odd.append((applied_f.loc[row, 'FilePath']))
+
+    occurrences = {}
+    for row in range(len(applied_f)):
+        if applied_f.loc[row, 'FilePath'] in odd:
+            if applied_f.loc[row, 'FilePath'] in occurrences.keys():
+                occurrences[applied_f.loc[row, 'FilePath']].append(applied_f.loc[row, 'KeyParamGroup'])
+            else:
+                occurrences[applied_f.loc[row, 'FilePath']] = [applied_f.loc[row, 'KeyParamGroup']]
+
+    assert len(orig) == len(applied)
+
+    renamed = True
+    new_keys = applied['KeyGroup'].tolist()
+    for row in range(len(orig)):
+        if str(orig.loc[row, 'RenameKeyGroup']) != 'nan' \
+                and str(orig.loc[row, 'RenameKeyGroup']) not in new_keys:
+            print(orig.loc[row, 'RenameKeyGroup'])
+            renamed = False
+    assert renamed == True
 
     # will no longer be equal because of auto rename!
     assert file_hash(original_summary_csv)!= \
@@ -568,12 +584,26 @@ def test_apply_csv_changes(tmp_path):
     # make sure files you wanted to rename exist in the bids dir
 
     data_root = get_data(tmp_path)
+    bids_dir = str(data_root / "complete")
+    for scan in Path(bids_dir).rglob('sub-*/*/*/*.nii.gz'):
 
-    # add extension files
-    path_to_img = str(data_root / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.nii.gz")
-    _add_ext_files(path_to_img)
-    assert Path(data_root /
-        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz").exists() == True
+        # add extension files
+        _add_ext_files(str(scan))
+
+    # path_to_img = str(data_root / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.nii.gz")
+    # _add_ext_files(path_to_img)
+
+    has_events = False
+    has_physio = False
+
+    # check if events and physio files
+    if Path(data_root /
+            "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_events.tsv").exists():
+        has_events = True
+    if Path(data_root /
+            "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz").exists():
+        has_physio = True
+
 
     complete_bond = BOnD(data_root / "complete", use_datalad=True)
     complete_bond.datalad_save()
@@ -596,7 +626,6 @@ def test_apply_csv_changes(tmp_path):
     assert og_content == mod1_content
 
     # edit the csv, add a RenameKeyGroup
-    # make sure extension files also get renamed
 
     _edit_csv(str(tmp_path / "originals_summary.csv"))
     complete_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
@@ -606,13 +635,15 @@ def test_apply_csv_changes(tmp_path):
     # check files df to make sure extension files also got renmaed
     mod_files = tmp_path / "modified2_files.csv"
     assert Path(data_root /
-        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.bval").exists() == True
+        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.json").exists() == True
     assert Path(data_root /
-        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.bvec").exists() == True
+        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.json").exists() == False
+
+    # check that old names are gone!
     assert Path(data_root /
-        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_events.tsv").exists() == True
+        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_physio.tsv.gz").exists() == True
     assert Path(data_root /
-         "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_physio.tsv.gz").exists() == True
+        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz").exists() == False
 
     mod2_path = tmp_path / "modified2_summary.csv"
     with mod2_path.open("r") as f:
@@ -686,21 +717,23 @@ def _edit_csv(summary_csv):
 
 def _add_ext_files(img_path):
     # add and save extension files in
-    exts = ['.bval', '.bvec', '.tsv', '.tsv.gz']
-    for ext in exts:
-        ext_file = img_path.replace(".nii.gz", "").replace(".nii", "") + ext
+    dwi_exts = ['.bval', '.bvec']
 
-        if ext == '.tsv':
-            no_suffix = ext_file.rpartition('_')[0]
-            ext_file = no_suffix + '_events' + ext
-        if ext == '.tsv.gz':
-            no_suffix = ext_file.rpartition('_')[0]
-            ext_file = no_suffix + '_physio' + ext
-        # save ext file in img_path's parent dir
-        Path(ext_file).touch()
+    # everyone gets a physio file
+    no_suffix = img_path.rpartition('_')[0]
+    physio_file = no_suffix + '_physio' + '.tsv.gz'
+    # save ext file in img_path's parent dir
+    Path(physio_file).touch()
 
-
-    # add new key group name to RenameKeyGroup column
+    if '/dwi/' in img_path:
+        # add bval and bvec
+        for ext in dwi_exts:
+            dwi_ext_file = img_path.replace(".nii.gz", "").replace(".nii", "") + ext
+            Path(dwi_ext_file).touch()
+    if 'bold' in img_path:
+        no_suffix = img_path.rpartition('_')[0]
+        bold_ext_file = no_suffix + '_events' + '.tsv'
+        Path(bold_ext_file).touch()
 
 
 def _edit_a_json(json_file):
