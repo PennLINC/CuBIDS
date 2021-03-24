@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
-import pdb
 from shutil import copytree, copyfile
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES
