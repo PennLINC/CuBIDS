@@ -228,7 +228,7 @@ def test_csv_merge_no_datalad(tmp_path):
                           original_files_csv,
                           str(tmp_path / "unmodified"))
 
-    # these will no longer be equivalent because we automated rename suggest
+    # these will not actually be equivalent because of the auto renames
     assert file_hash(original_summary_csv) != \
            file_hash(tmp_path / "unmodified_summary.csv")
 
@@ -301,16 +301,32 @@ def test_csv_merge_changes(tmp_path):
             assert str(orig.loc[row, 'RenameKeyGroup']) != 'nan'
 
     # TESTING RENAMES GOT APPLIED
-    # applied = pd.read_csv(str(tmp_path / "unmodified_summary.csv"))
-    # assert len(orig) == len(applied)
-    # renamed = True
-    # new_keys = applied['KeyGroup'].tolist()
-    # for row in range(len(orig)):
-    #     if str(orig.loc[row, 'RenameKeyGroup']) != 'nan' \
-    #             and str(orig.loc[row, 'RenameKeyGroup']) not in new_keys:
-    #         print(orig.loc[row, 'RenameKeyGroup'])
-    #         renamed = False
-    # assert renamed == True
+    applied = pd.read_csv(str(tmp_path / "unmodified_summary.csv"))
+
+    applied_f = pd.read_csv(str(tmp_path / "unmodified_files.csv"))
+    odd = []
+    for row in range(len(applied_f)):
+        if 'VARIANT' in applied_f.loc[row, 'FilePath'] and 'VARIANT' not in applied_f.loc[row, 'KeyParamGroup']:
+            odd.append((applied_f.loc[row, 'FilePath']))
+
+    occurrences = {}
+    for row in range(len(applied_f)):
+        if applied_f.loc[row, 'FilePath'] in odd:
+            if applied_f.loc[row, 'FilePath'] in occurrences.keys():
+                occurrences[applied_f.loc[row, 'FilePath']].append(applied_f.loc[row, 'KeyParamGroup'])
+            else:
+                occurrences[applied_f.loc[row, 'FilePath']] = [applied_f.loc[row, 'KeyParamGroup']]
+
+    assert len(orig) == len(applied)
+
+    renamed = True
+    new_keys = applied['KeyGroup'].tolist()
+    for row in range(len(orig)):
+        if str(orig.loc[row, 'RenameKeyGroup']) != 'nan' \
+                and str(orig.loc[row, 'RenameKeyGroup']) not in new_keys:
+            print(orig.loc[row, 'RenameKeyGroup'])
+            renamed = False
+    assert renamed == True
 
     # will no longer be equal because of auto rename!
     assert file_hash(original_summary_csv)!= \
@@ -648,6 +664,8 @@ def test_apply_csv_changes(tmp_path):
     with deleted.open("r") as f:
         deleted_content = "".join(f.readlines())
     assert deleted_keyparam not in deleted_content
+
+    # TODO: CHECK ASSOCIATIONS ALSO DELETED!
 
 
 def _add_deletion(summary_csv):
