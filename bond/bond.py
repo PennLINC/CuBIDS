@@ -530,8 +530,7 @@ class BOnD(object):
                     print("ASSOC: ", filepath)
                     # ensure association is not an IntendedFor reference!
                     if '.nii' not in str(filepath):
-                        to_remove.append(filepath)
-                        
+                        to_remove.append(filepath)       
                 if '/dwi/' in str(path):
                     # add the bval and bvec if there
                     to_remove.append(img_to_new_ext(str(path), '.bval'))
