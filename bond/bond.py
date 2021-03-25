@@ -626,11 +626,13 @@ class BOnD(object):
                 to_include.append(filepath)
 
         # get the modality associated with the key group
-        rel_path = filepath.replace(str(self.path), '')
-        modality = Path(rel_path).parts[3]
-        modalities = ['dwi', 'anat', 'func', 'perf', 'fmap']
-        if modality not in modalities:
-            print("Warning: unusual modality detected!")
+        modalities = ['/dwi/', '/anat/', '/func/', '/perf/', '/fmap/']
+        modality = ''
+        for mod in modalities:
+            if mod in filepath:
+                modality = mod.replace('/', '').replace('/', '')
+        if modality == '':
+            print("Unusual Modality Detected")
 
         ret = _get_param_groups(
             to_include, self.layout, self.fieldmap_lookup, key_group,
@@ -817,7 +819,11 @@ class BOnD(object):
 
                 self.keys_files[ret].append(path)
 
-        return sorted(key_groups)
+        # sort the key_groups by count
+        ordered = sorted(self.keys_files, key=lambda k:
+                         len(self.keys_files[k]), reverse=True)
+
+        return ordered
 
     def change_metadata(self, filters, pattern, metadata):
 
