@@ -20,6 +20,7 @@ from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 bids.config.set_option('extension_initial_dot', True)
 
+
 class BOnD(object):
 
     def __init__(self, data_root, use_datalad=False, grouping_config=None):
