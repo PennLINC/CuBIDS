@@ -20,7 +20,6 @@ from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 bids.config.set_option('extension_initial_dot', True)
 
-
 class BOnD(object):
 
     def __init__(self, data_root, use_datalad=False, grouping_config=None):
@@ -816,17 +815,17 @@ class BOnD(object):
 
                 if ret not in keys_files.keys():
 
-                    # self.keys_files[ret] = []
+                    self.keys_files[ret] = []
                     keys_files[ret] = []
 
-                # self.keys_files[ret].append(path)
+                self.keys_files[ret].append(path)
                 keys_files[ret].append(path)
 
         # sort the key_groups by count
-        ordered = sorted(key_groups, key=lambda k:
+        ordered = sorted(keys_files, key=lambda k:
                          len(keys_files[k]), reverse=True)
 
-        # return sorted(key_groups
+        # return sorted(key_groups)
         return ordered
 
     def change_metadata(self, filters, pattern, metadata):
