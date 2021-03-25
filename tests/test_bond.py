@@ -24,7 +24,6 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import subprocess
-import pdb
 
 TEST_DATA = pkgrf("bond", "testdata")
 
@@ -633,7 +632,6 @@ def test_apply_csv_changes(tmp_path):
                                     str(tmp_path / "modified2"))
 
     # check files df to make sure extension files also got renmaed
-    pdb.set_trace()
     mod_files = tmp_path / "modified2_files.csv"
     assert Path(data_root /
         "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.json").exists() == True
