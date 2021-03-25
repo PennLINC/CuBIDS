@@ -816,14 +816,14 @@ class BOnD(object):
 
                 if ret not in keys_files.keys():
 
-                    #self.keys_files[ret] = []
+                    # self.keys_files[ret] = []
                     keys_files[ret] = []
 
-                #self.keys_files[ret].append(path)
+                # self.keys_files[ret].append(path)
                 keys_files[ret].append(path)
 
         # sort the key_groups by count
-        ordered = sorted(keys_files, key=lambda k:
+        ordered = sorted(key_groups, key=lambda k:
                          len(keys_files[k]), reverse=True)
 
         # return sorted(key_groups
