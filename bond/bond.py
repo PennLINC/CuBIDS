@@ -826,8 +826,8 @@ class BOnD(object):
         ordered = sorted(keys_files, key=lambda k:
                          len(keys_files[k]), reverse=True)
 
-        # return sorted(key_groups)
-        return ordered
+        return sorted(key_groups)
+        # return ordered
 
     def change_metadata(self, filters, pattern, metadata):
 
