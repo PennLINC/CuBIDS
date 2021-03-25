@@ -802,6 +802,7 @@ class BOnD(object):
         '''Identifies the key groups for the bids dataset'''
         # reset self.keys_files
         self.keys_files = {}
+        keys_files = {}
 
         key_groups = set()
 
@@ -813,16 +814,19 @@ class BOnD(object):
                 # Fill the dictionary of key group, list of filenames pairrs
                 ret = _file_to_key_group(path)
 
-                if ret not in self.keys_files.keys():
+                if ret not in keys_files.keys():
 
-                    self.keys_files[ret] = []
+                    #self.keys_files[ret] = []
+                    keys_files[ret] = []
 
-                self.keys_files[ret].append(path)
+                #self.keys_files[ret].append(path)
+                keys_files[ret].append(path)
 
         # sort the key_groups by count
-        ordered = sorted(self.keys_files, key=lambda k:
-                         len(self.keys_files[k]), reverse=True)
+        ordered = sorted(keys_files, key=lambda k:
+                         len(keys_files[k]), reverse=True)
 
+        # return sorted(key_groups
         return ordered
 
     def change_metadata(self, filters, pattern, metadata):
