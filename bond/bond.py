@@ -11,6 +11,7 @@ from bids.utils import listify
 import numpy as np
 import pandas as pd
 import nibabel as nb
+# import pdb
 import datalad.api as dlapi
 from shutil import copytree, copyfile
 from tqdm import tqdm
@@ -804,9 +805,12 @@ class BOnD(object):
         # reset self.keys_files
         self.keys_files = {}
 
+        key_groups = set()
+
         for path in Path(self.path).rglob("sub-*/**/*.*"):
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
+                key_groups.update((_file_to_key_group(path),))
 
                 # Fill the dictionary of key group, list of filenames pairrs
                 ret = _file_to_key_group(path)
@@ -820,9 +824,10 @@ class BOnD(object):
         # sort the key_groups by count
         ordered = sorted(self.keys_files, key=lambda k:
                          len(self.keys_files[k]), reverse=True)
+        # pdb.set_trace()
+        #return ordered
+        return sorted(key_groups)
 
-        # return sorted(key_groups)
-        return ordered
 
     def change_metadata(self, filters, pattern, metadata):
 
