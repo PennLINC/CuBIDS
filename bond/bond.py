@@ -789,8 +789,8 @@ class BOnD(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        summary = summary.sort_values(by=['Modality'])
-        big_df = big_df.sort_values(by=['Modality'])
+        # summary = summary.sort_values(by=['Modality'])
+        # big_df = big_df.sort_values(by=['Modality'])
 
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
