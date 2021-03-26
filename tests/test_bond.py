@@ -704,15 +704,15 @@ def _add_deletion(summary_csv):
 
 
 def _edit_csv(summary_csv):
-    r = csv.reader(open(summary_csv))
-    lines = list(r)
-
-    # adds a new key group to the RenameKeyGroup columm
-    lines[3][3] = \
-        "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
-
-    writer = csv.writer(open(summary_csv, 'w'))
-    writer.writerows(lines)
+    df = pd.read_csv(summary_csv)
+    df['RenameKeyGroup'] = df['RenameKeyGroup'].apply(str)
+    df['KeyGroup'] = df['KeyGroup'].apply(str)
+    for row in range(len(df)):
+        if df.loc[row, 'KeyGroup'] == \
+            "acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1":
+            df.at[row, 'RenameKeyGroup'] = \
+                "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
+    df.to_csv(summary_csv)
 
 def _add_ext_files(img_path):
     # add and save extension files in
