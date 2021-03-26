@@ -800,16 +800,13 @@ class BOnD(object):
 
     def get_key_groups(self):
         '''Identifies the key groups for the bids dataset'''
+
         # reset self.keys_files
         self.keys_files = {}
-        # keys_files = {}
-
-        # key_groups = set()
 
         for path in Path(self.path).rglob("sub-*/**/*.*"):
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
-                # key_groups.update((_file_to_key_group(path),))
 
                 # Fill the dictionary of key group, list of filenames pairrs
                 ret = _file_to_key_group(path)
@@ -817,10 +814,8 @@ class BOnD(object):
                 if ret not in self.keys_files.keys():
 
                     self.keys_files[ret] = []
-                    # keys_files[ret] = []
 
                 self.keys_files[ret].append(path)
-                # keys_files[ret].append(path)
 
         # sort the key_groups by count
         ordered = sorted(self.keys_files, key=lambda k:
