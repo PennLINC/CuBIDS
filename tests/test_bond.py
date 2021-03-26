@@ -25,7 +25,6 @@ import numpy as np
 import pandas as pd
 import subprocess
 
-
 TEST_DATA = pkgrf("bond", "testdata")
 
 COMPLETE_KEY_GROUPS = [
@@ -479,7 +478,7 @@ def test_keygroups(tmp_path):
 
     # Test that the correct key groups are found
     key_groups = complete_bod.get_key_groups()
-    assert key_groups == COMPLETE_KEY_GROUPS
+    assert set(key_groups) == set(COMPLETE_KEY_GROUPS)
 
     # Test the incomplete
     ibod = BOnD(data_root / "inconsistent")
@@ -488,7 +487,7 @@ def test_keygroups(tmp_path):
 
     # There will still be the same number of key groups
     ikey_groups = ibod.get_key_groups()
-    assert ikey_groups == COMPLETE_KEY_GROUPS
+    assert set(ikey_groups) == set(COMPLETE_KEY_GROUPS)
 
 
 def test_csv_creation(tmp_path):
@@ -504,7 +503,7 @@ def test_csv_creation(tmp_path):
 
     # Test that the correct key groups are found
     key_groups = complete_bod.get_key_groups()
-    assert key_groups == COMPLETE_KEY_GROUPS
+    assert set(key_groups) == set(COMPLETE_KEY_GROUPS)
 
     # Get the CSVs from the complete data
     cfiles_df, csummary_df = \
@@ -535,7 +534,7 @@ def test_csv_creation(tmp_path):
 
     # There will still be the same number of key groups
     ikey_groups = ibod.get_key_groups()
-    assert ikey_groups == COMPLETE_KEY_GROUPS
+    assert set(ikey_groups) == set(COMPLETE_KEY_GROUPS)
 
     # Get the CSVs from the inconsistent data
     ifiles_df, isummary_df = \
@@ -705,15 +704,15 @@ def _add_deletion(summary_csv):
 
 
 def _edit_csv(summary_csv):
-    r = csv.reader(open(summary_csv))
-    lines = list(r)
-
-    # adds a new key group to the RenameKeyGroup columm
-    lines[3][3] = \
-        "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
-
-    writer = csv.writer(open(summary_csv, 'w'))
-    writer.writerows(lines)
+    df = pd.read_csv(summary_csv)
+    df['RenameKeyGroup'] = df['RenameKeyGroup'].apply(str)
+    df['KeyGroup'] = df['KeyGroup'].apply(str)
+    for row in range(len(df)):
+        if df.loc[row, 'KeyGroup'] == \
+            "acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1":
+            df.at[row, 'RenameKeyGroup'] = \
+                "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
+    df.to_csv(summary_csv)
 
 def _add_ext_files(img_path):
     # add and save extension files in
