@@ -822,12 +822,11 @@ class BOnD(object):
                 self.keys_files[ret].append(path)
 
         # sort the key_groups by count
-        ordered = sorted(self.keys_files, key=lambda k:
-                         len(self.keys_files[k]), reverse=True)
+        # ordered = sorted(self.keys_files, key=lambda k:
+        #                  len(self.keys_files[k]), reverse=True)
         # pdb.set_trace()
-        #return ordered
+        # return ordered
         return sorted(key_groups)
-
 
     def change_metadata(self, filters, pattern, metadata):
 
