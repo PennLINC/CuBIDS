@@ -636,7 +636,7 @@ class BOnD(object):
 
         ret = _get_param_groups(
             to_include, self.layout, self.fieldmap_lookup, key_group,
-            self.grouping_config, modality)
+            self.grouping_config, modality, self.keys_files)
 
         return ret
 
@@ -788,8 +788,10 @@ class BOnD(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        summary = summary.sort_values(by=['Modality'])
-        big_df = big_df.sort_values(by=['Modality'])
+        summary = summary.sort_values(by=['Modality', 'KeyGroupCount'],
+                                      ascending=[True, False])
+        big_df = big_df.sort_values(by=['Modality', 'KeyGroupCount'],
+                                    ascending=[True, False])
 
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
@@ -804,9 +806,12 @@ class BOnD(object):
         # reset self.keys_files
         self.keys_files = {}
 
+        key_groups = set()
+
         for path in Path(self.path).rglob("sub-*/**/*.*"):
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
+                key_groups.update((_file_to_key_group(path),))
 
                 # Fill the dictionary of key group, list of filenames pairrs
                 ret = _file_to_key_group(path)
@@ -817,12 +822,7 @@ class BOnD(object):
 
                 self.keys_files[ret].append(path)
 
-        # sort the key_groups by count
-        ordered = sorted(self.keys_files, key=lambda k:
-                         len(self.keys_files[k]), reverse=True)
-
-        # return sorted(key_groups)
-        return ordered
+        return sorted(key_groups)
 
     def change_metadata(self, filters, pattern, metadata):
 
@@ -934,7 +934,7 @@ def _get_intended_for_reference(scan):
 
 
 def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
-                      grouping_config, modality):
+                      grouping_config, modality, keys_files):
 
     """Finds a list of *parameter groups* from a list of files.
 
@@ -1041,6 +1041,9 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     # add the modality as a column
     deduped["Modality"] = modality
 
+    # add key group count column (will delete later)
+    deduped["KeyGroupCount"] = len(keys_files[key_group_name])
+
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=param_group_cols)
     value_counts = labeled_files.ParamGroup.value_counts()
@@ -1065,6 +1068,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     # sort ordered_labeled_files by param group
     ordered_labeled_files.sort_values(by=['Counts'], inplace=True,
                                       ascending=False)
+
+    # pdb.set_trace()
 
     return ordered_labeled_files, param_groups_with_counts
 
