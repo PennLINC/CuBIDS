@@ -580,7 +580,6 @@ class BOnD(object):
         else:
             print("Not running any association removals")
 
-
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
 
