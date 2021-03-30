@@ -633,12 +633,17 @@ class BOnD(object):
                 modality = mod.replace('/', '').replace('/', '')
         if modality == '':
             print("Unusual Modality Detected")
+            modality = 'other'
 
         ret = _get_param_groups(
             to_include, self.layout, self.fieldmap_lookup, key_group,
             self.grouping_config, modality, self.keys_files)
 
-        return ret
+        # add modality to the retun tuple
+        l_ret = list(ret)
+        l_ret.append(modality)
+        tup_ret = tuple(l_ret)
+        return tup_ret
 
     def get_param_groups_dataframes(self):
         '''Creates DataFrames of files x param groups and a summary'''
@@ -647,7 +652,7 @@ class BOnD(object):
         labeled_files = []
         param_group_summaries = []
         for key_group in key_groups:
-            labeled_file_params, param_summary = \
+            labeled_file_params, param_summary, modality = \
                 self.get_param_groups_from_key_group(key_group)
             if labeled_file_params is None:
                 continue
@@ -683,6 +688,8 @@ class BOnD(object):
         # loop though imaging and derrived param keys
 
         sidecar = self.grouping_config.get('sidecar_params')
+        sidecar = sidecar[modality]
+
         relational = self.grouping_config.get('relational_params')
 
         # list of columns names that we account for in suggested renaming
@@ -727,9 +734,6 @@ class BOnD(object):
             entities = _key_group_to_entities(summary.loc[row, "KeyGroup"])
             if 'VARIANT' in summary.loc[row, 'KeyGroup']:
                 renamed = True
-            # if 'acquisition' in entities.keys():
-            #     if 'VARIANT' in entities['acquisition']:
-            #        renamed = True
 
             if summary.loc[row, "ParamGroup"] != 1 and not renamed:
                 acq_str = 'VARIANT'
@@ -973,8 +977,13 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
 
     # Split the config into separate parts
     imaging_params = grouping_config.get('sidecar_params', {})
+    imaging_params = imaging_params[modality]
+
     relational_params = grouping_config.get('relational_params', {})
+
     derived_params = grouping_config.get('derived_params')
+    derived_params = derived_params[modality]
+
     imaging_params.update(derived_params)
 
     dfs = []
@@ -1031,7 +1040,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         dfs.append(example_data)
 
     # Assign each file to a ParamGroup
-    df = format_params(pd.DataFrame(dfs), grouping_config)
+    df = format_params(pd.DataFrame(dfs), grouping_config, modality)
     param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
@@ -1069,14 +1078,12 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     ordered_labeled_files.sort_values(by=['Counts'], inplace=True,
                                       ascending=False)
 
-    # pdb.set_trace()
-
     return ordered_labeled_files, param_groups_with_counts
 
 
-def format_params(param_group_df, config):
-    to_format = config['sidecar_params']
-    to_format.update(config['derived_params'])
+def format_params(param_group_df, config, modality):
+    to_format = config['sidecar_params'][modality]
+    to_format.update(config['derived_params'][modality])
 
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
