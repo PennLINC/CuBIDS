@@ -265,13 +265,24 @@ class BOnD(object):
                     move_ops.append('mv %s %s' % (from_file, to_file))
         print("Performing %d renamings" % len(move_ops))
 
-        full_cmd = "; ".join(merge_commands + move_ops)
+        full_cmd = "\n ".join(merge_commands + move_ops)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
+            # write full_cmd to a .sh file
+            # Open file for writing
+            fileObject = open(new_prefix + "_full_cmd.sh", "w")
+            fileObject.write("#!/bin/bash\n")
+            fileObject.write(full_cmd)
+            # Close the file
+            fileObject.close()
+
             if self.use_datalad:
-                self.datalad_handle.run(full_cmd)
+                self.datalad_handle.run(cmd=["bash", new_prefix +
+                                             "_full_cmd.sh"])
             else:
-                subprocess.run(full_cmd, stdout=subprocess.PIPE, shell=True)
+                subprocess.run(["bash", new_prefix + "_full_cmd.sh"],
+                               stdout=subprocess.PIPE,
+                               cwd=str(Path(new_prefix).parent))
         else:
             print("Not running any commands")
 
@@ -546,16 +557,29 @@ class BOnD(object):
         print(to_remove)
 
         # datalad run the file deletions (purges)
-        full_cmd = "; ".join(purge_commands)
+        full_cmd = "\n ".join(purge_commands)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
+            # write full_cmd to a .sh file
+            # Open file for writing
+
+            path_prefix = str(self.path.parent)
+            fileObject = open(path_prefix + "_full_cmd.sh", "w")
+            fileObject.write("#!/bin/bash\n")
+            fileObject.write(full_cmd)
+            # Close the file
+            fileObject.close()
             if self.use_datalad:
-                self.datalad_handle.run(full_cmd)
+                self.datalad_handle.run(cmd=["bash", path_prefix +
+                                             "_full_cmd.sh"])
             else:
-                subprocess.run(full_cmd, stdout=subprocess.PIPE, shell=True)
+                subprocess.run(["bash", path_prefix + "_full_cmd.sh"],
+                               stdout=subprocess.PIPE,
+                               cwd=path_prefix)
             self.reset_bids_layout()
         else:
             print("Not running any association removals")
+
 
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
