@@ -350,9 +350,9 @@ class BOnD(object):
         for assoc in associations:
             assoc_path = assoc.path
             if Path(assoc_path).exists():
-                print("FILE: ", filepath)
-                print("ASSOC: ", assoc.path)
-                # ensure association is not an IntendedFor reference!
+                # print("FILE: ", filepath)
+                # print("ASSOC: ", assoc.path)
+                # ensure assoc not an IntendedFor reference
                 if '.nii' not in str(assoc_path):
                     self.old_filenames.append(assoc_path)
                     new_ext_path = img_to_new_ext(new_path,
