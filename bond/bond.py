@@ -11,6 +11,7 @@ from bids.utils import listify
 import numpy as np
 import pandas as pd
 import nibabel as nb
+import pdb
 import datalad.api as dlapi
 from shutil import copytree, copyfile
 from tqdm import tqdm
@@ -1040,7 +1041,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         dfs.append(example_data)
 
     # Assign each file to a ParamGroup
-    df = format_params(pd.DataFrame(dfs), grouping_config, modality)
+    df, tol_dict = format_params(pd.DataFrame(dfs), grouping_config, modality)
     param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
@@ -1082,17 +1083,52 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
 
 
 def format_params(param_group_df, config, modality):
+
     to_format = config['sidecar_params'][modality]
     to_format.update(config['derived_params'][modality])
 
+    # create new column to check if vals are too close to another group
+    # delete later
+    for col in param_group_df.columns:
+        param_group_df[column_name + "_isClose"] = column_name
+
+    # tol_checks = 0
+    # is_close = 0
+
+    # dictionary of column name, column values
+    # of all cols in df with tolerance
+    dict_tol = {}
+    # loop through df
+    # if a col has a tolerance and 2 rows are within it
+    # save the col name and change one row to be the same as another
+    # then do the drop duplicates check
+    # finally, overwrite the tolerance columns with their old saved versions
+
+    # use np.isclose to check if row, col is within threashold
+    # if yes, don't include that col in drop duplicates!
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
             continue
-        if 'precision' in column_fmt:
-            param_group_df[column_name] = \
-                param_group_df[column_name].round(column_fmt['precision'])
+        if 'tolerance' in column_fmt:
+            # tol_checks += 1
+            # unique_vals = 0
+            pdb.set_trace()
+            tolerance = column_fmt['tolerance']
+            rows = range(len(param_group_df))
+            for row in range(len(param_group_df)):
+                val = param_group_df.loc[row, column_name]
+                for i in rows:
+                    if i != row:
+                        other = param_group_df.loc[i, column_name]
+                        isclose = np.isclose(val, other, atol=tolerance,
+                                             rtol=0)
+                        param_group_df.at[row, column_name + "_isClose"] = isClose
+                        param_group_df.at[i, column_name + "_isClose"] = isClose
+                        if column_name not in dict_tol.keys():
+                            dict_tol[column_name] = \
+                                    param_group_df[column_name].tolist()
 
-    return param_group_df
+    return param_group_df, dict_tol
 
 
 def _order_columns(df):
