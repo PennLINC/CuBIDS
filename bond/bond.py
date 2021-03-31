@@ -265,7 +265,7 @@ class BOnD(object):
                     move_ops.append('mv %s %s' % (from_file, to_file))
         print("Performing %d renamings" % len(move_ops))
 
-        full_cmd = "\n ".join(merge_commands + move_ops)
+        full_cmd = "\n".join(merge_commands + move_ops)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
             # write full_cmd to a .sh file
