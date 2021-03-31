@@ -557,7 +557,7 @@ class BOnD(object):
         print(to_remove)
 
         # datalad run the file deletions (purges)
-        full_cmd = "\n ".join(purge_commands)
+        full_cmd = "\n".join(purge_commands)
         if full_cmd:
             print("RUNNING:\n\n", full_cmd)
             # write full_cmd to a .sh file
