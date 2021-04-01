@@ -1138,7 +1138,7 @@ def format_params(param_group_df, config, modality):
 
             for i in range(len(array)):
                 if np.isnan(array[i, 0]):
-                    array[i,0] = -999
+                    array[i, 0] = -999
 
             tolerance = to_format[column_name]['tolerance']
             clustering = AgglomerativeClustering(n_clusters=None,
