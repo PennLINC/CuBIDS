@@ -1137,7 +1137,7 @@ def format_params(param_group_df, config, modality):
             array = param_group_df[column_name].to_numpy().reshape(-1, 1)
 
             for i in range(len(array)):
-                if np.isnan(array[i,0]):
+                if np.isnan(array[i, 0]):
                     array[i,0] = -999
 
             tolerance = to_format[column_name]['tolerance']
@@ -1145,8 +1145,8 @@ def format_params(param_group_df, config, modality):
                                                  distance_threshold=tolerance,
                                                  linkage='complete').fit(array)
             for i in range(len(array)):
-                if array[i,0] == -999:
-                    array[i,0] = np.nan
+                if array[i, 0] == -999:
+                    array[i, 0] = np.nan
 
             # now add clustering_labels as a column
 

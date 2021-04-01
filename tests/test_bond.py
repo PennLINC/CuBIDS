@@ -24,7 +24,6 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import subprocess
-import pdb
 
 TEST_DATA = pkgrf("bond", "testdata")
 
