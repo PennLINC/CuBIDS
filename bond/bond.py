@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
+# import pdb
 from shutil import copytree, copyfile
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -1092,6 +1093,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
 
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=param_group_cols)
+
     value_counts = labeled_files.ParamGroup.value_counts()
 
     param_group_counts = pd.DataFrame(
@@ -1115,6 +1117,10 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     ordered_labeled_files.sort_values(by=['Counts'], inplace=True,
                                       ascending=False)
 
+    # if param_groups_with_counts.sum().Counts != \
+    #         param_groups_with_counts.loc[0, 'KeyGroupCount']:
+    #         pdb.set_trace()
+
     return ordered_labeled_files, param_groups_with_counts
 
 
@@ -1130,10 +1136,17 @@ def format_params(param_group_df, config, modality):
         if 'tolerance' in column_fmt and len(param_group_df) > 1:
             array = param_group_df[column_name].to_numpy().reshape(-1, 1)
 
+            for i in range(len(array)):
+                if np.isnan(array[i,0]):
+                    array[i,0] = -999
+
             tolerance = to_format[column_name]['tolerance']
             clustering = AgglomerativeClustering(n_clusters=None,
                                                  distance_threshold=tolerance,
                                                  linkage='complete').fit(array)
+            for i in range(len(array)):
+                if array[i,0] == -999:
+                    array[i,0] = np.nan
 
             # now add clustering_labels as a column
 

@@ -24,6 +24,7 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import subprocess
+import pdb
 
 TEST_DATA = pkgrf("bond", "testdata")
 
@@ -73,6 +74,17 @@ def test_ok_json_merge_cli(tmp_path):
         ['bids-sidecar-merge', str(source_json), str(dest_json)])
     assert merge_proc.returncode == 0
     assert not _get_json_string(dest_json) == orig_dest_json_content
+
+def test_get_param_groups(tmp_path):
+    data_root = get_data(tmp_path)
+    bod = BOnD(data_root / "inconsistent", use_datalad=True)
+    csv_prefix = str(tmp_path / "csvs")
+    key_groups = bod.get_key_groups()
+    bod._cache_fieldmaps()
+
+    for key_group in key_groups:
+        ret = bod.get_param_groups_from_key_group(key_group)
+        assert ret[1].sum().Counts == ret[1].loc[0, 'KeyGroupCount']
 
 def test_copy_exemplars(tmp_path):
     data_root = get_data(tmp_path)
