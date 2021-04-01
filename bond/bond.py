@@ -13,6 +13,7 @@ import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
 from shutil import copytree, copyfile
+from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES
 from .config import load_config
@@ -286,8 +287,6 @@ class BOnD(object):
         else:
             print("Not running any commands")
 
-        # DATALAD RUN SAVES RIGHT? BUT IS IT BLOCKING?!!!!!!
-        # TRY COMMENTING OUT RE-GROUP PART AND JUST RUNNING GROUP AFTER....
         self.reset_bids_layout()
         self.get_CSVs(new_prefix)
 
@@ -361,9 +360,9 @@ class BOnD(object):
         for assoc in associations:
             assoc_path = assoc.path
             if Path(assoc_path).exists():
-                print("FILE: ", filepath)
-                print("ASSOC: ", assoc.path)
-                # ensure association is not an IntendedFor reference!
+                # print("FILE: ", filepath)
+                # print("ASSOC: ", assoc.path)
+                # ensure assoc not an IntendedFor reference
                 if '.nii' not in str(assoc_path):
                     self.old_filenames.append(assoc_path)
                     new_ext_path = img_to_new_ext(new_path,
@@ -656,12 +655,17 @@ class BOnD(object):
                 modality = mod.replace('/', '').replace('/', '')
         if modality == '':
             print("Unusual Modality Detected")
+            modality = 'other'
 
         ret = _get_param_groups(
             to_include, self.layout, self.fieldmap_lookup, key_group,
             self.grouping_config, modality, self.keys_files)
 
-        return ret
+        # add modality to the retun tuple
+        l_ret = list(ret)
+        l_ret.append(modality)
+        tup_ret = tuple(l_ret)
+        return tup_ret
 
     def get_param_groups_dataframes(self):
         '''Creates DataFrames of files x param groups and a summary'''
@@ -670,7 +674,7 @@ class BOnD(object):
         labeled_files = []
         param_group_summaries = []
         for key_group in key_groups:
-            labeled_file_params, param_summary = \
+            labeled_file_params, param_summary, modality = \
                 self.get_param_groups_from_key_group(key_group)
             if labeled_file_params is None:
                 continue
@@ -706,6 +710,8 @@ class BOnD(object):
         # loop though imaging and derrived param keys
 
         sidecar = self.grouping_config.get('sidecar_params')
+        sidecar = sidecar[modality]
+
         relational = self.grouping_config.get('relational_params')
 
         # list of columns names that we account for in suggested renaming
@@ -750,9 +756,6 @@ class BOnD(object):
             entities = _key_group_to_entities(summary.loc[row, "KeyGroup"])
             if 'VARIANT' in summary.loc[row, 'KeyGroup']:
                 renamed = True
-            # if 'acquisition' in entities.keys():
-            #     if 'VARIANT' in entities['acquisition']:
-            #        renamed = True
 
             if summary.loc[row, "ParamGroup"] != 1 and not renamed:
                 acq_str = 'VARIANT'
@@ -996,8 +999,13 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
 
     # Split the config into separate parts
     imaging_params = grouping_config.get('sidecar_params', {})
+    imaging_params = imaging_params[modality]
+
     relational_params = grouping_config.get('relational_params', {})
+
     derived_params = grouping_config.get('derived_params')
+    derived_params = derived_params[modality]
+
     imaging_params.update(derived_params)
 
     dfs = []
@@ -1054,11 +1062,26 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         dfs.append(example_data)
 
     # Assign each file to a ParamGroup
-    df = format_params(pd.DataFrame(dfs), grouping_config)
+    df = format_params(pd.DataFrame(dfs), grouping_config, modality)
     param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
+    # get the subset of columns to drop duplicates by
+    check_cols = []
+    for col in list(df.columns):
+        if "Cluster_" + col not in list(df.columns) and col != 'FilePath':
+            check_cols.append(col)
+
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
-    deduped = df.drop('FilePath', axis=1).drop_duplicates(ignore_index=True)
+    deduped = df.drop('FilePath', axis=1).drop_duplicates(subset=check_cols,
+                                                          ignore_index=True)
+
+    # now get rid of cluster cols from deduped and df
+    for col in list(deduped.columns):
+        if col.startswith('Cluster_'):
+            deduped = deduped.drop(col, axis=1)
+            df = df.drop(col, axis=1)
+            param_group_cols.remove(col)
+
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
 
     # add the modality as a column
@@ -1092,21 +1115,29 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     ordered_labeled_files.sort_values(by=['Counts'], inplace=True,
                                       ascending=False)
 
-    # pdb.set_trace()
-
     return ordered_labeled_files, param_groups_with_counts
 
 
-def format_params(param_group_df, config):
-    to_format = config['sidecar_params']
-    to_format.update(config['derived_params'])
+def format_params(param_group_df, config, modality):
+    '''Run AgglomerativeClustering on param groups, add columns to dataframe'''
+
+    to_format = config['sidecar_params'][modality]
+    to_format.update(config['derived_params'][modality])
 
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
             continue
-        if 'precision' in column_fmt:
-            param_group_df[column_name] = \
-                param_group_df[column_name].round(column_fmt['precision'])
+        if 'tolerance' in column_fmt and len(param_group_df) > 1:
+            array = param_group_df[column_name].to_numpy().reshape(-1, 1)
+
+            tolerance = to_format[column_name]['tolerance']
+            clustering = AgglomerativeClustering(n_clusters=None,
+                                                 distance_threshold=tolerance,
+                                                 linkage='complete').fit(array)
+
+            # now add clustering_labels as a column
+
+            param_group_df['Cluster_' + column_name] = clustering.labels_
 
     return param_group_df
 
