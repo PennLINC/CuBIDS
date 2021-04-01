@@ -11,9 +11,9 @@ from bids.utils import listify
 import numpy as np
 import pandas as pd
 import nibabel as nb
-import pdb
 import datalad.api as dlapi
 from shutil import copytree, copyfile
+from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES
 from .config import load_config
@@ -276,8 +276,6 @@ class BOnD(object):
         else:
             print("Not running any commands")
 
-        # DATALAD RUN SAVES RIGHT? BUT IS IT BLOCKING?!!!!!!
-        # TRY COMMENTING OUT RE-GROUP PART AND JUST RUNNING GROUP AFTER....
         self.reset_bids_layout()
         self.get_CSVs(new_prefix)
 
@@ -1041,11 +1039,26 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         dfs.append(example_data)
 
     # Assign each file to a ParamGroup
-    df, tol_dict = format_params(pd.DataFrame(dfs), grouping_config, modality)
+    df = format_params(pd.DataFrame(dfs), grouping_config, modality)
     param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
+    # get the subset of columns to drop duplicates by
+    check_cols = []
+    for col in list(df.columns):
+        if "Cluster_" + col not in list(df.columns) and col != 'FilePath':
+            check_cols.append(col)
+
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
-    deduped = df.drop('FilePath', axis=1).drop_duplicates(ignore_index=True)
+    deduped = df.drop('FilePath', axis=1).drop_duplicates(subset=check_cols,
+                                                          ignore_index=True)
+
+    # now get rid of cluster cols from deduped and df
+    for col in list(deduped.columns):
+        if col.startswith('Cluster_'):
+            deduped = deduped.drop(col, axis=1)
+            df = df.drop(col, axis=1)
+            param_group_cols.remove(col)
+
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
 
     # add the modality as a column
@@ -1083,52 +1096,27 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
 
 
 def format_params(param_group_df, config, modality):
+    '''Run AgglomerativeClustering on param groups, add columns to dataframe'''
 
     to_format = config['sidecar_params'][modality]
     to_format.update(config['derived_params'][modality])
 
-    # create new column to check if vals are too close to another group
-    # delete later
-    for col in param_group_df.columns:
-        param_group_df[column_name + "_isClose"] = column_name
-
-    # tol_checks = 0
-    # is_close = 0
-
-    # dictionary of column name, column values
-    # of all cols in df with tolerance
-    dict_tol = {}
-    # loop through df
-    # if a col has a tolerance and 2 rows are within it
-    # save the col name and change one row to be the same as another
-    # then do the drop duplicates check
-    # finally, overwrite the tolerance columns with their old saved versions
-
-    # use np.isclose to check if row, col is within threashold
-    # if yes, don't include that col in drop duplicates!
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
             continue
-        if 'tolerance' in column_fmt:
-            # tol_checks += 1
-            # unique_vals = 0
-            pdb.set_trace()
-            tolerance = column_fmt['tolerance']
-            rows = range(len(param_group_df))
-            for row in range(len(param_group_df)):
-                val = param_group_df.loc[row, column_name]
-                for i in rows:
-                    if i != row:
-                        other = param_group_df.loc[i, column_name]
-                        isclose = np.isclose(val, other, atol=tolerance,
-                                             rtol=0)
-                        param_group_df.at[row, column_name + "_isClose"] = isClose
-                        param_group_df.at[i, column_name + "_isClose"] = isClose
-                        if column_name not in dict_tol.keys():
-                            dict_tol[column_name] = \
-                                    param_group_df[column_name].tolist()
+        if 'tolerance' in column_fmt and len(param_group_df) > 1:
+            array = param_group_df[column_name].to_numpy().reshape(-1, 1)
 
-    return param_group_df, dict_tol
+            tolerance = to_format[column_name]['tolerance']
+            clustering = AgglomerativeClustering(n_clusters=None,
+                                                 distance_threshold=tolerance,
+                                                 linkage='complete').fit(array)
+
+            # now add clustering_labels as a column
+
+            param_group_df['Cluster_' + column_name] = clustering.labels_
+
+    return param_group_df
 
 
 def _order_columns(df):
