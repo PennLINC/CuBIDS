@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
-import pdb
 from shutil import copytree, copyfile
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -1064,7 +1063,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
 
     # Assign each file to a ParamGroup
     df = format_params(pd.DataFrame(dfs), grouping_config, modality)
-    param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
+    # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
     # get the subset of columns to drop duplicates by
     check_cols = []
@@ -1114,7 +1113,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     for col in list(ordered_labeled_files.columns):
         if col.startswith('Cluster_'):
             ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
-            param_groups_with_counts = param_groups_with_counts.drop(col, axis=1)
+            param_groups_with_counts = param_groups_with_counts.drop(col,
+                                                                     axis=1)
         if col.endswith('_x'):
             ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
 
@@ -1146,13 +1146,7 @@ def format_params(param_group_df, config, modality):
                     array[i, 0] = np.nan
 
             # now add clustering_labels as a column
-            # param_group_df[column_name] =
-
             param_group_df['Cluster_' + column_name] = clustering.labels_
-
-    # # set all vals to first cluster val
-    # for index, row in param_group_df.iterrows():
-    #     pdb.set_trace()
 
     return param_group_df
 
