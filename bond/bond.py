@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
-# import pdb
+import pdb
 from shutil import copytree, copyfile
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -1076,13 +1076,6 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     deduped = df.drop('FilePath', axis=1).drop_duplicates(subset=check_cols,
                                                           ignore_index=True)
 
-    # now get rid of cluster cols from deduped and df
-    for col in list(deduped.columns):
-        if col.startswith('Cluster_'):
-            deduped = deduped.drop(col, axis=1)
-            df = df.drop(col, axis=1)
-            param_group_cols.remove(col)
-
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
 
     # add the modality as a column
@@ -1092,7 +1085,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     deduped["KeyGroupCount"] = len(keys_files[key_group_name])
 
     # Add the ParamGroup to the whole list of files
-    labeled_files = pd.merge(df, deduped, on=param_group_cols)
+    labeled_files = pd.merge(df, deduped, on=check_cols)
 
     value_counts = labeled_files.ParamGroup.value_counts()
 
@@ -1111,15 +1104,19 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
 
     # Send the new, ordered param group ids to the files list
     ordered_labeled_files = pd.merge(df, param_groups_with_counts,
-                                     on=param_group_cols)
+                                     on=check_cols, suffixes=('_x', ''))
 
     # sort ordered_labeled_files by param group
     ordered_labeled_files.sort_values(by=['Counts'], inplace=True,
                                       ascending=False)
 
-    # if param_groups_with_counts.sum().Counts != \
-    #         param_groups_with_counts.loc[0, 'KeyGroupCount']:
-    #         pdb.set_trace()
+    # now get rid of cluster cols from deduped and df
+    for col in list(ordered_labeled_files.columns):
+        if col.startswith('Cluster_'):
+            ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
+            param_groups_with_counts = param_groups_with_counts.drop(col, axis=1)
+        if col.endswith('_x'):
+            ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
 
     return ordered_labeled_files, param_groups_with_counts
 
@@ -1149,8 +1146,13 @@ def format_params(param_group_df, config, modality):
                     array[i, 0] = np.nan
 
             # now add clustering_labels as a column
+            # param_group_df[column_name] =
 
             param_group_df['Cluster_' + column_name] = clustering.labels_
+
+    # # set all vals to first cluster val
+    # for index, row in param_group_df.iterrows():
+    #     pdb.set_trace()
 
     return param_group_df
 
