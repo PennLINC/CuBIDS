@@ -773,14 +773,6 @@ class BOnD(object):
                                 acq_str = acq_str + 'NoFmap'
                             else:
                                 acq_str = acq_str + 'HasFmap'
-
-                        # TODO: check if col has a tolerance,
-                        # make sure var val not within tolerance of dom val
-                        if col in tolerance_cols:
-                            if float(summary.loc[row, col]) - \
-                                    float(dom_dict[key][col]) > \
-                                    sidecar[col]['tolerance']:
-                                acq_str = acq_str + col
                         else:
                             acq_str = acq_str + col
 
@@ -1075,6 +1067,9 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     df = format_params(pd.DataFrame(dfs), grouping_config, modality)
     # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
+    # round param groups based on precision after clustering
+    df = round_params(df, grouping_config, modality)
+
     # get the subset of columns to drop duplicates by
     check_cols = []
     for col in list(df.columns):
@@ -1129,6 +1124,20 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
             ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
 
     return ordered_labeled_files, param_groups_with_counts
+
+
+def round_params(param_group_df, config, modality):
+    to_format = config['sidecar_params'][modality]
+    to_format.update(config['derived_params'][modality])
+
+    for column_name, column_fmt in to_format.items():
+        if column_name not in param_group_df:
+            continue
+        if 'precision' in column_fmt:
+            param_group_df[column_name] = \
+                param_group_df[column_name].round(column_fmt['precision'])
+
+    return param_group_df
 
 
 def format_params(param_group_df, config, modality):

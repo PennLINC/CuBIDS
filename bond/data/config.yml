@@ -14,12 +14,15 @@ derived_params:
       suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim2:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim3:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
   dwi:
     Dim1Size:
@@ -35,9 +38,11 @@ derived_params:
       suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim2:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim3:
       tolerance: 0.001
@@ -59,9 +64,11 @@ derived_params:
       suggest_variant_rename: yes
     VoxelSizeDim2:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim3:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
   func:
     Dim1Size:
@@ -77,12 +84,15 @@ derived_params:
       suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim2:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim3:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
   perf:
     Dim1Size:
@@ -98,12 +108,15 @@ derived_params:
       suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim2:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim3:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
   other:
     Dim1Size:
@@ -119,12 +132,15 @@ derived_params:
       suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim2:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
     VoxelSizeDim3:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
 # These fields reflect relationships between images.
 # Not modality specific
@@ -157,17 +173,22 @@ sidecar_params:
     PhaseEncodingDirection: {}
     RepetitionTime:
       tolerance: 0.000001
+      precision: 6
       suggest_variant_rename: yes
     SliceEncodingDirection: {}
     TotalReadoutTime:
       tolerance: 0.001
+      precision: 3
     VolumeTiming:
       tolerance: 0.000001
+      precision: 6
   dwi:
     EchoTime:
       tolerance: 0.001
+      precision: 3
     EffectiveEchoSpacing:
       tolerance: 0.00001
+      precision: 6
     FlipAngle: {}
     MultibandAccelerationFactor: {}
     NumberOfVolumesDiscardedByScanner: {}
@@ -178,17 +199,22 @@ sidecar_params:
     PhaseEncodingDirection: {}
     RepetitionTime:
       tolerance: 0.000001
+      precision: 6
       suggest_variant_rename: yes
     SliceEncodingDirection: {}
     TotalReadoutTime:
       tolerance: 0.001
+      precision: 3
     VolumeTiming:
       tolerance: 0.000001
+      precision: 6
   fmap:
     EchoTime:
       tolerance: 0.001
+      precision: 3
     EffectiveEchoSpacing:
       tolerance: 0.00001
+      precision: 5
     FlipAngle: {}
     MultibandAccelerationFactor: {}
     NumberOfVolumesDiscardedByScanner: {}
@@ -199,17 +225,22 @@ sidecar_params:
     PhaseEncodingDirection: {}
     RepetitionTime:
       tolerance: 0.000001
+      precision: 6
       suggest_variant_rename: yes
     SliceEncodingDirection: {}
     TotalReadoutTime:
       tolerance: 0.001
+      precision: 3
     VolumeTiming:
       tolerance: 0.000001
+      precision: 6
   func:
     EchoTime:
       tolerance: 0.001
+      precision: 3
     EffectiveEchoSpacing:
       tolerance: 0.00001
+      precision: 5
     FlipAngle: {}
     MultibandAccelerationFactor: {}
     NumberOfVolumesDiscardedByScanner: {}
@@ -220,17 +251,22 @@ sidecar_params:
     PhaseEncodingDirection: {}
     RepetitionTime:
       tolerance: 0.000001
+      precision: 6
       suggest_variant_rename: yes
     SliceEncodingDirection: {}
     TotalReadoutTime:
       tolerance: 0.001
+      precision: 3
     VolumeTiming:
       tolerance: 0.000001
+      precision: 6
   perf:
     EchoTime:
       tolerance: 0.001
+      precision: 3
     EffectiveEchoSpacing:
       tolerance: 0.00001
+      precision: 5
     FlipAngle: {}
     MultibandAccelerationFactor: {}
     NumberOfVolumesDiscardedByScanner: {}
@@ -241,17 +277,22 @@ sidecar_params:
     PhaseEncodingDirection: {}
     RepetitionTime:
       tolerance: 0.000001
+      precision: 6
       suggest_variant_rename: yes
     SliceEncodingDirection: {}
     TotalReadoutTime:
       tolerance: 0.001
+      precision: 3
     VolumeTiming:
       tolerance: 0.000001
+      precision: 6
   other:
     EchoTime:
       tolerance: 0.001
+      precision: 3
     EffectiveEchoSpacing:
       tolerance: 0.00001
+      precision: 5
     FlipAngle: {}
     MultibandAccelerationFactor: {}
     NumberOfVolumesDiscardedByScanner: {}
@@ -262,9 +303,12 @@ sidecar_params:
     PhaseEncodingDirection: {}
     RepetitionTime:
       tolerance: 0.000001
+      precision: 6
       suggest_variant_rename: yes
     SliceEncodingDirection: {}
     TotalReadoutTime:
       tolerance: 0.001
+      precision: 3
     VolumeTiming:
       tolerance: 0.000001
+      precision: 6
