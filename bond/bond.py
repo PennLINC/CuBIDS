@@ -718,12 +718,14 @@ class BOnD(object):
         summary['RenameKeyGroup'] = summary['RenameKeyGroup'].apply(str)
 
         rename_cols = []
-
+        tolerance_cols = []
         for col in sidecar.keys():
             if 'suggest_variant_rename' in sidecar[col].keys():
                 if sidecar[col]['suggest_variant_rename'] \
                         and col in summary.columns:
                     rename_cols.append(col)
+                    if 'tolerance' in sidecar[col].keys():
+                        tolerance_cols.append(col)
 
         # deal with Fmap!
         if 'FieldmapKey' in relational:
@@ -765,12 +767,20 @@ class BOnD(object):
                 for col in rename_cols:
                     summary[col] = summary[col].apply(str)
                     if summary.loc[row, col] != dom_dict[key][col]:
-                        if col == 'HasFieldmap':
 
+                        if col == 'HasFieldmap':
                             if dom_dict[key][col] == 'True':
                                 acq_str = acq_str + 'NoFmap'
                             else:
                                 acq_str = acq_str + 'HasFmap'
+
+                        # TODO: check if col has a tolerance,
+                        # make sure var val not within tolerance of dom val
+                        if col in tolerance_cols:
+                            if float(summary.loc[row, col]) - \
+                                    float(dom_dict[key][col]) > \
+                                    sidecar[col]['tolerance']:
+                                acq_str = acq_str + col
                         else:
                             acq_str = acq_str + col
 
