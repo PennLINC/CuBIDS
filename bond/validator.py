@@ -27,10 +27,11 @@ def build_validator_call(path, ignore_headers=False, ignore_subject=True):
 
 def build_subject_paths(bids_dir):
     """Build a list of BIDS dirs with 1 subject each"""
-    
+
+    bids_dir = str(bids_dir)
     if not bids_dir.endswith("/"):
         bids_dir += "/"
-        
+    
     root_files = [x for x in glob.glob(bids_dir + "*") if os.path.isfile(x)]
     
     bids_dir += "sub-*/"

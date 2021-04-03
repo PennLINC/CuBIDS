@@ -6,6 +6,9 @@ import sys
 import re
 import logging
 import tempfile
+import tqdm
+import shutil
+import pandas as pd
 from bond import BOnD
 from pathlib import Path
 from .validator import (build_validator_call,
@@ -35,15 +38,15 @@ def bond_validate():
                         action='store',
                         help='file prefix to which tabulated validator output '
                         'is written.')
-    parser.add_argument('sequential',
+    parser.add_argument('--sequential',
                         action='store_true',
                         help='Run the BIDS validator sequentially '
-                        'on each subject.')    
+                        'on each subject.',
+                        required=False)    
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.',
                         default=None)
-
     parser.add_argument('--ignore_nifti_headers',
                         action='store_true',
                         default=False,
@@ -102,6 +105,7 @@ def bond_validate():
             
             for subject, files_list in tqdm.tqdm(subjects_dict.items()):
                 
+                logger.info(" ".join(["Processing subject:", subject]))
                 # create a temporary directory and symlink the data
                 with tempfile.TemporaryDirectory() as tmpdirname:
                     #print("Copying", len(files_list), "files")
@@ -122,7 +126,8 @@ def bond_validate():
                         if not os.path.exists(fi_tmpdir):
                             os.makedirs(fi_tmpdir)
                         output = fi_tmpdir + '/' + str(Path(fi).name)
-                        os.symlink(fi, output)
+                        #os.symlink(fi, output)
+                        shutil.copy2(fi, output)
                     #print(glob.glob(tmpdirname +'/**', recursive=True))
                     
                     # run the validator
@@ -138,9 +143,28 @@ def bond_validate():
                     # parse the string output and add to list if it returns a df
                     tmp_parse = parse_validator_output(ret.stdout.decode('UTF-8'))
                     if tmp_parse.shape[1] > 1:
+                        tmp_parse['subject'] = subject
                         parsed.append(tmp_parse)
+                        
             
-            print(parsed)
+            # concatenate the parsed data and exit, we're goin home fellas
+            parsed = pd.concat(parsed, axis=0).drop_duplicates()
+            if parsed.shape[1] < 1:
+                logger.info("No issues/warnings parsed, your dataset"
+                            " is BIDS valid.")
+                sys.exit(0)
+            else:
+                logger.info("BIDS issues/warnings found in the dataset")
+
+                if opts.output_prefix:
+                    # normally, write dataframe to file in CLI
+                    logger.info("Writing issues out to file")
+                    parsed.to_csv(str(opts.output_prefix) +
+                                  "_validation.csv", index=False)
+                    sys.exit(0)
+                else:
+                    # user may be in python session, return dataframe
+                    return parsed
                     
     # Run it through a container
     container_type = _get_container_type(opts.container)
