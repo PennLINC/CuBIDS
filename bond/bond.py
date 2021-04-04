@@ -718,12 +718,14 @@ class BOnD(object):
         summary['RenameKeyGroup'] = summary['RenameKeyGroup'].apply(str)
 
         rename_cols = []
-
+        tolerance_cols = []
         for col in sidecar.keys():
             if 'suggest_variant_rename' in sidecar[col].keys():
                 if sidecar[col]['suggest_variant_rename'] \
                         and col in summary.columns:
                     rename_cols.append(col)
+                    if 'tolerance' in sidecar[col].keys():
+                        tolerance_cols.append(col)
 
         # deal with Fmap!
         if 'FieldmapKey' in relational:
@@ -765,8 +767,8 @@ class BOnD(object):
                 for col in rename_cols:
                     summary[col] = summary[col].apply(str)
                     if summary.loc[row, col] != dom_dict[key][col]:
-                        if col == 'HasFieldmap':
 
+                        if col == 'HasFieldmap':
                             if dom_dict[key][col] == 'True':
                                 acq_str = acq_str + 'NoFmap'
                             else:
@@ -1065,6 +1067,9 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     df = format_params(pd.DataFrame(dfs), grouping_config, modality)
     # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
+    # round param groups based on precision after clustering
+    df = round_params(df, grouping_config, modality)
+
     # get the subset of columns to drop duplicates by
     check_cols = []
     for col in list(df.columns):
@@ -1119,6 +1124,20 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
             ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
 
     return ordered_labeled_files, param_groups_with_counts
+
+
+def round_params(param_group_df, config, modality):
+    to_format = config['sidecar_params'][modality]
+    to_format.update(config['derived_params'][modality])
+
+    for column_name, column_fmt in to_format.items():
+        if column_name not in param_group_df:
+            continue
+        if 'precision' in column_fmt:
+            param_group_df[column_name] = \
+                param_group_df[column_name].round(column_fmt['precision'])
+
+    return param_group_df
 
 
 def format_params(param_group_df, config, modality):
