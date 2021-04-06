@@ -1,14 +1,19 @@
 """Console script for bond."""
 import argparse
 import subprocess
-from pathlib import Path
 import os
 import sys
 import re
 import logging
+import tempfile
+import tqdm
+import shutil
+import pandas as pd
 from bond import BOnD
+from pathlib import Path
 from .validator import (build_validator_call,
-                        run_validator, parse_validator_output)
+                        run_validator, parse_validator_output,
+                        build_subject_paths)
 from .metadata_merge import merge_json_into_json
 
 logging.basicConfig(level=logging.INFO)
@@ -33,11 +38,15 @@ def bond_validate():
                         action='store',
                         help='file prefix to which tabulated validator output '
                         'is written.')
+    parser.add_argument('--sequential',
+                        action='store_true',
+                        help='Run the BIDS validator sequentially '
+                        'on each subject.',
+                        required=False)
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.',
                         default=None)
-
     parser.add_argument('--ignore_nifti_headers',
                         action='store_true',
                         default=False,
@@ -46,7 +55,7 @@ def bond_validate():
                         required=False)
     parser.add_argument('--ignore_subject_consistency',
                         action='store_true',
-                        default=True,
+                        default=False,
                         help='Skip checking that any given file for one'
                         ' subject is present for all other subjects',
                         required=False)
@@ -54,32 +63,112 @@ def bond_validate():
 
     # Run directly from python using subprocess
     if opts.container is None:
-        call = build_validator_call(str(opts.bids_dir),
-                                    opts.ignore_nifti_headers,
-                                    opts.ignore_subject_consistency)
-        ret = run_validator(call)
 
-        if ret.returncode != 0:
-            logger.error("Errors returned from validator run, parsing now")
+        if opts.sequential is None:
+            # run on full dataset
+            call = build_validator_call(str(opts.bids_dir),
+                                        opts.ignore_nifti_headers,
+                                        opts.ignore_subject_consistency)
+            ret = run_validator(call)
 
-        # parse the string output
-        parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
-        if parsed.shape[1] < 1:
-            logger.info("No issues/warnings parsed, your dataset"
-                        " is BIDS valid.")
-            sys.exit(0)
-        else:
-            logger.info("BIDS issues/warnings found in the dataset")
+            if ret.returncode != 0:
+                logger.error("Errors returned from validator run, parsing now")
 
-            if opts.output_prefix:
-                # normally, write dataframe to file in CLI
-                logger.info("Writing issues out to file")
-                parsed.to_csv(str(opts.output_prefix) +
-                              "_validation.csv", index=False)
+            # parse the string output
+            parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+            if parsed.shape[1] < 1:
+                logger.info("No issues/warnings parsed, your dataset"
+                            " is BIDS valid.")
                 sys.exit(0)
             else:
-                # user may be in python session, return dataframe
-                return parsed
+                logger.info("BIDS issues/warnings found in the dataset")
+
+                if opts.output_prefix:
+                    # normally, write dataframe to file in CLI
+                    logger.info("Writing issues out to file")
+                    parsed.to_csv(str(opts.output_prefix) +
+                                  "_validation.csv", index=False)
+                    sys.exit(0)
+                else:
+                    # user may be in python session, return dataframe
+                    return parsed
+        else:
+            logger.info("Prepping sequential validator run...")
+
+            # build a dictionary with {SubjectLabel: [List of files]}
+            subjects_dict = build_subject_paths(opts.bids_dir)
+
+            logger.info("Running validator sequentially...")
+            # iterate over the dictionary
+
+            parsed = []
+
+            for subject, files_list in tqdm.tqdm(subjects_dict.items()):
+
+                logger.info(" ".join(["Processing subject:", subject]))
+                # create a temporary directory and symlink the data
+                with tempfile.TemporaryDirectory() as tmpdirname:
+                    for fi in files_list:
+
+                        # cut the path down to the subject label
+                        bids_start = fi.find(subject)
+
+                        # maybe it's a single file
+                        if bids_start < 1:
+                            bids_folder = tmpdirname
+                            fi_tmpdir = tmpdirname
+
+                        else:
+                            bids_folder = Path(fi[bids_start:]).parent
+                            fi_tmpdir = tmpdirname + '/' + str(bids_folder)
+
+                        if not os.path.exists(fi_tmpdir):
+                            os.makedirs(fi_tmpdir)
+                        output = fi_tmpdir + '/' + str(Path(fi).name)
+                        shutil.copy2(fi, output)
+
+                    # run the validator
+                    nifti_head = opts.ignore_nifti_headers
+                    subj_consist = opts.ignore_subject_consistency
+                    call = build_validator_call(tmpdirname,
+                                                nifti_head,
+                                                subj_consist)
+                    ret = run_validator(call)
+
+                    # parse output
+                    if ret.returncode != 0:
+                        logger.error("Errors returned "
+                                     "from validator run, parsing now")
+
+                    # parse the output and add to list if it returns a df
+                    decoded = ret.stdout.decode('UTF-8')
+                    tmp_parse = parse_validator_output(decoded)
+                    if tmp_parse.shape[1] > 1:
+                        tmp_parse['subject'] = subject
+                        parsed.append(tmp_parse)
+
+            # concatenate the parsed data and exit, we're goin home fellas
+            if len(parsed) < 1:
+                logger.info("No issues/warnings parsed, your dataset"
+                            " is BIDS valid.")
+                sys.exit(0)
+
+            else:
+                parsed = pd.concat(parsed, axis=0)
+                subset = parsed.columns.difference(['subject'])
+                parsed = parsed.drop_duplicates(subset=subset)
+
+                logger.info("BIDS issues/warnings found in the dataset")
+
+                if opts.output_prefix:
+                    # normally, write dataframe to file in CLI
+                    logger.info("Writing issues out to file")
+                    parsed.to_csv(str(opts.output_prefix) +
+                                  "_validation.csv", index=False)
+                    sys.exit(0)
+                else:
+                    # user may be in python session, return dataframe
+                    return parsed
 
     # Run it through a container
     container_type = _get_container_type(opts.container)
@@ -104,6 +193,8 @@ def bond_validate():
             cmd.append('--ignore_nifti_headers')
         if opts.ignore_subject_consistency:
             cmd.append('--ignore_subject_consistency')
+        if opts.sequential:
+            cmd.append('--sequential')
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
