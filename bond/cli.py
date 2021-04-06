@@ -42,7 +42,7 @@ def bond_validate():
                         action='store_true',
                         help='Run the BIDS validator sequentially '
                         'on each subject.',
-                        required=False)    
+                        required=False)
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.',
@@ -63,7 +63,7 @@ def bond_validate():
 
     # Run directly from python using subprocess
     if opts.container is None:
-        
+
         if opts.sequential is None:
             # run on full dataset
             call = build_validator_call(str(opts.bids_dir),
@@ -94,66 +94,70 @@ def bond_validate():
                     return parsed
         else:
             logger.info("Prepping sequential validator run...")
-            
+
             # build a dictionary with {SubjectLabel: [List of files]}
             subjects_dict = build_subject_paths(opts.bids_dir)
-            
+
             logger.info("Running validator sequentially...")
             # iterate over the dictionary
-            
+
             parsed = []
-            
+
             for subject, files_list in tqdm.tqdm(subjects_dict.items()):
-                
+
                 logger.info(" ".join(["Processing subject:", subject]))
                 # create a temporary directory and symlink the data
                 with tempfile.TemporaryDirectory() as tmpdirname:
-                    #print("Copying", len(files_list), "files")
                     for fi in files_list:
-                        
+
                         # cut the path down to the subject label
                         bids_start = fi.find(subject)
-                        
+
                         # maybe it's a single file
                         if bids_start < 1:
                             bids_folder = tmpdirname
                             fi_tmpdir = tmpdirname
-                        
+
                         else:
                             bids_folder = Path(fi[bids_start:]).parent
                             fi_tmpdir = tmpdirname + '/' + str(bids_folder)
-                        
+
                         if not os.path.exists(fi_tmpdir):
                             os.makedirs(fi_tmpdir)
                         output = fi_tmpdir + '/' + str(Path(fi).name)
-                        #os.symlink(fi, output)
                         shutil.copy2(fi, output)
-                    #print(glob.glob(tmpdirname +'/**', recursive=True))
-                    
+
                     # run the validator
+                    nifti_head = opts.ignore_nifti_headers
+                    subj_consist = opts.ignore_subject_consistency
                     call = build_validator_call(tmpdirname,
-                                        True,
-                                        True)
+                                                nifti_head,
+                                                subj_consist)
                     ret = run_validator(call)
-                    
+
                     # parse output
                     if ret.returncode != 0:
-                        logger.error("Errors returned from validator run, parsing now")
+                        logger.error("Errors returned "
+                                     "from validator run, parsing now")
 
-                    # parse the string output and add to list if it returns a df
-                    tmp_parse = parse_validator_output(ret.stdout.decode('UTF-8'))
+                    # parse the output and add to list if it returns a df
+                    decoded = ret.stdout.decode('UTF-8')
+                    tmp_parse = parse_validator_output(decoded)
                     if tmp_parse.shape[1] > 1:
                         tmp_parse['subject'] = subject
                         parsed.append(tmp_parse)
-                        
-            
+
             # concatenate the parsed data and exit, we're goin home fellas
-            parsed = pd.concat(parsed, axis=0).drop_duplicates()
-            if parsed.shape[1] < 1:
+            if len(parsed) < 1:
                 logger.info("No issues/warnings parsed, your dataset"
                             " is BIDS valid.")
                 sys.exit(0)
+
             else:
+                parsed = pd.concat(parsed, axis=0)
+                subset = parsed.columns.difference(['subject'])
+                parsed = parsed.drop_duplicates(subset=subset)
+
                 logger.info("BIDS issues/warnings found in the dataset")
 
                 if opts.output_prefix:
@@ -165,7 +169,7 @@ def bond_validate():
                 else:
                     # user may be in python session, return dataframe
                     return parsed
-                    
+
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
