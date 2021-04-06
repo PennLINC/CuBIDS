@@ -59,6 +59,14 @@ def bond_validate():
                         help='Skip checking that any given file for one'
                         ' subject is present for all other subjects',
                         required=False)
+    parser.add_argument('--sequential-subjects',
+                        action='store',
+                        default=None,
+                        help='List: Filter the sequential run to only include'
+                        ' the listed subjects. e.g. --sequential-subjects '
+                        'sub-01 sub-02 sub-03',
+                        nargs='+',
+                        required=False)
     opts = parser.parse_args()
 
     # Run directly from python using subprocess
@@ -103,6 +111,11 @@ def bond_validate():
 
             parsed = []
 
+            if opts.sequential_subjects:
+                subjects_dict = {k: v for k, v in subjects_dict.items()
+                                 if k in opts.sequential_subjects}
+            assert len(list(subjects_dict.keys())) > 1, ("No subjects found"
+                                                         " in filter")
             for subject, files_list in tqdm.tqdm(subjects_dict.items()):
 
                 logger.info(" ".join(["Processing subject:", subject]))
@@ -126,7 +139,6 @@ def bond_validate():
                             os.makedirs(fi_tmpdir)
                         output = fi_tmpdir + '/' + str(Path(fi).name)
                         shutil.copy2(fi, output)
-
                     # run the validator
                     nifti_head = opts.ignore_nifti_headers
                     subj_consist = opts.ignore_subject_consistency
@@ -134,7 +146,6 @@ def bond_validate():
                                                 nifti_head,
                                                 subj_consist)
                     ret = run_validator(call)
-
                     # parse output
                     if ret.returncode != 0:
                         logger.error("Errors returned "
