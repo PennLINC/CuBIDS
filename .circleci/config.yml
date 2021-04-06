@@ -80,14 +80,14 @@ jobs:
              source activate bond
              conda install -c conda-forge -y datalad
              # Add nodejs and the validator
-             conda install nodejs
+             conda install nodejs=14.15.0
              npm install -g yarn && \
              mkdir -p /tmp/validator && \
              cd /tmp/validator && \
              git clone  -b 'master' --single-branch --depth 1 \
                  --single-branch https://github.com/bids-standard/bids-validator.git  && \
              cd /tmp/validator/bids-validator && \
-             yarn && \
+             yarn --ignore-engines && \
              cd bids-validator && npm install -g
 
       - persist_to_workspace:
