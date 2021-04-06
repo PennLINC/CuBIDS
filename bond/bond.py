@@ -562,7 +562,7 @@ class BOnD(object):
             # write full_cmd to a .sh file
             # Open file for writing
 
-            path_prefix = str(self.path.parent)
+            path_prefix = str(Path(self.path).parent)
             fileObject = open(path_prefix + "_full_cmd.sh", "w")
             fileObject.write("#!/bin/bash\n")
             fileObject.write(full_cmd)
