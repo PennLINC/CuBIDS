@@ -80,7 +80,7 @@ jobs:
              source activate bond
              conda install -c conda-forge -y datalad
              # Add nodejs and the validator
-             conda install nodejs=14.15.0
+             conda install nodejs
              npm install -g yarn && \
              mkdir -p /tmp/validator && \
              cd /tmp/validator && \
