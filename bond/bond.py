@@ -734,6 +734,13 @@ class BOnD(object):
                 if relational['FieldmapKey']['display_mode'] == 'bool':
                     rename_cols.append("HasFieldmap")
 
+        # deal with IntendedFor Key!
+        if 'IntnededForKey' in relational:
+            if 'suggest_variant_rename' in relational['IntendedForKey'].keys():
+                # check if 'bool' or 'columns'
+                if relational['IntendedForKey']['display_mode'] == 'bool':
+                    rename_cols.append("HasIntendedFor")
+
         dom_dict = {}
         # loop through summary csv and create dom_dict
         for row in range(len(summary)):
@@ -773,6 +780,11 @@ class BOnD(object):
                                 acq_str = acq_str + 'NoFmap'
                             else:
                                 acq_str = acq_str + 'HasFmap'
+                        elif col == 'HasIntendedFor':
+                            if dom_dict[key][col] == 'True':
+                                acq_str = acq_str + 'Unused'
+                            else:
+                                acq_str = acq_str + 'IsUsed'
                         else:
                             acq_str = acq_str + col
 
