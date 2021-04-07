@@ -730,16 +730,18 @@ class BOnD(object):
         # deal with Fmap!
         if 'FieldmapKey' in relational:
             if 'suggest_variant_rename' in relational['FieldmapKey'].keys():
-                # check if 'bool' or 'columns'
-                if relational['FieldmapKey']['display_mode'] == 'bool':
-                    rename_cols.append("HasFieldmap")
+                if relational['FieldmapKey']['suggest_variant_rename']:
+                    # check if 'bool' or 'columns'
+                    if relational['FieldmapKey']['display_mode'] == 'bool':
+                        rename_cols.append("HasFieldmap")
 
         # deal with IntendedFor Key!
         if 'IntnededForKey' in relational:
             if 'suggest_variant_rename' in relational['IntendedForKey'].keys():
-                # check if 'bool' or 'columns'
-                if relational['IntendedForKey']['display_mode'] == 'bool':
-                    rename_cols.append("HasIntendedFor")
+                if relational['FieldmapKey']['suggest_variant_rename']:
+                    # check if 'bool' or 'columns'
+                    if relational['IntendedForKey']['display_mode'] == 'bool':
+                        rename_cols.append("HasIntendedFor")
 
         dom_dict = {}
         # loop through summary csv and create dom_dict
