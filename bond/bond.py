@@ -741,7 +741,7 @@ class BOnD(object):
                 if relational['FieldmapKey']['suggest_variant_rename']:
                     # check if 'bool' or 'columns'
                     if relational['IntendedForKey']['display_mode'] == 'bool':
-                        rename_cols.append("HasIntendedFor")
+                        rename_cols.append("UsedAsFieldmap")
 
         dom_dict = {}
         # loop through summary csv and create dom_dict
@@ -782,7 +782,7 @@ class BOnD(object):
                                 acq_str = acq_str + 'NoFmap'
                             else:
                                 acq_str = acq_str + 'HasFmap'
-                        elif col == 'HasIntendedFor':
+                        elif col == 'UsedAsFieldmap':
                             if dom_dict[key][col] == 'True':
                                 acq_str = acq_str + 'Unused'
                             else:
@@ -1078,11 +1078,13 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         dfs.append(example_data)
 
     # Assign each file to a ParamGroup
-    df = format_params(pd.DataFrame(dfs), grouping_config, modality)
-    # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
-    # round param groups based on precision after clustering
-    df = round_params(df, grouping_config, modality)
+    # round param groups based on precision
+    df = round_params(pd.DataFrame(dfs), grouping_config, modality)
+
+    # cluster param groups based on tolerance
+    df = format_params(df, grouping_config, modality)
+    # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
     # get the subset of columns to drop duplicates by
     check_cols = []
