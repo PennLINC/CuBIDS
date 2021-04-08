@@ -736,7 +736,7 @@ class BOnD(object):
                         rename_cols.append("HasFieldmap")
 
         # deal with IntendedFor Key!
-        if 'IntnededForKey' in relational:
+        if 'IntendedForKey' in relational:
             if 'suggest_variant_rename' in relational['IntendedForKey'].keys():
                 if relational['FieldmapKey']['suggest_variant_rename']:
                     # check if 'bool' or 'columns'
