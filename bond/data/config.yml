@@ -46,6 +46,7 @@ derived_params:
       suggest_variant_rename: yes
     VoxelSizeDim3:
       tolerance: 0.001
+      precision: 3
       suggest_variant_rename: yes
   fmap:
     Dim1Size:
