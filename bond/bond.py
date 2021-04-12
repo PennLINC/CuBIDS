@@ -562,7 +562,7 @@ class BOnD(object):
             # write full_cmd to a .sh file
             # Open file for writing
 
-            path_prefix = str(self.path.parent)
+            path_prefix = str(Path(self.path).parent)
             fileObject = open(path_prefix + "_full_cmd.sh", "w")
             fileObject.write("#!/bin/bash\n")
             fileObject.write(full_cmd)
@@ -730,9 +730,18 @@ class BOnD(object):
         # deal with Fmap!
         if 'FieldmapKey' in relational:
             if 'suggest_variant_rename' in relational['FieldmapKey'].keys():
-                # check if 'bool' or 'columns'
-                if relational['FieldmapKey']['display_mode'] == 'bool':
-                    rename_cols.append("HasFieldmap")
+                if relational['FieldmapKey']['suggest_variant_rename']:
+                    # check if 'bool' or 'columns'
+                    if relational['FieldmapKey']['display_mode'] == 'bool':
+                        rename_cols.append("HasFieldmap")
+
+        # deal with IntendedFor Key!
+        if 'IntendedForKey' in relational:
+            if 'suggest_variant_rename' in relational['IntendedForKey'].keys():
+                if relational['FieldmapKey']['suggest_variant_rename']:
+                    # check if 'bool' or 'columns'
+                    if relational['IntendedForKey']['display_mode'] == 'bool':
+                        rename_cols.append("UsedAsFieldmap")
 
         dom_dict = {}
         # loop through summary csv and create dom_dict
@@ -773,6 +782,11 @@ class BOnD(object):
                                 acq_str = acq_str + 'NoFmap'
                             else:
                                 acq_str = acq_str + 'HasFmap'
+                        elif col == 'UsedAsFieldmap':
+                            if dom_dict[key][col] == 'True':
+                                acq_str = acq_str + 'Unused'
+                            else:
+                                acq_str = acq_str + 'IsUsed'
                         else:
                             acq_str = acq_str + col
 
@@ -1064,11 +1078,13 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         dfs.append(example_data)
 
     # Assign each file to a ParamGroup
-    df = format_params(pd.DataFrame(dfs), grouping_config, modality)
-    # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
-    # round param groups based on precision after clustering
-    df = round_params(df, grouping_config, modality)
+    # round param groups based on precision
+    df = round_params(pd.DataFrame(dfs), grouping_config, modality)
+
+    # cluster param groups based on tolerance
+    df = format_params(df, grouping_config, modality)
+    # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
     # get the subset of columns to drop duplicates by
     check_cols = []
