@@ -768,6 +768,11 @@ class BOnD(object):
             if 'VARIANT' in summary.loc[row, 'KeyGroup']:
                 renamed = True
 
+            # if NumVolumes is nan, set to 1.0
+            if 'NumVolumes' in summary.columns \
+                    and str(summary.loc[row, "NumVolumes"]) == 'nan':
+                summary.at[row, "NumVolumes"] = 1.0
+
             if summary.loc[row, "ParamGroup"] != 1 and not renamed:
                 acq_str = 'VARIANT'
                 # now we know we have a deviant param group
@@ -1054,6 +1059,7 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         # Add the number of slice times specified
         if "NSliceTimes" in derived_params:
             example_data["NSliceTimes"] = len(slice_times)
+
         example_data["FilePath"] = path
 
         # If it's a fieldmap, see what key group it's intended to correct
