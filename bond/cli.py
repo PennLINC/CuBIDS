@@ -346,11 +346,17 @@ def bond_apply():
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
+    parser.add_argument('--config',
+                        action='store',
+                        type=Path,
+                        help='path to a config file for grouping')
     opts = parser.parse_args()
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
+        bod = BOnD(data_root=str(opts.bids_dir),
+                   use_datalad=opts.use_datalad,
+                   grouping_config=opts.config)
         if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
