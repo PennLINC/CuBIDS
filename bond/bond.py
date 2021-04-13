@@ -1060,6 +1060,11 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         if "NSliceTimes" in derived_params:
             example_data["NSliceTimes"] = len(slice_times)
 
+        # Set NumVolumes to 1.0 for 3D scans who got old add-nifti-info
+        if "NumVolumes" in derived_params and \
+                "NumVolumes" not in example_data.keys():
+            example_data["NumVolumes"] = 1.0
+
         example_data["FilePath"] = path
 
         # If it's a fieldmap, see what key group it's intended to correct
