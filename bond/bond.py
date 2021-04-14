@@ -136,21 +136,26 @@ class BOnD(object):
                         data = json.load(f)
 
                     if "Obliquity" not in data.keys():
-                        print("Added info from ", path)
-
                         data["Obliquity"] = str(obliquity)
+                    if "VoxelSizeDim1" not in data.keys():
                         data["VoxelSizeDim1"] = float(voxel_sizes[0])
-                        data["VoxelSizeDim3"] = float(voxel_sizes[2])
+                    if "VoxelSizeDim2" not in data.keys():
                         data["VoxelSizeDim2"] = float(voxel_sizes[1])
+                    if "VoxelSizeDim3" not in data.keys():
+                        data["VoxelSizeDim3"] = float(voxel_sizes[2])
+                    if "Dim1Size" not in data.keys():
                         data["Dim1Size"] = matrix_dims[0]
+                    if "Dim2Size" not in data.keys():
                         data["Dim2Size"] = matrix_dims[1]
+                    if "Dim2Size" not in data.keys():
                         data["Dim3Size"] = matrix_dims[2]
+                    if "NumVolumes" not in data.keys():
                         if img.ndim == 4:
                             data["NumVolumes"] = matrix_dims[3]
                         elif img.ndim == 3:
                             data["NumVolumes"] = 1.0
-                        with open(sidecar, 'w') as file:
-                            json.dump(data, file, indent=4)
+                    with open(sidecar, 'w') as file:
+                        json.dump(data, file, indent=4)
 
         if self.use_datalad:
             self.datalad_save(message="Added nifti info to sidecars")
