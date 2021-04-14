@@ -926,6 +926,7 @@ def test_validator(tmp_path):
     # test the validator in valid dataset
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
+    print(ret)
 
     assert ret.returncode == 0
 
