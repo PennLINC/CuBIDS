@@ -953,3 +953,4 @@ def test_image(image='pennlinc/bond:latest'):
 
     return_status = ret.stdout.decode('UTF-8')
     assert return_status
+
