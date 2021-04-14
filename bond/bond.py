@@ -751,9 +751,9 @@ class BOnD(object):
         dom_dict = {}
         # loop through summary csv and create dom_dict
         for row in range(len(summary)):
-            if 'NumVolumes' in summary.columns \
-                    and str(summary.loc[row, "NumVolumes"]) == 'nan':
-                summary.at[row, "NumVolumes"] = 1.0
+            # if 'NumVolumes' in summary.columns \
+            #        and str(summary.loc[row, "NumVolumes"]) == 'nan':
+            #    summary.at[row, "NumVolumes"] = 1.0
 
             # if dominant group identified
             if str(summary.loc[row, 'ParamGroup']) == '1':
@@ -774,9 +774,9 @@ class BOnD(object):
                 renamed = True
 
             # if NumVolumes is nan, set to 1.0
-            if 'NumVolumes' in summary.columns \
-                    and str(summary.loc[row, "NumVolumes"]) == 'nan':
-                summary.at[row, "NumVolumes"] = 1.0
+            # if 'NumVolumes' in summary.columns \
+            #        and str(summary.loc[row, "NumVolumes"]) == 'nan':
+            #    summary.at[row, "NumVolumes"] = 1.0
 
             if summary.loc[row, "ParamGroup"] != 1 and not renamed:
                 acq_str = 'VARIANT'
