@@ -40,6 +40,7 @@ def bond_validate():
                         'is written.')
     parser.add_argument('--sequential',
                         action='store_true',
+                        default=False,
                         help='Run the BIDS validator sequentially '
                         'on each subject.',
                         required=False)
@@ -72,7 +73,7 @@ def bond_validate():
     # Run directly from python using subprocess
     if opts.container is None:
 
-        if opts.sequential is None:
+        if not opts.sequential:
             # run on full dataset
             call = build_validator_call(str(opts.bids_dir),
                                         opts.ignore_nifti_headers,
