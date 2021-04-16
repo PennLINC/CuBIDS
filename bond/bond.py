@@ -5,6 +5,7 @@ import bids
 import bids.layout
 import json
 import csv
+import os
 from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
@@ -26,7 +27,7 @@ class BOnD(object):
 
     def __init__(self, data_root, use_datalad=False, grouping_config=None):
 
-        self.path = data_root
+        self.path = os.path.abspath(data_root)
         self._layout = None
         self.keys_files = {}
         self.fieldmaps_cached = False
@@ -642,11 +643,6 @@ class BOnD(object):
 
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
-
-        # NEED TO CHECK IF THE RELATIVE PATH STRING GETS ADDED HERE
-        # IF NOT, CHECK AT THE _get_param_groups LEVEL WHEN FILEPATH GETS ADDED
-        # pdb.set_trace()
-        print(self.path)
 
         # ensure files who's entities contain key_entities but include other
         # entities do not also get added to matching_files
