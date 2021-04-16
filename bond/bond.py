@@ -421,14 +421,25 @@ class BOnD(object):
             data = json_file.get_dict()
 
             if 'IntendedFor' in data.keys():
-                for item in data['IntendedFor']:
-                    if item in _get_intended_for_reference(filepath):
+                # check if IntendedFor field is a str or list
+                if isinstance(data['IntendedFor'], str):
+                    if item == _get_intended_for_reference(filepath):
+                        # replace old filename with new one (overwrite string)
+                        data['IntendedFor'] = \
+                                _get_intended_for_reference(new_path)
 
-                        # remove old filename
-                        data['IntendedFor'].remove(item)
-                        # add new filename
-                        data['IntendedFor'].append(_get_intended_for_reference
-                                                   (new_path))
+                        # update the json with the new data dictionary
+                        _update_json(json_file.path, data)
+
+                if isinstance(data['IntendedFor'], list):
+                    for item in data['IntendedFor']:
+                        if item in _get_intended_for_reference(filepath):
+
+                            # remove old filename
+                            data['IntendedFor'].remove(item)
+                            # add new filename
+                            data['IntendedFor'].append(_get_intended_for_reference
+                                                    (new_path))
                         # update the json with the new data dictionary
                         _update_json(json_file.path, data)
 
@@ -518,12 +529,20 @@ class BOnD(object):
             # remove scan references in the IntendedFor
 
             if 'IntendedFor' in data.keys():
-                for item in data['IntendedFor']:
-                    if item in if_scans:
-                        data['IntendedFor'].remove(item)
-
+                # check if IntendedFor field value is a list or a string
+                if isinstance(data['IntendedFor'], str):
+                    if data['IntendedFor'] in if_scans:
+                        data['IntendedFor'] = ''
                         # update the json with the new data dictionary
                         _update_json(json_file.path, data)
+
+                if isinstance(data['IntendedFor'], list):
+                    for item in data['IntendedFor']:
+                        if item in if_scans:
+                            data['IntendedFor'].remove(item)
+
+                            # update the json with the new data dictionary
+                            _update_json(json_file.path, data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
