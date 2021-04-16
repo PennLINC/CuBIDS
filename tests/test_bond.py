@@ -132,7 +132,7 @@ def test_purge_no_datalad(tmp_path):
         j_dict = json.load(f)
 
     assert "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz" in j_dict.values()
-
+    assert isinstance(j_dict['IntendedFor'], str)
     # PURGE
     bod.purge(purge_path)
 
@@ -142,6 +142,8 @@ def test_purge_no_datalad(tmp_path):
     assert not Path(scan_name).exists()
     assert not Path(json_name).exists()
     assert "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz" not in purged_dict.values()
+    assert isinstance(purged_dict['IntendedFor'], list)
+    assert purged_dict['IntendedFor'] == []
 
 def test_purge(tmp_path):
     data_root = get_data(tmp_path)
