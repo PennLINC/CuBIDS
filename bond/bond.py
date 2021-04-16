@@ -423,7 +423,8 @@ class BOnD(object):
             if 'IntendedFor' in data.keys():
                 # check if IntendedFor field is a str or list
                 if isinstance(data['IntendedFor'], str):
-                    if item == _get_intended_for_reference(filepath):
+                    if data['IntendedFor'] == \
+                            _get_intended_for_reference(filepath):
                         # replace old filename with new one (overwrite string)
                         data['IntendedFor'] = \
                                 _get_intended_for_reference(new_path)
@@ -438,8 +439,9 @@ class BOnD(object):
                             # remove old filename
                             data['IntendedFor'].remove(item)
                             # add new filename
-                            data['IntendedFor'].append(_get_intended_for_reference
-                                                    (new_path))
+                            data['IntendedFor'].append(
+                                    _get_intended_for_reference(new_path))
+
                         # update the json with the new data dictionary
                         _update_json(json_file.path, data)
 
@@ -532,7 +534,7 @@ class BOnD(object):
                 # check if IntendedFor field value is a list or a string
                 if isinstance(data['IntendedFor'], str):
                     if data['IntendedFor'] in if_scans:
-                        data['IntendedFor'] = ''
+                        data['IntendedFor'] = []
                         # update the json with the new data dictionary
                         _update_json(json_file.path, data)
 
