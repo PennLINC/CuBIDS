@@ -115,23 +115,33 @@ def test_purge_no_datalad(tmp_path):
     json_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
         / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
     scans.append(scan_name)
-    purge_path = str(tmp_path / "purge_scans.txt")
+    scans.append(data_root / "complete" / "sub-01" / "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz")
 
+    # create and save .txt with list of scans
+    purge_path = str(tmp_path / "purge_scans.txt")
     with open(purge_path, 'w') as filehandle:
         for listitem in scans:
             filehandle.write('%s\n' % listitem)
     bod = BOnD(data_root / "complete", use_datalad=False)
-    #bod.datalad_save()
 
-    #assert bod.is_datalad_clean()
     assert Path(scan_name).exists()
     assert Path(json_name).exists()
 
-    # create and save .txt with list of scans
+    # Check that IntendedFor purge worked
+    with open(str(data_root / "complete" / "sub-01" / "ses-phdiff" / "fmap" / "sub-01_ses-phdiff_acq-v4_phasediff.json")) as f:
+        j_dict = json.load(f)
+
+    assert "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz" in j_dict.values()
+
+    # PURGE
     bod.purge(purge_path)
+
+    with open(str(data_root / "complete" / "sub-01" / "ses-phdiff" / "fmap" / "sub-01_ses-phdiff_acq-v4_phasediff.json")) as f:
+        purged_dict = json.load(f)
 
     assert not Path(scan_name).exists()
     assert not Path(json_name).exists()
+    assert "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz" not in purged_dict.values()
 
 def test_purge(tmp_path):
     data_root = get_data(tmp_path)
