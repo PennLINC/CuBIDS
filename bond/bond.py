@@ -643,6 +643,11 @@ class BOnD(object):
         matching_files = self.layout.get(return_type="file", scope="self",
                                          regex_search=True, **key_entities)
 
+        # NEED TO CHECK IF THE RELATIVE PATH STRING GETS ADDED HERE
+        # IF NOT, CHECK AT THE _get_param_groups LEVEL WHEN FILEPATH GETS ADDED
+        # pdb.set_trace()
+        print(self.path)
+
         # ensure files who's entities contain key_entities but include other
         # entities do not also get added to matching_files
         to_include = []
