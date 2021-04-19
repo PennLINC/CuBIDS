@@ -148,7 +148,7 @@ class BOnD(object):
                         data["Dim1Size"] = matrix_dims[0]
                     if "Dim2Size" not in data.keys():
                         data["Dim2Size"] = matrix_dims[1]
-                    if "Dim2Size" not in data.keys():
+                    if "Dim3Size" not in data.keys():
                         data["Dim3Size"] = matrix_dims[2]
                     if "NumVolumes" not in data.keys():
                         if img.ndim == 4:
