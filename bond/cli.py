@@ -256,6 +256,10 @@ def bond_group():
                         action='store_true',
                         help='ensure that there are no untracked changes '
                         'before finding groups')
+    parser.add_argument('--acq-group-level',
+                        action='store',
+                        help='Level at which acquisition groups are created '
+                        'options: "subject" or "session"')
     parser.add_argument('--config',
                         action='store',
                         type=Path,
@@ -269,7 +273,8 @@ def bond_group():
                    grouping_config=opts.config)
         if opts.use_datalad and not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.get_CSVs(str(opts.output_prefix), )
+        bod.get_CSVs(str(opts.output_prefix),
+                     acq_group_level=str(opts.acq_group_level),)
         sys.exit(0)
 
     # Run it through a container
@@ -308,6 +313,11 @@ def bond_group():
 
     if opts.use_datalad:
         cmd.append("--use-datalad")
+
+    if opts.acq_group_level:
+        cmd.append("--acq-group-level")
+        cmd.append(str(opts.acq_group_level))
+
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)

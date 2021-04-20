@@ -847,7 +847,7 @@ class BOnD(object):
 
         return (big_df, summary)
 
-    def get_CSVs(self, path_prefix, split_by_session=True):
+    def get_CSVs(self, path_prefix, acq_group_level='subject'):
         """Creates the _summary and _files CSVs for the bids dataset.
 
         Parameters:
@@ -872,7 +872,7 @@ class BOnD(object):
 
         # Calculate the acq groups
         group_by_acquisition_sets(path_prefix + "_files.csv", path_prefix,
-                                  split_session=split_by_session)
+                                  acq_group_level)
 
     def get_key_groups(self):
         '''Identifies the key groups for the bids dataset'''
