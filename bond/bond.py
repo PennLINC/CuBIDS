@@ -25,7 +25,8 @@ bids.config.set_option('extension_initial_dot', True)
 
 class BOnD(object):
 
-    def __init__(self, data_root, use_datalad=False, grouping_config=None):
+    def __init__(self, data_root, use_datalad=False, acq_group_level='subject',
+                 grouping_config=None):
 
         self.path = os.path.abspath(data_root)
         self._layout = None
@@ -36,10 +37,14 @@ class BOnD(object):
         self.old_filenames = []  # files whose key groups changed
         self.new_filenames = []  # new filenames for files to change
         self.grouping_config = load_config(grouping_config)
+        self.acq_group_level = acq_group_level
 
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
         if self.use_datalad:
             self.init_datalad()
+
+        if self.acq_group_level == 'session':
+            NON_KEY_ENTITIES.remove("session")
 
     @property
     def layout(self):
@@ -477,7 +482,9 @@ class BOnD(object):
         # load the exemplars csv
         subs = pd.read_csv(exemplars_csv)
         unique = subs.drop_duplicates(subset=["AcqGroup"])
-        unique_subs = unique['subject'].tolist()
+
+        # cast list to a set to drop duplicates, then convert back to list
+        unique_subs = list(set(unique['subject'].tolist()))
         print("SUBS TO COPY", unique_subs)
         for subid in unique_subs:
             if force_unlock:
@@ -847,7 +854,7 @@ class BOnD(object):
 
         return (big_df, summary)
 
-    def get_CSVs(self, path_prefix, acq_group_level='subject'):
+    def get_CSVs(self, path_prefix):
         """Creates the _summary and _files CSVs for the bids dataset.
 
         Parameters:
@@ -872,7 +879,7 @@ class BOnD(object):
 
         # Calculate the acq groups
         group_by_acquisition_sets(path_prefix + "_files.csv", path_prefix,
-                                  acq_group_level)
+                                  self.acq_group_level)
 
     def get_key_groups(self):
         '''Identifies the key groups for the bids dataset'''
