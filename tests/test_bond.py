@@ -719,6 +719,40 @@ def test_apply_csv_changes(tmp_path):
         assert Path(f.replace('nii.gz', 'json')).exists() == False
 
 
+def test_session_apply(tmp_path):
+    # set up like narrative of user using this
+    # similar to test csv creation
+    # open the csv, rename a key group
+    # save csv
+    # call change key groups
+    # give csv with no changes (make sure it does nothing)
+    # make sure files you wanted to rename exist in the bids dir
+
+    data_root = get_data(tmp_path)
+    bids_dir = str(data_root / "inconsistent")
+
+    ses_bond = BOnD(data_root / "inconsistent", acq_group_level='session', use_datalad=True)
+
+    ses_bond.get_CSVs(str(tmp_path / "originals"))
+
+    # give csv and make sure 'session' is in summary both pre and post apply
+    ses_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
+                                    str(tmp_path / "originals_files.csv"),
+                                    str(tmp_path / "modified1"))
+
+    og_path = tmp_path / "originals_summary.csv"
+    with og_path.open("r") as f:
+        og_content = "".join(f.readlines())
+
+    mod1_path = tmp_path / "modified1_summary.csv"
+    with mod1_path.open("r") as f:
+        mod1_content = "".join(f.readlines())
+
+    assert 'session-' in og_content
+    assert 'session-' in mod1_content
+
+
+
 def _add_deletion(summary_csv):
     df = pd.read_csv(summary_csv)
     df.loc[3, 'MergeInto'] = 0

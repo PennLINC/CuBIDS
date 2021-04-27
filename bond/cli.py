@@ -357,6 +357,10 @@ def bond_apply():
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
+    parser.add_argument('--acq-group-level',
+                        action='store',
+                        help='Level at which acquisition groups are created '
+                        'options: "subject" or "session"')
     parser.add_argument('--config',
                         action='store',
                         type=Path,
@@ -367,6 +371,7 @@ def bond_apply():
     if opts.container is None:
         bod = BOnD(data_root=str(opts.bids_dir),
                    use_datalad=opts.use_datalad,
+                   acq_group_level=opts.acq_group_level,
                    grouping_config=opts.config)
         if opts.use_datalad:
             if not bod.is_datalad_clean():
@@ -433,6 +438,11 @@ def bond_apply():
 
     if opts.use_datalad:
         cmd.append("--use-datalad")
+
+    if opts.acq_group_level:
+        cmd.append("--acq-group-level")
+        cmd.append(str(opts.acq_group_level))
+
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
