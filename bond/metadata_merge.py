@@ -160,7 +160,7 @@ def merge_json_into_json(from_file, to_file,
     return 0
 
 
-def group_by_acquisition_sets(files_csv, output_prefix, split_session=True):
+def group_by_acquisition_sets(files_csv, output_prefix, acq_group_level):
     '''Finds unique sets of Key/Param groups across subjects.
     '''
     from bids.layout import parse_file_entities
@@ -172,7 +172,7 @@ def group_by_acquisition_sets(files_csv, output_prefix, split_session=True):
     for _, row in files_df.iterrows():
         file_entities = parse_file_entities(row.FilePath)
 
-        if split_session:
+        if acq_group_level == 'subject':
             acq_id = (file_entities.get("subject"),
                       file_entities.get("session"))
             acq_groups[acq_id].append((row.KeyGroup, row.ParamGroup))
