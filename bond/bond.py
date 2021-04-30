@@ -254,7 +254,7 @@ class BOnD(object):
 
             for row in range(len(files_df)):
                 file_path = files_df.loc[row, 'FilePath']
-                if Path(file_path).exists():
+                if Path(file_path).exists() and '/fmap/' not in file_path:
 
                     key_param_group = files_df.loc[row, 'KeyParamGroup']
 

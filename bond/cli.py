@@ -139,7 +139,10 @@ def bond_validate():
                         if not os.path.exists(fi_tmpdir):
                             os.makedirs(fi_tmpdir)
                         output = fi_tmpdir + '/' + str(Path(fi).name)
-                        shutil.copy2(fi, output)
+
+                        #shutil.copy2(fi, output)
+                        shutil.copytree(fi, output)
+
                     # run the validator
                     nifti_head = opts.ignore_nifti_headers
                     subj_consist = opts.ignore_subject_consistency
