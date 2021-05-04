@@ -259,7 +259,7 @@ def bond_group():
                         'before finding groups')
     parser.add_argument('--acq-group-level',
                         default='subject',
-                        options=['subject','session'],
+                        options='[subject, session]',
                         action='store',
                         help='Level at which acquisition groups are created '
                         'options: "subject" or "session"')
@@ -362,7 +362,7 @@ def bond_apply():
                         help='Docker image tag or Singularity image file.')
     parser.add_argument('--acq-group-level',
                         default='subject',
-                        options=['subject','session'],
+                        options='[subject, session]',
                         action='store',
                         help='Level at which acquisition groups are created '
                         'options: "subject" or "session"')
