@@ -7,7 +7,6 @@ import re
 import logging
 import tempfile
 import tqdm
-import shutil
 import pandas as pd
 from bond import BOnD
 from pathlib import Path
