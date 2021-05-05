@@ -25,6 +25,17 @@ def build_validator_call(path, ignore_headers=False, ignore_subject=True):
     return command
 
 
+def tempdir_check(path):
+    """Ensure tempdir is safe to copy data to"""
+
+    pathy = pathlib.Path(path).absolute()
+    assert os.path.exists(pathy), "Could not find tempdir {}".format(path)
+
+    bids_dir = pathy / 'temp_BIDS'
+    os.mkdir(bids_dir)
+    return str(bids_dir)
+
+
 def build_subject_paths(bids_dir):
     """Build a list of BIDS dirs with 1 subject each"""
 

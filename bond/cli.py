@@ -7,12 +7,13 @@ import re
 import logging
 import tempfile
 import tqdm
+import shutil
 import pandas as pd
 from bond import BOnD
 from pathlib import Path
 from .validator import (build_validator_call,
                         run_validator, parse_validator_output,
-                        build_subject_paths)
+                        build_subject_paths, tempdir_check)
 from .metadata_merge import merge_json_into_json
 
 logging.basicConfig(level=logging.INFO)
@@ -67,6 +68,11 @@ def bond_validate():
                         'sub-01 sub-02 sub-03',
                         nargs='+',
                         required=False)
+    parser.add_argument('--tempdir',
+                        action='store',
+                        default=None,
+                        help='Temporary space to copy sequential subjects to',
+                        required=False)
     opts = parser.parse_args()
 
     # Run directly from python using subprocess
@@ -103,6 +109,14 @@ def bond_validate():
         else:
             logger.info("Prepping sequential validator run...")
 
+            if opts.tempdir:
+
+                dir = tempdir_check(opts.tempdir)
+
+            else:
+
+                dir = None
+
             # build a dictionary with {SubjectLabel: [List of files]}
             subjects_dict = build_subject_paths(opts.bids_dir)
 
@@ -120,7 +134,7 @@ def bond_validate():
 
                 logger.info(" ".join(["Processing subject:", subject]))
                 # create a temporary directory and symlink the data
-                with tempfile.TemporaryDirectory() as tmpdirname:
+                with tempfile.TemporaryDirectory(dir=dir) as tmpdirname:
                     for fi in files_list:
 
                         # cut the path down to the subject label
@@ -158,6 +172,8 @@ def bond_validate():
                         tmp_parse['subject'] = subject
                         parsed.append(tmp_parse)
 
+            if dir:
+                shutil.rmtree(dir)
             # concatenate the parsed data and exit, we're goin home fellas
             if len(parsed) < 1:
                 logger.info("No issues/warnings parsed, your dataset"
