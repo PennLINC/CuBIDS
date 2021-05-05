@@ -5,24 +5,6 @@ Installation
 ============
 
 
-Stable release
---------------
-
-To install BOnD, run this command in your terminal:
-
-.. code-block:: console
-
-    $ pip install bond
-
-This is the preferred method to install BOnD, as it will always install the most recent stable release.
-
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
-
-.. _pip: https://pip.pypa.io
-.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
-
-
 From sources
 ------------
 
@@ -32,13 +14,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/mattcieslak/bond
+    $ git clone git://github.com/PennLINC/BOnD
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/mattcieslak/bond/tarball/master
+    $ curl -OJL https://github.com/PennLINC/BOnD/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +29,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/mattcieslak/bond
-.. _tarball: https://github.com/mattcieslak/bond/tarball/master
+.. _Github repo: https://github.com/PennLINC/BOnD
+.. _tarball: https://github.com/PennLINC/BOnD/tarball/master

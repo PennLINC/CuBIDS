@@ -1,0 +1,394 @@
+# These are non-BIDS fields that can be added by CuBIDS
+derived_params:
+  anat:
+    Dim1Size:
+      suggest_variant_rename: yes
+    Dim2Size:
+      suggest_variant_rename: yes
+    Dim3Size:
+      suggest_variant_rename: yes
+    NSliceTimes: {}
+    NumVolumes:
+      suggest_variant_rename: yes
+    Obliquity:
+      suggest_variant_rename: yes
+    VoxelSizeDim1:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim2:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim3:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+  dwi:
+    Dim1Size:
+      suggest_variant_rename: yes
+    Dim2Size:
+      suggest_variant_rename: yes
+    Dim3Size:
+      suggest_variant_rename: yes
+    NSliceTimes: {}
+    NumVolumes:
+      suggest_variant_rename: yes
+    Obliquity:
+      suggest_variant_rename: yes
+    VoxelSizeDim1:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim2:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim3:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+  fmap:
+    Dim1Size:
+      suggest_variant_rename: yes
+    Dim2Size:
+      suggest_variant_rename: yes
+    Dim3Size:
+      suggest_variant_rename: yes
+    NSliceTimes: {}
+    NumVolumes:
+      suggest_variant_rename: yes
+    Obliquity:
+      suggest_variant_rename: yes
+    VoxelSizeDim1:
+      tolerance: 0.001
+      suggest_variant_rename: yes
+    VoxelSizeDim2:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim3:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+  func:
+    Dim1Size:
+      suggest_variant_rename: yes
+    Dim2Size:
+      suggest_variant_rename: yes
+    Dim3Size:
+      suggest_variant_rename: yes
+    NSliceTimes: {}
+    NumVolumes:
+      suggest_variant_rename: yes
+    Obliquity:
+      suggest_variant_rename: yes
+    VoxelSizeDim1:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim2:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim3:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+  perf:
+    Dim1Size:
+      suggest_variant_rename: yes
+    Dim2Size:
+      suggest_variant_rename: yes
+    Dim3Size:
+      suggest_variant_rename: yes
+    NSliceTimes: {}
+    NumVolumes:
+      suggest_variant_rename: yes
+    Obliquity:
+      suggest_variant_rename: yes
+    VoxelSizeDim1:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim2:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim3:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+  other:
+    Dim1Size:
+      suggest_variant_rename: yes
+    Dim2Size:
+      suggest_variant_rename: yes
+    Dim3Size:
+      suggest_variant_rename: yes
+    NSliceTimes: {}
+    NumVolumes:
+      suggest_variant_rename: yes
+    Obliquity:
+      suggest_variant_rename: yes
+    VoxelSizeDim1:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim2:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VoxelSizeDim3:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+# These fields reflect relationships between images.
+# Not modality specific
+relational_params:
+  FieldmapKey:
+    # can be
+    # "bool": a single column with true if an IntendedFor is present
+    # "columns": List all intended key groups in separate columns (IntendedForXX)
+    display_mode: bool
+    suggest_variant_rename: yes
+  IntendedForKey:
+    # can be
+    # "bool": a single column with true if an IntendedFor is present
+    # "columns": List all intended key groups in separate columns (IntendedForXX)
+    display_mode: bool
+    suggest_variant_rename: yes
+# BIDS fields to directly include in the Parameter Groupings
+sidecar_params:
+  anat:
+    EchoTime:
+      tolerance: 0.001
+      suggest_variant_rename: yes
+    EffectiveEchoSpacing:
+      tolerance: 0.00001
+      suggest_variant_rename: yes
+    FlipAngle:
+      suggest_variant_rename: yes
+    MultibandAccelerationFactor:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByScanner:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByUser:
+      suggest_variant_rename: yes
+    ParallelAcquisitionTechnique:
+      suggest_variant_rename: yes
+    ParallelReductionFactorInPlane:
+      suggest_variant_rename: yes
+    PartialFourier:
+      suggest_variant_rename: yes
+    PhaseEncodingDirection:
+      suggest_variant_rename: yes
+    RepetitionTime:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+    SliceEncodingDirection:
+      suggest_variant_rename: yes
+    TotalReadoutTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VolumeTiming:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+  dwi:
+    EchoTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    EffectiveEchoSpacing:
+      tolerance: 0.00001
+      precision: 6
+      suggest_variant_rename: yes
+    FlipAngle:
+      suggest_variant_rename: yes
+    MultibandAccelerationFactor:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByScanner:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByUser:
+      suggest_variant_rename: yes
+    ParallelAcquisitionTechnique:
+      suggest_variant_rename: yes
+    ParallelReductionFactorInPlane:
+      suggest_variant_rename: yes
+    PartialFourier:
+      suggest_variant_rename: yes
+    PhaseEncodingDirection:
+      suggest_variant_rename: yes
+    RepetitionTime:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+    SliceEncodingDirection:
+      suggest_variant_rename: yes
+    TotalReadoutTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VolumeTiming:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+  fmap:
+    EchoTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    EffectiveEchoSpacing:
+      tolerance: 0.00001
+      precision: 5
+      suggest_variant_rename: yes
+    FlipAngle:
+      suggest_variant_rename: yes
+    MultibandAccelerationFactor:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByScanner:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByUser:
+      suggest_variant_rename: yes
+    ParallelAcquisitionTechnique:
+      suggest_variant_rename: yes
+    ParallelReductionFactorInPlane:
+      suggest_variant_rename: yes
+    PartialFourier:
+      suggest_variant_rename: yes
+    PhaseEncodingDirection:
+      suggest_variant_rename: yes
+    RepetitionTime:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+    SliceEncodingDirection:
+      suggest_variant_rename: yes
+    TotalReadoutTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VolumeTiming:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+  func:
+    EchoTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    EffectiveEchoSpacing:
+      tolerance: 0.00001
+      precision: 5
+      suggest_variant_rename: yes
+    FlipAngle:
+      suggest_variant_rename: yes
+    MultibandAccelerationFactor:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByScanner:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByUser:
+      suggest_variant_rename: yes
+    ParallelAcquisitionTechnique:
+      suggest_variant_rename: yes
+    ParallelReductionFactorInPlane:
+      suggest_variant_rename: yes
+    PartialFourier:
+      suggest_variant_rename: yes
+    PhaseEncodingDirection:
+      suggest_variant_rename: yes
+    RepetitionTime:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+    SliceEncodingDirection:
+      suggest_variant_rename: yes
+    TotalReadoutTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VolumeTiming:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+  perf:
+    EchoTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    EffectiveEchoSpacing:
+      tolerance: 0.00001
+      precision: 5
+      suggest_variant_rename: yes
+    FlipAngle:
+      suggest_variant_rename: yes
+    MultibandAccelerationFactor:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByScanner:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByUser:
+      suggest_variant_rename: yes
+    ParallelAcquisitionTechnique:
+      suggest_variant_rename: yes
+    ParallelReductionFactorInPlane:
+      suggest_variant_rename: yes
+    PartialFourier:
+      suggest_variant_rename: yes
+    PhaseEncodingDirection:
+      suggest_variant_rename: yes
+    RepetitionTime:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+    SliceEncodingDirection:
+      suggest_variant_rename: yes
+    TotalReadoutTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VolumeTiming:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+  other:
+    EchoTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    EffectiveEchoSpacing:
+      tolerance: 0.00001
+      precision: 5
+      suggest_variant_rename: yes
+    FlipAngle:
+      suggest_variant_rename: yes
+    MultibandAccelerationFactor:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByScanner:
+      suggest_variant_rename: yes
+    NumberOfVolumesDiscardedByUser:
+      suggest_variant_rename: yes
+    ParallelAcquisitionTechnique:
+      suggest_variant_rename: yes
+    ParallelReductionFactorInPlane:
+      suggest_variant_rename: yes
+    PartialFourier:
+      suggest_variant_rename: yes
+    PhaseEncodingDirection:
+      suggest_variant_rename: yes
+    RepetitionTime:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes
+    SliceEncodingDirection:
+      suggest_variant_rename: yes
+    TotalReadoutTime:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    VolumeTiming:
+      tolerance: 0.000001
+      precision: 6
+      suggest_variant_rename: yes

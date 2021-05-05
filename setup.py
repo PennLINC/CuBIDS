@@ -10,15 +10,11 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['pybids', 'nipype', 'tqdm']
-
-setup_requirements = ['pytest-runner', ]
-
-test_requirements = ['pytest>=3', ]
+setup_requirements = ['pytest-runner']
 
 setup(
-    author="Matt Cieslak",
-    author_email='mattcieslak@gmail.com',
+    author="PennLINC",
+    author_email='matthew.cieslak@pennmecidine.upenn.edu',
     python_requires='>=3.5',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
@@ -32,10 +28,21 @@ setup(
     description="BIDS On Disk Editor",
     entry_points={
         'console_scripts': [
-            'bond=bond.cli:main',
+            'bond-group=bond.cli:bond_group',
+            'bond-apply=bond.cli:bond_apply',
+            'bond-purge=bond.cli:bond_purge',
+            'bond-add-nifti-info=bond.cli:bond_add_nifti_info',
+            'bond-copy-exemplars=bond.cli:bond_copy_exemplars',
+            'bond-undo=bond.cli:bond_undo',
+            'bids-sidecar-merge=bond.cli:bids_sidecar_merge',
+            'bond-validate=bond.cli:bond_validate',
+            'bond-datalad-save=bond.cli:bond_datalad_save',
+            'bond-print-metadata-fields=bond.cli:'
+            'bond_print_metadata_fields',
+            'bond-remove-metadata-fields=bond.cli:'
+            'bond_remove_metadata_fields'
         ],
     },
-    install_requires=requirements,
     license="GNU General Public License v3",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
@@ -44,7 +51,6 @@ setup(
     packages=find_packages(include=['bond', 'bond.*']),
     setup_requires=setup_requirements,
     test_suite='tests',
-    tests_require=test_requirements,
     url='https://github.com/pennlinc/bond',
     version='0.1.0',
     zip_safe=False,

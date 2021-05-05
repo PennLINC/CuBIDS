@@ -1,0 +1,654 @@
+version: 2
+jobs:
+
+  build:
+    environment:
+      TZ: "/usr/share/zoneinfo/America/New_York"
+      SCRATCH: "/scratch"
+    docker:
+      - image: docker:18.06.1-ce-git
+    working_directory: /tmp/src/BOnD
+    steps:
+      - checkout
+      - run:
+          name: Install parallel gzip and python3
+          command: |
+            apk add --no-cache pigz python3 tar
+      - restore_cache:
+          keys:
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
+            - docker-v1-{{ .Branch }}-
+            - docker-v1-master-
+            - docker-v1-
+          paths:
+            - /tmp/cache/docker.tar.gz
+      - setup_remote_docker
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 30m
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+      - run:
+          name: Build Docker image
+          no_output_timeout: 3h
+          command: |
+            # Build docker image
+            e=1 && for i in {1..5}; do
+              docker build \
+                --cache-from=pennlinc/bond \
+                --rm=false \
+                -t pennlinc/bond:latest \
+                --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
+                --build-arg VCS_REF=`git rev-parse --short HEAD` . \
+              && e=0 && break || sleep 15
+            done && [ "$e" -eq "0" ]
+
+      - run:
+          name: Docker save
+          no_output_timeout: 40m
+          command: |
+            mkdir -p /tmp/cache
+            docker save pennlinc/bond:latest \
+            | pigz -3 > /tmp/cache/docker.tar.gz
+
+      - save_cache:
+         key: docker-v1-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
+         paths:
+           - /tmp/cache/docker.tar.gz
+
+  setup_conda:
+    machine:
+      image: ubuntu-1604:202004-01
+    steps:
+      - run:
+           name: install miniconda
+           command: |
+             cd /tmp
+             export MINICONDA=/tmp/miniconda
+             export PATH="$MINICONDA/bin:$PATH"
+             wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+             bash miniconda.sh -b -f -p $MINICONDA
+             conda config --set always_yes yes
+             conda update conda
+             conda info -a
+             conda create -n bond python=3.7
+             source activate bond
+             conda install -c conda-forge -y datalad
+             # Add nodejs and the validator
+             conda install nodejs
+             npm install -g yarn && \
+             mkdir -p /tmp/validator && \
+             cd /tmp/validator && \
+             git clone  -b 'master' --single-branch --depth 1 \
+                 --single-branch https://github.com/bids-standard/bids-validator.git  && \
+             cd /tmp/validator/bids-validator && \
+             yarn --ignore-engines && \
+             cd bids-validator && npm install -g
+
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - miniconda
+            - validator
+
+  get_singularity:
+    machine:
+      image: ubuntu-1604:202004-01
+    steps:
+      - restore_cache:
+          keys:
+            - singularity-v3-{{ .Branch }}-{{ .Revision }}
+            - singularity-v3-{{ .Branch }}-
+            - singularity-v3-master-
+            - singularity-v3-
+
+      - run:
+          name: Download Singularity
+          command: |
+            if [ ! -f /home/circleci/singularity.tar.gz ]
+            then
+              sudo apt-get update && sudo apt-get -y install build-essential \
+                libssl-dev \
+                uuid-dev \
+                libgpgme11-dev \
+                squashfs-tools \
+                libseccomp-dev \
+                pkg-config \
+                wget
+              export GOPATH=$HOME/go
+              mkdir -p $GOPATH
+              go get -u github.com/golang/dep/cmd/dep
+              export VERSION=3.6.4
+              wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
+              tar -xzf singularity-${VERSION}.tar.gz
+              cd ./singularity
+              ./mconfig && \
+                make -j2 -C ./builddir
+              cd $HOME
+              tar cfz singularity.tar.gz project/singularity/
+              tar cfz go.tar.gz go/
+            fi
+
+      - save_cache:
+         key: singularity-v3-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
+         paths:
+            - /home/circleci/singularity.tar.gz
+            - /home/circleci/go.tar.gz
+
+  install_and_test_singularity:
+    machine:
+      image: ubuntu-1604:202004-01
+    working_directory: /home/circleci/src/BOnD
+    steps:
+      - checkout:
+          path: /home/circleci/src/BOnD
+
+      - attach_workspace:
+          at: /tmp
+
+      - restore_cache:
+          keys:
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
+
+      - restore_cache:
+          keys:
+            - singularity-v3-{{ .Branch }}-{{ .Revision }}
+            - singularity-v3-{{ .Branch }}-
+            - singularity-v3-master-
+            - singularity-v3-
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 30m
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+
+      - run:
+          name: Install BOnD
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            pip install .
+
+      - run:
+          name: Install Singularity
+          command: |
+              export GOPATH=$HOME/go
+              cd /home/circleci
+              tar xfz go.tar.gz
+              tar xfz singularity.tar.gz
+              cd project/singularity/builddir
+              sudo make install
+
+      - run:
+          name: Build singularity image
+          no_output_timeout: 30m
+          command: |
+              singularity build \
+                /home/circleci/bond-latest.sif \
+                docker-daemon://pennlinc/bond:latest
+
+      - run:
+          name: Test bond-validate
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids /tmp/validate_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
+            bond-validate \
+              /tmp/bids/singularity \
+              /tmp/validate_testing/singularity \
+              --container /home/circleci/bond-latest.sif
+
+      - run:
+          name: Test bond-group
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids /tmp/group_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/group
+            bond-group \
+              /tmp/bids/group \
+              /tmp/group_testing/group \
+              --container /home/circleci/bond-latest.sif
+
+      - run:
+          name: Test bond-save
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
+            bond-datalad-save \
+              /tmp/bids/singularity \
+              -m 'test save' \
+              --container /home/circleci/bond-latest.sif
+
+      - run:
+          name: Test bond-remove-metadata-fields
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/metatest
+
+            # Get the original metadata fields
+            bond-print-metadata-fields \
+              /tmp/bids/metatest \
+              --container /home/circleci/bond-latest.sif > /tmp/origmd.txt
+
+            # Remove some fields
+            bond-remove-metadata-fields \
+              /tmp/bids/metatest \
+              --container /home/circleci/bond-latest.sif \
+              --fields DeviceSerialNumber AcquisitionTime \
+                       InstitutionAddress InstitutionName \
+                       StationName NotARealField > /tmp/removedmd.txt
+
+            [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
+            exit 1
+
+  install_and_test:
+    machine:
+      image: ubuntu-1604:202004-01
+    working_directory: /home/circleci/src/BOnD
+    steps:
+      - checkout:
+          path: /home/circleci/src/BOnD
+
+      - attach_workspace:
+          at: /tmp
+
+      - restore_cache:
+          keys:
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
+
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 30m
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+
+      - run:
+          name: Install BOnD
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            pip install .[all]
+            py.test -sv tests
+
+      - run:
+          name: Test Docker validate
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids /tmp/validate_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-validate
+            bond-validate \
+              /tmp/bids/docker-validate \
+              /tmp/validate_testing/docker \
+              --container pennlinc/bond:latest
+
+      - run:
+          name: Test Docker group
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids /tmp/group_testing
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-group
+            bond-group \
+              /tmp/bids/docker-group \
+              /tmp/group_testing/docker \
+              --container pennlinc/bond:latest
+
+      - run:
+          name: Test Docker save
+          command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-save
+            bond-datalad-save \
+              /tmp/bids/docker-save \
+              -m 'test docker save!' \
+              --container pennlinc/bond:latest
+      - run:
+          name: Test bond-remove-metadata-fields
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate bond
+            mkdir -p /tmp/bids
+            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/metatest
+
+            # Get the original metadata fields
+            bond-print-metadata-fields \
+              /tmp/bids/metatest \
+              --container pennlinc/bond:latest > /tmp/origmd.txt
+
+            # Remove some fields
+            bond-remove-metadata-fields \
+              /tmp/bids/metatest \
+              --container pennlinc/bond:latest \
+              --fields DeviceSerialNumber AcquisitionTime \
+                       InstitutionAddress InstitutionName \
+                       StationName NotARealField > /tmp/removedmd.txt
+
+            [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
+            exit 1
+
+
+  build_docs:
+    docker:
+      - image: circleci/python:3.7.4
+    working_directory: /tmp/src/BOnD
+    steps:
+      - checkout
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?docs\]' )" != "" ]]; then
+              echo "Skipping doc building job"
+              circleci step halt
+            fi
+
+      - run:
+          name: Check Python version and upgrade pip
+          command: |
+            python --version
+            sudo python -m pip install -U pip
+            sudo pip install flake8
+
+      - run:
+          name: Lint code with flake8
+          command: |
+            flake8 bond
+
+      - run:
+          name: Install BOnD.
+          command: sudo python -m pip install ".[doc]" --no-cache-dir --progress-bar off
+
+      - run:
+          name: Build documentation
+          no_output_timeout: 45m
+          command: |
+            make SPHINXOPTS="-W" -C docs html
+      - store_artifacts:
+          path: /tmp/src/BOnD/docs/_build/html
+
+  deploy_docker:
+    machine:
+      image: circleci/classic:201711-01
+    working_directory: /tmp/src/BOnD
+    steps:
+      - checkout:
+          path: /home/circleci/src/BOnD
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /home/circleci/src/BOnD
+            if [[ "$( git log --format='format:%s' -n 1 $CIRCLE_SHA1 | grep -i -E '^docs?(\(\w+\))?:' )" != "" ]]; then
+              echo "Only docs build"
+              circleci step halt
+            fi
+      - restore_cache:
+          keys:
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 30m
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
+      - run:
+          name: Deploy to Docker Hub
+          no_output_timeout: 40m
+          command: |
+            if [[ -n "$DOCKER_PASS" ]]; then
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              docker tag pennlinc/BOnD pennlinc/BOnD:unstable
+              docker push pennlinc/BOnD:unstable
+              if [[ -n "$CIRCLE_TAG" ]]; then
+                docker push pennlinc/BOnD:latest
+                docker tag pennlinc/BOnD pennlinc/BOnD:$CIRCLE_TAG
+                docker push pennlinc/BOnD:$CIRCLE_TAG
+              fi
+            fi
+
+#   test_deploy_pypi:
+#     docker:
+#       - image: circleci/python:3.7.4
+#     working_directory: /tmp/src/BOnD
+#     steps:
+#       - checkout
+#       - run:
+#           name: Build BOnD
+#           command: |
+#             pip install --user twine  # For use in checking distributions
+#             THISVERSION=$( python3 get_version.py )
+#             THISVERSION=${THISVERSION%.dirty*}
+#             THISVERSION=${CIRCLE_TAG:-$THISVERSION}
+#             virtualenv --python=python build
+#             source build/bin/activate
+#             pip install --upgrade "pip>=19.1" numpy
+#             echo "${CIRCLE_TAG:-$THISVERSION}" > BOnD/VERSION
+#             python setup.py sdist
+#             pip wheel --no-deps -w dist/ .
+#       - store_artifacts:
+#           path: /tmp/src/BOnD/dist
+#       - run:
+#           name: Check sdist distribution
+#           command: |
+#             THISVERSION=$( python get_version.py )
+#             THISVERSION=${THISVERSION%.dirty*}
+#             THISVERSION=${CIRCLE_TAG:-$THISVERSION}
+#             twine check dist/BOnD*.tar.gz
+#             virtualenv --python=python sdist
+#             source sdist/bin/activate
+#             pip install --progress-bar off --upgrade "pip>=19.1" numpy
+#             pip install dist/BOnD*.tar.gz
+#             which BOnD | grep sdist\\/bin
+#             INSTALLED_VERSION=$(BOnD --version)
+#             INSTALLED_VERSION=${INSTALLED_VERSION%$'\r'}
+#             INSTALLED_VERSION=${INSTALLED_VERSION#*"BOnD v"}
+#             echo "VERSION: \"$THISVERSION\""
+#             echo "INSTALLED: \"$INSTALLED_VERSION\""
+#             test "$INSTALLED_VERSION" = "$THISVERSION"
+#       - run:
+#           name: Check wheel distribution
+#           command: |
+#             THISVERSION=$( python get_version.py )
+#             THISVERSION=${THISVERSION%.dirty*}
+#             THISVERSION=${CIRCLE_TAG:-$THISVERSION}
+#             twine check dist/BOnD*.whl
+#             virtualenv --python=python wheel
+#             source wheel/bin/activate
+#             pip install dist/BOnD*.whl
+#             which BOnD | grep wheel\\/bin
+#             INSTALLED_VERSION=$(BOnD --version)
+#             INSTALLED_VERSION=${INSTALLED_VERSION%$'\r'}
+#             INSTALLED_VERSION=${INSTALLED_VERSION#*"BOnD v"}
+#             echo "VERSION: \"$THISVERSION\""
+#             echo "INSTALLED: \"$INSTALLED_VERSION\""
+#             test "$INSTALLED_VERSION" = "$THISVERSION"
+#       - run:
+#           name: Build BOnD-container
+#           command: |
+#             THISVERSION=$( python get_version.py )
+#             THISVERSION=${THISVERSION%.dirty*}
+#             cd wrapper
+#             virtualenv --python=python build
+#             source build/bin/activate
+#             pip install --upgrade "pip>=19.1"
+#             sed -i -E "s/(__version__ = )'[A-Za-z0-9.-]+'/\1'${CIRCLE_TAG:-$THISVERSION}'/" qsiprep_docker.py
+#             python setup.py sdist
+#             pip wheel --no-deps -w dist/ .
+#       - store_artifacts:
+#           path: /tmp/src/BOnD/wrapper/dist
+
+#   deploy_pypi:
+#     docker:
+#       - image: circleci/python:3.7.4
+#     working_directory: /tmp/src/BOnD
+#     steps:
+#       - checkout
+#       - run:
+#           name: Build BOnD
+#           command: |
+#             THISVERSION=$( python get_version.py )
+#             virtualenv --python=python build
+#             source build/bin/activate
+#             pip install --upgrade "pip>=19.1" numpy
+#             echo "${CIRCLE_TAG:-$THISVERSION}" > BOnD/VERSION
+#             python setup.py sdist
+#             pip wheel --no-deps -w dist/ .
+#       - run:
+#           name: Build BOnD-container
+#           command: |
+#             THISVERSION=$( python get_version.py )
+#             cd wrapper
+#             virtualenv --python=python build
+#             source build/bin/activate
+#             pip install --upgrade "pip>=19.1"
+#             sed -i -E "s/(__version__ = )'[A-Za-z0-9.-]+'/\1'${CIRCLE_TAG:-$THISVERSION}'/" qsiprep_docker.py
+#             python setup.py sdist
+#             pip wheel --no-deps -w dist/ .
+#       - run:
+#           name: Upload packages to PyPI
+#           command: |
+#             pip install --user twine
+#             pip install --user --upgrade importlib-metadata
+#             twine upload dist/BOnD*gz wrapper/dist/BOnD*
+
+  deployable:
+    docker:
+      - image: busybox:latest
+    steps:
+      - run: echo Deploying!
+
+
+workflows:
+  version: 2
+  build_test_deploy:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+
+      - setup_conda:
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /docker\/.*/
+            tags:
+              only: /.*/
+
+      - install_and_test:
+          requires:
+            - build
+            - setup_conda
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /docker\/.*/
+            tags:
+              only: /.*/
+
+      - get_singularity:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /docker\/.*/
+            tags:
+              only: /.*/
+
+      - install_and_test_singularity:
+          requires:
+            - build
+            - setup_conda
+            - get_singularity
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /docker\/.*/
+            tags:
+              only: /.*/
+
+      - build_docs:
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /docker\/.*/
+            tags:
+              only: /.*/
+
+      - deployable:
+          requires:
+            - build_docs
+            - install_and_test
+            - install_and_test_singularity
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /.*/
+
+      - deploy_docker:
+          requires:
+            - deployable
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /.*/
+
+#       - deploy_pypi:
+#           requires:
+#             - deployable
+#           filters:
+#             branches:
+#               ignore: /.*/
+#             tags:
+#               only: /.*/
