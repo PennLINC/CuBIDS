@@ -8,6 +8,8 @@ derived_params:
     Dim3Size:
       suggest_variant_rename: yes
     NSliceTimes: {}
+    NSliceTimes:
+      suggest_variant_rename: yes
     NumVolumes:
       suggest_variant_rename: yes
     Obliquity:
@@ -32,6 +34,8 @@ derived_params:
     Dim3Size:
       suggest_variant_rename: yes
     NSliceTimes: {}
+    NSliceTimes:
+      suggest_variant_rename: yes
     NumVolumes:
       suggest_variant_rename: yes
     Obliquity:
@@ -56,6 +60,8 @@ derived_params:
     Dim3Size:
       suggest_variant_rename: yes
     NSliceTimes: {}
+    NSliceTimes:
+      suggest_variant_rename: yes
     NumVolumes:
       suggest_variant_rename: yes
     Obliquity:
@@ -79,6 +85,8 @@ derived_params:
     Dim3Size:
       suggest_variant_rename: yes
     NSliceTimes: {}
+    NSliceTimes:
+      suggest_variant_rename: yes
     NumVolumes:
       suggest_variant_rename: yes
     Obliquity:
@@ -103,6 +111,8 @@ derived_params:
     Dim3Size:
       suggest_variant_rename: yes
     NSliceTimes: {}
+    NSliceTimes:
+      suggest_variant_rename: yes
     NumVolumes:
       suggest_variant_rename: yes
     Obliquity:
@@ -127,6 +137,8 @@ derived_params:
     Dim3Size:
       suggest_variant_rename: yes
     NSliceTimes: {}
+    NSliceTimes:
+      suggest_variant_rename: yes
     NumVolumes:
       suggest_variant_rename: yes
     Obliquity:

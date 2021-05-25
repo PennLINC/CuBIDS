@@ -152,7 +152,7 @@ def bond_validate():
                         if not os.path.exists(fi_tmpdir):
                             os.makedirs(fi_tmpdir)
                         output = fi_tmpdir + '/' + str(Path(fi).name)
-                        os.system("cp {} {}".format(fi, output))
+                        os.system("cp {} {}".format(fi, output))                        
                     # run the validator
                     nifti_head = opts.ignore_nifti_headers
                     subj_consist = opts.ignore_subject_consistency
@@ -272,6 +272,7 @@ def bond_group():
                         help='ensure that there are no untracked changes '
                         'before finding groups')
     parser.add_argument('--acq-group-level',
+                        default='subject',
                         action='store',
                         help='Level at which acquisition groups are created '
                         'options: "subject" or "session"')
@@ -373,6 +374,7 @@ def bond_apply():
                         action='store',
                         help='Docker image tag or Singularity image file.')
     parser.add_argument('--acq-group-level',
+                        default='subject',
                         action='store',
                         help='Level at which acquisition groups are created '
                         'options: "subject" or "session"')
