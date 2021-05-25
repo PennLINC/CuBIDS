@@ -981,8 +981,8 @@ def test_validator(tmp_path):
 
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
-    print(parsed.shape[0])
-    print(parsed.shape[1])
+    print("VALIDATOR OUTPUT: ", parsed)
+
     assert parsed.shape[1] < 1
 
 
