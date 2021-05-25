@@ -969,7 +969,7 @@ def test_validator(tmp_path):
 
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
-    assert type(df) == pd.core.frame.DataFrame
+    assert type(parsed) == pd.core.frame.DataFrame
 
 
 def test_docker():
