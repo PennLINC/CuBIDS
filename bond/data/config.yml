@@ -32,7 +32,6 @@ derived_params:
       suggest_variant_rename: yes
     Dim3Size:
       suggest_variant_rename: yes
-    NSliceTimes: {}
     NSliceTimes:
       suggest_variant_rename: yes
     NumVolumes:
@@ -58,7 +57,6 @@ derived_params:
       suggest_variant_rename: yes
     Dim3Size:
       suggest_variant_rename: yes
-    NSliceTimes: {}
     NSliceTimes:
       suggest_variant_rename: yes
     NumVolumes:
@@ -83,7 +81,6 @@ derived_params:
       suggest_variant_rename: yes
     Dim3Size:
       suggest_variant_rename: yes
-    NSliceTimes: {}
     NSliceTimes:
       suggest_variant_rename: yes
     NumVolumes:
@@ -109,7 +106,6 @@ derived_params:
       suggest_variant_rename: yes
     Dim3Size:
       suggest_variant_rename: yes
-    NSliceTimes: {}
     NSliceTimes:
       suggest_variant_rename: yes
     NumVolumes:
@@ -135,7 +131,6 @@ derived_params:
       suggest_variant_rename: yes
     Dim3Size:
       suggest_variant_rename: yes
-    NSliceTimes: {}
     NSliceTimes:
       suggest_variant_rename: yes
     NumVolumes:
