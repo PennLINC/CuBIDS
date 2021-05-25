@@ -664,15 +664,11 @@ def test_apply_csv_changes(tmp_path):
     #     "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.json").exists() == False
     assert Path(data_root /
         "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.json").exists() == True
-    assert Path(data_root /
-        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.json").exists() == False
     # check that old names are gone!
     # assert Path(data_root /
     #     "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_physio.tsv.gz").exists() == True
     assert Path(data_root /
         "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_physio.tsv.gz").exists() == True
-    assert Path(data_root /
-        "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz").exists() == False
 
     mod2_path = tmp_path / "modified2_summary.csv"
     with mod2_path.open("r") as f:
