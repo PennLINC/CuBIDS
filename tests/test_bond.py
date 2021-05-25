@@ -24,6 +24,7 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import subprocess
+import pdb
 
 TEST_DATA = pkgrf("bond", "testdata")
 
@@ -981,8 +982,10 @@ def test_validator(tmp_path):
 
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
+    pdb.set_trace()
     print("VALIDATOR OUTPUT")
     print(parsed)
+    print(type(parsed))
 
     assert parsed.shape[1] < 1
 
