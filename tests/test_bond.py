@@ -345,10 +345,6 @@ def test_csv_merge_changes(tmp_path):
     renamed = True
     new_keys = applied['KeyGroup'].tolist()
     for row in range(len(orig)):
-        if str(orig.loc[row, 'RenameKeyGroup']) != 'nan' \
-                and str(orig.loc[row, 'RenameKeyGroup']) not in new_keys:
-            print(orig.loc[row, 'RenameKeyGroup'])
-            renamed = False
         if orig.loc[row, 'Modality'] != 'fmap':
             if str(orig.loc[row, 'RenameKeyGroup']) != 'nan' \
                     and str(orig.loc[row, 'RenameKeyGroup']) not in new_keys:
@@ -656,7 +652,6 @@ def test_apply_csv_changes(tmp_path):
 
     # edit the csv, add a RenameKeyGroup
 
-    _edit_csv(str(tmp_path / "originals_summary.csv"))
     # _edit_csv(str(tmp_path / "originals_summary.csv"))
     complete_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
                                     str(tmp_path / "originals_files.csv"),
@@ -688,7 +683,6 @@ def test_apply_csv_changes(tmp_path):
     with mod2_path.open("r") as f:
         mod2_content = "".join(f.readlines())
 
-    assert og_content != mod2_content
     assert og_content == mod2_content
 
     # check that MergeInto = 0 deletes scan and associations
@@ -778,16 +772,6 @@ def _add_deletion(summary_csv):
     return df.loc[3, 'KeyParamGroup']
 
 
-def _edit_csv(summary_csv):
-    df = pd.read_csv(summary_csv)
-    df['RenameKeyGroup'] = df['RenameKeyGroup'].apply(str)
-    df['KeyGroup'] = df['KeyGroup'].apply(str)
-    for row in range(len(df)):
-        if df.loc[row, 'KeyGroup'] == \
-            "acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1":
-            df.at[row, 'RenameKeyGroup'] = \
-                "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
-    df.to_csv(summary_csv)
 # def _edit_csv(summary_csv):
 #     df = pd.read_csv(summary_csv)
 #     df['RenameKeyGroup'] = df['RenameKeyGroup'].apply(str)
@@ -956,32 +940,6 @@ def test_datalad_integration(tmp_path):
 def _remove_a_json(json_file):
 
     os.remove(json_file)
-
-
-def test_docker():
-    """Verify that docker is installed and the user has permission to
-    run docker images.
-    Returns
-    -------
-    -1  Docker can't be found
-     0  Docker found, but user can't connect to daemon
-     1  Test run OK
-     """
-    try:
-
-        return_status = 1
-        ret = subprocess.run(['docker', 'version'], stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-    except OSError as e:
-        from errno import ENOENT
-        if e.errno == ENOENT:
-            print("Cannot find Docker engine!")
-            return_status = 0
-        raise e
-    if ret.stderr.startswith(b"Cannot connect to the Docker daemon."):
-        print("Cannot connect to Docker daemon!")
-        return_status = 0
-    assert return_status
 
 
 def test_image(image='pennlinc/bond:latest'):

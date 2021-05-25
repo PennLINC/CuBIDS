@@ -7,7 +7,6 @@ import json
 import csv
 import os
 from pathlib import Path
-import bids
 from bids.layout import parse_file_entities
 from bids.utils import listify
 import numpy as np
