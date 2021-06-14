@@ -1,2 +1,7 @@
-# BOnD
-BIDS On Disk
+# CuBIDS
+Curation of BIDS 
+
+Link to video tutorial: 
+
+
+
