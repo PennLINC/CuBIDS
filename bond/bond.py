@@ -21,7 +21,7 @@ from .config import load_config
 from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 bids.config.set_option('extension_initial_dot', True)
-import pdb
+
 
 class BOnD(object):
 
@@ -36,7 +36,7 @@ class BOnD(object):
         self.datalad_handle = None
         self.old_filenames = []  # files whose key groups changed
         self.new_filenames = []  # new filenames for files to change
-        self.IF_rename_paths = [] # list of fmap jsons with rename intended fors
+        self.IF_rename_paths = []  # fmap jsons with rename intended fors
         self.grouping_config = load_config(grouping_config)
         self.acq_group_level = acq_group_level
 
@@ -291,8 +291,8 @@ class BOnD(object):
 
             if self.use_datalad:
                 self.datalad_handle.run(cmd=["bash", new_prefix +
-                                             "_full_cmd.sh"],
-                                             inputs=self.IF_rename_paths)
+                                        "_full_cmd.sh"],
+                                        inputs=self.IF_rename_paths)
             else:
                 subprocess.run(["bash", new_prefix + "_full_cmd.sh"],
                                stdout=subprocess.PIPE,
@@ -422,7 +422,8 @@ class BOnD(object):
             self.new_filenames.append(new_physio)
 
         # RENAME INTENDED FORS!
-        for path in Path(self.path + '/' + sub + '/' + ses).rglob("fmap/*.json"):
+        ses_path = self.path + '/' + sub + '/' + ses
+        for path in Path(ses_path).rglob("fmap/*.json"):
             self.IF_rename_paths.append(str(path))
             json_file = self.layout.get_file(str(path))
             data = json_file.get_dict()
