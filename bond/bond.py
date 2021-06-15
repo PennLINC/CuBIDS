@@ -408,11 +408,17 @@ class BOnD(object):
 
         if '_task-' in filepath:
             old_events = filepath.replace(scan_end, '_events.tsv')
+            old_ejson = filepath.replace(scan_end, '_events.json')
             if Path(old_events).exists():
                 self.old_filenames.append(old_events)
                 new_scan_end = '_' + suffix + old_ext
                 new_events = new_path.replace(new_scan_end, '_events.tsv')
                 self.new_filenames.append(new_events)
+            if Path(old_ejson).exists():
+                self.old_filenames.append(old_ejson)
+                new_scan_end = '_' + suffix + old_ext
+                new_ejson = new_path.replace(new_scan_end, '_events.json')
+                self.new_filenames.append(new_ejson)
 
         old_physio = filepath.replace(scan_end, '_physio.tsv.gz')
         if Path(old_physio).exists():
