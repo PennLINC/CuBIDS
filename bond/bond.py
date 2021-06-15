@@ -586,8 +586,20 @@ class BOnD(object):
                         to_remove.append(filepath)
                 if '/dwi/' in str(path):
                     # add the bval and bvec if there
-                    to_remove.append(img_to_new_ext(str(path), '.bval'))
-                    to_remove.append(img_to_new_ext(str(path), '.bvec'))
+                    if Path(img_to_new_ext(str(path), '.bval')).exists():
+                        to_remove.append(img_to_new_ext(str(path), '.bval'))
+                    if Path(img_to_new_ext(str(path), '.bvec')).exists():
+                        to_remove.append(img_to_new_ext(str(path), '.bvec'))
+                if '/func/' in str(path):
+                    # add tsvs
+                    tsv = img_to_new_ext(str(path), '.tsv').replace(
+                            '_bold', '_events')
+                    if Path(tsv).exists():
+                        print(tsv)
+                        to_remove.append(tsv)
+                    # add tsv json (if exists)
+                    if Path(tsv.replace('.tsv', '.json')).exists():
+                        to_remove.append(tsv.replace('.tsv', '.json'))
         to_remove += scans
 
         # create rm commands for all files that need to be purged
