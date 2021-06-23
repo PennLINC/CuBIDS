@@ -36,6 +36,7 @@ class BOnD(object):
         self.datalad_handle = None
         self.old_filenames = []  # files whose key groups changed
         self.new_filenames = []  # new filenames for files to change
+        self.IF_rename_paths = []  # fmap jsons with rename intended fors
         self.grouping_config = load_config(grouping_config)
         self.acq_group_level = acq_group_level
 
@@ -290,7 +291,8 @@ class BOnD(object):
 
             if self.use_datalad:
                 self.datalad_handle.run(cmd=["bash", new_prefix +
-                                             "_full_cmd.sh"])
+                                        "_full_cmd.sh"],
+                                        inputs=self.IF_rename_paths)
             else:
                 subprocess.run(["bash", new_prefix + "_full_cmd.sh"],
                                stdout=subprocess.PIPE,
@@ -406,11 +408,17 @@ class BOnD(object):
 
         if '_task-' in filepath:
             old_events = filepath.replace(scan_end, '_events.tsv')
+            old_ejson = filepath.replace(scan_end, '_events.json')
             if Path(old_events).exists():
                 self.old_filenames.append(old_events)
                 new_scan_end = '_' + suffix + old_ext
                 new_events = new_path.replace(new_scan_end, '_events.tsv')
                 self.new_filenames.append(new_events)
+            if Path(old_ejson).exists():
+                self.old_filenames.append(old_ejson)
+                new_scan_end = '_' + suffix + old_ext
+                new_ejson = new_path.replace(new_scan_end, '_events.json')
+                self.new_filenames.append(new_ejson)
 
         old_physio = filepath.replace(scan_end, '_physio.tsv.gz')
         if Path(old_physio).exists():
@@ -420,8 +428,9 @@ class BOnD(object):
             self.new_filenames.append(new_physio)
 
         # RENAME INTENDED FORS!
-        for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
-
+        ses_path = self.path + '/' + sub + '/' + ses
+        for path in Path(ses_path).rglob("fmap/*.json"):
+            self.IF_rename_paths.append(str(path))
             json_file = self.layout.get_file(str(path))
             data = json_file.get_dict()
 
@@ -577,8 +586,20 @@ class BOnD(object):
                         to_remove.append(filepath)
                 if '/dwi/' in str(path):
                     # add the bval and bvec if there
-                    to_remove.append(img_to_new_ext(str(path), '.bval'))
-                    to_remove.append(img_to_new_ext(str(path), '.bvec'))
+                    if Path(img_to_new_ext(str(path), '.bval')).exists():
+                        to_remove.append(img_to_new_ext(str(path), '.bval'))
+                    if Path(img_to_new_ext(str(path), '.bvec')).exists():
+                        to_remove.append(img_to_new_ext(str(path), '.bvec'))
+                if '/func/' in str(path):
+                    # add tsvs
+                    tsv = img_to_new_ext(str(path), '.tsv').replace(
+                            '_bold', '_events')
+                    if Path(tsv).exists():
+                        print(tsv)
+                        to_remove.append(tsv)
+                    # add tsv json (if exists)
+                    if Path(tsv.replace('.tsv', '.json')).exists():
+                        to_remove.append(tsv.replace('.tsv', '.json'))
         to_remove += scans
 
         # create rm commands for all files that need to be purged
