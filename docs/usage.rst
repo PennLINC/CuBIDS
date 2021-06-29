@@ -1,6 +1,6 @@
-=============
+===============
 CuBIDS Workflow
-=============
+===============
 
 Curating MRI data using BIDS opens up a world of wonderful pipeline tools
 to automatically and correctly preprocess (or more) your data. This software
