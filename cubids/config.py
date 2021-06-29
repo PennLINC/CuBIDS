@@ -12,7 +12,7 @@ def load_config(config_file):
     """
 
     if config_file is None:
-        config_file = Path(pkgrf("bond", "data/config.yml"))
+        config_file = Path(pkgrf("cubids", "data/config.yml"))
 
     with config_file.open() as f:
         config = yaml.safe_load(f)

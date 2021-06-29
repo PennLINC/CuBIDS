@@ -28,30 +28,30 @@ setup(
     description="BIDS On Disk Editor",
     entry_points={
         'console_scripts': [
-            'bond-group=bond.cli:bond_group',
-            'bond-apply=bond.cli:bond_apply',
-            'bond-purge=bond.cli:bond_purge',
-            'bond-add-nifti-info=bond.cli:bond_add_nifti_info',
-            'bond-copy-exemplars=bond.cli:bond_copy_exemplars',
-            'bond-undo=bond.cli:bond_undo',
-            'bids-sidecar-merge=bond.cli:bids_sidecar_merge',
-            'bond-validate=bond.cli:bond_validate',
-            'bond-datalad-save=bond.cli:bond_datalad_save',
-            'bond-print-metadata-fields=bond.cli:'
-            'bond_print_metadata_fields',
-            'bond-remove-metadata-fields=bond.cli:'
-            'bond_remove_metadata_fields'
+            'cubids-group=cubids.cli:cubids_group',
+            'cubids-apply=cubids.cli:cubids_apply',
+            'cubids-purge=cubids.cli:cubids_purge',
+            'cubids-add-nifti-info=cubids.cli:cubids_add_nifti_info',
+            'cubids-copy-exemplars=cubids.cli:cubids_copy_exemplars',
+            'cubids-undo=cubids.cli:cubids_undo',
+            'bids-sidecar-merge=cubids.cli:bids_sidecar_merge',
+            'cubids-validate=cubids.cli:cubids_validate',
+            'cubids-datalad-save=cubids.cli:cubids_datalad_save',
+            'cubids-print-metadata-fields=cubids.cli:'
+            'cubids_print_metadata_fields',
+            'cubids-remove-metadata-fields=cubids.cli:'
+            'cubids_remove_metadata_fields'
         ],
     },
     license="GNU General Public License v3",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
-    keywords='bond',
-    name='bond',
-    packages=find_packages(include=['bond', 'bond.*']),
+    keywords='cubids',
+    name='cubids',
+    packages=find_packages(include=['cubids', 'cubids.*']),
     setup_requires=setup_requirements,
     test_suite='tests',
-    url='https://github.com/pennlinc/bond',
+    url='https://github.com/pennlinc/cubids',
     version='0.1.0',
     zip_safe=False,
 )

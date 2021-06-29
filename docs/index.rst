@@ -1,4 +1,4 @@
-Welcome to BOnD's documentation!
+Welcome to CuBIDS's documentation!
 ======================================
 
 .. toctree::

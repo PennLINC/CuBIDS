@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=bond
+set SPHINXPROJ=cubids
 
 if "%1" == "" goto help
 

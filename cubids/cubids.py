@@ -23,7 +23,7 @@ from .metadata_merge import (
 bids.config.set_option('extension_initial_dot', True)
 
 
-class BOnD(object):
+class CuBIDS(object):
 
     def __init__(self, data_root, use_datalad=False, acq_group_level='subject',
                  grouping_config=None):
@@ -88,7 +88,7 @@ class BOnD(object):
         if not self.datalad_ready:
             raise Exception(
                 "DataLad has not been initialized. use datalad_init()")
-        statuses = self.datalad_handle.save(message=message or "BOnD Save")
+        statuses = self.datalad_handle.save(message=message or "CuBIDS Save")
         saved_status = set([status['status'] for status in statuses])
         if not saved_status == set(["ok"]):
             raise Exception("Failed to save in DataLad")
@@ -484,7 +484,7 @@ class BOnD(object):
             exemplars_csv: str
                 path to the .csv file that lists one subject
                 from each Acqusition Group (*_AcqGrouping.csv
-                from the bond-group output)
+                from the cubids-group output)
                 example path: /Users/Covitz/CSVs/CCNP_Acq_Grouping.csv
         """
 
@@ -640,7 +640,7 @@ class BOnD(object):
         Returns:
         -----------
             misfits : list
-                A list of fmap filenames for whom BOnD has not detected
+                A list of fmap filenames for whom CuBIDS has not detected
                 an IntnededFor.
         """
 

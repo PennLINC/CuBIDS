@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Tests for `bond` package."""
+"""Tests for `cubids` package."""
 import sys
 sys.path.append("..")
 import shutil
@@ -10,10 +10,10 @@ import json
 from pathlib import Path
 from pkg_resources import resource_filename as pkgrf
 import pytest
-from bond import BOnD
-from bond.validator import (build_validator_call,
+from cubids import CuBIDS
+from cubids.validator import (build_validator_call,
                        run_validator, parse_validator_output)
-from bond.metadata_merge import (
+from cubids.metadata_merge import (
     merge_without_overwrite, merge_json_into_json)
 from math import nan
 import subprocess
@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 import subprocess
 
-TEST_DATA = pkgrf("bond", "testdata")
+TEST_DATA = pkgrf("cubids", "testdata")
 
 COMPLETE_KEY_GROUPS = [
     'acquisition-HASC55AP_datatype-dwi_suffix-dwi',
@@ -76,7 +76,7 @@ def test_ok_json_merge_cli(tmp_path):
 
 def test_get_param_groups(tmp_path):
     data_root = get_data(tmp_path)
-    bod = BOnD(data_root / "inconsistent", use_datalad=True)
+    bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
     csv_prefix = str(tmp_path / "csvs")
     key_groups = bod.get_key_groups()
     bod._cache_fieldmaps()
@@ -87,7 +87,7 @@ def test_get_param_groups(tmp_path):
 
 def test_copy_exemplars(tmp_path):
     data_root = get_data(tmp_path)
-    bod = BOnD(data_root / "complete", use_datalad=True)
+    bod = CuBIDS(data_root / "complete", use_datalad=True)
     csv_prefix = str(tmp_path / "csvs")
     bod.get_CSVs(csv_prefix)
     acq_group_csv = csv_prefix + "_AcqGrouping.csv"
@@ -122,7 +122,7 @@ def test_purge_no_datalad(tmp_path):
     with open(purge_path, 'w') as filehandle:
         for listitem in scans:
             filehandle.write('%s\n' % listitem)
-    bod = BOnD(data_root / "complete", use_datalad=False)
+    bod = CuBIDS(data_root / "complete", use_datalad=False)
 
     assert Path(scan_name).exists()
     assert Path(json_name).exists()
@@ -158,7 +158,7 @@ def test_purge(tmp_path):
     with open(purge_path, 'w') as filehandle:
         for listitem in scans:
             filehandle.write('%s\n' % listitem)
-    bod = BOnD(data_root / "complete", use_datalad=True)
+    bod = CuBIDS(data_root / "complete", use_datalad=True)
     bod.datalad_save()
 
     assert bod.is_datalad_clean()
@@ -203,7 +203,7 @@ def test_bad_json_merge_cli(tmp_path):
 
 def test_add_nifti_info_datalad(tmp_path):
     data_root = get_data(tmp_path)
-    bod = BOnD(data_root / "complete", use_datalad=True)
+    bod = CuBIDS(data_root / "complete", use_datalad=True)
     csv_prefix = str(tmp_path / "csvs")
     bod.get_CSVs(csv_prefix)
     summary_csv = csv_prefix + "_summary.csv"
@@ -224,7 +224,7 @@ def test_add_nifti_info_datalad(tmp_path):
 
 def test_add_nifti_info_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
-    bod = BOnD(data_root / "complete", use_datalad=False)
+    bod = CuBIDS(data_root / "complete", use_datalad=False)
     bod.add_nifti_info(force_unlock=False)
     csv_prefix = str(tmp_path / "csvs")
     bod.get_CSVs(csv_prefix)
@@ -237,7 +237,7 @@ def test_add_nifti_info_no_datalad(tmp_path):
 #TODO: add tests that return an error for invalid merge
 def test_csv_merge_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
-    bod = BOnD(data_root / "inconsistent", use_datalad=False)
+    bod = CuBIDS(data_root / "inconsistent", use_datalad=False)
 
     # Get an initial grouping summary and files list
     csv_prefix = str(tmp_path / "originals")
@@ -302,7 +302,7 @@ def test_csv_merge_no_datalad(tmp_path):
 
 def test_csv_merge_changes(tmp_path):
     data_root = get_data(tmp_path)
-    bod = BOnD(data_root / "inconsistent", use_datalad=True)
+    bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
     bod.datalad_save()
     assert bod.is_datalad_clean()
 
@@ -496,7 +496,7 @@ def test_keygroups(tmp_path):
     data_root = get_data(tmp_path)
 
     # Test the complete data
-    complete_bod = BOnD(data_root / "complete")
+    complete_bod = CuBIDS(data_root / "complete")
     complete_misfit_fmaps = complete_bod._cache_fieldmaps()
     # There should be no unpaired fieldmaps
     assert len(complete_misfit_fmaps) == 0
@@ -506,7 +506,7 @@ def test_keygroups(tmp_path):
     assert key_groups == COMPLETE_KEY_GROUPS
 
     # Test the incomplete
-    ibod = BOnD(data_root / "inconsistent")
+    ibod = CuBIDS(data_root / "inconsistent")
     inc_misfit_fmaps = ibod._cache_fieldmaps()
     assert len(inc_misfit_fmaps) == 1
 
@@ -521,7 +521,7 @@ def test_csv_creation(tmp_path):
     data_root = get_data(tmp_path)
 
     # Test the complete data
-    complete_bod = BOnD(data_root / "complete")
+    complete_bod = CuBIDS(data_root / "complete")
     complete_misfit_fmaps = complete_bod._cache_fieldmaps()
     # There should be no unpaired fieldmaps
     assert len(complete_misfit_fmaps) == 0
@@ -553,7 +553,7 @@ def test_csv_creation(tmp_path):
     assert bool_FMAP == True
 
     # Test the incomplete
-    ibod = BOnD(data_root / "inconsistent")
+    ibod = CuBIDS(data_root / "inconsistent")
     inc_misfit_fmaps = ibod._cache_fieldmaps()
     assert len(inc_misfit_fmaps) == 1
 
@@ -629,13 +629,13 @@ def test_apply_csv_changes(tmp_path):
         has_physio = True
 
 
-    complete_bond = BOnD(data_root / "complete", use_datalad=True)
-    complete_bond.datalad_save()
+    complete_cubids = CuBIDS(data_root / "complete", use_datalad=True)
+    complete_cubids.datalad_save()
 
-    complete_bond.get_CSVs(str(tmp_path / "originals"))
+    complete_cubids.get_CSVs(str(tmp_path / "originals"))
 
     # give csv with no changes (make sure it does nothing)
-    complete_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
+    complete_cubids.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
                                     str(tmp_path / "originals_files.csv"),
                                     str(tmp_path / "modified1"))
 
@@ -652,7 +652,7 @@ def test_apply_csv_changes(tmp_path):
     # edit the csv, add a RenameKeyGroup
 
     # _edit_csv(str(tmp_path / "originals_summary.csv"))
-    complete_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
+    complete_cubids.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
                                     str(tmp_path / "originals_files.csv"),
                                     str(tmp_path / "modified2"))
 
@@ -700,7 +700,7 @@ def test_apply_csv_changes(tmp_path):
         assert Path(f.replace('nii.gz', 'json')).exists() == True
 
     # apply deletion
-    complete_bond.apply_csv_changes(mod2_path,
+    complete_cubids.apply_csv_changes(mod2_path,
                                     str(tmp_path / "modified2_files.csv"),
                                     str(tmp_path / "deleted"))
 
@@ -734,12 +734,12 @@ def test_session_apply(tmp_path):
     data_root = get_data(tmp_path)
     bids_dir = str(data_root / "inconsistent")
 
-    ses_bond = BOnD(data_root / "inconsistent", acq_group_level='session', use_datalad=True)
+    ses_cubids = CuBIDS(data_root / "inconsistent", acq_group_level='session', use_datalad=True)
 
-    ses_bond.get_CSVs(str(tmp_path / "originals"))
+    ses_cubids.get_CSVs(str(tmp_path / "originals"))
 
     # give csv and make sure 'session' is in summary both pre and post apply
-    ses_bond.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
+    ses_cubids.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
                                     str(tmp_path / "originals_files.csv"),
                                     str(tmp_path / "modified1"))
 
@@ -828,7 +828,7 @@ def _get_json_string(json_path):
 def test_remove_fields(tmp_path):
     """Test that we metadata fields are detected and removed."""
     data_root = get_data(tmp_path)
-    bod = BOnD(data_root, use_datalad=False)
+    bod = CuBIDS(data_root, use_datalad=False)
 
     # Get the metadata fields
     metadata_fields = bod.get_all_metadata_fields()
@@ -849,23 +849,23 @@ def test_datalad_integration(tmp_path):
     """
     data_root = get_data(tmp_path)
 
-    # Test that an uninitialized BOnD raises exceptions
-    uninit_bond = BOnD(data_root / "complete", use_datalad=False)
+    # Test that an uninitialized CuBIDS raises exceptions
+    uninit_cubids = CuBIDS(data_root / "complete", use_datalad=False)
 
     # Ensure an exception is raised if trying to use datalad without
     # initializing
     with pytest.raises(Exception):
-        uninit_bond.is_datalad_clean()
+        uninit_cubids.is_datalad_clean()
 
     # initialize the datalad repository and try again
-    uninit_bond.init_datalad()
-    uninit_bond.datalad_save('Test save')
-    assert uninit_bond.is_datalad_clean()
+    uninit_cubids.init_datalad()
+    uninit_cubids.datalad_save('Test save')
+    assert uninit_cubids.is_datalad_clean()
 
     # Now, the datalad repository is initialized and saved.
-    # Make sure if we make a new BOnD object it recognizes that
+    # Make sure if we make a new CuBIDS object it recognizes that
     # the datalad status is OK
-    complete_bod = BOnD(data_root / "complete", use_datalad=True)
+    complete_bod = CuBIDS(data_root / "complete", use_datalad=True)
 
     assert complete_bod.datalad_ready
     assert complete_bod.is_datalad_clean()
@@ -901,19 +901,19 @@ def test_datalad_integration(tmp_path):
     assert not original_binary_content == edited_binary_content
 
     # Check that datalad knows something has changed
-    assert not uninit_bond.is_datalad_clean()
+    assert not uninit_cubids.is_datalad_clean()
     assert not complete_bod.is_datalad_clean()
 
     # Attempt to undo a change before checking in changes
     with pytest.raises(Exception):
-        uninit_bond.datalad_undo_last_commit()
+        uninit_cubids.datalad_undo_last_commit()
 
     # Perform a save
-    uninit_bond.datalad_save(message="TEST SAVE!")
-    assert uninit_bond.is_datalad_clean()
+    uninit_cubids.datalad_save(message="TEST SAVE!")
+    assert uninit_cubids.is_datalad_clean()
 
     # Now undo the most recent save
-    uninit_bond.datalad_undo_last_commit()
+    uninit_cubids.datalad_undo_last_commit()
 
     # Unlock the restored files so we can access their content
     complete_bod.datalad_handle.unlock(test_binary)
@@ -998,7 +998,7 @@ def test_docker():
     assert return_status
 
 
-def test_image(image='pennlinc/bond:latest'):
+def test_image(image='pennlinc/cubids:latest'):
     """Check whether image is present on local system"""
     ret = subprocess.run(['docker', 'images', '-q', image],
                          stdout=subprocess.PIPE)

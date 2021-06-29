@@ -1,4 +1,4 @@
-"""Console script for bond."""
+"""Console script for cubids."""
 import argparse
 import subprocess
 import os
@@ -9,7 +9,7 @@ import tempfile
 import tqdm
 import shutil
 import pandas as pd
-from bond import BOnD
+from cubids import CuBIDS
 from pathlib import Path
 from .validator import (build_validator_call,
                         run_validator, parse_validator_output,
@@ -17,15 +17,15 @@ from .validator import (build_validator_call,
 from .metadata_merge import merge_json_into_json
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('bond-cli')
+logger = logging.getLogger('cubids-cli')
 GIT_CONFIG = os.path.join(os.path.expanduser("~"), '.gitconfig')
 
 
-def bond_validate():
+def cubids_validate():
     '''Command Line Interface function for running the bids validator.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-validate: Wrapper around the official "
+        description="cubids-validate: Wrapper around the official "
         "BIDS Validator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
@@ -191,7 +191,7 @@ def bond_validate():
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', output_dir_link, '--entrypoint', 'bond-validate',
+               '-v', output_dir_link, '--entrypoint', 'cubids-validate',
                opts.container, '/bids', linked_output_prefix]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
@@ -200,7 +200,7 @@ def bond_validate():
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               '-B', output_dir_link, opts.container, 'bond-validate',
+               '-B', output_dir_link, opts.container, 'cubids-validate',
                '/bids', linked_output_prefix]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
@@ -234,11 +234,11 @@ def bids_sidecar_merge():
     sys.exit(merge_status)
 
 
-def bond_group():
+def cubids_group():
     '''Command Line Interface function for finding key and param groups.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-group: find key and parameter groups in BIDS",
+        description="cubids-group: find key and parameter groups in BIDS",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
                         type=Path,
@@ -270,10 +270,10 @@ def bond_group():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir),
-                   use_datalad=opts.use_datalad,
-                   acq_group_level=opts.acq_group_level,
-                   grouping_config=opts.config)
+        bod = CuBIDS(data_root=str(opts.bids_dir),
+                     use_datalad=opts.use_datalad,
+                     acq_group_level=opts.acq_group_level,
+                     grouping_config=opts.config)
         if opts.use_datalad and not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.get_CSVs(str(opts.output_prefix),)
@@ -295,7 +295,7 @@ def bond_group():
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
                '-v', output_dir_link,
-               '--entrypoint', 'bond-group',
+               '--entrypoint', 'cubids-group',
                opts.container, '/bids', linked_output_prefix]
         if apply_config:
             cmd.insert(3, '-v')
@@ -306,7 +306,7 @@ def bond_group():
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                '-B', output_dir_link,
-               opts.container, 'bond-group',
+               opts.container, 'cubids-group',
                '/bids', linked_output_prefix]
         if apply_config:
             cmd.insert(3, '-B')
@@ -325,11 +325,11 @@ def bond_group():
     sys.exit(proc.returncode)
 
 
-def bond_apply():
+def cubids_apply():
     ''' Command Line Interface funciton for applying the csv changes.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-apply: apply the changes specified in a csv "
+        description="cubids-apply: apply the changes specified in a csv "
         "to a BIDS directory",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
@@ -372,10 +372,10 @@ def bond_apply():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir),
-                   use_datalad=opts.use_datalad,
-                   acq_group_level=opts.acq_group_level,
-                   grouping_config=opts.config)
+        bod = CuBIDS(data_root=str(opts.bids_dir),
+                     use_datalad=opts.use_datalad,
+                     acq_group_level=opts.acq_group_level,
+                     grouping_config=opts.config)
         if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
@@ -417,7 +417,7 @@ def bond_apply():
                '-v', input_summary_csv_dir_link,
                '-v', input_files_csv_dir_link,
                '-v', output_csv_dir_link,
-               '--entrypoint', 'bond-apply',
+               '--entrypoint', 'cubids-apply',
                opts.container, '/bids', linked_input_summary_csv,
                linked_input_files_csv, linked_output_prefix]
         if apply_config:
@@ -431,7 +431,7 @@ def bond_apply():
                '-B', input_summary_csv_dir_link,
                '-B', input_files_csv_dir_link,
                '-B', output_csv_dir_link,
-               opts.container, 'bond-apply',
+               opts.container, 'cubids-apply',
                '/bids', linked_input_summary_csv,
                linked_input_files_csv, linked_output_prefix]
         if apply_config:
@@ -451,11 +451,11 @@ def bond_apply():
     sys.exit(proc.returncode)
 
 
-def bond_datalad_save():
+def cubids_datalad_save():
     ''' Command Line Interfcae function for performing datalad save.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-datalad-save: perform a DataLad save on a BIDS "
+        description="cubids-datalad-save: perform a DataLad save on a BIDS "
         "directory",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
@@ -473,7 +473,7 @@ def bond_datalad_save():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
+        bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=True)
         bod.datalad_save(message=opts.m)
         sys.exit(0)
 
@@ -483,23 +483,23 @@ def bond_datalad_save():
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '--entrypoint', 'bond-datalad-save',
+               '--entrypoint', 'cubids-datalad-save',
                opts.container, '/bids', '-m', opts.m]
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               opts.container, 'bond-datalad-save',
+               opts.container, 'cubids-datalad-save',
                '/bids', '-m', opts.m]
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
 
 
-def bond_undo():
+def cubids_undo():
     ''' Command Line Interface function for reverting a commit.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-undo: revert most recent commit",
+        description="cubids-undo: revert most recent commit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
                         type=Path,
@@ -513,7 +513,7 @@ def bond_undo():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=True)
+        bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=True)
         bod.datalad_undo_last_commit()
         sys.exit(0)
 
@@ -523,22 +523,22 @@ def bond_undo():
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '--entrypoint', 'bond-undo',
+               '--entrypoint', 'cubids-undo',
                opts.container, '/bids']
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               opts.container, 'bond-undo', '/bids']
+               opts.container, 'cubids-undo', '/bids']
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
 
 
-def bond_copy_exemplars():
+def cubids_copy_exemplars():
     ''' Command Line Interface function for purging scan associations.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-copy-exemplars: create and save a directory with "
+        description="cubids-copy-exemplars: create and save a directory with "
         " one subject from each Acquisition Group in the BIDS dataset",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
@@ -559,7 +559,7 @@ def bond_copy_exemplars():
                         action='store',
                         help='absolute path to the .csv file that lists one '
                         'subject from each Acqusition Group '
-                        '(*_AcqGrouping.csv from the bond-group output)')
+                        '(*_AcqGrouping.csv from the cubids-group output)')
     parser.add_argument('--use-datalad',
                         action='store_true',
                         help='ensure that there are no untracked changes '
@@ -576,7 +576,8 @@ def bond_copy_exemplars():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
+        bod = CuBIDS(data_root=str(opts.bids_dir),
+                     use_datalad=opts.use_datalad)
         if opts.use_datalad:
             if bod.is_datalad_clean() and not opts.force_unlock:
                 raise Exception("Need to unlock " + str(opts.bids_dir))
@@ -594,7 +595,8 @@ def bond_copy_exemplars():
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', exemplars_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', exemplars_csv_link, '--entrypoint', 'bond-copy-exemplars',
+               '-v', exemplars_csv_link, '--entrypoint',
+               'cubids-copy-exemplars',
                opts.container, '/bids', '/exemplars', '/in_csv']
 
         if opts.force_unlock:
@@ -603,7 +605,8 @@ def bond_copy_exemplars():
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                '-B', exemplars_dir_link,
-               '-B', exemplars_csv_link, opts.container, 'bond-copy-exemplars',
+               '-B', exemplars_csv_link, opts.container,
+               'cubids-copy-exemplars',
                '/bids', '/exemplars', '/in_csv']
         if opts.force_unlock:
             cmd.append('--force-unlock')
@@ -613,11 +616,11 @@ def bond_copy_exemplars():
     sys.exit(proc.returncode)
 
 
-def bond_add_nifti_info():
+def cubids_add_nifti_info():
     ''' Command Line Interface function for purging scan associations.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-add-nifti-info: Add information from nifti"
+        description="cubids-add-nifti-info: Add information from nifti"
         "files to the sidecars of each dataset",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
@@ -642,7 +645,8 @@ def bond_add_nifti_info():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
+        bod = CuBIDS(data_root=str(opts.bids_dir),
+                     use_datalad=opts.use_datalad)
         if opts.use_datalad:
             if bod.is_datalad_clean() and not opts.force_unlock:
                 raise Exception("Need to unlock " + str(opts.bids_dir))
@@ -655,7 +659,7 @@ def bond_add_nifti_info():
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '--entrypoint', 'bond-add-nifti-info',
+               '--entrypoint', 'cubids-add-nifti-info',
                opts.container, '/bids']
 
         if opts.force_unlock:
@@ -663,7 +667,7 @@ def bond_add_nifti_info():
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               opts.container, 'bond-add-nifti-info',
+               opts.container, 'cubids-add-nifti-info',
                '/bids']
         if opts.force_unlock:
             cmd.append('--force-unlock')
@@ -673,11 +677,11 @@ def bond_add_nifti_info():
     sys.exit(proc.returncode)
 
 
-def bond_purge():
+def cubids_purge():
     ''' Command Line Interface function for purging scan associations.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-purge: purge associations from the dataset",
+        description="cubids-purge: purge associations from the dataset",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
                         type=Path,
@@ -701,7 +705,8 @@ def bond_purge():
 
     # Run directly from python using
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
+        bod = CuBIDS(data_root=str(opts.bids_dir),
+                     use_datalad=opts.use_datalad)
         if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
@@ -718,14 +723,14 @@ def bond_purge():
                '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
                '-v', input_scans_link,
-               '--entrypoint', 'bond-purge',
+               '--entrypoint', 'cubids-purge',
                opts.container, '/bids', input_scans_link]
 
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                '-B', input_scans_link,
-               opts.container, 'bond-purge',
+               opts.container, 'cubids-purge',
                '/bids', input_scans_link]
     print("RUNNING: " + ' '.join(cmd))
     if opts.use_datalad:
@@ -734,11 +739,11 @@ def bond_purge():
     sys.exit(proc.returncode)
 
 
-def bond_remove_metadata_fields():
+def cubids_remove_metadata_fields():
     ''' Command Line Interface function for deteling fields from metadata.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-remove-metadata-fields: delete fields from "
+        description="cubids-remove-metadata-fields: delete fields from "
         "metadata",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
@@ -759,7 +764,7 @@ def bond_remove_metadata_fields():
 
     # Run directly from python
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=False)
+        bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=False)
         bod.remove_metadata_fields(opts.fields)
         sys.exit(0)
 
@@ -768,23 +773,23 @@ def bond_remove_metadata_fields():
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:rw"
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
-               '--entrypoint', 'bond-remove-metadata-fields',
+               '--entrypoint', 'cubids-remove-metadata-fields',
                opts.container, '/bids', '--fields'] + opts.fields
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               opts.container, 'bond-remove-metadata-fields',
+               opts.container, 'cubids-remove-metadata-fields',
                '/bids', '--fields'] + opts.fields
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
 
 
-def bond_print_metadata_fields():
+def cubids_print_metadata_fields():
     '''Command Line Interface function that prints unique metadata fields.'''
 
     parser = argparse.ArgumentParser(
-        description="bond-print-metadata-fields: print all unique "
+        description="cubids-print-metadata-fields: print all unique "
         "metadata fields",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
@@ -799,7 +804,7 @@ def bond_print_metadata_fields():
 
     # Run directly from python
     if opts.container is None:
-        bod = BOnD(data_root=str(opts.bids_dir), use_datalad=False)
+        bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=False)
         fields = bod.get_all_metadata_fields()
         print("\n".join(fields))
         sys.exit(0)
@@ -809,12 +814,12 @@ def bond_print_metadata_fields():
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
-               '--entrypoint', 'bond-print-metadata-fields',
+               '--entrypoint', 'cubids-print-metadata-fields',
                opts.container, '/bids']
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               opts.container, 'bond-print-metadata-fields',
+               opts.container, 'cubids-print-metadata-fields',
                '/bids']
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
