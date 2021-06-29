@@ -271,9 +271,9 @@ def cubids_group():
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir),
-                   use_datalad=opts.use_datalad,
-                   acq_group_level=opts.acq_group_level,
-                   grouping_config=opts.config)
+                     use_datalad=opts.use_datalad,
+                     acq_group_level=opts.acq_group_level,
+                     grouping_config=opts.config)
         if opts.use_datalad and not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.get_CSVs(str(opts.output_prefix),)
@@ -373,9 +373,9 @@ def cubids_apply():
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir),
-                   use_datalad=opts.use_datalad,
-                   acq_group_level=opts.acq_group_level,
-                   grouping_config=opts.config)
+                     use_datalad=opts.use_datalad,
+                     acq_group_level=opts.acq_group_level,
+                     grouping_config=opts.config)
         if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
@@ -576,7 +576,8 @@ def cubids_copy_exemplars():
 
     # Run directly from python using
     if opts.container is None:
-        bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
+        bod = CuBIDS(data_root=str(opts.bids_dir),
+                     use_datalad=opts.use_datalad)
         if opts.use_datalad:
             if bod.is_datalad_clean() and not opts.force_unlock:
                 raise Exception("Need to unlock " + str(opts.bids_dir))
@@ -594,7 +595,8 @@ def cubids_copy_exemplars():
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', exemplars_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', exemplars_csv_link, '--entrypoint', 'cubids-copy-exemplars',
+               '-v', exemplars_csv_link, '--entrypoint',
+               'cubids-copy-exemplars',
                opts.container, '/bids', '/exemplars', '/in_csv']
 
         if opts.force_unlock:
@@ -603,7 +605,8 @@ def cubids_copy_exemplars():
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                '-B', exemplars_dir_link,
-               '-B', exemplars_csv_link, opts.container, 'cubids-copy-exemplars',
+               '-B', exemplars_csv_link, opts.container,
+               'cubids-copy-exemplars',
                '/bids', '/exemplars', '/in_csv']
         if opts.force_unlock:
             cmd.append('--force-unlock')
@@ -642,7 +645,8 @@ def cubids_add_nifti_info():
 
     # Run directly from python using
     if opts.container is None:
-        bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
+        bod = CuBIDS(data_root=str(opts.bids_dir),
+                     use_datalad=opts.use_datalad)
         if opts.use_datalad:
             if bod.is_datalad_clean() and not opts.force_unlock:
                 raise Exception("Need to unlock " + str(opts.bids_dir))
@@ -701,7 +705,8 @@ def cubids_purge():
 
     # Run directly from python using
     if opts.container is None:
-        bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
+        bod = CuBIDS(data_root=str(opts.bids_dir),
+                     use_datalad=opts.use_datalad)
         if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
