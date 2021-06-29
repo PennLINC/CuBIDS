@@ -7,7 +7,7 @@ jobs:
       SCRATCH: "/scratch"
     docker:
       - image: docker:18.06.1-ce-git
-    working_directory: /tmp/src/BOnD
+    working_directory: /tmp/src/CuBIDS
     steps:
       - checkout
       - run:
@@ -40,9 +40,9 @@ jobs:
             # Build docker image
             e=1 && for i in {1..5}; do
               docker build \
-                --cache-from=pennlinc/bond \
+                --cache-from=pennlinc/cubids \
                 --rm=false \
-                -t pennlinc/bond:latest \
+                -t pennlinc/cubids:latest \
                 --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
                 --build-arg VCS_REF=`git rev-parse --short HEAD` . \
               && e=0 && break || sleep 15
@@ -53,7 +53,7 @@ jobs:
           no_output_timeout: 40m
           command: |
             mkdir -p /tmp/cache
-            docker save pennlinc/bond:latest \
+            docker save pennlinc/cubids:latest \
             | pigz -3 > /tmp/cache/docker.tar.gz
 
       - save_cache:
@@ -76,8 +76,8 @@ jobs:
              conda config --set always_yes yes
              conda update conda
              conda info -a
-             conda create -n bond python=3.7
-             source activate bond
+             conda create -n cubids python=3.7
+             source activate cubids
              conda install -c conda-forge -y datalad
              # Add nodejs and the validator
              conda install nodejs
@@ -143,10 +143,10 @@ jobs:
   install_and_test_singularity:
     machine:
       image: ubuntu-1604:202004-01
-    working_directory: /home/circleci/src/BOnD
+    working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
-          path: /home/circleci/src/BOnD
+          path: /home/circleci/src/CuBIDS
 
       - attach_workspace:
           at: /tmp
@@ -174,10 +174,10 @@ jobs:
             fi
 
       - run:
-          name: Install BOnD
+          name: Install CuBIDS
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             pip install .
 
       - run:
@@ -195,70 +195,70 @@ jobs:
           no_output_timeout: 30m
           command: |
               singularity build \
-                /home/circleci/bond-latest.sif \
-                docker-daemon://pennlinc/bond:latest
+                /home/circleci/cubids-latest.sif \
+                docker-daemon://pennlinc/cubids:latest
 
       - run:
-          name: Test bond-validate
+          name: Test cubids-validate
           command: |
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             mkdir -p /tmp/bids /tmp/validate_testing
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
-            bond-validate \
+            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/singularity
+            cubids-validate \
               /tmp/bids/singularity \
               /tmp/validate_testing/singularity \
-              --container /home/circleci/bond-latest.sif
+              --container /home/circleci/cubids-latest.sif
 
       - run:
-          name: Test bond-group
+          name: Test cubids-group
           command: |
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             mkdir -p /tmp/bids /tmp/group_testing
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/group
-            bond-group \
+            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/group
+            cubids-group \
               /tmp/bids/group \
               /tmp/group_testing/group \
-              --container /home/circleci/bond-latest.sif
+              --container /home/circleci/cubids-latest.sif
 
       - run:
-          name: Test bond-save
+          name: Test cubids-save
           command: |
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             mkdir -p /tmp/bids
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/singularity
-            bond-datalad-save \
+            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/singularity
+            cubids-datalad-save \
               /tmp/bids/singularity \
               -m 'test save' \
-              --container /home/circleci/bond-latest.sif
+              --container /home/circleci/cubids-latest.sif
 
       - run:
-          name: Test bond-remove-metadata-fields
+          name: Test cubids-remove-metadata-fields
           command: |
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             mkdir -p /tmp/bids
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/metatest
+            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/metatest
 
             # Get the original metadata fields
-            bond-print-metadata-fields \
+            cubids-print-metadata-fields \
               /tmp/bids/metatest \
-              --container /home/circleci/bond-latest.sif > /tmp/origmd.txt
+              --container /home/circleci/cubids-latest.sif > /tmp/origmd.txt
 
             # Remove some fields
-            bond-remove-metadata-fields \
+            cubids-remove-metadata-fields \
               /tmp/bids/metatest \
-              --container /home/circleci/bond-latest.sif \
+              --container /home/circleci/cubids-latest.sif \
               --fields DeviceSerialNumber AcquisitionTime \
                        InstitutionAddress InstitutionName \
                        StationName NotARealField > /tmp/removedmd.txt
@@ -269,10 +269,10 @@ jobs:
   install_and_test:
     machine:
       image: ubuntu-1604:202004-01
-    working_directory: /home/circleci/src/BOnD
+    working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
-          path: /home/circleci/src/BOnD
+          path: /home/circleci/src/CuBIDS
 
       - attach_workspace:
           at: /tmp
@@ -294,10 +294,10 @@ jobs:
             fi
 
       - run:
-          name: Install BOnD
+          name: Install CuBIDS
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             pip install .[all]
             py.test -sv tests
 
@@ -307,13 +307,13 @@ jobs:
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             mkdir -p /tmp/bids /tmp/validate_testing
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-validate
-            bond-validate \
+            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/docker-validate
+            cubids-validate \
               /tmp/bids/docker-validate \
               /tmp/validate_testing/docker \
-              --container pennlinc/bond:latest
+              --container pennlinc/cubids:latest
 
       - run:
           name: Test Docker group
@@ -321,13 +321,13 @@ jobs:
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             mkdir -p /tmp/bids /tmp/group_testing
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-group
-            bond-group \
+            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/docker-group
+            cubids-group \
               /tmp/bids/docker-group \
               /tmp/group_testing/docker \
-              --container pennlinc/bond:latest
+              --container pennlinc/cubids:latest
 
       - run:
           name: Test Docker save
@@ -335,30 +335,30 @@ jobs:
             git config --global user.email "circleci@citesting.com"
             git config --global user.name "CircleCI Test"
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             mkdir -p /tmp/bids
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/docker-save
-            bond-datalad-save \
+            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/docker-save
+            cubids-datalad-save \
               /tmp/bids/docker-save \
               -m 'test docker save!' \
-              --container pennlinc/bond:latest
+              --container pennlinc/cubids:latest
       - run:
-          name: Test bond-remove-metadata-fields
+          name: Test cubids-remove-metadata-fields
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate bond
+            source activate cubids
             mkdir -p /tmp/bids
-            cp -r /home/circleci/src/BOnD/bond/testdata/complete /tmp/bids/metatest
+            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/metatest
 
             # Get the original metadata fields
-            bond-print-metadata-fields \
+            cubids-print-metadata-fields \
               /tmp/bids/metatest \
-              --container pennlinc/bond:latest > /tmp/origmd.txt
+              --container pennlinc/cubids:latest > /tmp/origmd.txt
 
             # Remove some fields
-            bond-remove-metadata-fields \
+            cubids-remove-metadata-fields \
               /tmp/bids/metatest \
-              --container pennlinc/bond:latest \
+              --container pennlinc/cubids:latest \
               --fields DeviceSerialNumber AcquisitionTime \
                        InstitutionAddress InstitutionName \
                        StationName NotARealField > /tmp/removedmd.txt
@@ -370,7 +370,7 @@ jobs:
   build_docs:
     docker:
       - image: circleci/python:3.7.4
-    working_directory: /tmp/src/BOnD
+    working_directory: /tmp/src/CuBIDS
     steps:
       - checkout
       - run:
@@ -391,10 +391,10 @@ jobs:
       - run:
           name: Lint code with flake8
           command: |
-            flake8 bond
+            flake8 cubids
 
       - run:
-          name: Install BOnD.
+          name: Install CuBIDS.
           command: sudo python -m pip install ".[doc]" --no-cache-dir --progress-bar off
 
       - run:
@@ -403,19 +403,19 @@ jobs:
           command: |
             make SPHINXOPTS="-W" -C docs html
       - store_artifacts:
-          path: /tmp/src/BOnD/docs/_build/html
+          path: /tmp/src/CuBIDS/docs/_build/html
 
   deploy_docker:
     machine:
       image: circleci/classic:201711-01
-    working_directory: /tmp/src/BOnD
+    working_directory: /tmp/src/CuBIDS
     steps:
       - checkout:
-          path: /home/circleci/src/BOnD
+          path: /home/circleci/src/CuBIDS
       - run:
           name: Check whether build should be skipped
           command: |
-            cd /home/circleci/src/BOnD
+            cd /home/circleci/src/CuBIDS
             if [[ "$( git log --format='format:%s' -n 1 $CIRCLE_SHA1 | grep -i -E '^docs?(\(\w+\))?:' )" != "" ]]; then
               echo "Only docs build"
               circleci step halt
@@ -440,23 +440,23 @@ jobs:
           command: |
             if [[ -n "$DOCKER_PASS" ]]; then
               docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker tag pennlinc/BOnD pennlinc/BOnD:unstable
-              docker push pennlinc/BOnD:unstable
+              docker tag pennlinc/CuBIDS pennlinc/CuBIDS:unstable
+              docker push pennlinc/CuBIDS:unstable
               if [[ -n "$CIRCLE_TAG" ]]; then
-                docker push pennlinc/BOnD:latest
-                docker tag pennlinc/BOnD pennlinc/BOnD:$CIRCLE_TAG
-                docker push pennlinc/BOnD:$CIRCLE_TAG
+                docker push pennlinc/CuBIDS:latest
+                docker tag pennlinc/CuBIDS pennlinc/CuBIDS:$CIRCLE_TAG
+                docker push pennlinc/CuBIDS:$CIRCLE_TAG
               fi
             fi
 
 #   test_deploy_pypi:
 #     docker:
 #       - image: circleci/python:3.7.4
-#     working_directory: /tmp/src/BOnD
+#     working_directory: /tmp/src/CuBIDS
 #     steps:
 #       - checkout
 #       - run:
-#           name: Build BOnD
+#           name: Build CuBIDS
 #           command: |
 #             pip install --user twine  # For use in checking distributions
 #             THISVERSION=$( python3 get_version.py )
@@ -465,26 +465,26 @@ jobs:
 #             virtualenv --python=python build
 #             source build/bin/activate
 #             pip install --upgrade "pip>=19.1" numpy
-#             echo "${CIRCLE_TAG:-$THISVERSION}" > BOnD/VERSION
+#             echo "${CIRCLE_TAG:-$THISVERSION}" > CuBIDS/VERSION
 #             python setup.py sdist
 #             pip wheel --no-deps -w dist/ .
 #       - store_artifacts:
-#           path: /tmp/src/BOnD/dist
+#           path: /tmp/src/CuBIDS/dist
 #       - run:
 #           name: Check sdist distribution
 #           command: |
 #             THISVERSION=$( python get_version.py )
 #             THISVERSION=${THISVERSION%.dirty*}
 #             THISVERSION=${CIRCLE_TAG:-$THISVERSION}
-#             twine check dist/BOnD*.tar.gz
+#             twine check dist/CuBIDS*.tar.gz
 #             virtualenv --python=python sdist
 #             source sdist/bin/activate
 #             pip install --progress-bar off --upgrade "pip>=19.1" numpy
-#             pip install dist/BOnD*.tar.gz
-#             which BOnD | grep sdist\\/bin
-#             INSTALLED_VERSION=$(BOnD --version)
+#             pip install dist/CuBIDS*.tar.gz
+#             which CuBIDS | grep sdist\\/bin
+#             INSTALLED_VERSION=$(CuBIDS --version)
 #             INSTALLED_VERSION=${INSTALLED_VERSION%$'\r'}
-#             INSTALLED_VERSION=${INSTALLED_VERSION#*"BOnD v"}
+#             INSTALLED_VERSION=${INSTALLED_VERSION#*"CuBIDS v"}
 #             echo "VERSION: \"$THISVERSION\""
 #             echo "INSTALLED: \"$INSTALLED_VERSION\""
 #             test "$INSTALLED_VERSION" = "$THISVERSION"
@@ -494,19 +494,19 @@ jobs:
 #             THISVERSION=$( python get_version.py )
 #             THISVERSION=${THISVERSION%.dirty*}
 #             THISVERSION=${CIRCLE_TAG:-$THISVERSION}
-#             twine check dist/BOnD*.whl
+#             twine check dist/CuBIDS*.whl
 #             virtualenv --python=python wheel
 #             source wheel/bin/activate
-#             pip install dist/BOnD*.whl
-#             which BOnD | grep wheel\\/bin
-#             INSTALLED_VERSION=$(BOnD --version)
+#             pip install dist/CuBIDS*.whl
+#             which CuBIDS | grep wheel\\/bin
+#             INSTALLED_VERSION=$(CuBIDS --version)
 #             INSTALLED_VERSION=${INSTALLED_VERSION%$'\r'}
-#             INSTALLED_VERSION=${INSTALLED_VERSION#*"BOnD v"}
+#             INSTALLED_VERSION=${INSTALLED_VERSION#*"CuBIDS v"}
 #             echo "VERSION: \"$THISVERSION\""
 #             echo "INSTALLED: \"$INSTALLED_VERSION\""
 #             test "$INSTALLED_VERSION" = "$THISVERSION"
 #       - run:
-#           name: Build BOnD-container
+#           name: Build CuBIDS-container
 #           command: |
 #             THISVERSION=$( python get_version.py )
 #             THISVERSION=${THISVERSION%.dirty*}
@@ -518,26 +518,26 @@ jobs:
 #             python setup.py sdist
 #             pip wheel --no-deps -w dist/ .
 #       - store_artifacts:
-#           path: /tmp/src/BOnD/wrapper/dist
+#           path: /tmp/src/CuBIDS/wrapper/dist
 
 #   deploy_pypi:
 #     docker:
 #       - image: circleci/python:3.7.4
-#     working_directory: /tmp/src/BOnD
+#     working_directory: /tmp/src/CuBIDS
 #     steps:
 #       - checkout
 #       - run:
-#           name: Build BOnD
+#           name: Build CuBIDS
 #           command: |
 #             THISVERSION=$( python get_version.py )
 #             virtualenv --python=python build
 #             source build/bin/activate
 #             pip install --upgrade "pip>=19.1" numpy
-#             echo "${CIRCLE_TAG:-$THISVERSION}" > BOnD/VERSION
+#             echo "${CIRCLE_TAG:-$THISVERSION}" > CuBIDS/VERSION
 #             python setup.py sdist
 #             pip wheel --no-deps -w dist/ .
 #       - run:
-#           name: Build BOnD-container
+#           name: Build CuBIDS-container
 #           command: |
 #             THISVERSION=$( python get_version.py )
 #             cd wrapper
@@ -552,7 +552,7 @@ jobs:
 #           command: |
 #             pip install --user twine
 #             pip install --user --upgrade importlib-metadata
-#             twine upload dist/BOnD*gz wrapper/dist/BOnD*
+#             twine upload dist/CuBIDS*gz wrapper/dist/CuBIDS*
 
   deployable:
     docker:

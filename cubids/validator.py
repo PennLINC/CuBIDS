@@ -6,7 +6,7 @@ import glob
 import pathlib
 import pandas as pd
 
-logger = logging.getLogger('bond-cli')
+logger = logging.getLogger('cubids-cli')
 
 
 def build_validator_call(path, ignore_headers=False, ignore_subject=True):

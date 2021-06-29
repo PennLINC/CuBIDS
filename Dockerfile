@@ -37,7 +37,7 @@ RUN npm install -g yarn && \
 #     yarn && \
 #     cd bids-validator && npm install -g
 
-COPY . /src/BOnD
-RUN pip3 install --no-cache-dir "/src/BOnD"
+COPY . /src/CuBIDS
+RUN pip3 install --no-cache-dir "/src/CuBIDS"
 
 ENTRYPOINT [ "/bin/bash"]
