@@ -1,6 +1,6 @@
-==================
-CuBIDS: BIDS On Disk
-==================
+========================
+CuBIDS: Curation of BIDS
+========================
 
 
 .. image:: https://img.shields.io/pypi/v/cubids.svg
