@@ -496,7 +496,7 @@ class CuBIDS(object):
         unique_subs = list(set(unique['subject'].tolist()))
         print("SUBS TO COPY", unique_subs)
 
-        subprocess.run(['datalad', 'create', '-d', exemplars_dir])
+        subprocess.run(['datalad', 'create', '-c', 'text2git', exemplars_dir])
         for subid in unique_subs:
             if self.use_datalad:
                 if force_unlock:
