@@ -495,19 +495,32 @@ class CuBIDS(object):
         # cast list to a set to drop duplicates, then convert back to list
         unique_subs = list(set(unique['subject'].tolist()))
         print("SUBS TO COPY", unique_subs)
-        for subid in unique_subs:
-            if force_unlock:
-                # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
-                subprocess.run(["datalad", "unlock", str(self.path)
-                                + '/' + subid], cwd=self.path)
-            source = str(self.path) + '/' + subid
-            dest = exemplars_dir + '/' + subid
-            # Copy the content of source to destination
-            copytree(source, dest)
 
-        # Copy the dataset_description.json
-        copyfile(str(self.path) + '/' + 'dataset_description.json',
-                 exemplars_dir + '/' + 'dataset_description.json')
+        subprocess.run(['datalad', 'create', '-d', exemplars_dir])
+        for subid in unique_subs:
+            if self.use_datalad:
+                if force_unlock:
+                    # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
+                    subprocess.run(["datalad", "unlock", str(self.path)
+                                    + '/' + subid], cwd=self.path)
+
+                subprocess.run(['datalad', 'copy-file', str(self.path) + '/' +
+                                subid, '-r', '-d', exemplars_dir])
+            else:
+                source = str(self.path) + '/' + subid
+                dest = exemplars_dir + '/' + subid
+                # Copy the content of source to destination
+                copytree(source, dest)
+
+        if Path(str(self.path) + '/dataset_description.json').exists():
+            if self.use_datalad:
+                # Copy the dataset_description.json
+                subprocess.run(['datalad', 'copy-file', str(self.path) +
+                                '/dataset_description.json', '-d',
+                                exemplars_dir])
+            else:
+                copyfile(str(self.path) + '/' + 'dataset_description.json',
+                         exemplars_dir + '/' + 'dataset_description.json')
 
     def purge(self, scans_txt, raise_on_error=True):
         """Purges all associations of desired scans from a bids dataset.

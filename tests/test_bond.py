@@ -87,16 +87,17 @@ def test_get_param_groups(tmp_path):
 
 def test_copy_exemplars(tmp_path):
     data_root = get_data(tmp_path)
-    bod = CuBIDS(data_root / "complete", use_datalad=True)
+    bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
     csv_prefix = str(tmp_path / "csvs")
     bod.get_CSVs(csv_prefix)
     acq_group_csv = csv_prefix + "_AcqGrouping.csv"
     print("ACQ GROUP PATH: ", acq_group_csv)
     exemplars_dir = str(tmp_path / "exemplars")
+
     print('EXEMPLARS DIR: ', exemplars_dir)
     df = pd.read_csv(acq_group_csv)
 
-    bod.copy_exemplars(exemplars_dir, acq_group_csv, force_unlock=True)
+    bod.copy_exemplars(exemplars_dir, acq_group_csv, force_unlock=False)
 
     # check exemplar dir got created and has the correct number of subs
     cntr = 0
