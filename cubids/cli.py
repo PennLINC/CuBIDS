@@ -578,9 +578,9 @@ def cubids_copy_exemplars():
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir),
                      use_datalad=opts.use_datalad)
-        if opts.use_datalad:
-            if bod.is_datalad_clean() and not opts.force_unlock:
-                raise Exception("Need to unlock " + str(opts.bids_dir))
+        # if opts.use_datalad:
+        #     if bod.is_datalad_clean() and not opts.force_unlock:
+        #         raise Exception("Need to unlock " + str(opts.bids_dir))
         bod.copy_exemplars(str(opts.exemplars_dir), str(opts.exemplars_csv),
                            force_unlock=opts.force_unlock,
                            raise_on_error=True)
