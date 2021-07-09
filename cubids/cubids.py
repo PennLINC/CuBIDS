@@ -888,6 +888,8 @@ class CuBIDS(object):
 
         self._cache_fieldmaps()
 
+        # TODO: IGNORE NON SUB- DIRS IN BIDS DIR! MAYBE ADD TO CONSTRUCTOR?
+
         big_df, summary = self.get_param_groups_dataframes()
 
         summary = summary.sort_values(by=['Modality', 'KeyGroupCount'],
