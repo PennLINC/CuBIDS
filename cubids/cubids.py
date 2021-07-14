@@ -487,6 +487,10 @@ class CuBIDS(object):
                 from the cubids-group output)
                 example path: /Users/Covitz/CSVs/CCNP_Acq_Grouping.csv
         """
+        # create the exemplar ds
+        if self.use_datalad:
+            subprocess.run(['datalad', 'create', '-c', 'text2git',
+                            exemplars_dir])
 
         # load the exemplars csv
         subs = pd.read_csv(exemplars_csv)
@@ -508,6 +512,10 @@ class CuBIDS(object):
         # Copy the dataset_description.json
         copyfile(str(self.path) + '/' + 'dataset_description.json',
                  exemplars_dir + '/' + 'dataset_description.json')
+
+        if self.use_datalad:
+            subprocess.run(['datalad', 'save', '-d', exemplars_dir,
+                            '-m', 'copied subs into exemplar dir'])
 
     def purge(self, scans_txt, raise_on_error=True):
         """Purges all associations of desired scans from a bids dataset.
