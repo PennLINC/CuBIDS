@@ -501,10 +501,10 @@ class CuBIDS(object):
                 acq_group = subs.loc[row, 'AcqGroup']
             size = int(subs['AcqGroup'].value_counts()[acq_group])
             if size < int(min_group_size):
-                subs = subs.drop[row]
+                new_subs = subs.drop[row]
 
         # get one sub from each acq group
-        unique = subs.drop_duplicates(subset=["AcqGroup"])
+        unique = new_subs.drop_duplicates(subset=["AcqGroup"])
 
         # cast list to a set to drop duplicates, then convert back to list
         unique_subs = list(set(unique['subject'].tolist()))
