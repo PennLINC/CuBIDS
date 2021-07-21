@@ -499,9 +499,9 @@ class CuBIDS(object):
         if int(min_group_size) > 1:
             for row in range(len(subs)):
                 acq_group = subs.loc[row, 'AcqGroup']
-            size = int(subs['AcqGroup'].value_counts()[acq_group])
-            if size < int(min_group_size):
-                new_subs = subs.drop[row]
+                size = int(subs['AcqGroup'].value_counts()[acq_group])
+                if size < int(min_group_size):
+                    new_subs = subs.drop[row]
 
         # get one sub from each acq group
         unique = new_subs.drop_duplicates(subset=["AcqGroup"])
