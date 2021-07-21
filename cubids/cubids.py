@@ -469,7 +469,7 @@ class CuBIDS(object):
                 print("No IntendedFor References to Rename")
 
     def copy_exemplars(self, exemplars_dir, exemplars_csv, force_unlock,
-                       raise_on_error=True):
+                       min_group_size, raise_on_error=True):
         """Copies one subject from each Acquisition Group into a new directory
         for testing *preps, raises an error if the subjects are not unlocked,
         unlocks each subject before copying if --force_unlock is set.
@@ -494,6 +494,16 @@ class CuBIDS(object):
 
         # load the exemplars csv
         subs = pd.read_csv(exemplars_csv)
+
+        # if min group size flag set, drop acq groups with less than min
+        if int(min_group_size) > 1:
+            for row in range(len(subs)):
+                acq_group = subs.loc[row, 'AcqGroup']
+                size = int(subs['AcqGroup'].value_counts()[acq_group])
+                if size < int(min_group_size):
+                    subs = subs.drop([row])
+
+        # get one sub from each acq group
         unique = subs.drop_duplicates(subset=["AcqGroup"])
 
         # cast list to a set to drop duplicates, then convert back to list

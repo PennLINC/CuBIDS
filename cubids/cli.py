@@ -564,6 +564,12 @@ def cubids_copy_exemplars():
                         action='store_true',
                         help='ensure that there are no untracked changes '
                         'before finding groups')
+    parser.add_argument('--min-group-size',
+                        action='store',
+                        default=1,
+                        help='minimum number of subjects an Acquisition Group '
+                        'must have in order to be included in the exemplars ',
+                        required=False)
     parser.add_argument('--force-unlock',
                         action='store_true',
                         default=False,
@@ -584,6 +590,7 @@ def cubids_copy_exemplars():
                                 + str(opts.bids_dir) +
                                 " before coyping exemplars")
         bod.copy_exemplars(str(opts.exemplars_dir), str(opts.exemplars_csv),
+                           min_group_size=opts.min_group_size,
                            force_unlock=opts.force_unlock,
                            raise_on_error=True)
         sys.exit(0)
@@ -603,6 +610,8 @@ def cubids_copy_exemplars():
 
         if opts.force_unlock:
             cmd.append('--force-unlock')
+        if opts.min_group_size:
+            cmd.append('--min-group-size')
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
@@ -612,6 +621,8 @@ def cubids_copy_exemplars():
                '/bids', '/exemplars', '/in_csv']
         if opts.force_unlock:
             cmd.append('--force-unlock')
+        if opts.min_group_size:
+            cmd.append('--min-group-size')
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)
