@@ -496,7 +496,7 @@ class CuBIDS(object):
         subs = pd.read_csv(exemplars_csv)
 
         # if min group size flag set, drop acq groups with less than min
-        if min_group_size > 1:
+        if int(min_group_size) > 1:
             for row in range(len(subs)):
                 acq_group = subs.loc[row, 'AcqGroup']
             size = subs['AcqGroup'].value_counts()[acq_group]
