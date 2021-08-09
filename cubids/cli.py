@@ -164,7 +164,7 @@ def cubids_validate():
                                             nifti_head,
                                             subj_consist)
 
-                if queue is False:
+                if not queue:
                     ret = run_validator(call)
                     # execute and parse output immediately
                     if ret.returncode != 0:
