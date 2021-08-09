@@ -193,7 +193,6 @@ def cubids_validate():
 
                     for batch in build_drmaa_batch(queue):
                         tmp = tempfile.NamedTemporaryFile(delete=False, dir=opts.bids_dir, prefix=".", suffix=".sh")
-                        print(tmp.name, batch['script'])
                         tmp.write(batch['script'].encode())
                         tmp.close() # this is very important
                         os.chmod(tmp.name, 0o755) # make executable
