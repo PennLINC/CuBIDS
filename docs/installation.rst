@@ -14,7 +14,7 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/PennLINC/CuBIDS
+    $ git clone https://github.com/PennLINC/CuBIDS.git ./CuBIDS
 
 Or download the `tarball`_:
 
