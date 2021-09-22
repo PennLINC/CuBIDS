@@ -62,6 +62,11 @@ wrong with this, and normally will result in a warning from the ``bids-validator
 but there can be big consequences if the different parameters cause different
 preprocessing pipelines to be run on images of the same Key Group.
 
+Acquisition Group
+~~~~~~~~~~~~~~~~~
+
+Acquisition Groups are sets of subjects who's images belong to all the same Key and Parameter Groups. The Acquistion Groups that subjects belong to are listed in ``_AcqGrouping.csv``, while the Key Groups and Parameter Groups that define each Acquisition Group are noted in ``_AcqGroupingInfo.txt``.
+
 
 Detecting Key and Parameter Groups
 ----------------------------------
