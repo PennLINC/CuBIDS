@@ -128,7 +128,8 @@ Once the columns have been edited you can apply the changes to BIDS data using
     $ cubids-apply /bids/dir keyparam_edited new_keyparam_prefix
 
 The changes in ``keyparam_edited_summary.csv`` will be applied to the BIDS data in ``/bids/dir``
-and the new Key and Parameter groups will be saved to csv files starting with ``new_keyparam_prefix``.
+and the new Key and Parameter groups will be saved to csv files starting with ``new_keyparam_prefix``. Note:
+fieldmaps keygroups with variant parameters will be identified but not renamed. 
 
 
 Moving a Parameter Group to a New Key Group
