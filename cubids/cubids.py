@@ -6,7 +6,6 @@ import bids.layout
 import json
 import csv
 import os
-import pdb
 from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
@@ -944,7 +943,6 @@ class CuBIDS(object):
             # ignore all dot directories
             if str(path).split('/')[-1].startswith('./'):
                 print(str(path))
-                pdb.set_trace()
                 continue
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
