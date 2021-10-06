@@ -18,8 +18,6 @@ from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES
 from .config import load_config
-from .add_nifti_info import (
-    add_nifti_info)
 from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 bids.config.set_option('extension_initial_dot', True)
