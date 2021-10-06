@@ -6,6 +6,7 @@ import bids.layout
 import json
 import csv
 import os
+import pdb
 from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
@@ -18,6 +19,8 @@ from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
 from .constants import ID_VARS, NON_KEY_ENTITIES
 from .config import load_config
+from .add_nifti_info import (
+    add_nifti_info)
 from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 bids.config.set_option('extension_initial_dot', True)
@@ -123,7 +126,9 @@ class CuBIDS(object):
 
         # loop through all niftis in the bids dir
         for path in Path(self.path).rglob("sub-*/**/*.*"):
-
+            # ignore all dot directories
+            if str(path).split('/')[-1].startswith('./'):
+                continue
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 try:
                     img = nb.load(str(path))
@@ -469,7 +474,7 @@ class CuBIDS(object):
                 print("No IntendedFor References to Rename")
 
     def copy_exemplars(self, exemplars_dir, exemplars_csv, force_unlock,
-                       min_group_size, raise_on_error=True):
+                       min_group_size, include_groups, raise_on_error=True):
         """Copies one subject from each Acquisition Group into a new directory
         for testing *preps, raises an error if the subjects are not unlocked,
         unlocks each subject before copying if --force_unlock is set.
@@ -494,6 +499,13 @@ class CuBIDS(object):
 
         # load the exemplars csv
         subs = pd.read_csv(exemplars_csv)
+
+        # if only groups flag set, drop acq groups not in the list
+        # TODO: FIGURE OUT HOW GROUPS LIST IS READ IN! LIST?
+
+        print("INCLUDE GROUPS: ")
+        print(type(include_groups))
+        print(include_groups)
 
         # if min group size flag set, drop acq groups with less than min
         if int(min_group_size) > 1:
@@ -929,6 +941,11 @@ class CuBIDS(object):
         key_groups = set()
 
         for path in Path(self.path).rglob("sub-*/**/*.*"):
+            # ignore all dot directories
+            if str(path).split('/')[-1].startswith('./'):
+                print(str(path))
+                pdb.set_trace()
+                continue
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 key_groups.update((_file_to_key_group(path),))
