@@ -8,7 +8,7 @@ RUN apt-get update && \
 
 # Installing Neurodebian and nodejs packages
 COPY neurodebian.gpg /usr/local/etc/neurodebian.gpg
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
     curl -sSL "http://neuro.debian.net/lists/$( lsb_release -c | cut -f2 ).us-ca.full" >> /etc/apt/sources.list.d/neurodebian.sources.list && \
     apt-key add /usr/local/etc/neurodebian.gpg && \
     (apt-key adv --refresh-keys --keyserver hkp://ha.pool.sks-keyservers.net 0xA5D32F012649A5A9 || true)
