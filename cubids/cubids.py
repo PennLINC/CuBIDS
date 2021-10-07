@@ -124,7 +124,7 @@ class CuBIDS(object):
         # loop through all niftis in the bids dir
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
-            if './' in str(path)
+            if './' in str(path):
                 print(str(path))
                 continue
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
