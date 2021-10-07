@@ -6,13 +6,6 @@ RUN apt-get update && \
     curl ca-certificates && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# RUN apt-get -y update && apt-get install -y curl
-# RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - &&\
-#     apt-get -y install nodejs &&\
-#     ln -s /usr/bin/nodejs /usr/local/bin/node
-# RUN curl -L https://www.npmjs.com/install.sh | sh
-# RUN npm install -g bids-validator
-
 # Installing Neurodebian and nodejs packages
 COPY neurodebian.gpg /usr/local/etc/neurodebian.gpg
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
