@@ -22,7 +22,8 @@ jobs:
             - docker-v1-
           paths:
             - /tmp/cache/docker.tar.gz
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - run:
           name: Load Docker image layer cache
           no_output_timeout: 30m
