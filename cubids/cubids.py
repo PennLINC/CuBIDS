@@ -125,6 +125,7 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
             if str(path).split('/')[-1].startswith('./'):
+                print(str(path))
                 continue
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 try:
