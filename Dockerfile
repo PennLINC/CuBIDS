@@ -7,7 +7,7 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN apt-get -y update && apt-get install -y curl
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - &&\
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - &&\
     apt-get -y install nodejs &&\
     ln -s /usr/bin/nodejs /usr/local/bin/node
 RUN curl -L https://www.npmjs.com/install.sh | sh
