@@ -83,7 +83,7 @@ def test_get_param_groups(tmp_path):
 
     for key_group in key_groups:
         ret = bod.get_param_groups_from_key_group(key_group)
-        assert ret[1].sum().Counts == ret[1].loc[0, 'KeyGroupCount']
+        assert sum(ret[1].Counts) == ret[1].loc[0, 'KeyGroupCount']
 
 def test_copy_exemplars(tmp_path):
     data_root = get_data(tmp_path)
@@ -96,8 +96,7 @@ def test_copy_exemplars(tmp_path):
     print('EXEMPLARS DIR: ', exemplars_dir)
     df = pd.read_csv(acq_group_csv)
 
-    bod.copy_exemplars(exemplars_dir, acq_group_csv, force_unlock=False,
-                       min_group_size=2)
+    bod.copy_exemplars(exemplars_dir, acq_group_csv, include_groups=[1, 2], force_unlock=False, min_group_size=1)
 
     # check exemplar dir got created and has the correct number of subs
     cntr = 0
