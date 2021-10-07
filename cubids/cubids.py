@@ -51,9 +51,11 @@ class CuBIDS(object):
     def layout(self):
         if self._layout is None:
             self.reset_bids_layout()
+            print("DONE SETTING BIDS LAYOUT")
         return self._layout
 
     def reset_bids_layout(self, validate=False):
+        print("SETTING BIDS LAYOUT")
         self._layout = bids.BIDSLayout(self.path, validate=validate)
 
     def init_datalad(self):
