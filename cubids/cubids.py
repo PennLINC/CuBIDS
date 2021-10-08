@@ -50,6 +50,8 @@ class CuBIDS(object):
     @property
     def layout(self):
         if self._layout is None:
+            print("self._layout is None")
+            print(self.path)
             self.reset_bids_layout()
             print("DONE SETTING BIDS LAYOUT")
         return self._layout
