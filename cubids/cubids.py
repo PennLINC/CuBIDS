@@ -128,7 +128,7 @@ class CuBIDS(object):
         # loop through all niftis in the bids dir
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
-            if './' in str(path):
+            if '/.' in str(path):
                 print(str(path))
                 continue
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
@@ -574,6 +574,7 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
 
             json_file = self.layout.get_file(str(path))
+
             data = json_file.get_dict()
 
             # remove scan references in the IntendedFor
@@ -640,7 +641,7 @@ class CuBIDS(object):
             if Path(rm_me).exists():
                 purge_commands.append("rm " + rm_me)
         print("Deleting %d files" % len(purge_commands))
-        print(to_remove)
+        print("SCANS TO REMOVE: ", to_remove)
 
         # datalad run the file deletions (purges)
         full_cmd = "\n".join(purge_commands)
@@ -662,7 +663,7 @@ class CuBIDS(object):
                 subprocess.run(["bash", path_prefix + "_full_cmd.sh"],
                                stdout=subprocess.PIPE,
                                cwd=path_prefix)
-            self.reset_bids_layout()
+            #self.reset_bids_layout()
         else:
             print("Not running any association removals")
 
@@ -944,7 +945,7 @@ class CuBIDS(object):
 
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
-            if './' in str(path):
+            if '/.' in str(path):
                 print(str(path))
                 continue
 
