@@ -663,7 +663,7 @@ class CuBIDS(object):
                 subprocess.run(["bash", path_prefix + "_full_cmd.sh"],
                                stdout=subprocess.PIPE,
                                cwd=path_prefix)
-            #self.reset_bids_layout()
+            self.reset_bids_layout()
         else:
             print("Not running any association removals")
 
