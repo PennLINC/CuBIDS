@@ -568,7 +568,15 @@ def cubids_copy_exemplars():
                         action='store',
                         default=1,
                         help='minimum number of subjects an Acquisition Group '
-                        'must have in order to be included in the exemplars ',
+                        'must have in order to be included in the exemplar dataset ',
+                        required=False)
+    parser.add_argument('--include-groups',
+                        action='store',
+                        default=None,
+                        nargs='+',
+                        type=List,
+                        help='only include an exemplar subject from these '
+                        'listed Acquisition Groups in the exemplar dataset ',
                         required=False)
     parser.add_argument('--force-unlock',
                         action='store_true',
@@ -591,6 +599,7 @@ def cubids_copy_exemplars():
                                 " before coyping exemplars")
         bod.copy_exemplars(str(opts.exemplars_dir), str(opts.exemplars_csv),
                            min_group_size=opts.min_group_size,
+                           include_groups=opts.include_groups,
                            force_unlock=opts.force_unlock,
                            raise_on_error=True)
         sys.exit(0)
@@ -612,6 +621,8 @@ def cubids_copy_exemplars():
             cmd.append('--force-unlock')
         if opts.min_group_size:
             cmd.append('--min-group-size')
+        if opts.include_groups:
+            cmd.append('--only-groups')
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
@@ -623,6 +634,8 @@ def cubids_copy_exemplars():
             cmd.append('--force-unlock')
         if opts.min_group_size:
             cmd.append('--min-group-size')
+        if opts.include_groups:
+            cmd.append('--only-groups')
 
     print("RUNNING: " + ' '.join(cmd))
     proc = subprocess.run(cmd)

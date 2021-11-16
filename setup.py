@@ -14,7 +14,7 @@ setup_requirements = ['pytest-runner']
 
 setup(
     author="PennLINC",
-    author_email='matthew.cieslak@pennmecidine.upenn.edu',
+    author_email='sydney.covitz@pennmecidine.upenn.edu',
     python_requires='>=3.5',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
