@@ -990,19 +990,20 @@ class CuBIDS(object):
             return
         for json_file in tqdm(Path(self.path).rglob("*.json")):
             # Check for offending keys in the json file
-            with open(json_file, "r") as jsonr:
-                metadata = json.load(jsonr)
-            offending_keys = remove_fields.intersection(metadata.keys())
-            # Quit if there are none in there
-            if not offending_keys:
-                continue
+            if '.git' not in str(json_file):
+                with open(json_file, "r") as jsonr:
+                    metadata = json.load(jsonr)
+                offending_keys = remove_fields.intersection(metadata.keys())
+                # Quit if there are none in there
+                if not offending_keys:
+                    continue
 
-            # Remove the offending keys
-            for key in offending_keys:
-                del metadata[key]
-            # Write the cleaned output
-            with open(json_file, "w") as jsonr:
-                json.dump(metadata, jsonr, indent=4)
+                # Remove the offending keys
+                for key in offending_keys:
+                    del metadata[key]
+                # Write the cleaned output
+                with open(json_file, "w") as jsonr:
+                    json.dump(metadata, jsonr, indent=4)
 
     # # # # FOR TESTING # # # #
     def get_filenames(self):
