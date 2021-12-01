@@ -976,9 +976,10 @@ class CuBIDS(object):
 
         found_fields = set()
         for json_file in Path(self.path).rglob("*.json"):
-            with open(json_file, "r") as jsonr:
-                metadata = json.load(jsonr)
-            found_fields.update(metadata.keys())
+            if '.git' not in json_file:
+                with open(json_file, "r") as jsonr:
+                    metadata = json.load(jsonr)
+                found_fields.update(metadata.keys())
         return sorted(found_fields)
 
     def remove_metadata_fields(self, fields_to_remove):
