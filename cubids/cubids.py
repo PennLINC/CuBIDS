@@ -976,7 +976,7 @@ class CuBIDS(object):
 
         found_fields = set()
         for json_file in Path(self.path).rglob("*.json"):
-            if '.git' not in json_file:
+            if '.git' not in str(json_file):
                 with open(json_file, "r") as jsonr:
                     metadata = json.load(jsonr)
                 found_fields.update(metadata.keys())
