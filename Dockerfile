@@ -20,13 +20,7 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN npm install -g yarn && \
-    mkdir -p /home/validator && \
-    cd /home/validator && \
-    git clone  -b 'master' --single-branch --depth 1 \
-        --single-branch https://github.com/bids-standard/bids-validator.git  && \
-    cd /home/validator/bids-validator && \
-    yarn && \
-    cd bids-validator && npm install -g
+    npm install -g bids-validator
 
 # RUN npm install -g yarn && \
 #    mkdir -p /home/validator && \
