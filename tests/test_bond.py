@@ -96,7 +96,7 @@ def test_copy_exemplars(tmp_path):
     print('EXEMPLARS DIR: ', exemplars_dir)
     df = pd.read_csv(acq_group_csv)
 
-    bod.copy_exemplars(exemplars_dir, acq_group_csv, include_groups=[1, 2], force_unlock=False, min_group_size=1)
+    bod.copy_exemplars(exemplars_dir, acq_group_csv, force_unlock=False, min_group_size=1)
 
     # check exemplar dir got created and has the correct number of subs
     cntr = 0
