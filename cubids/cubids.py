@@ -476,7 +476,7 @@ class CuBIDS(object):
                 print("No IntendedFor References to Rename")
 
     def copy_exemplars(self, exemplars_dir, exemplars_csv, force_unlock,
-                       min_group_size, include_groups, raise_on_error=True):
+                       min_group_size, raise_on_error=True):
         """Copies one subject from each Acquisition Group into a new directory
         for testing *preps, raises an error if the subjects are not unlocked,
         unlocks each subject before copying if --force_unlock is set.
@@ -504,10 +504,9 @@ class CuBIDS(object):
 
         # if only groups flag set, drop acq groups not in the list
         # TODO: FIGURE OUT HOW GROUPS LIST IS READ IN! LIST?
-
-        print("INCLUDE GROUPS: ")
-        print(type(include_groups))
-        print(include_groups)
+        # print("INCLUDE GROUPS: ")
+        # print(type(include_groups))
+        # print(include_groups)
 
         # if min group size flag set, drop acq groups with less than min
         if int(min_group_size) > 1:

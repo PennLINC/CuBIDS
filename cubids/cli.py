@@ -568,16 +568,16 @@ def cubids_copy_exemplars():
                         action='store',
                         default=1,
                         help='minimum number of subjects an Acquisition Group '
-                        'must have in order to be included in the exemplar dataset ',
+                        'must have in order to be included in the exemplar '
+                        'dataset ',
                         required=False)
-    parser.add_argument('--include-groups',
-                        action='store',
-                        default=None,
-                        nargs='+',
-                        type=List,
-                        help='only include an exemplar subject from these '
-                        'listed Acquisition Groups in the exemplar dataset ',
-                        required=False)
+    # parser.add_argument('--include-groups',
+    #                     action='store',
+    #                     nargs='+',
+    #                     default=[],
+    #                     help='only include an exemplar subject from these '
+    #                     'listed Acquisition Groups in the exemplar dataset ',
+    #                     required=False)
     parser.add_argument('--force-unlock',
                         action='store_true',
                         default=False,
