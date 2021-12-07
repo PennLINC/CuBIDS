@@ -50,10 +50,14 @@ class CuBIDS(object):
     @property
     def layout(self):
         if self._layout is None:
+            print("self._layout is None")
+            print(self.path)
             self.reset_bids_layout()
+            print("DONE SETTING BIDS LAYOUT")
         return self._layout
 
     def reset_bids_layout(self, validate=False):
+        print("SETTING BIDS LAYOUT")
         self._layout = bids.BIDSLayout(self.path, validate=validate)
 
     def init_datalad(self):
@@ -123,7 +127,10 @@ class CuBIDS(object):
 
         # loop through all niftis in the bids dir
         for path in Path(self.path).rglob("sub-*/**/*.*"):
-
+            # ignore all dot directories
+            if '/.' in str(path):
+                print(str(path))
+                continue
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 try:
                     img = nb.load(str(path))
@@ -495,6 +502,12 @@ class CuBIDS(object):
         # load the exemplars csv
         subs = pd.read_csv(exemplars_csv)
 
+        # if only groups flag set, drop acq groups not in the list
+        # TODO: FIGURE OUT HOW GROUPS LIST IS READ IN! LIST?
+        # print("INCLUDE GROUPS: ")
+        # print(type(include_groups))
+        # print(include_groups)
+
         # if min group size flag set, drop acq groups with less than min
         if int(min_group_size) > 1:
             for row in range(len(subs)):
@@ -560,6 +573,7 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
 
             json_file = self.layout.get_file(str(path))
+
             data = json_file.get_dict()
 
             # remove scan references in the IntendedFor
@@ -626,7 +640,7 @@ class CuBIDS(object):
             if Path(rm_me).exists():
                 purge_commands.append("rm " + rm_me)
         print("Deleting %d files" % len(purge_commands))
-        print(to_remove)
+        print("SCANS TO REMOVE: ", to_remove)
 
         # datalad run the file deletions (purges)
         full_cmd = "\n".join(purge_commands)
@@ -929,6 +943,10 @@ class CuBIDS(object):
         key_groups = set()
 
         for path in Path(self.path).rglob("sub-*/**/*.*"):
+            # ignore all dot directories
+            if '/.' in str(path):
+                print(str(path))
+                continue
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 key_groups.update((_file_to_key_group(path),))

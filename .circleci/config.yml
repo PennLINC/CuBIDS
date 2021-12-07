@@ -22,7 +22,8 @@ jobs:
             - docker-v1-
           paths:
             - /tmp/cache/docker.tar.gz
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - run:
           name: Load Docker image layer cache
           no_output_timeout: 30m
@@ -82,19 +83,13 @@ jobs:
              # Add nodejs and the validator
              conda install nodejs
              npm install -g yarn && \
-             mkdir -p /tmp/validator && \
-             cd /tmp/validator && \
-             git clone  -b 'master' --single-branch --depth 1 \
-                 --single-branch https://github.com/bids-standard/bids-validator.git  && \
-             cd /tmp/validator/bids-validator && \
-             yarn --ignore-engines && \
-             cd bids-validator && npm install -g
+             npm install -g bids-validator
 
       - persist_to_workspace:
           root: /tmp
           paths:
             - miniconda
-            - validator
+
 
   get_singularity:
     machine:
