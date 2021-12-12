@@ -48,18 +48,18 @@ class CuBIDS(object):
             NON_KEY_ENTITIES.remove("session")
 
     @property
-    def layout(self):
-        if self._layout is None:
-            print("self._layout is None")
-            print(self.path)
-            self.reset_bids_layout()
-            print("DONE SETTING BIDS LAYOUT")
-        return self._layout
+    # def layout(self):
+    #     if self._layout is None:
+    #         print("self._layout is None")
+    #         print(self.path)
+    #         self.reset_bids_layout()
+    #         print("DONE SETTING BIDS LAYOUT")
+    #     return self._layout
 
-    def reset_bids_layout(self, validate=False):
-        print("SETTING BIDS LAYOUT")
-        self._layout = bids.BIDSLayout(self.path, validate=False,
-                                       exclude="code/", exclude=".*")
+    # def reset_bids_layout(self, validate=False):
+    #     print("SETTING BIDS LAYOUT")
+    #     self._layout = bids.BIDSLayout(self.path, validate=False,
+    #                                    exclude="code/", exclude=".*")
 
     def init_datalad(self):
         """Initializes a datalad Dataset at self.path.
