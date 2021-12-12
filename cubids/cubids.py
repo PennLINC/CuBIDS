@@ -436,6 +436,9 @@ class CuBIDS(object):
 
         # RENAME INTENDED FORS!
         ses_path = self.path + '/' + sub + '/' + ses
+
+        # TODO: NEED TO ALSO RENAME ASL INTENDED FORS ???
+
         for path in Path(ses_path).rglob("fmap/*.json"):
             self.IF_rename_paths.append(str(path))
             json_file = self.layout.get_file(str(path))
@@ -950,7 +953,7 @@ class CuBIDS(object):
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 key_groups.update((_file_to_key_group(path),))
-
+                print("Key Groups", key_groups)
                 # Fill the dictionary of key group, list of filenames pairrs
                 ret = _file_to_key_group(path)
 
