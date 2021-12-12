@@ -922,7 +922,7 @@ class CuBIDS(object):
                 example path: /Users/Covitz/PennLINC/RBC/CCNP/
         """
 
-        self._cache_fieldmaps()
+        #self._cache_fieldmaps()
 
         big_df, summary = self.get_param_groups_dataframes()
 
