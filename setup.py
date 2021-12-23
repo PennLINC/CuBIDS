@@ -25,7 +25,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    description="BIDS On Disk Editor",
+    description="BIDS Curation Tool",
     entry_points={
         'console_scripts': [
             'cubids-group=cubids.cli:cubids_group',
@@ -43,7 +43,7 @@ setup(
             'cubids_remove_metadata_fields'
         ],
     },
-    license="GNU General Public License v3",
+    license="MIT License",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='cubids',
