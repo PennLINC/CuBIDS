@@ -13,8 +13,9 @@ with open('HISTORY.rst') as history_file:
 setup_requirements = ['pytest-runner']
 
 setup(
-    author="PennLINC",
+    author="Neuroinformatics Team of PennLINC",
     author_email='sydney.covitz@pennmecidine.upenn.edu',
+    maintainer='Sydney Covitz'
     python_requires='>=3.5',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
