@@ -19,17 +19,17 @@ RUN apt-get update && \
     datalad nodejs python3 python3-pip python3-setuptools && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN npm install -g yarn && \
-    npm install -g bids-validator
-
 # RUN npm install -g yarn && \
-#    mkdir -p /home/validator && \
-#     cd /home/validator && \
-#     git clone -b skip_session_checks \
-#         --single-branch https://github.com/bids-standard/bids-validator.git  && \
-#     cd /home/validator/bids-validator && \
-#     yarn && \
-#     cd bids-validator && npm install -g
+#     npm install -g bids-validator
+
+RUN npm install -g yarn && \
+   mkdir -p /home/validator && \
+    cd /home/validator && \
+    git clone -b skip_session_checks \
+        --single-branch https://github.com/bids-standard/bids-validator.git  && \
+    cd /home/validator/bids-validator && \
+    yarn && \
+    cd bids-validator && npm install -g
 
 COPY . /src/CuBIDS
 RUN pip3 install --no-cache-dir "/src/CuBIDS"
