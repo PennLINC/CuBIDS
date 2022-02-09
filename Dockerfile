@@ -20,7 +20,7 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN npm install -g yarn && \
-    npm install -g bids-validator
+    npm install -g bids-validator@v1.8.8
 
 # RUN npm install -g yarn && \
 #    mkdir -p /home/validator && \
