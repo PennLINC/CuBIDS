@@ -83,7 +83,7 @@ jobs:
              # Add nodejs and the validator
              conda install nodejs
              npm install -g yarn && \
-             npm install -g bids-validator
+             npm install -g bids-validator@v1.8.8
 
       - persist_to_workspace:
           root: /tmp
