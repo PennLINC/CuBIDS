@@ -21,7 +21,7 @@ RUN apt-get update && \
 
 # get the validator 
 RUN npm install -g yarn && \
-    npm install -g bids-validator@1.8.4
+    npm install -g bids-validator@1.6.2
 
 # RUN npm install -g yarn && \
 #    mkdir -p /home/validator && \
