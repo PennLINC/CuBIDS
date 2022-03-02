@@ -19,7 +19,7 @@ RUN apt-get update && \
     datalad nodejs python3 python3-pip python3-setuptools && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-get the validator 
+# get the validator 
 RUN npm install -g yarn && \
     npm install -g bids-validator@1.6.2
 
