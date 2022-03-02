@@ -41,7 +41,7 @@ jobs:
             # Build docker image
             e=1 && for i in {1..5}; do
               docker build \
-                --cache-from=pennlinc/cubids \
+                --cache-from=pennlinc/bond \
                 --rm=false \
                 -t pennlinc/bond:latest \
                 --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
@@ -435,11 +435,11 @@ jobs:
           command: |
             if [[ -n "$DOCKER_PASS" ]]; then
               docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker tag pennlinc/CuBIDS pennlinc/bond:unstable
+              docker tag pennlinc/bond pennlinc/bond:unstable
               docker push pennlinc/bond:unstable
               if [[ -n "$CIRCLE_TAG" ]]; then
                 docker push pennlinc/bond:latest
-                docker tag pennlinc/CuBIDS pennlinc/bond:$CIRCLE_TAG
+                docker tag pennlinc/bond pennlinc/bond:$CIRCLE_TAG
                 docker push pennlinc/bond:$CIRCLE_TAG
               fi
             fi
