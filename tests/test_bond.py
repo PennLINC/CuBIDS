@@ -997,7 +997,7 @@ def test_docker():
     assert return_status
 
 
-def test_image(image='pennlinc/cubids:latest'):
+def test_image(image='pennlinc/bond:latest'):
     """Check whether image is present on local system"""
     ret = subprocess.run(['docker', 'images', '-q', image],
                          stdout=subprocess.PIPE)

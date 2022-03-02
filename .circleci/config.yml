@@ -43,7 +43,7 @@ jobs:
               docker build \
                 --cache-from=pennlinc/cubids \
                 --rm=false \
-                -t pennlinc/cubids:latest \
+                -t pennlinc/bond:latest \
                 --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
                 --build-arg VCS_REF=`git rev-parse --short HEAD` . \
               && e=0 && break || sleep 15
@@ -54,7 +54,7 @@ jobs:
           no_output_timeout: 40m
           command: |
             mkdir -p /tmp/cache
-            docker save pennlinc/cubids:latest \
+            docker save pennlinc/bond:latest \
             | pigz -3 > /tmp/cache/docker.tar.gz
 
       - save_cache:
@@ -191,7 +191,7 @@ jobs:
           command: |
               singularity build \
                 /home/circleci/cubids-latest.sif \
-                docker-daemon://pennlinc/cubids:latest
+                docker-daemon://pennlinc/bond:latest
 
       - run:
           name: Test cubids-validate
@@ -308,7 +308,7 @@ jobs:
             cubids-validate \
               /tmp/bids/docker-validate \
               /tmp/validate_testing/docker \
-              --container pennlinc/cubids:latest
+              --container pennlinc/bond:latest
 
       - run:
           name: Test Docker group
@@ -322,7 +322,7 @@ jobs:
             cubids-group \
               /tmp/bids/docker-group \
               /tmp/group_testing/docker \
-              --container pennlinc/cubids:latest
+              --container pennlinc/bond:latest
 
       - run:
           name: Test Docker save
@@ -336,7 +336,7 @@ jobs:
             cubids-datalad-save \
               /tmp/bids/docker-save \
               -m 'test docker save!' \
-              --container pennlinc/cubids:latest
+              --container pennlinc/bond:latest
       - run:
           name: Test cubids-remove-metadata-fields
           command: |
@@ -348,12 +348,12 @@ jobs:
             # Get the original metadata fields
             cubids-print-metadata-fields \
               /tmp/bids/metatest \
-              --container pennlinc/cubids:latest > /tmp/origmd.txt
+              --container pennlinc/bond:latest > /tmp/origmd.txt
 
             # Remove some fields
             cubids-remove-metadata-fields \
               /tmp/bids/metatest \
-              --container pennlinc/cubids:latest \
+              --container pennlinc/bond:latest \
               --fields DeviceSerialNumber AcquisitionTime \
                        InstitutionAddress InstitutionName \
                        StationName NotARealField > /tmp/removedmd.txt
@@ -435,12 +435,12 @@ jobs:
           command: |
             if [[ -n "$DOCKER_PASS" ]]; then
               docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker tag pennlinc/CuBIDS pennlinc/CuBIDS:unstable
-              docker push pennlinc/CuBIDS:unstable
+              docker tag pennlinc/CuBIDS pennlinc/bond:unstable
+              docker push pennlinc/bond:unstable
               if [[ -n "$CIRCLE_TAG" ]]; then
-                docker push pennlinc/CuBIDS:latest
-                docker tag pennlinc/CuBIDS pennlinc/CuBIDS:$CIRCLE_TAG
-                docker push pennlinc/CuBIDS:$CIRCLE_TAG
+                docker push pennlinc/bond:latest
+                docker tag pennlinc/CuBIDS pennlinc/bond:$CIRCLE_TAG
+                docker push pennlinc/bond:$CIRCLE_TAG
               fi
             fi
 
