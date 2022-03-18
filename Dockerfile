@@ -21,15 +21,7 @@ RUN apt-get update && \
 
 # get the validator 
 RUN npm install -g yarn && \
-    npm install -g bids-validator@1.6.2
-
-# RUN npm install -g yarn && \
-#    mkdir -p /home/validator && \
-#     cd /home/validator && \
-#     git clone https://github.com/bids-standard/bids-validator.git  && \
-#     cd /home/validator/bids-validator && \
-#     yarn && \
-#     cd bids-validator && npm install -g
+    npm install -g bids-validator
 
 COPY . /src/CuBIDS
 RUN pip3 install --no-cache-dir "/src/CuBIDS"
