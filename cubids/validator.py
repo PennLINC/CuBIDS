@@ -122,3 +122,4 @@ def parse_validator_output(output):
         df = df.append(parsed, ignore_index=True)
 
     return df
+    
