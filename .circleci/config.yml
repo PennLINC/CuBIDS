@@ -185,27 +185,13 @@ jobs:
               cd project/singularity/builddir
               sudo make install
 
-      # - run:
-      #     name: Build singularity image
-      #     no_output_timeout: 30m
-      #     command: |
-      #         singularity build \
-      #           /home/circleci/cubids-latest.sif \
-      #           docker-daemon://pennlinc/bond:latest
-
-      # - run:
-      #     name: Test cubids-validate
-      #     command: |
-      #       git config --global user.email "circleci@citesting.com"
-      #       git config --global user.name "CircleCI Test"
-      #       export PATH=/tmp/miniconda/bin:$PATH
-      #       source activate cubids
-      #       mkdir -p /tmp/bids /tmp/validate_testing
-      #       cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/singularity
-      #       cubids-validate \
-      #         /tmp/bids/singularity \
-      #         /tmp/validate_testing/singularity \
-      #         --container /home/circleci/cubids-latest.sif
+      - run:
+          name: Build singularity image
+          no_output_timeout: 30m
+          command: |
+              singularity build \
+                /home/circleci/cubids-latest.sif \
+                docker-daemon://pennlinc/bond:latest
 
       # - run:
       #     name: Test cubids-validate
@@ -275,40 +261,40 @@ jobs:
   #           [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
   #           exit 1
 
-  # install_and_test:
-  #   machine:
-  #     image: ubuntu-2004:202201-02
-  #   working_directory: /home/circleci/src/CuBIDS
-  #   steps:
-  #     - checkout:
-  #         path: /home/circleci/src/CuBIDS
+  install_and_test:
+    machine:
+      image: ubuntu-2004:202201-02
+    working_directory: /home/circleci/src/CuBIDS
+    steps:
+      - checkout:
+          path: /home/circleci/src/CuBIDS
 
-  #     - attach_workspace:
-  #         at: /tmp
+      - attach_workspace:
+          at: /tmp
 
-  #     - restore_cache:
-  #         keys:
-  #           - docker-v1-{{ .Branch }}-{{ .Revision }}
+      - restore_cache:
+          keys:
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
 
-  #     - run:
-  #         name: Load Docker image layer cache
-  #         no_output_timeout: 30m
-  #         command: |
-  #           docker info
-  #           set +o pipefail
-  #           if [ -f /tmp/cache/docker.tar.gz ]; then
-  #             sudo apt update && sudo apt -y install pigz
-  #             pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-  #             docker images
-  #           fi
+      - run:
+          name: Load Docker image layer cache
+          no_output_timeout: 30m
+          command: |
+            docker info
+            set +o pipefail
+            if [ -f /tmp/cache/docker.tar.gz ]; then
+              sudo apt update && sudo apt -y install pigz
+              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+              docker images
+            fi
 
-  #     - run:
-  #         name: Install CuBIDS
-  #         command: |
-  #           export PATH=/tmp/miniconda/bin:$PATH
-  #           source activate cubids
-  #           pip install .[all]
-  #           py.test -sv tests
+      - run:
+          name: Install CuBIDS
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate cubids
+            pip install .[all]
+            py.test -sv tests
 
   #     - run:
   #         name: Test Docker validate
