@@ -83,8 +83,8 @@ def cubids_validate():
             if ret.returncode != 0:
                 logger.error("Errors returned from validator run, parsing now")
 
-            # parse the string output
-            parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+                # parse the string output
+                parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
             if parsed.shape[1] < 1:
                 logger.info("No issues/warnings parsed, your dataset"
                             " is BIDS valid.")
@@ -160,7 +160,7 @@ def cubids_validate():
                         tmp_parse['subject'] = subject
                         parsed.append(tmp_parse)
 
-            # concatenate the parsed data and exit, we're goin home fellas
+            # concatenate the parsed data and exit
             if len(parsed) < 1:
                 logger.info("No issues/warnings parsed, your dataset"
                             " is BIDS valid.")

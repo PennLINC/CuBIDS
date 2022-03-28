@@ -941,9 +941,9 @@ def test_validator(tmp_path):
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
 
-    #assert ret.returncode == 0
-
-    parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+    assert ret.returncode == 0
+    if ret.returncode != 0:
+        parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
     # change this assert
     # assert parsed.shape[1] < 1
