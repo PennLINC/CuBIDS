@@ -965,7 +965,8 @@ def test_validator(tmp_path):
     ret = run_validator(call)
 
     assert ret.returncode == 1
-
+    print("PARSED")
+    print(parsed)
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
     assert type(parsed) == pd.core.frame.DataFrame
