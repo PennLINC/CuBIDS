@@ -940,7 +940,7 @@ def test_validator(tmp_path):
     # test the validator in valid dataset
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
-    print(ret)
+
     assert ret.returncode == 0
 
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
@@ -997,10 +997,10 @@ def test_docker():
     assert return_status
 
 
-def test_image(image='pennlinc/bond:latest'):
-    """Check whether image is present on local system"""
-    ret = subprocess.run(['docker', 'images', '-q', image],
-                         stdout=subprocess.PIPE)
+# def test_image(image='pennlinc/bond:latest'):
+#     """Check whether image is present on local system"""
+#     ret = subprocess.run(['docker', 'images', '-q', image],
+#                          stdout=subprocess.PIPE)
 
-    return_status = ret.stdout.decode('UTF-8')
-    assert return_status
+#     return_status = ret.stdout.decode('UTF-8')
+#     assert return_status

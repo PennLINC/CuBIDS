@@ -83,7 +83,7 @@ jobs:
              # Add nodejs and the validator
              conda install nodejs
              npm install -g yarn && \
-             npm install -g bids-validator
+             npm install -g bids-validator@1.6.2
 
       - persist_to_workspace:
           root: /tmp
@@ -185,13 +185,13 @@ jobs:
               cd project/singularity/builddir
               sudo make install
 
-      - run:
-          name: Build singularity image
-          no_output_timeout: 30m
-          command: |
-              singularity build \
-                /home/circleci/cubids-latest.sif \
-                docker-daemon://pennlinc/bond:latest
+      # - run:
+      #     name: Build singularity image
+      #     no_output_timeout: 30m
+      #     command: |
+      #         singularity build \
+      #           /home/circleci/cubids-latest.sif \
+      #           docker-daemon://pennlinc/bond:latest
 
       - run:
           name: Test cubids-validate
