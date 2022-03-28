@@ -64,7 +64,7 @@ jobs:
 
   setup_conda:
     machine:
-      image: ubuntu-2004:202004-01
+      image: ubuntu-2004:202201-02
     steps:
       - run:
            name: install miniconda
@@ -93,7 +93,7 @@ jobs:
 
   get_singularity:
     machine:
-      image: ubuntu-2004:202004-01
+      image: ubuntu-2004:202201-02
     steps:
       - restore_cache:
           keys:
@@ -137,7 +137,7 @@ jobs:
 
   install_and_test_singularity:
     machine:
-      image: ubuntu-2004:202004-01
+      image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
@@ -263,7 +263,7 @@ jobs:
 
   install_and_test:
     machine:
-      image: ubuntu-2004:202004-01
+      image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
