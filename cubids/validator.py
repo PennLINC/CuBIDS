@@ -16,9 +16,9 @@ def build_validator_call(path, ignore_headers=False, ignore_subject=True):
     command = ['bids-validator', '--verbose', '--json']
 
     if ignore_headers:
-        command.append('--ignore-nifti_headers')
+        command.append('--ignoreNiftiHeaders')
     if ignore_subject:
-        command.append('--ignore_subject_consistency')
+        command.append('--ignoreSubjectConsistency')
 
     command.append(path)
 
@@ -71,7 +71,6 @@ def run_validator(call, verbose=True):
 
 def parse_validator_output(output):
     """Parse the JSON output of the BIDS validator into a pandas dataframe
-
     Parameters:
     -----------
         - path : string
@@ -114,12 +113,12 @@ def parse_validator_output(output):
 
         parsed = parse_issue(warn)
         parsed = pd.DataFrame(parsed)
-        df = pd.concat([df, parsed], ignore_index=True)
+        df = df.append(parsed, ignore_index=True)
 
     for err in issues['errors']:
 
         parsed = parse_issue(err)
         parsed = pd.DataFrame(parsed)
-        df = pd.concat([df, parsed], ignore_index=True)
+        df = df.append(parsed, ignore_index=True)
 
     return df
