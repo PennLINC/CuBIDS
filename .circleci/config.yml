@@ -221,159 +221,159 @@ jobs:
       #         /tmp/validate_testing/singularity \
       #         --container /home/circleci/cubids-latest.sif
 
-      - run:
-          name: Test cubids-group
-          command: |
-            git config --global user.email "circleci@citesting.com"
-            git config --global user.name "CircleCI Test"
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-            mkdir -p /tmp/bids /tmp/group_testing
-            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/group
-            cubids-group \
-              /tmp/bids/group \
-              /tmp/group_testing/group \
-              --container /home/circleci/cubids-latest.sif
+  #     - run:
+  #         name: Test cubids-group
+  #         command: |
+  #           git config --global user.email "circleci@citesting.com"
+  #           git config --global user.name "CircleCI Test"
+  #           export PATH=/tmp/miniconda/bin:$PATH
+  #           source activate cubids
+  #           mkdir -p /tmp/bids /tmp/group_testing
+  #           cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/group
+  #           cubids-group \
+  #             /tmp/bids/group \
+  #             /tmp/group_testing/group \
+  #             --container /home/circleci/cubids-latest.sif
 
-      - run:
-          name: Test cubids-save
-          command: |
-            git config --global user.email "circleci@citesting.com"
-            git config --global user.name "CircleCI Test"
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-            mkdir -p /tmp/bids
-            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/singularity
-            cubids-datalad-save \
-              /tmp/bids/singularity \
-              -m 'test save' \
-              --container /home/circleci/cubids-latest.sif
+  #     - run:
+  #         name: Test cubids-save
+  #         command: |
+  #           git config --global user.email "circleci@citesting.com"
+  #           git config --global user.name "CircleCI Test"
+  #           export PATH=/tmp/miniconda/bin:$PATH
+  #           source activate cubids
+  #           mkdir -p /tmp/bids
+  #           cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/singularity
+  #           cubids-datalad-save \
+  #             /tmp/bids/singularity \
+  #             -m 'test save' \
+  #             --container /home/circleci/cubids-latest.sif
 
-      - run:
-          name: Test cubids-remove-metadata-fields
-          command: |
-            git config --global user.email "circleci@citesting.com"
-            git config --global user.name "CircleCI Test"
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-            mkdir -p /tmp/bids
-            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/metatest
+  #     - run:
+  #         name: Test cubids-remove-metadata-fields
+  #         command: |
+  #           git config --global user.email "circleci@citesting.com"
+  #           git config --global user.name "CircleCI Test"
+  #           export PATH=/tmp/miniconda/bin:$PATH
+  #           source activate cubids
+  #           mkdir -p /tmp/bids
+  #           cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/metatest
 
-            # Get the original metadata fields
-            cubids-print-metadata-fields \
-              /tmp/bids/metatest \
-              --container /home/circleci/cubids-latest.sif > /tmp/origmd.txt
+  #           # Get the original metadata fields
+  #           cubids-print-metadata-fields \
+  #             /tmp/bids/metatest \
+  #             --container /home/circleci/cubids-latest.sif > /tmp/origmd.txt
 
-            # Remove some fields
-            cubids-remove-metadata-fields \
-              /tmp/bids/metatest \
-              --container /home/circleci/cubids-latest.sif \
-              --fields DeviceSerialNumber AcquisitionTime \
-                       InstitutionAddress InstitutionName \
-                       StationName NotARealField > /tmp/removedmd.txt
+  #           # Remove some fields
+  #           cubids-remove-metadata-fields \
+  #             /tmp/bids/metatest \
+  #             --container /home/circleci/cubids-latest.sif \
+  #             --fields DeviceSerialNumber AcquisitionTime \
+  #                      InstitutionAddress InstitutionName \
+  #                      StationName NotARealField > /tmp/removedmd.txt
 
-            [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
-            exit 1
+  #           [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
+  #           exit 1
 
-  install_and_test:
-    machine:
-      image: ubuntu-2004:202201-02
-    working_directory: /home/circleci/src/CuBIDS
-    steps:
-      - checkout:
-          path: /home/circleci/src/CuBIDS
+  # install_and_test:
+  #   machine:
+  #     image: ubuntu-2004:202201-02
+  #   working_directory: /home/circleci/src/CuBIDS
+  #   steps:
+  #     - checkout:
+  #         path: /home/circleci/src/CuBIDS
 
-      - attach_workspace:
-          at: /tmp
+  #     - attach_workspace:
+  #         at: /tmp
 
-      - restore_cache:
-          keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
+  #     - restore_cache:
+  #         keys:
+  #           - docker-v1-{{ .Branch }}-{{ .Revision }}
 
-      - run:
-          name: Load Docker image layer cache
-          no_output_timeout: 30m
-          command: |
-            docker info
-            set +o pipefail
-            if [ -f /tmp/cache/docker.tar.gz ]; then
-              sudo apt update && sudo apt -y install pigz
-              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-              docker images
-            fi
+  #     - run:
+  #         name: Load Docker image layer cache
+  #         no_output_timeout: 30m
+  #         command: |
+  #           docker info
+  #           set +o pipefail
+  #           if [ -f /tmp/cache/docker.tar.gz ]; then
+  #             sudo apt update && sudo apt -y install pigz
+  #             pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
+  #             docker images
+  #           fi
 
-      - run:
-          name: Install CuBIDS
-          command: |
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-            pip install .[all]
-            py.test -sv tests
+  #     - run:
+  #         name: Install CuBIDS
+  #         command: |
+  #           export PATH=/tmp/miniconda/bin:$PATH
+  #           source activate cubids
+  #           pip install .[all]
+  #           py.test -sv tests
 
-      - run:
-          name: Test Docker validate
-          command: |
-            git config --global user.email "circleci@citesting.com"
-            git config --global user.name "CircleCI Test"
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-            mkdir -p /tmp/bids /tmp/validate_testing
-            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/docker-validate
-            cubids-validate \
-              /tmp/bids/docker-validate \
-              /tmp/validate_testing/docker \
-              --container pennlinc/bond:latest
+  #     - run:
+  #         name: Test Docker validate
+  #         command: |
+  #           git config --global user.email "circleci@citesting.com"
+  #           git config --global user.name "CircleCI Test"
+  #           export PATH=/tmp/miniconda/bin:$PATH
+  #           source activate cubids
+  #           mkdir -p /tmp/bids /tmp/validate_testing
+  #           cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/docker-validate
+  #           cubids-validate \
+  #             /tmp/bids/docker-validate \
+  #             /tmp/validate_testing/docker \
+  #             --container pennlinc/bond:latest
 
-      - run:
-          name: Test Docker group
-          command: |
-            git config --global user.email "circleci@citesting.com"
-            git config --global user.name "CircleCI Test"
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-            mkdir -p /tmp/bids /tmp/group_testing
-            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/docker-group
-            cubids-group \
-              /tmp/bids/docker-group \
-              /tmp/group_testing/docker \
-              --container pennlinc/bond:latest
+  #     - run:
+  #         name: Test Docker group
+  #         command: |
+  #           git config --global user.email "circleci@citesting.com"
+  #           git config --global user.name "CircleCI Test"
+  #           export PATH=/tmp/miniconda/bin:$PATH
+  #           source activate cubids
+  #           mkdir -p /tmp/bids /tmp/group_testing
+  #           cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/docker-group
+  #           cubids-group \
+  #             /tmp/bids/docker-group \
+  #             /tmp/group_testing/docker \
+  #             --container pennlinc/bond:latest
 
-      - run:
-          name: Test Docker save
-          command: |
-            git config --global user.email "circleci@citesting.com"
-            git config --global user.name "CircleCI Test"
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-            mkdir -p /tmp/bids
-            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/docker-save
-            cubids-datalad-save \
-              /tmp/bids/docker-save \
-              -m 'test docker save!' \
-              --container pennlinc/bond:latest
-      - run:
-          name: Test cubids-remove-metadata-fields
-          command: |
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-            mkdir -p /tmp/bids
-            cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/metatest
+  #     - run:
+  #         name: Test Docker save
+  #         command: |
+  #           git config --global user.email "circleci@citesting.com"
+  #           git config --global user.name "CircleCI Test"
+  #           export PATH=/tmp/miniconda/bin:$PATH
+  #           source activate cubids
+  #           mkdir -p /tmp/bids
+  #           cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/docker-save
+  #           cubids-datalad-save \
+  #             /tmp/bids/docker-save \
+  #             -m 'test docker save!' \
+  #             --container pennlinc/bond:latest
+  #     - run:
+  #         name: Test cubids-remove-metadata-fields
+  #         command: |
+  #           export PATH=/tmp/miniconda/bin:$PATH
+  #           source activate cubids
+  #           mkdir -p /tmp/bids
+  #           cp -r /home/circleci/src/CuBIDS/cubids/testdata/complete /tmp/bids/metatest
 
-            # Get the original metadata fields
-            cubids-print-metadata-fields \
-              /tmp/bids/metatest \
-              --container pennlinc/bond:latest > /tmp/origmd.txt
+  #           # Get the original metadata fields
+  #           cubids-print-metadata-fields \
+  #             /tmp/bids/metatest \
+  #             --container pennlinc/bond:latest > /tmp/origmd.txt
 
-            # Remove some fields
-            cubids-remove-metadata-fields \
-              /tmp/bids/metatest \
-              --container pennlinc/bond:latest \
-              --fields DeviceSerialNumber AcquisitionTime \
-                       InstitutionAddress InstitutionName \
-                       StationName NotARealField > /tmp/removedmd.txt
+  #           # Remove some fields
+  #           cubids-remove-metadata-fields \
+  #             /tmp/bids/metatest \
+  #             --container pennlinc/bond:latest \
+  #             --fields DeviceSerialNumber AcquisitionTime \
+  #                      InstitutionAddress InstitutionName \
+  #                      StationName NotARealField > /tmp/removedmd.txt
 
-            [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
-            exit 1
+  #           [ $(diff /tmp/origmd.txt /tmp/removedmd.txt | wc -l) -gt 0 ] && exit 0
+  #           exit 1
 
 
   build_docs:
