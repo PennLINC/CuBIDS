@@ -16,9 +16,9 @@ def build_validator_call(path, ignore_headers=False, ignore_subject=True):
     command = ['bids-validator', '--verbose', '--json']
 
     if ignore_headers:
-        command.append('--ignoreNiftiHeaders')
+        command.append('--ignore-nifti_headers')
     if ignore_subject:
-        command.append('--ignoreSubjectConsistency')
+        command.append('--ignore_subject_consistency')
 
     command.append(path)
 
