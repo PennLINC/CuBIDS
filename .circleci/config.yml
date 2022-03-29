@@ -294,15 +294,15 @@ jobs:
             fi
 
       - run:
-          name: Install CuBIDS
+          name: Test CuBIDS
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
+            conda install -c conda-forge -y datalad
             # Add nodejs and the validator
             conda install nodejs
             npm install -g yarn && \
             npm install -g bids-validator
-            pip install .
             pip install pytest
             py.test -sv tests
 
