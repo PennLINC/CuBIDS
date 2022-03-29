@@ -3,7 +3,7 @@ version: 2.1
 runinstall: &runinstall
     name: Install CuBIDS
     command: |
-      pip install . --progress-bar off
+      pip install .[all] --progress-bar off
       npm install bids-validator@1.6.0
 
       # Setup git
