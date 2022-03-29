@@ -304,6 +304,7 @@ jobs:
             npm install -g yarn && \
             npm install -g bids-validator
             pip install pytest
+            pip install cubids
             py.test -sv tests
 
       - run:
