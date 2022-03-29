@@ -650,16 +650,16 @@ class CuBIDS(object):
             # Open file for writing
 
             path_prefix = str(Path(self.path).parent)
-            fileObject = open(path_prefix + "_full_cmd.sh", "w")
+            fileObject = open(path_prefix + '/' + "_full_cmd.sh", "w")
             fileObject.write("#!/bin/bash\n")
             fileObject.write(full_cmd)
             # Close the file
             fileObject.close()
             if self.use_datalad:
-                self.datalad_handle.run(cmd=["bash", path_prefix +
+                self.datalad_handle.run(cmd=["bash", path_prefix + '/'
                                              "_full_cmd.sh"])
             else:
-                subprocess.run(["bash", path_prefix + "_full_cmd.sh"],
+                subprocess.run(["bash", path_prefix + '/' + "_full_cmd.sh"],
                                stdout=subprocess.PIPE,
                                cwd=path_prefix)
             self.reset_bids_layout()
