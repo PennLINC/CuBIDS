@@ -294,21 +294,21 @@ jobs:
               docker images
             fi
 
-      - run:
-          name: Test CuBIDS
-          command: |
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-            conda install -c conda-forge -y datalad
-            conda install pip
-            pip install cubids
-            pip install -e .
-            # Add nodejs and the validator
-            conda install nodejs
-            npm install -g yarn && \
-            npm install -g bids-validator
-            pip install pytest
-            py.test -sv tests
+      # - run:
+      #     name: Test CuBIDS
+      #     command: |
+      #       export PATH=/tmp/miniconda/bin:$PATH
+      #       source activate cubids
+      #       conda install -c conda-forge -y datalad
+      #       conda install pip
+      #       pip install cubids
+      #       pip install -e .
+      #       # Add nodejs and the validator
+      #       conda install nodejs
+      #       npm install -g yarn && \
+      #       npm install -g bids-validator
+      #       pip install pytest
+      #       py.test -sv tests
 
       - run:
           name: Test Docker validate
