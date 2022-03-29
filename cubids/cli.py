@@ -56,7 +56,7 @@ def cubids_validate():
                         required=False)
     parser.add_argument('--ignore_subject_consistency',
                         action='store_true',
-                        default=False,
+                        default=True,
                         help='Skip checking that any given file for one'
                         ' subject is present for all other subjects',
                         required=False)
@@ -83,8 +83,8 @@ def cubids_validate():
             if ret.returncode != 0:
                 logger.error("Errors returned from validator run, parsing now")
 
-                # parse the string output
-                parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+            # parse the string output
+            parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
             if parsed.shape[1] < 1:
                 logger.info("No issues/warnings parsed, your dataset"
                             " is BIDS valid.")
