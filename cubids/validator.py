@@ -14,7 +14,7 @@ def build_validator_call(path, ignore_headers=False, ignore_subject=True):
 
     # build docker call
     command = ['bids-validator', '--verbose', '--json']
-    
+
     if ignore_headers:
         command.append('--ignoreNiftiHeaders')
     if ignore_subject:
