@@ -174,12 +174,12 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
             conda install -c conda-forge -y datalad
-            pip install npm
             # Add nodejs and the validator
             conda install nodejs
             npm install -g yarn && \
             npm install -g bids-validator
-            pip install .
+            pip install cubids
+            pip install -e .
 
       - run:
           name: Install Singularity
@@ -301,7 +301,6 @@ jobs:
             source activate cubids
             conda install -c conda-forge -y datalad
             conda install pip
-            conda install npm
             pip install cubids
             pip install -e .
             # Add nodejs and the validator
