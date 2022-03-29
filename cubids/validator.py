@@ -9,12 +9,12 @@ import pandas as pd
 logger = logging.getLogger('cubids-cli')
 
 
-def build_validator_call(path, ignore_headers=False, ignore_subject=True):
+def build_validator_call(path, ignore_headers=False, ignore_subject=False):
     """Build a subprocess command to the bids validator"""
 
     # build docker call
-    command = ['bids-validator', '-v', '--json']
-
+    #command = ['bids-validator', '--verbose', '--json']
+    command = ['bids-validator']
     if ignore_headers:
         command.append('--ignoreNiftiHeaders')
     if ignore_subject:
