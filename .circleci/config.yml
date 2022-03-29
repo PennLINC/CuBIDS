@@ -298,7 +298,11 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
-            pip install .[all]
+            # Add nodejs and the validator
+            conda install nodejs
+            npm install -g yarn && \
+            npm install -g bids-validator
+            pip install .
             py.test -sv tests
 
       - run:
