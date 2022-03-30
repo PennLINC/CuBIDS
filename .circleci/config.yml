@@ -80,6 +80,8 @@ jobs:
              conda create -n cubids python=3.7
              source activate cubids
              conda install -c conda-forge -y datalad
+             conda install pip
+             conda install pytest
              # Add nodejs and the validator
              conda install nodejs
              npm install -g yarn && \
@@ -300,6 +302,7 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
+            pip install pytest
             py.test -sv tests
 
       - run:
