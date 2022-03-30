@@ -72,9 +72,9 @@ jobs:
              export PATH="$MINICONDA/bin:$PATH"
              wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
              bash miniconda.sh -b -f -p $MINICONDA
+             conda init bash 
              conda config --set always_yes yes
              conda update conda
-             conda init bash
              conda info -a
              conda create -n cubids python=3.7
              conda activate cubids
