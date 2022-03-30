@@ -76,7 +76,7 @@ jobs:
              conda update conda
              conda info -a
              conda create -n cubids python=3.7
-             conda source cubids
+             source activate cubids
              conda install -c conda-forge -y datalad
              conda install pip
              conda install pytest
