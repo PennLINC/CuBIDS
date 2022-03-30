@@ -72,12 +72,11 @@ jobs:
              export PATH="$MINICONDA/bin:$PATH"
              wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
              bash miniconda.sh -b -f -p $MINICONDA
-             conda init bash 
              conda config --set always_yes yes
              conda update conda
              conda info -a
              conda create -n cubids python=3.7
-             conda activate cubids
+             conda source cubids
              conda install -c conda-forge -y datalad
              conda install pip
              conda install pytest
@@ -168,6 +167,12 @@ jobs:
               pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
               docker images
             fi
+
+      - run:
+          name: Initialize Bash Shell
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            conda init bash 
 
       - run:
           name: Install CuBIDS
@@ -300,7 +305,7 @@ jobs:
           name: Test CuBIDS
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
-            conda activate cubids
+            conda source cubids
             pip install .
             pip install pytest
             npm install -g yarn && \
