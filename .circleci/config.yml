@@ -175,8 +175,8 @@ jobs:
             source activate cubids
             conda install -c conda-forge -y datalad
             # Add nodejs and the validator
-            conda install nodejs
-            npm install -g yarn && \
+            # conda install nodejs
+            # npm install -g yarn && \
             npm install -g bids-validator
             pip install cubids
             pip install -e .
@@ -304,10 +304,10 @@ jobs:
             pip install cubids
             pip install -e .
             # Add nodejs and the validator
-            conda install nodejs
-            npm install -g yarn
-            npm install -g bids-validator
-            pip install pytest
+            # conda install nodejs
+            # npm install -g yarn
+            # npm install -g bids-validator
+            # pip install pytest
             py.test -sv tests
 
       - run:
