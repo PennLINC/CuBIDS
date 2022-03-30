@@ -20,8 +20,6 @@ jobs:
             - docker-v1-{{ .Branch }}-
             - docker-v1-master-
             - docker-v1-
-          paths:
-            - /tmp/cache/docker.tar.gz
       - setup_remote_docker:
           version: 19.03.13
       - run:
@@ -302,6 +300,7 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
+            pip install .
             pip install pytest
             py.test -sv tests
 
