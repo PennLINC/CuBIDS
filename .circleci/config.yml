@@ -81,9 +81,9 @@ jobs:
              conda install pip
              conda install pytest
              # Add nodejs and the validator
-             conda install nodejs
-             npm install -g yarn && \
-             npm install -g bids-validator
+             #  conda install nodejs
+             #  npm install -g yarn && \
+             #  npm install -g bids-validator
 
       - persist_to_workspace:
           root: /tmp
@@ -177,8 +177,8 @@ jobs:
             conda install pip
             # Add nodejs and the validator
             # conda install nodejs
-            npm install -g yarn && \
-            npm install -g bids-validator
+            # npm install -g yarn && \
+            # npm install -g bids-validator
             pip install pytest
             pip install .
 
@@ -302,8 +302,9 @@ jobs:
             source activate cubids
             pip install .
             pip install pytest
-            npm install -g yarn && \
-            npm install -g bids-validator
+            # conda install nodejs
+            # npm install -g yarn && \
+            # npm install -g bids-validator
             py.test -sv tests
 
       - run:
