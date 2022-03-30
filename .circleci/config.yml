@@ -302,11 +302,12 @@ jobs:
             conda install -c conda-forge -y datalad
             conda install pip
             pip install cubids
-            pip install -e .
+            pip install .
             # Add nodejs and the validator
-            # conda install nodejs
-            # npm install -g yarn
-            # npm install -g bids-validator
+            conda install nodejs
+            npm install --global npm@^7
+            npm install -g yarn
+            npm install -g bids-validator
             pip install pytest
             py.test -sv tests
 
