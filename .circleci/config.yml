@@ -76,7 +76,7 @@ jobs:
              conda update conda
              conda info -a
              conda create -n cubids python=3.7
-             source activate cubids
+             conda activate cubids
              conda install -c conda-forge -y datalad
              conda install pip
              conda install pytest
@@ -299,9 +299,11 @@ jobs:
           name: Test CuBIDS
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
+            conda activate cubids
             pip install .
             pip install pytest
+            npm install -g yarn && \
+            npm install -g bids-validator
             py.test -sv tests
 
       - run:
