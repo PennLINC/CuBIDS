@@ -299,7 +299,7 @@ jobs:
           name: Test CuBIDS
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
-            conda source cubids
+            source activate cubids
             pip install .
             pip install pytest
             npm install -g yarn && \
