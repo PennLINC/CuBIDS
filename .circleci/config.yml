@@ -301,13 +301,12 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
-            pip install .
-            pip install pytest
-            sudo apt update
-            sudo apt install nodejs npm
-            # conda install nodejs
-            npm install -g yarn && \
-            npm install -g bids-validator
+            # pip install .
+            # pip install pytest
+            # sudo apt update
+            # sudo apt install nodejs npm
+            # npm install -g yarn && \
+            # npm install -g bids-validator
             py.test -sv tests
 
       - run:
