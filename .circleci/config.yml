@@ -301,7 +301,7 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
-            # pip install .
+            pip install .
             # pip install pytest
             # sudo apt update
             # sudo apt install nodejs npm
