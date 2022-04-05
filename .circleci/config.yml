@@ -302,11 +302,11 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
             pip install .
-            # pip install pytest
-            # sudo apt update
-            # sudo apt install nodejs npm
-            # npm install -g yarn && \
-            # npm install -g bids-validator
+            pip install pytest
+            sudo apt update
+            sudo apt install nodejs npm
+            npm install -g yarn && \
+            npm install -g bids-validator
             py.test -sv tests
 
       - run:
