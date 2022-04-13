@@ -19,7 +19,7 @@ RUN apt-get update && \
     sudo apt-get remove python-setuptools \
     wget https://bootstrap.pypa.io/get-pip.py \
     sudo python get-pip.py \
-    sudo pip install -U pip setuptools \
+    sudo pip install pip setuptools \
     datalad nodejs python3 python3-pip python3-setuptools && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
