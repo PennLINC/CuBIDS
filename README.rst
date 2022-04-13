@@ -16,15 +16,15 @@ CuBIDS: Curation of BIDS
 About
 -----
 
-``CuBIDS`` is designed to facilitate reproducible curation––checking and fixing––of BIDS
-datasets. The main features of this software are
+``CuBIDS`` is designed to facilitate reproducible curation of BIDS
+datasets. The main features of this software include the following:
 
   1. Ensuring data is valid BIDS.
   2. Visualizing metadata heterogenaity present in a BIDS dataset
   3. Providing a platform for quality checking a datasets's metadata
   4. Test preprocessing pipelines on an example of each unique set of scanning parameters
 
-.. image:: https://github.com/PennBBL/CuBIDS/raw/readthedocs-update/docs/_static/cubids_workflow.png
+.. image:: https://github.com/PennLINC/CuBIDS/blob/readthedocs-update/docs/_static/cubids_workflow.png
 
 .. _definitions_def:
 
