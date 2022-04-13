@@ -16,6 +16,7 @@ RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
 # get dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    pip install --upgrade setuptools \
     datalad nodejs python3 python3-pip python3-setuptools && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
