@@ -8,15 +8,15 @@ Installation
 From sources
 ------------
 
-The sources for CuBIDS can be downloaded from the `Github repo`_.
+The source code for CuBIDS can be downloaded from the `Github repo`_.
 
-You can either clone the public repository:
+To install the software, you can either clone the public repository:
 
 .. code-block:: console
 
     $ git clone git://github.com/PennLINC/CuBIDS
 
-Or download from the Python Package Manager `Pypi`_:
+Or download from the Python Package Manager (Pypi) by running the command:
 
 .. code-block:: console
 
