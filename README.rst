@@ -6,8 +6,8 @@ CuBIDS: Curation of BIDS
 .. image:: https://img.shields.io/pypi/v/cubids.svg
         :target: https://pypi.python.org/pypi/cubids
 
-.. image:: https://img.shields.io/travis/PennLINC/cubids.svg
-        :target: https://travis-ci.com/PennLINC/cubids
+.. image:: https://circleci.com/gh/PennLINC/CuBIDS.svg?style=svg
+        :target: https://circleci.com/gh/PennLINC/CuBIDS
 
 .. image:: https://readthedocs.org/projects/cubids/badge/?version=latest
         :target: https://cubids.readthedocs.io/en/latest/?badge=latest
