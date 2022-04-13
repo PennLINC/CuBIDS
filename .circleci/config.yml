@@ -409,7 +409,6 @@ jobs:
           name: Build documentation
           no_output_timeout: 45m
           command: |
-            source activate cubids
             pip install sphinx-rtd-theme
             make SPHINXOPTS="-W" -C docs html
       - store_artifacts:
