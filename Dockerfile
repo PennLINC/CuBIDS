@@ -16,7 +16,7 @@ RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
 # get dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    sudo apt-get remove python-setuptools \
+    apt-get remove python-setuptools \
     wget https://bootstrap.pypa.io/get-pip.py \
     sudo python get-pip.py \
     sudo pip install pip setuptools \
