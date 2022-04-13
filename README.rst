@@ -13,18 +13,22 @@ CuBIDS: Curation of BIDS
         :target: https://cubids.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-``CuBIDS`` is designed to facilitate the curation and sanity-checking of BIDS
-datasets that live on a hard drive. Its has many functions that help curators
-follow the Three Steps of Curation. These steps are
+About
+-----
 
+``CuBIDS`` is designed to facilitate reproducible curation––checking and fixing––of BIDS
+datasets. The main features of this software are
 
-  1. Ensure the data is valid BIDS.
-  2. Detect potentially multiple *parameter groups* within *key groups*
-  3. Test preprocessing pipelines on an example of each *parameter group*.
+  1. Ensuring data is valid BIDS.
+  2. Visualizing metadata heterogenaity present in a BIDS dataset
+  3. Providing a platform for quality checking a datasets's metadata
+  4. Test preprocessing pipelines on an example of each unique set of scanning parameters
 
+.. image:: https://github.com/PennBBL/CuBIDS/raw/master/docs/_static/cubids_workflow.png
 
-Step 1: Ensure the data is valid BIDS
--------------------------------------
+.. _preprocessing_def:
 
-The CuBIDS class has a call to a containerized version of the BIDS Validator. The
-output of the BIDS validator is collected and converted to a convenient Python object.
+Validation
+~~~~~~~~~~~~~~~
+
+CuBIDS wraps the standard BIDS Validator to produce a validation csv 
