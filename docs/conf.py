@@ -30,8 +30,6 @@ from packaging import version as pver  # Avoid distutils.LooseVersion which is d
 sys.path.append(os.path.abspath('sphinxext'))
 sys.path.insert(0, os.path.abspath('../wrapper'))
 
-from github_link import make_linkcode_resolve
-
 
 # -- General configuration ---------------------------------------------
 
