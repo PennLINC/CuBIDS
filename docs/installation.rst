@@ -16,11 +16,11 @@ You can either clone the public repository:
 
     $ git clone git://github.com/PennLINC/CuBIDS
 
-Or download the `tarball`_:
+Or download from the Python Package Manager `Pypi`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/PennLINC/CuBIDS/tarball/master
+    $ pip insatll CuBIDS
 
 Once you have a copy of the source, you can install it with:
 
@@ -30,4 +30,3 @@ Once you have a copy of the source, you can install it with:
 
 
 .. _Github repo: https://github.com/PennLINC/CuBIDS
-.. _tarball: https://github.com/PennLINC/CuBIDS/tarball/master
