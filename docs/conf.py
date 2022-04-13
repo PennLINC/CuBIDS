@@ -30,6 +30,8 @@ from packaging import version as pver  # Avoid distutils.LooseVersion which is d
 sys.path.append(os.path.abspath('sphinxext'))
 sys.path.insert(0, os.path.abspath('../wrapper'))
 
+from github_link import make_linkcode_resolve
+
 
 # -- General configuration ---------------------------------------------
 
@@ -39,7 +41,7 @@ needs_sphinx = '1.5.3'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones
+# ones.
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
@@ -48,10 +50,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.linkcode',
     'sphinxarg.ext',  # argparse extension
-    'nipype.sphinxext.plot_workflow',
-    'nbsphinx',
-    'recommonmark',
-    'sphinx_markdown_tables'
+    'sphinx.ext.viewcode'
 ]
 
 # Mock modules in autodoc:
