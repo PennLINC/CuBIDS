@@ -45,7 +45,6 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'sphinx.ext.linkcode',
     'sphinxarg.ext',  # argparse extension
     'sphinx.ext.viewcode'
 ]
