@@ -24,9 +24,7 @@ datasets. The main features of this software are
   3. Providing a platform for quality checking a datasets's metadata
   4. Test preprocessing pipelines on an example of each unique set of scanning parameters
 
-.. image:: https://github.com/PennBBL/CuBIDS/raw/master/docs/_static/cubids_workflow.png
-
-.. _preprocessing_def:
+.. _validation_def:
 
 Validation
 ~~~~~~~~~~~~~~~
