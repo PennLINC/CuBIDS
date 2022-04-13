@@ -23,10 +23,3 @@ datasets. The main features of this software are
   2. Visualizing metadata heterogenaity present in a BIDS dataset
   3. Providing a platform for quality checking a datasets's metadata
   4. Test preprocessing pipelines on an example of each unique set of scanning parameters
-
-.. _validation_def:
-
-Validation
-~~~~~~~~~~~~~~~
-
-CuBIDS wraps the standard BIDS Validator to produce a validation csv 
