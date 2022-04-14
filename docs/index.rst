@@ -1,3 +1,5 @@
+.. CuBIDS documentation master file
+
 .. include:: ../README.rst
 
 Contents
