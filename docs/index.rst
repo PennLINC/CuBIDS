@@ -8,6 +8,7 @@ Contents
 .. toctree::
    :maxdepth: 5
 
+   readme
    installation
    usage
    example
