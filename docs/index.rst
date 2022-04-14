@@ -8,9 +8,11 @@ Welcome to CuBIDS's documentation!
    readme
    installation
    usage
+   example
    contributing
    authors
    history
+  
 
 Indices and tables
 ==================
