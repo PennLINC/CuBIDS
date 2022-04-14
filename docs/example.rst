@@ -8,8 +8,8 @@ and University of Minnesota’s Masonic Institute for the Developing Brain. To d
 of CuBIDS, here we apply the software to a small example dataset that is included in the software’s 
 GitHub repository for testing purposes. This dataset can be found at LINK TO TOY DATASET HERE!!!!!!!
 
-Although DataLad is an optional dependency of CuBIDS, we us it in this example to demonstrate the version 
-control curation capabilities of CuBIDS. For the purposes of this walkthrough, the path to this 
+Although DataLad is an optional dependency of CuBIDS, we use it in this example to demonstrate the 
+version control curation capabilities of CuBIDS. For the purposes of this walkthrough, the path to this 
 example dataset is ``~/BIDS_Dataset.`` 
 
 

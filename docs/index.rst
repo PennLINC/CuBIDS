@@ -2,7 +2,7 @@ Welcome to CuBIDS's documentation!
 ======================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 5
    :caption: Contents:
 
    readme
