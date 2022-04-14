@@ -27,10 +27,9 @@ functionalities:
 
 .. image:: https://github.com/PennLINC/CuBIDS/blob/readthedocs-update/docs/_static/cubids_workflow.png
 
-.. _definitions_def:
 
 Definitions
-~~~~~~~~~~~~~
+------------
 
 Key Group
         * A unique set of BIDS key-value pairs excluding identifiers such as subject and session.
@@ -67,18 +66,4 @@ Example 2
         * Key Group: ``acquisition-singleband_datatype-func_suffix-bold_task-rest``
         * Param Group: ``2`` (Variant Group)
         * Rename Key Group: ``acquisition-singlebandVARIANTNoFmap_datatype-func_suffix-bold_task-rest``
-
-
-
-.. _validation_def:
-
-Validation
-~~~~~~~~~~~~~~~
-
-
-
-.. _heterogenaity_parsing_def:
-
-Heterogenaity Parsing
-~~~~~~~~~~~~~~~~~~~~~~~~~
 
