@@ -1,11 +1,11 @@
-Welcome to CuBIDS's documentation!
-======================================
+.. include:: ../README.rst
+
+Contents
+--------
 
 .. toctree::
    :maxdepth: 5
-   :caption: Contents:
 
-   readme
    installation
    usage
    example
