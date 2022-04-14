@@ -31,7 +31,7 @@ Definitions
 Key Group
 ~~~~~~~~~
 
-A *Key Group* is a unique set of BIDS key-value pairs exculding identifiers like
+A *Key Group* is a unique set of BIDS key-value pairs exculding identifiers such as
 subject and session. For example the files::
 
     bids-root/sub-1/ses-1/func/sub-1_ses-1_acq-mb_dir-PA_task-rest_bold.nii.gz

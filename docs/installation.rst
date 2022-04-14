@@ -8,19 +8,19 @@ Installation
 From sources
 ------------
 
-The sources for CuBIDS can be downloaded from the `Github repo`_.
+The source code for CuBIDS can be downloaded from the `Github repo`_.
 
-You can either clone the public repository:
+To install the software, you can either clone the public repository:
 
 .. code-block:: console
 
     $ git clone git://github.com/PennLINC/CuBIDS
 
-Or download the `tarball`_:
+Or download from the Python Package Manager (Pypi) by running the command:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/PennLINC/CuBIDS/tarball/master
+    $ pip insatll CuBIDS
 
 Once you have a copy of the source, you can install it with:
 
@@ -30,4 +30,3 @@ Once you have a copy of the source, you can install it with:
 
 
 .. _Github repo: https://github.com/PennLINC/CuBIDS
-.. _tarball: https://github.com/PennLINC/CuBIDS/tarball/master
