@@ -39,7 +39,7 @@ class CuBIDS(object):
         self.IF_rename_paths = []  # fmap jsons with rename intended fors
         self.grouping_config = load_config(grouping_config)
         self.acq_group_level = acq_group_level
-        self.scans_txt = None # txt file of scans to purge (for purge only)
+        self.scans_txt = None  # txt file of scans to purge (for purge only)
 
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
         if self.use_datalad:
@@ -239,7 +239,7 @@ class CuBIDS(object):
                     to_remove.append(rm_me)
                     # delete_commands.append("rm " + rm_me)
         print("Deleting %d files" % len(to_remove))
-       
+
         # call purge associations on list of files to remove
         self._purge_associations(to_remove)
 
@@ -305,18 +305,18 @@ class CuBIDS(object):
                 if not self.is_datalad_clean():
                     IF_rename_msg = "Renamed IntendedFor references"
                     self.datalad_handle.save(message=IF_rename_msg)
-                
+
                 s1 = "Renamed Variant Group scans according to their variant "
                 s2 = "parameters"
 
                 rename_commit = s1 + s2
-                
+
                 self.datalad_handle.run(cmd=["bash", renames],
-                                        message=rename_commit)                      
+                                        message=rename_commit)
             else:
                 subprocess.run(["bash", renames],
-                                stdout=subprocess.PIPE,
-                                cwd=str(Path(new_prefix).parent))
+                               stdout=subprocess.PIPE,
+                               cwd=str(Path(new_prefix).parent))
         else:
             print("Not running any commands")
 
@@ -672,14 +672,14 @@ class CuBIDS(object):
             fileObject.write(full_cmd)
             # Close the file
             fileObject.close()
-            if self.scans_txt: 
-                commit = "Purged scans listed in %s from dataset" % self.scans_txt
+            if self.scans_txt:
+                cmt = "Purged scans listed in %s from dataset" % self.scans_txt
             else:
-                commit = "Purged Parameter Groups marked for removal"
+                cmt = "Purged Parameter Groups marked for removal"
             purge_file = path_prefix + "/" + '_full_cmd.sh'
             if self.use_datalad:
                 self.datalad_handle.run(cmd=["bash", purge_file],
-                                        message=commit)
+                                        message=cmt)
             else:
                 subprocess.run(["bash", path_prefix + "/" + "_full_cmd.sh"],
                                stdout=subprocess.PIPE,
