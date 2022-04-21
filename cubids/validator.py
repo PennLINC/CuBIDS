@@ -14,7 +14,7 @@ def build_validator_call(path, ignore_headers=False, ignore_subject=True):
 
     # build docker call
     command = ['bids-validator', '--verbose', '--json']
-    
+
     if ignore_headers:
         command.append('--ignoreNiftiHeaders')
     if ignore_subject:
@@ -112,16 +112,12 @@ def parse_validator_output(output):
     for warn in issues['warnings']:
 
         parsed = parse_issue(warn)
-        print("PARSED WARNINGS")
-        print(parsed)
         parsed = pd.DataFrame(parsed)
         df = pd.concat([df, parsed], ignore_index=True)
 
     for err in issues['errors']:
 
         parsed = parse_issue(err)
-        print("PARSED ERRORS")
-        print(parsed)
         parsed = pd.DataFrame(parsed)
         df = pd.concat([df, parsed], ignore_index=True)
 
