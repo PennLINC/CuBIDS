@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "pip": "^0.0.1",
-    "bids-validator": "^1.6.2"
+    "pip": "^0.0.1"
   }
 }
