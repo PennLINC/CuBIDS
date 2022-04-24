@@ -203,7 +203,7 @@ def test_bad_json_merge_cli(tmp_path):
 
 def test_add_nifti_info_datalad(tmp_path):
     data_root = get_data(tmp_path)
-    bod = CuBIDS(data_root / "complete", use_datalad=True)
+    bod = CuBIDS(data_root / "complete", use_datalad=True, force_unlock=True)
     csv_prefix = str(tmp_path / "csvs")
     bod.get_CSVs(csv_prefix)
     summary_csv = csv_prefix + "_summary.csv"
@@ -213,7 +213,7 @@ def test_add_nifti_info_datalad(tmp_path):
     assert 'Obliquity' not in l_cols
 
     # now add nifti info
-    bod.add_nifti_info(force_unlock=True)
+    bod.add_nifti_info()
     nifti_csv_prefix = str(tmp_path / "nifti_csvs")
     bod.get_CSVs(nifti_csv_prefix)
     nifti_summary_csv = nifti_csv_prefix + "_summary.csv"
@@ -224,8 +224,8 @@ def test_add_nifti_info_datalad(tmp_path):
 
 def test_add_nifti_info_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
-    bod = CuBIDS(data_root / "complete", use_datalad=False)
-    bod.add_nifti_info(force_unlock=False)
+    bod = CuBIDS(data_root / "complete", use_datalad=False, force_unlock=False)
+    bod.add_nifti_info()
     csv_prefix = str(tmp_path / "csvs")
     bod.get_CSVs(csv_prefix)
     summary_csv = csv_prefix + "_summary.csv"

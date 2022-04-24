@@ -26,7 +26,7 @@ bids.config.set_option('extension_initial_dot', True)
 class CuBIDS(object):
 
     def __init__(self, data_root, use_datalad=False, acq_group_level='subject',
-                 grouping_config=None):
+                 grouping_config=None, force_unlock=False):
 
         self.path = os.path.abspath(data_root)
         self._layout = None
@@ -40,6 +40,7 @@ class CuBIDS(object):
         self.grouping_config = load_config(grouping_config)
         self.acq_group_level = acq_group_level
         self.scans_txt = None  # txt file of scans to purge (for purge only)
+        self.force_unlock = force_unlock  # force unlock for add-nifti-info
 
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
         if self.use_datalad:
@@ -73,10 +74,13 @@ class CuBIDS(object):
                 Message to add to
         """
         self.datalad_ready = True
-        self.datalad_handle = dlapi.create(self.path,
-                                           cfg_proc='text2git',
-                                           force=True,
-                                           annex=True)
+
+        self.datalad_handle = dlapi.Dataset(self.path)
+        if not self.datalad_handle.is_installed():
+            self.datalad_handle = dlapi.create(self.path,
+                                               cfg_proc='text2git',
+                                               force=True,
+                                               annex=True)
 
     def datalad_save(self, message=None):
         """Performs a DataLad Save operation on the BIDS tree.
@@ -119,10 +123,10 @@ class CuBIDS(object):
             ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
-    def add_nifti_info(self, force_unlock, raise_on_error=True):
+    def add_nifti_info(self, raise_on_error=True):
         """Adds info from nifti files to json sidecars."""
         # check if force_unlock is set
-        if force_unlock:
+        if self.force_unlock:
             # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
             subprocess.run(["datalad", "unlock"], cwd=self.path)
 

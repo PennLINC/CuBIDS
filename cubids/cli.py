@@ -656,9 +656,7 @@ def cubids_add_nifti_info():
                         'before finding groups')
     parser.add_argument('--force-unlock',
                         action='store_true',
-                        default=False,
-                        help='unlock dataset before adding nift info ',
-                        required=False)
+                        help='unlock dataset before adding nifti info ')
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
@@ -667,11 +665,14 @@ def cubids_add_nifti_info():
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir),
-                     use_datalad=opts.use_datalad)
+                     use_datalad=opts.use_datalad,
+                     force_unlock=opts.force_unlock)
         if opts.use_datalad:
+            if not bod.is_datalad_clean():
+                raise Exception("Untracked change in " + str(opts.bids_dir))
             if bod.is_datalad_clean() and not opts.force_unlock:
                 raise Exception("Need to unlock " + str(opts.bids_dir))
-        bod.add_nifti_info(force_unlock=opts.force_unlock, raise_on_error=True)
+        bod.add_nifti_info()
         sys.exit(0)
 
     # Run it through a container
