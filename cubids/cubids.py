@@ -79,9 +79,9 @@ class CuBIDS(object):
         if not self.datalad_handle.is_installed():
             print("NO DATALAD DATASET DETECTED")
             self.datalad_handle = dlapi.create(self.path,
-                                                cfg_proc='text2git',
-                                                force=True,
-                                                annex=True)
+                                               cfg_proc='text2git',
+                                               force=True,
+                                               annex=True)
         else:
             print("DATALAD DATASET DETECTED")
 
