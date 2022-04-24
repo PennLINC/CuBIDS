@@ -77,10 +77,13 @@ class CuBIDS(object):
 
         self.datalad_handle = dlapi.Dataset(self.path)
         if not self.datalad_handle.is_installed():
+            print("NO DATALAD DATASET DETECTED")
             self.datalad_handle = dlapi.create(self.path,
-                                               cfg_proc='text2git',
-                                               force=True,
-                                               annex=True)
+                                                cfg_proc='text2git',
+                                                force=True,
+                                                annex=True)
+        else:
+            print("DATALAD DATASET DETECTED")
 
     def datalad_save(self, message=None):
         """Performs a DataLad Save operation on the BIDS tree.
@@ -623,11 +626,14 @@ class CuBIDS(object):
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
 
         to_remove = []
-        for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
-            if str(path) in scans:
-                bids_file = self.layout.get_file(str(path))
 
+        for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
+
+            if str(path) in scans:
+                print("NIFTI TO PURGE DETECTED")
+                bids_file = self.layout.get_file(str(path))
                 associations = bids_file.get_associations()
+
                 for assoc in associations:
                     filepath = assoc.path
 
