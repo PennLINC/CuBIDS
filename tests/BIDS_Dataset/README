@@ -1,0 +1,10 @@
+Heavily downsampled CS-DSI testing datasets
+
+This data has had some parameters changed so that there are different
+parameter groups in the same key groups.
+
+## Changes
+
+ - sub-01_ses-phdiff_acq-HASC55AP_dwi: EchoTime set to 0.04 from 0.089
+ - sub-02_ses-phdiff_task-rest_bold: Fieldmap has been removed
+ - sub-03_ses-phdiff_task-rest_bold: FlipAngle set to 70 from 90
