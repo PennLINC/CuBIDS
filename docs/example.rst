@@ -4,14 +4,19 @@ Full Walkthrough
 
 The CuBIDS workflow is currently being used in neuroimaging labs at a number of institutions 
 including University of Pennsylvania, Children’s Hospital of Philadelphia, Child Mind Institute, 
-and University of Minnesota’s Masonic Institute for the Developing Brain. To demonstrate the utility 
-of CuBIDS, here we apply the software to a small example dataset that is included in the software’s 
-GitHub repository for testing purposes. This dataset can be found at LINK TO TOY DATASET HERE!!!!!!!
+and University of Minnesota’s Masonic Institute for the Developing Brain. The following walkthrough 
+displays the process of curating a dataset using CuBIDS. To do so, we use an example dataset that is 
+bundled with the software and can be found at https://github.com/PennLINC/CuBIDS/tree/main/cubids/testdata/BIDS_Dataset 
+
+
+We have installed CuBIDS, DataLad, and the bids-validator inside a conda environment titled “test-env.” In this 
+example, we use the bids-validator version 1.7.2. using a different version of the validator may result in 
+slightly different validation csv printouts. Throughout this example, we use DataLad for version 
+control. 
 
 Although DataLad is an optional dependency of CuBIDS, we use it in this example to demonstrate the 
 version control curation capabilities of CuBIDS. For the purposes of this walkthrough, the path to this 
-example dataset is ``~/BIDS_Dataset``. 
-
+example dataset is ``~/BIDS_Dataset``
 
 
 Identifying and removing PHI 
@@ -44,14 +49,46 @@ To do this, we run the following command:
 
     $ datalad create -c text2git ~/BIDS_Dataset_Datalad
 
+The creation of our DataLad dataset will be accordingly reflected in the dataset’s version control 
+history, or “git log.” At any point in the CuBIDS workflow, we can view a summary of our dataset’s 
+version history by running the following commands: 
+
+.. code-block:: console 
+
+    $ cd ~/CuBIDS_Test/BIDS_Dataset_DataLad
+    $ git log --oneline
+
+This command will write the following to the terminal: 
+
+.. image:: _static/screenshot_1.png
+
 Next, we copy the contents of our BIDS dataset into the newly created and currently empty DataLad 
 dataset and save the changes. 
 
 .. code-block:: console
 
     $ cp -r ~/BIDS_Dataset/* ~/BIDS_Dataset_Datalad
-    $ datalad save -d ~/BIDS_Dataset_Datalad -m “checked dataset into datalad”
 
+In addition to being able to access the version history of our data, any point in this workflow, we can 
+also check the status of untracked (not yet saved) changes using the datalad status command, as seen 
+below: 
+
+.. code-block:: console 
+
+    $ datalad status -d ~/CuBIDS_Test/BIDS_Dataset_DataLad
+
+This command produces a description of the changes we have made to the data since the last commit 
+(see below)
+
+.. image:: _static/screenshot_2.png
+
+The command above shows all files untracked, as we have copied the BIDS data into 
+``~/CuBIDS_Test/BIDS_Dataset_DataLad`` but have not yet saved those changes. Our next step is to 
+run save. It is best practice to provide a detailed commit message, for example:
+
+.. code-block:: console
+
+    $ datalad save -d ~/BIDS_Dataset_Datalad -m “checked dataset into datalad”
 
 At this point, we can check our git history, which will display the version history of our dataset 
 thus far, with the following command: 
@@ -62,7 +99,7 @@ thus far, with the following command:
 
 which will produce the following: 
 
-.. image:: https://github.com/PennLINC/CuBIDS/blob/readthedocs-update/docs/_static/screenshot_3.png
+.. image:: _static/screenshot_3.png
 
 As seen above, the creation of our DataLad dataset is now reflected in the dataset’s version control 
 history. Note that it is best practice to provide a detailed commit message with each change made to
@@ -87,7 +124,7 @@ Since we ran ``cubids-add-nifti-info`` with the ``–-use-datalad`` flag set, Cu
 made to the dataset to the git log as follows:
 
 
-.. image:: https://github.com/PennLINC/CuBIDS/blob/readthedocs-update/docs/_static/screenshot_4.png
+.. image:: _static/screenshot_4.png
 
 Validation 
 -----------
@@ -104,8 +141,10 @@ errors present. Validation can be accomplished by running the following command:
 
 This command produces the following CSV: 
 
-INSERT VALIDATION CSV HERE!
-
+.. csv-table:: v0_validation.csv
+   :file: _static/v0_validation.csv
+   :widths: 10, 10, 10, 10, 10, 40, 10
+   :header-rows: 1
 
 The use of the sequential flag forces the validator to treat each participant as its own BIDS dataset. 
 This initial validation run reveals that Phase Encoding Direction (PED) is not specified for one of the 
@@ -125,7 +164,7 @@ sidecars and IntendedFor references in the sidecars of fieldmaps, are also delet
 be reflected in the git history.
 
 
-.. image:: https://github.com/PennLINC/CuBIDS/blob/readthedocs-update/docs/_static/screenshot_5.png
+.. image:: _static/screenshot_5.png
 
 
 Returning again to ``v0_validation.csv``, we can also see that there is one DWI scan missing 
@@ -141,7 +180,7 @@ latest changes to the dataset with a detailed commit message as follows:
 
 This change will be reflected in the git history.
 
-.. image:: https://github.com/PennLINC/CuBIDS/blob/readthedocs-update/docs/_static/screenshot_6.png
+.. image:: _static/screenshot_6.png
 
 To verify that there are no remaining validation errors, we rerun validation with the following command:
 
@@ -181,6 +220,12 @@ as dimension and voxel sizes, number of volumes, etc. While ``v0_validation.csv`
 in the dataset, it will not identify several issues that might be present with the sidecars. Such issues include instances of 
 erroneous metadata and missing sidecar fields, which may impact successful execution of BIDS Apps. 
 
+
+.. csv-table:: v0_summary.csv
+   :file: _static/v0_summary.csv
+   :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
+   :header-rows: 1
+
 Examining ``v0_summary.csv`` we can see that one DWI Parameter Group––``acquisition-HASC55AP_datatype-dwi_suffix-dwi__2``––contains 
 only one scan (see “Counts” column) with only 10 volumes (see “NumVolumes” column). Since the majority of DWI scans in this dataset 
 have 61 volumes, CuBIDS assigns this single scan to a “Non-Dominant”, or “Variant” Parameter Group and populates that Parameter 
@@ -190,6 +235,11 @@ To do this, we can either use ``cubids-purge``, or we can edit v0_summary.csv by
 (Parameter Group) we want to remove. This will ensure all scans in that Parameter Group (in this example, just one scan) are removed. 
 We will then save this edited version of v0_summary.csv as v0_edited_summary.csv, which will be passed into ``cubids-apply`` in our next 
 curation step. 
+
+.. csv-table:: v0_edited_summary.csv
+   :file: _static/v0_edited_summary.csv
+   :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
+   :header-rows: 1
 
 Applying Changes
 -----------------
@@ -207,7 +257,7 @@ those in the acquisition’s Dominant Group. We execute ``cubids-apply`` with th
 
 Checking our git log, we can see that our changes from apply have been saved.
 
-.. image:: https://github.com/PennLINC/CuBIDS/blob/readthedocs-update/docs/_static/screenshot_7.png
+.. image:: _static/screenshot_7.png
 
 As a final step, we can check the four grouping CSVs ``cubids-apply`` produces to ensure they look as 
 expected––that all files with variant scanning parameters have been renamed to indicate the parameters 
