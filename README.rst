@@ -25,7 +25,7 @@ functionalities:
   3. Prepares BIDS data for successful preprocessing pipeline runs.
   4. Helps users perform metadata-based quality control. 
 
-.. image:: https://github.com/PennLINC/CuBIDS/blob/readthedocs-update/docs/_static/cubids_workflow.png
+.. image:: docs/_static/cubids_workflow.png
 
 
 Definitions
