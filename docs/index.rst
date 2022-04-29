@@ -1,14 +1,14 @@
 .. CuBIDS documentation master file
 
-.. include:: ../README.rst
+.. include:: README.rst
 
 Contents
 --------
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 2
 
-   readme
+   about
    installation
    usage
    example
