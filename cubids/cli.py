@@ -1,7 +1,5 @@
 """Console script for cubids."""
 import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-
 import argparse
 import subprocess
 import os
@@ -19,9 +17,11 @@ from .validator import (build_validator_call,
                         build_subject_paths)
 from .metadata_merge import merge_json_into_json
 
+warnings.simplefilter(action='ignore', category=FutureWarning)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('cubids-cli')
 GIT_CONFIG = os.path.join(os.path.expanduser("~"), '.gitconfig')
+
 
 def cubids_validate():
     '''Command Line Interface function for running the bids validator.'''
@@ -81,9 +81,6 @@ def cubids_validate():
                                         opts.ignore_nifti_headers,
                                         opts.ignore_subject_consistency)
             ret = run_validator(call)
-
-            # if ret.returncode != 0:
-            #     logger.error("Errors returned from validator run, parsing now")
 
             # parse the string output
             parsed = parse_validator_output(ret.stdout.decode('UTF-8'))

@@ -1,7 +1,5 @@
 """Main module."""
 import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-
 from collections import defaultdict
 import subprocess
 import bids
@@ -23,6 +21,7 @@ from .constants import ID_VARS, NON_KEY_ENTITIES
 from .config import load_config
 from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
+warnings.simplefilter(action='ignore', category=FutureWarning)
 bids.config.set_option('extension_initial_dot', True)
 
 
@@ -486,7 +485,7 @@ class CuBIDS(object):
             else:
                 print("No IntendedFor References to Rename")
 
-    def copy_exemplars(self, exemplars_dir, exemplars_csv, min_group_size, 
+    def copy_exemplars(self, exemplars_dir, exemplars_csv, min_group_size,
                        raise_on_error=True):
         """Copies one subject from each Acquisition Group into a new directory
         for testing *preps, raises an error if the subjects are not unlocked,
@@ -643,7 +642,6 @@ class CuBIDS(object):
         for rm_me in to_remove:
             if Path(rm_me).exists():
                 purge_commands.append("rm " + rm_me)
-
 
         # datalad run the file deletions (purges)
         full_cmd = "\n".join(purge_commands)
@@ -942,9 +940,9 @@ class CuBIDS(object):
         # Calculate the acq groups
         group_by_acquisition_sets(path_prefix + "_files.csv", path_prefix,
                                   self.acq_group_level)
-        
+
         print("Detected " + str(len(summary)) + " Parameter Groups.")
-        
+
     def get_key_groups(self):
         '''Identifies the key groups for the bids dataset'''
 
@@ -975,11 +973,11 @@ class CuBIDS(object):
     def change_metadata(self, filters, pattern, metadata):
 
         files_to_change = self.layout.get(return_type='object', **filters)
-  
+
         for bidsfile in files_to_change:
             # get the sidecar file
             bidsjson_file = bidsfile.get_associations()
-          
+
             if not bidsjson_file:
                 print("NO JSON FILES FOUND IN ASSOCIATIONS")
                 continue
