@@ -1,45 +1,57 @@
 .. include:: ../README.rst
 
+Motivation
+-------------
+
+The Brain Imaging Data Structure (BIDS) is a simple and intuitive way to
+organize and describe MRI data [#f1]_. Because of its ease of use, a wide array of
+preprocessing and analysis tools and pipelines have been developed specifically
+to operate on data curated in BIDS [#f2]_. These tools are able to automatically
+self-configure to the user's BIDS dataset, which saves time and effort on the
+part of the user. However, as datasets increase in size and complexity, it
+can be dangerous to blindly run these pipelines without a careful understanding of
+what's really in your BIDS data. Having knowledge of this potential **heterogeneity**
+ahead of time gives researchers the ability to **predict pipeline configurations**,
+**predict potential errors**, avoid running **unwanted or unusable data**, and **budget
+their computational time and resources** effectively.
+
+``CuBIDS`` is designed to facilitate the curation of such large, messy imaging data, so
+that you can infer useful information from descriptive and accurate BIDS labels
+before running pipelines *en masse*. ``CuBIDS`` accomplishes this by detecting
+:ref:`keygroup` s and :ref:`paramgroup` differences in your data (we'll explain what these
+are in more detail in the next section).
+
+The image below demonstrates the ``CuBIDS`` workflow that we'll discuss on the next page.
+
 .. image:: cubids_workflow.png
    :width: 600
-
 
 Definitions
 ------------
 
-Key Group
-"""""""""
+.. topic:: Key Group
 
-        * A unique set of `BIDS key-value pairs <https://bids-specification.readthedocs.io/en/stable/02-common-principles.html#file-name-structure>`_ , excluding the subject and session keys.
-        * Derived from the filename
-        * Example structure: ``acquisition-*_datatype-*_run-*_task-*_suffix`` 
+    * A unique set of `BIDS key-value pairs <https://bids-specification.readthedocs.io/en/stable/02-common-principles.html#file-name-structure>`_ , excluding the subject and session keys.
+    * Derived from the Filename
+    * Example structure: ``acquisition-*_datatype-*_run-*_task-*_suffix`` 
 
-Within a key group, all scanning parameters are expected to be identical.
+.. topic:: Parameter (Param) Group
 
-Parameter (Param) Group
-"""""""""""""""""""""""
+    * The set of scans with identical critical imaging parameters. 
+    * Defined within a Key Group
+    * Numerically identified (e.g. 1, 2, etc.)
 
-        * The set of scans with identical critical imaging parameters. 
-        * Defined within a Key Group
-        * Numerically identified (e.g. 1, 2, etc.)
+.. topic:: Dominant Group
 
-These parameters affect how BIDS Apps will configure their pipelines (e.g. fieldmap availability, multiband factor, etc).
+    * The Param Group that contains the highest number of scans in its Key Group.
 
-Dominant Group
-""""""""""""""
-        * The Param Group that contains the highest number of scans in its Key Group.
+.. topic:: Variant Group
+    
+    * Any Param Group that is non-dominant.
 
-Variant Group
-"""""""""""""
-        * Any Param Group that is non-dominant.
+.. topic:: Rename Key Group
 
-Rename Key Group
-""""""""""""""""
-        * Recommended new Key Group name for variant Param Group 
-
-CuBIDS will suggest renaming any non-dominant Param Group to include ``VARIANT*`` in the acquisition field, where ``*`` is reason the Param Group varies from the dominant.
-When ``cubids-apply`` is run, filenames will get renamed according to this auto-generated rename group.
-In doing so, ``cubids-apply`` adds important information about a scan's variant metadata to the acquisition field of it's BIDS filename.
+    * Recommended new Key Group name for variant Param Group 
 
 Examples
 """"""""
@@ -55,3 +67,8 @@ A variant resting state BOLD group
         * Param Group: ``2`` (Variant Group)
         * Rename Key Group: ``acquisition-singlebandVARIANTNoFmap_datatype-func_suffix-bold_task-rest``
 
+
+.. rubric:: Footnotes
+
+.. [#f1] See the `BIDS Specification <https://bids-specification.readthedocs.io>`_.
+.. [#f2] See this list of amazing `BIDS apps <https://bids-apps.neuroimaging.io/>`_.
