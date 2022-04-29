@@ -2,12 +2,24 @@
 CuBIDS Workflow
 ===============
 
-Curating MRI data using BIDS opens up a world of wonderful pipeline tools
-to automatically and correctly preprocess (or more) your data. This software
-is designed to help facilitate the BIDS curation of large, messy data so
-that you can be confident that your BIDS labels are descriptive and accurate
-before running pipelines *en masse*.
+Motivation
+-------------
 
+The Brain Imaging Data Structure (BIDS) is a simple and intuitive way to
+organize and describe MRI data [#f1]_. Because of its ease of use, a wide array of
+preprocessing and analysis tools and pipelines have been developed specifically
+to operate on data curated in BIDS [#f2]_. These tools are able to automatically
+self-configure to the user's BIDS dataset, which saves time and effort on the
+part of the user. However, as datasets increase in size and complexity, it
+can be dangerous to blindly run these pipelines without a careful understanding of
+what's really in your BIDS data. Having knowledge of this potential **heterogeneity**
+ahead of time gives researchers the ability to **predict pipeline configurations**,
+**predict potential errors**, avoid running **unwanted or unusable data**, and **budget
+their computational time and resources** effectively.
+
+``CuBIDS`` is designed to facilitate the curation of such large, messy imaging data, so
+that you can infer useful information from descriptive and accurate BIDS labels
+before running pipelines *en masse*.
 
 The big picture
 ---------------
@@ -254,3 +266,8 @@ Applying these changes we would see:
     ,,datatype-dwi_run-1_suffix-dwi,5,2,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
     ,,datatype-dwi_run-1_suffix-dwi,6,16,,70,8.1
 
+
+.. rubric:: Footnotes
+
+.. [#f1] See the `BIDS Specification <https://bids-specification.readthedocs.io>`_.
+.. [#f2] See this list of amazing `BIDS apps <https://bids-apps.neuroimaging.io/>`_.
