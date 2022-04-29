@@ -305,9 +305,6 @@ def cubids_group():
             cmd.insert(4, input_config_dir_link)
             cmd += ['--config', linked_input_config]
 
-    if opts.use_datalad:
-        cmd.append("--use-datalad")
-
     if opts.acq_group_level:
         cmd.append("--acq-group-level")
         cmd.append(str(opts.acq_group_level))
