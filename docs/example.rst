@@ -1,23 +1,36 @@
-=================
-Full Walkthrough
-=================
+===================
+Example Walkthrough
+===================
 
-The CuBIDS workflow is currently being used in neuroimaging labs at a number of institutions 
-including University of Pennsylvania, Children’s Hospital of Philadelphia, Child Mind Institute, 
-and University of Minnesota’s Masonic Institute for the Developing Brain. The following walkthrough 
-displays the process of curating a dataset using CuBIDS. To do so, we use an example dataset that is 
-bundled with the software and can be found at https://github.com/PennLINC/CuBIDS/tree/main/cubids/testdata/BIDS_Dataset 
+The ``CuBIDS`` workflow is currently being used in neuroimaging labs at a number of institutions 
+including University of Pennsylvania, Children's Hospital of Philadelphia, the Child Mind Institute, 
+and University of Minnesota's Masonic Institute for the Developing Brain. Below, we'll replicate the process of curating
+a dataset using ``CuBIDS`` as they've done many times before. To do so, we'll use an example dataset that comes
+bundled with the software, and can be found `in the Github repo <https://github.com/PennLINC/CuBIDS/tree/main/cubids/testdata/BIDS_Dataset>`_.
 
+Following the installation instructions at :doc:`the installation page <installation>`,
+you should have successfully installed ``CuBIDS``, ``dataLad``, and the ``bids-validator`` inside a
+conda environment titled "mycubids". In this example, we use validator version ``1.7.2``.
+Using a different version of the validator may result in slightly different validation
+CSV outputs, but the example should still be useful. 
 
-We have installed CuBIDS, DataLad, and the bids-validator inside a conda environment titled “test-env.” In this 
-example, we use the bids-validator version 1.7.2. Using a different version of the validator may result in 
-slightly different validation csv printouts. Throughout this example, we use DataLad for version 
-control. 
+Throughout this example, we use ``datalad`` for version control. Although ``datalad``
+is an optional dependency of ``CuBIDS``, we use it here to demonstrate its
+powerful integration with ``CuBIDS`` and the benefits it can provide its users. 
+We'll replicate this workflow in a new ``CuBIDS_Test`` directory in the user's ``$HOME``, with the
+path to this example dataset as ``$HOME/CuBIDS_Test/BIDS_Dataset``.
 
-Although DataLad is an optional dependency of CuBIDS, we use it in this example to demonstrate the 
-version control curation capabilities of CuBIDS. For the purposes of this walkthrough, the path to this 
-example dataset is ``~/BIDS_Dataset``
+.. code-block:: console
 
+    $ mkdir -p ~/CuBIDS_Test && cd ~/CuBIDS_Test
+    $ conda activate cubids
+
+Now, download and unzip the example data (you can also do this in your Finder window):
+
+.. code-block:: console
+    
+    $ wget https://github.com/PennLINC/CuBIDS/raw/main/cubids/testdata/BIDS_Dataset.zip
+    $ unzip BIDS_Dataset.zip
 
 Identifying and removing PHI 
 ------------------------------------------
