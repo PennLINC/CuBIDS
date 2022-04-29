@@ -10,7 +10,7 @@ bundled with the software and can be found at https://github.com/PennLINC/CuBIDS
 
 
 We have installed CuBIDS, DataLad, and the bids-validator inside a conda environment titled “test-env.” In this 
-example, we use the bids-validator version 1.7.2. using a different version of the validator may result in 
+example, we use the bids-validator version 1.7.2. Using a different version of the validator may result in 
 slightly different validation csv printouts. Throughout this example, we use DataLad for version 
 control. 
 
