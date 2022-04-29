@@ -17,13 +17,9 @@ About
 -----
 
 ``CuBIDS`` is a workflow and software package designed to facilitate
-reproducible curation of BIDS datasets. This software includes the following 
-functionalities:
+reproducible curation of BIDS datasets. This software helps users:
 
-  1. Ensures data is valid BIDS.
-  2. Visualizes and summarizes the metadata heterogeneity in a BIDS dataset. 
-  3. Prepares BIDS data for successful preprocessing pipeline runs.
-  4. Helps users perform metadata-based quality control. 
-
-.. image:: https://raw.githubusercontent.com/PennLINC/CuBIDS/blob/main/docs/_static/cubids_workflow.png?sanitize=true
-  :width: 400
+  1. Ensure data is BIDS-valid;
+  2. Visualize and summarize heterogeneity of metadata in a BIDS dataset;
+  3. Flexibly tailor heterogenous BIDS data for preprocessing pipeline runs;
+  4. Perform metadata-based quality control.
