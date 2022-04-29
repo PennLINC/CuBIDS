@@ -266,7 +266,7 @@ all your data through pipelines.
 
 Recall the schematic:
 
-.. image:: cubids_workflow.png
+.. image:: _static/cubids_workflow.png
 
 In the next section, we'll introduce ``datalad`` and walk through a real example.
 

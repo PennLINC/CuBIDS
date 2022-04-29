@@ -21,7 +21,7 @@ are in more detail in the next section).
 
 The image below demonstrates the ``CuBIDS`` workflow that we'll discuss on the next page.
 
-.. image:: cubids_workflow.png
+.. image:: _static/cubids_workflow.png
    :width: 600
 
 ``CuBIDS`` also pairs well with ``datalad`` for maintaining data provenance, enhancing
