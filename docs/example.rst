@@ -65,9 +65,9 @@ To do this, we run the following command:
 
 .. code-block:: console
 
-    $ datalad create -c text2git BIDS_Dataset_Datalad
+    $ datalad create -c text2git BIDS_Dataset_DataLad
 
-This command creates a brand new directory called ``BIDS_Dataset_Datalad`` where
+This command creates a brand new directory called ``BIDS_Dataset_DataLad`` where
 ``datalad`` will begin implementing version control and provenance tracking while
 we implement the rest of our ``CuBIDS`` workflow.
 The creation of our ``datalad`` dataset is accordingly reflected in the dataset's version control 
@@ -89,7 +89,7 @@ dataset and save the changes.
 .. code-block:: console
 
     $ cd ..
-    $ cp -r BIDS_Dataset/* BIDS_Dataset_Datalad
+    $ cp -r BIDS_Dataset/* BIDS_Dataset_DataLad
 
 In addition to being able to access the version history of our data, any point in this workflow, we can 
 also check the status of untracked (not yet saved) changes using the datalad status command, as seen 
@@ -111,14 +111,16 @@ run save. It is best practice to provide a detailed commit message, for example:
 
 .. code-block:: console
 
-    $ datalad save -d ~/CuBIDS_Test/BIDS_Dataset_Datalad -m "checked dataset into datalad"
+    $ datalad save -d ~/CuBIDS_Test/BIDS_Dataset_DataLad -m "checked dataset into datalad"
 
-At this point, we can check our git history, which will display the version history of our dataset 
+At this stage we also recommend moving/removing the ``BIDS_Dataset`` directory — its contents are
+safely copied and tracked in ``BIDS_Dataset_DataLad``.
+We can check our ``git`` history to be sure, which will display the version history of our dataset 
 thus far, with the following command: 
 
 .. code-block:: console
 
-    $ cd BIDS_Dataset_Datalad/
+    $ cd BIDS_Dataset_DataLad/
     $ git log --oneline
 
 which will produce the following: 
@@ -133,20 +135,23 @@ the data.
 Adding NIfTI Information to JSON Sidecars
 -------------------------------------------
 
-Next, we seek to add new fields regarding our image parameters that are only reflected in the NIfTI 
-header to our metadata; these include important details such as image dimensions, number of volumes, 
-image obliquity, and voxel sizes. To do this, we run:
+Next, we seek to add more image parameters to our sidecars so that we can better define our Key Groups.
+Historically, only a subset of parameters in the NIfTI image header have been included in a BIDS sidecar...
+Parameters such as image dimensions, number of volumes, image obliquity, and voxel sizes — all important
+data that can change how our pipelines will eventually run!
+
+To add them to the sidecar metadata, run:
 
 .. code-block:: console
 
     $ cd ..
-    $ cubids-add-nifti-info ~/CuBIDS_Test/BIDS_Dataset_Datalad --use-datalad
+    $ cubids-add-nifti-info ~/CuBIDS_Test/BIDS_Dataset_DataLad --use-datalad
 
 This command adds the NIfTI header information to the JSON sidecars and saves those changes. In order 
 to ensure that this command has been executed properly, we can run ``cubids-print-metadata-fields`` 
-once more, which reveals that NIfTI header information has been successfully included in the metadata. 
-Since we ran ``cubids-add-nifti-info`` with the ``–-use-datalad`` flag set, CuBIDS will automatically save the changes 
-made to the dataset to the git log as follows:
+once more, which reveals that new NIfTI header information has been successfully included in the metadata. 
+Since we ran ``cubids-add-nifti-info`` with the ``--use-datalad`` flag set, ``CuBIDS`` automatically saves
+the changes made to the dataset to the git log as follows:
 
 
 .. image:: _static/screenshot_4.png
@@ -154,15 +159,14 @@ made to the dataset to the git log as follows:
 Validation 
 -----------
 
-The next step in the CuBIDS workflow is to understand what BIDS validation errors may be present 
-(using ``cubids-validate``) as well as the structure, heterogeneity, and metadata errors present in the 
-dataset (using ``cubids-group``). Notably, neither of these two programs requires write access to the data, 
-as each simply reads in the contents of the data and creates CSVs that parse the metadata and validation 
-errors present. Validation can be accomplished by running the following command:
+The next step in the ``CuBIDS`` workflow is to run BIDS validation
+to detect potential curation errors using ``cubids-validate``.
 
 .. code-block:: console
 
-    $ cubids-validate ~/BIDS_Dataset_Datalad ~/v0 --sequential
+    $ cubids-validate ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/v0 --sequential
+
+.. note::  The use of the ``--sequential`` flag forces the validator to treat each participant as its own BIDS dataset. This can be helpful for identifying heterogenous elements, but can be slowed down by extremely large datasets.
 
 This command produces the following CSV: 
 
@@ -171,32 +175,48 @@ This command produces the following CSV:
    :widths: 10, 10, 10, 10, 10, 40, 10
    :header-rows: 1
 
-The use of the sequential flag forces the validator to treat each participant as its own BIDS dataset. 
-This initial validation run reveals that Phase Encoding Direction (PED) is not specified for one of the 
-BOLD task-rest scans. We can clearly see that we either need to find the PED for this scan elsewhere and 
-edit that sidecar to include it or remove that scan from the dataset, as this missing scanning parameter 
-will render field map correction impossible. For the purpose of this demonstration, we elect to remove 
-the scan. To do this, we run the following command: 
+This initial validation run reveals firstly that Phase Encoding Direction (PED) is not specified
+for one of the task-rest BOLD scans. This is an important parameter
+for `fieldmap correction in fMRIPRep <https://fmriprep.org/en/0.6.0/sdc/estimation.html#fmriprep.workflows.epi.init_nonlinear_sdc_wf>`_, 
+so knowing this ahead of time is valuable information.
+To resolve this, we could either find the PED for this scan elsewhere and 
+edit its sidecar to include it, or remove that scan from the dataset.
+For the purpose of this demonstration, we elect to remove 
+the scan. To do this, we run the ``cubids-purge`` command.
+
+``cubids-purge`` requires as input a list of files to cleanly 
+"purge" from the dataset. You can create this file in any
+text editor, as long as it is saved as plain text ``.txt``. For this example, we created the following file: 
+
+.. literalinclude:: _static/No_PED.txt
+    :linenos:
+
+(Be sure to modify the path in your walkthrough)
+
+To safely purge this file from the dataset, run:
 
 .. code-block:: console
 
-    $ cubids-purge ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/no_ped.txt --use-datalad 
+    $ cubids-purge ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/No_PED.txt --use-datalad 
 
-Here, no_ped.txt is a text file containing the path to the dwi scan flagged in v0_validation.txt 
-for missing PED which the user must create before running cubids-purge. We elect to use purge instead 
-of simply removing the scan due to the fact that purge will ensure all associated files, including 
-sidecars and IntendedFor references in the sidecars of fieldmaps, are also deleted. This change will 
-be reflected in the git history.
-
+We elect to use purge instead of simply removing the scan
+due to the fact that purge will ensure all associated files,
+such as sidecars and IntendedFor references in fieldmaps, are
+also safely deleted. ``CuBIDS``` makes sure this is reflected in the
+``git`` history:
 
 .. image:: _static/screenshot_5.png
 
 
 Returning again to ``v0_validation.csv``, we can also see that there is one DWI scan missing 
-TotalReadoutTime, a metadata field necessary for certain pipelines. In this case, we determine 
-that TotalReadoutTime (TRT) was erroneously omitted from the DWI sidecars. For the purpose of this 
-example, we assume we are able to obtain the TRT value for this scan, by asking the scanner tech. 
-Once we have this value, we manually add it to the sidecar for which it is missing. We then save the 
+TotalReadoutTime, a metadata field necessary for 
+`fieldmap correction <https://osf.io/k6rm5/wiki/1.1_Field_map_correction/>`_.
+After conferring with our MR physicist and the scanner technician, we determine 
+that TotalReadoutTime (TRT) was erroneously omitted from the DWI sidecars!
+After some digging, the technician provided us with the correct value, so it's now our job to manually 
+add it to the sidecar for which it is missing. You can do this in any text editor of
+your choice. The example value we'll use is ``"TotalReadoutTime": 0.0717598,``
+We then save the 
 latest changes to the dataset with a detailed commit message as follows:
 
 .. code-block:: console
@@ -213,52 +233,67 @@ To verify that there are no remaining validation errors, we rerun validation wit
 
     $ cubids-validate ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/v1 --sequential
 
-This command will produce no CSV output and instead print “No issues/warnings parsed, your dataset is 
+This command should produce no CSV output, and instead print “No issues/warnings parsed, your dataset is 
 BIDS valid” to the terminal, which indicates that the dataset is now free from BIDS validation errors 
 and warnings.
 
-Metadata Heterogenaity Parsing 
-------------------------------
+Parsing Heterogeneity
+---------------------
 
-Along with parsing the BIDS validation errors in our dataset, it is important to understand the 
-dataset’s structure, heterogeneity, and metadata errors. To accomplish these tasks, we use ``cubids-group``. 
-Large datasets almost inevitably contain multiple validation and metadata errors. As such, it is 
-typically useful to run both cubids-validate and cubids-group in parallel, as validation errors are 
-better understood within the context of a dataset’s heterogeneity. Additionally, being able to see 
-both the metadata errors—missing or incorrectly specified sidecar parameters—that grouping reveals, 
-alongside BIDS errors the validator catches, gives users a more comprehensive view of the issues they 
-will need to fix during the curation process. The command to run the grouping function is as follows:
+Next, we'll use ``CuBIDS`` to gain some insight on the
+dataset's structure, heterogeneity, and metadata errors.
+We'll do this with ``cubids-group``.
+
+Large datasets almost inevitably contain multiple validation and metadata 
+errors, so it's useful to run both ``cubids-validate`` and ``cubids-group``
+in parallel, as validation errors are better understood within the context of a dataset's heterogeneity. Being able to see 
+both metadata errors (such as missing or incorrectly specified
+sidecar parameters) that grouping reveals alongside BIDS errors that
+the validator catches, gives users a more comprehensive view of
+the issues they will need to fix during the curation process.
+The command to run the grouping function is:
 
 .. code-block:: console
 
     $ cubids-group ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/v0
 
-This command will produce four tables that display the dataset’s heterogeneity in different ways. First, ``v0_summary.csv``
-contains all detected Key and Parameter groups and provides a high-level overview of the heterogeneity in the entire 
-dataset. Second, ``v0_files.csv`` maps each imaging file in the BIDS directory to a Key and 
-Parameter group. Third, ``v0_AcqGrouping.csv`` maps each session in the dataset to an Acquisition Group. Finally, 
-``v0_AcqGroupInfo.txt`` lists the set of scanning parameters present in each Acquisition Group.
+This command will produce four tables that describe the dataset's
+heterogeneity in different ways.
 
-The next step in the CuBIDS curation process is to examine ``v0_summary.csv``, which allows for automated metadata quality 
-assurance (QA)––the identification of incomplete, incorrect, or unusable parameter groups based on acquisition fields such 
-as dimension and voxel sizes, number of volumes, etc. While ``v0_validation.csv`` identified all BIDS validation errors present 
-in the dataset, it will not identify several issues that might be present with the sidecars. Such issues include instances of 
-erroneous metadata and missing sidecar fields, which may impact successful execution of BIDS Apps. 
+#. ``v0_summary.csv`` contains all detected Key and Parameter groups and provides a high-level overview of the heterogeneity in the entire dataset.
+#. ``v0_files.csv`` maps each imaging file in the BIDS directory to a Key and Parameter group.
+#. ``v0_AcqGrouping.csv`` maps each session in the dataset to an Acquisition Group.
+#. ``v0_AcqGroupInfo.txt`` lists the set of scanning parameters present in each Acquisition Group.
 
+By first examining ``v0_summary.csv`` users are given he opportunity to
+conduct metadata quality assurance (QA). The file can help identify
+instances of incomplete, incorrect, or unusable parameter groups,
+based on acquisition fields such as dimension and voxel sizes, number of volumes, obliquity, and more. 
+
+While ``v0_validation.csv`` identified all the BIDS validation errors 
+present in the dataset, it did not identify any potential issues that
+might be present within the sidecars' metadata. Below, we see insances of missing
+metadata fields in a handful of sidecars, which may impact successful execution of BIDS Apps. 
 
 .. csv-table:: v0_summary.csv
    :file: _static/v0_summary.csv
    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
    :header-rows: 1
 
-Examining ``v0_summary.csv`` we can see that one DWI Parameter Group––``acquisition-HASC55AP_datatype-dwi_suffix-dwi__2``––contains 
-only one scan (see “Counts” column) with only 10 volumes (see “NumVolumes” column). Since the majority of DWI scans in this dataset 
-have 61 volumes, CuBIDS assigns this single scan to a “Non-Dominant”, or “Variant” Parameter Group and populates that Parameter 
-Group’s “RenameKeyGroup” column in ``v0_summary.csv`` with ``acquisition-HASC55APVARIANTNumVolumes_datatype-dwi_suffix-dwi``. For the 
-purpose of this demonstration, we elect to remove this scan because it does not have enough volumes to be usable for most analyses. 
-To do this, we can either use ``cubids-purge``, or we can edit v0_summary.csv by adding “0” to the “MergeInto” column in the row 
-(Parameter Group) we want to remove. This will ensure all scans in that Parameter Group (in this example, just one scan) are removed. 
-We will then save this edited version of v0_summary.csv as v0_edited_summary.csv, which will be passed into ``cubids-apply`` in our next 
+Examining ``v0_summary.csv`` we can see that one DWI Parameter Group — ``acquisition-HASC55AP_datatype-dwi_suffix-dwi__2`` — contains
+only one scan (see "Counts" column) with only 10 volumes (see 
+"NumVolumes" column). Since the majority of DWI scans in this dataset 
+have 61 volumes, ``CuBIDS`` assigns this single scan to a "Variant"
+(i.e. non-dominant) Parameter Group, and automatically populates
+that Parameter Group's "RenameKeyGroup" column in ``v0_summary.csv``
+with a suggested name: ``acquisition-HASC55APVARIANTNumVolumes_datatype-dwi_suffix-dwi``.
+This time, though, we elect to remove this scan because it does not have enough volumes to be usable for most analyses. 
+To do this, we can either use ``cubids-purge`` again, *or* we could
+edit v0_summary.csv by adding ``0`` to the ``MergeInto`` column
+in the row (Parameter Group) we want to remove. This will ensure all
+scans in that Parameter Group (in this example, just one scan) are removed. 
+
+Make this change and save this edited version of ``v0_summary.csv`` as ``v0_edited_summary.csv``, which will be passed to ``cubids-apply`` in our next 
 curation step. 
 
 .. csv-table:: v0_edited_summary.csv
@@ -269,8 +304,9 @@ curation step.
 Applying Changes
 -----------------
 
-Now that all metadata issues have been remedied––both the validation an summary outputs appear problem-free––we are ready to 
-rename our files based on their RenameKeyGroup values and apply the requested deletion in ``v0_edited_summary.csv``. The cubids-apply 
+Now that all metadata issues have been addressed — both validation and
+``CuBIDS`` summary — we are ready to rename our files based on their
+RenameKeyGroup values and apply the requested deletion in ``v0_edited_summary.csv``. The cubids-apply 
 function renames scans in each Variant Parameter Group according to the metadata parameters with a flag “VARIANT”, which is useful 
 because the user will then be able to see, in each scan’s filename, which metadata parameters associated with that scan vary from 
 those in the acquisition’s Dominant Group. We execute ``cubids-apply`` with the following command:
@@ -284,29 +320,33 @@ Checking our git log, we can see that our changes from apply have been saved.
 
 .. image:: _static/screenshot_7.png
 
-As a final step, we can check the four grouping CSVs ``cubids-apply`` produces to ensure they look as 
-expected––that all files with variant scanning parameters have been renamed to indicate the parameters 
+As an optional final step, we can check the four grouping CSVs ``cubids-apply`` produces to ensure they look as 
+expected — that all files with variant scanning parameters have been renamed to indicate the parameters 
 that vary in the acquisition fields of their filenames.
 
 Exemplar Testing
 -----------------
 
-At this stage, the curation of the dataset is complete; next is pre-processing. CuBIDS facilitates 
-this subsequent step through the creation of an Exemplar Dataset: a subset of the full dataset that 
-spans the full variation of acquisitions and parameters by including one subject from each Acquisition 
-Group. By testing only one subject per Acquisition Group, users are able to pinpoint both the specific 
-metadata values and scans that may be associated with pipeline failures; these acquisition groups could 
-then be evaluated in more detail and flagged for remediation or exclusion. The Exemplar Dataset can 
-easily be created with the ``cubids-copy-exemplars`` command, to which we pass in ``v2_AcqGrouping.csv``
-––the post ``cubids-apply`` acquisition grouping csv.
+The curation of the dataset is complete; finally, it's time
+for pre-processing. To streamline this step, and as an added measure
+for reproducibility and quality assurance, ``CuBIDS`` facilitates this
+subsequent step through the creation of an *Exemplar Dataset*: a subset
+of the full dataset that spans the full variation of acquisitions and
+parameters by including one subject from each Acquisition Group.
+By testing only one subject per Acquisition Group, users are able to
+pinpoint specific metadata values and scans that may trigger
+pipeline failures. These acquisition groups could then be evaluated in
+more detail and flagged for remediation or exclusion. The *Exemplar 
+Dataset* can easily be created with the ``cubids-copy-exemplars``
+command, to which we pass in ``v2_AcqGrouping.csv`` as input
+(the post ``cubids-apply`` acquisition grouping CSV).
 
 .. code-block:: console
 
-    $ cubids-copy-exemplars ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/Exemplar_Dataset ~/v1_AcqGrouping.csv –-use-datalad
+    $ cubids-copy-exemplars ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/Exemplar_Dataset ~/CuBIDS_Test/v1_AcqGrouping.csv --use-datalad
 
-Once a preprocessing pipeline completes successfully on the Exemplars, the full dataset can be executed 
-with confidence, as a pipeline’s behavior on the full range of metadata heterogeneity in the dataset 
+Once a preprocessing pipeline completes successfully on the Exemplars,
+the full dataset can be executed with confidence, as a pipeline's
+behavior on the full range of metadata heterogeneity in the dataset 
 will have already been discovered during exemplar testing. 
-
-
 
