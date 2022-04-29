@@ -234,6 +234,25 @@ Applying these changes we would see:
     ,,datatype-dwi_run-1_suffix-dwi,6,16,,70,8.1
 
 
+Command Line Tools
+-------------------
+
+With that brief introduction done, we can introduce the full gamut
+of ``CuBIDS`` command line tools:
+
+.. autofunction:: cubids.cli.cubids_add_nifti_info
+.. autofunction:: cubids.cli.cubids_apply
+.. autofunction:: cubids.cli.cubids_copy_exemplars
+.. autofunction:: cubids.cli.cubids_datalad_save
+.. autofunction:: cubids.cli.cubids_group
+.. autofunction:: cubids.cli.cubids_print_metadata_fields
+.. autofunction:: cubids.cli.cubids_purge
+.. autofunction:: cubids.cli.cubids_remove_metadata_fields
+.. autofunction:: cubids.cli.cubids_undo
+.. autofunction:: cubids.cli.cubids_validate
+
+
+
 The Big Picture
 ---------------
 

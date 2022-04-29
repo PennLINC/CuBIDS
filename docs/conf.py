@@ -182,5 +182,6 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-
+# -- Fix automodule config
+add_module_names = False
 
