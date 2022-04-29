@@ -1,4 +1,7 @@
 """Main module."""
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 from collections import defaultdict
 import subprocess
 import bids
@@ -52,14 +55,10 @@ class CuBIDS(object):
     @property
     def layout(self):
         if self._layout is None:
-            print("self._layout is None")
-            print(self.path)
             self.reset_bids_layout()
-            print("DONE SETTING BIDS LAYOUT")
         return self._layout
 
     def reset_bids_layout(self, validate=False):
-        print("SETTING BIDS LAYOUT")
         self._layout = bids.BIDSLayout(self.path, validate=validate)
 
     def init_datalad(self):
@@ -77,13 +76,10 @@ class CuBIDS(object):
 
         self.datalad_handle = dlapi.Dataset(self.path)
         if not self.datalad_handle.is_installed():
-            print("NO DATALAD DATASET DETECTED")
             self.datalad_handle = dlapi.create(self.path,
                                                cfg_proc='text2git',
                                                force=True,
                                                annex=True)
-        else:
-            print("DATALAD DATASET DETECTED")
 
     def datalad_save(self, message=None):
         """Performs a DataLad Save operation on the BIDS tree.
@@ -137,7 +133,6 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
             if '/.' in str(path):
-                print(str(path))
                 continue
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 try:
@@ -233,7 +228,6 @@ class CuBIDS(object):
                     merge_commands.append(
                         'bids-sidecar-merge %s %s'
                         % (source_json, dest_json))
-        print("Performing %d merges" % len(merge_commands))
 
         # Get the delete commands
         # delete_commands = []
@@ -245,7 +239,6 @@ class CuBIDS(object):
                 if Path(rm_me).exists():
                     to_remove.append(rm_me)
                     # delete_commands.append("rm " + rm_me)
-        print("Deleting %d files" % len(to_remove))
 
         # call purge associations on list of files to remove
         self._purge_associations(to_remove)
@@ -291,11 +284,9 @@ class CuBIDS(object):
 
                 if Path(from_file).exists():
                     move_ops.append('mv %s %s' % (from_file, to_file))
-        print("Performing %d renamings" % len(move_ops))
 
         full_cmd = "\n".join(merge_commands + move_ops)
         if full_cmd:
-            print("RUNNING:\n\n", full_cmd)
             # write full_cmd to a .sh file
             # Open file for writing
             fileObject = open(new_prefix + "_full_cmd.sh", "w")
@@ -495,8 +486,8 @@ class CuBIDS(object):
             else:
                 print("No IntendedFor References to Rename")
 
-    def copy_exemplars(self, exemplars_dir, exemplars_csv, force_unlock,
-                       min_group_size, raise_on_error=True):
+    def copy_exemplars(self, exemplars_dir, exemplars_csv, min_group_size, 
+                       raise_on_error=True):
         """Copies one subject from each Acquisition Group into a new directory
         for testing *preps, raises an error if the subjects are not unlocked,
         unlocks each subject before copying if --force_unlock is set.
@@ -522,12 +513,6 @@ class CuBIDS(object):
         # load the exemplars csv
         subs = pd.read_csv(exemplars_csv)
 
-        # if only groups flag set, drop acq groups not in the list
-        # TODO: FIGURE OUT HOW GROUPS LIST IS READ IN! LIST?
-        # print("INCLUDE GROUPS: ")
-        # print(type(include_groups))
-        # print(include_groups)
-
         # if min group size flag set, drop acq groups with less than min
         if int(min_group_size) > 1:
             for row in range(len(subs)):
@@ -541,12 +526,7 @@ class CuBIDS(object):
 
         # cast list to a set to drop duplicates, then convert back to list
         unique_subs = list(set(unique['subject'].tolist()))
-        print("SUBS TO COPY", unique_subs)
         for subid in unique_subs:
-            if force_unlock:
-                # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
-                subprocess.run(["datalad", "unlock", str(self.path)
-                                + '/' + subid], cwd=self.path)
             source = str(self.path) + '/' + subid
             dest = exemplars_dir + '/' + subid
             # Copy the content of source to destination
@@ -579,6 +559,8 @@ class CuBIDS(object):
             reader = csv.reader(fd)
             for row in reader:
                 scans.append(str(row[0]))
+
+        # check to ensure scans are all real files in the ds!
 
         self._purge_associations(scans)
 
@@ -630,14 +612,12 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
 
             if str(path) in scans:
-                print("NIFTI TO PURGE DETECTED")
                 bids_file = self.layout.get_file(str(path))
                 associations = bids_file.get_associations()
 
                 for assoc in associations:
                     filepath = assoc.path
 
-                    print("ASSOC: ", filepath)
                     # ensure association is not an IntendedFor reference!
                     if '.nii' not in str(filepath):
                         to_remove.append(filepath)
@@ -652,7 +632,6 @@ class CuBIDS(object):
                     tsv = img_to_new_ext(str(path), '.tsv').replace(
                             '_bold', '_events')
                     if Path(tsv).exists():
-                        print(tsv)
                         to_remove.append(tsv)
                     # add tsv json (if exists)
                     if Path(tsv.replace('.tsv', '.json')).exists():
@@ -664,19 +643,17 @@ class CuBIDS(object):
         for rm_me in to_remove:
             if Path(rm_me).exists():
                 purge_commands.append("rm " + rm_me)
-        print("Deleting %d files" % len(purge_commands))
-        print("SCANS TO REMOVE: ", to_remove)
+
 
         # datalad run the file deletions (purges)
         full_cmd = "\n".join(purge_commands)
         if full_cmd:
-            print("RUNNING:\n\n", full_cmd)
+
             # write full_cmd to a .sh file
             # Open file for writing
 
             path_prefix = str(Path(self.path).parent)
-            print("PATH PREFIX!")
-            print(path_prefix)
+
             fileObject = open(path_prefix + "/" + "_full_cmd.sh", "w")
             fileObject.write("#!/bin/bash\n")
             fileObject.write(full_cmd)
@@ -965,7 +942,9 @@ class CuBIDS(object):
         # Calculate the acq groups
         group_by_acquisition_sets(path_prefix + "_files.csv", path_prefix,
                                   self.acq_group_level)
-
+        
+        print("Detected " + str(len(summary)) + " Parameter Groups.")
+        
     def get_key_groups(self):
         '''Identifies the key groups for the bids dataset'''
 
@@ -977,7 +956,6 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
             if '/.' in str(path):
-                print(str(path))
                 continue
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
@@ -996,14 +974,12 @@ class CuBIDS(object):
 
     def change_metadata(self, filters, pattern, metadata):
 
-        # TODO: clean prints and add warnings
-
         files_to_change = self.layout.get(return_type='object', **filters)
-        if not files_to_change:
-            print('NO FILES FOUND')
+  
         for bidsfile in files_to_change:
             # get the sidecar file
             bidsjson_file = bidsfile.get_associations()
+          
             if not bidsjson_file:
                 print("NO JSON FILES FOUND IN ASSOCIATIONS")
                 continue
@@ -1011,6 +987,7 @@ class CuBIDS(object):
             json_file = [x for x in bidsjson_file if 'json' in x.filename]
             if not len(json_file) == 1:
                 print("FOUND IRREGULAR ASSOCIATIONS")
+
             else:
                 # get the data from it
                 json_file = json_file[0]
