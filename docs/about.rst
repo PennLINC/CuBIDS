@@ -26,6 +26,9 @@ The image below demonstrates the ``CuBIDS`` workflow that we'll discuss on the n
 .. image:: cubids_workflow.png
    :width: 600
 
+``CuBIDS`` also pairs well with ``datalad`` for maintaining data provenance, enhancing
+reproducibility, and supporting collaboration [#f3]_.
+
 Definitions
 ------------
 
@@ -72,3 +75,4 @@ A variant resting state BOLD group
 
 .. [#f1] See the `BIDS Specification <https://bids-specification.readthedocs.io>`_.
 .. [#f2] See this list of amazing `BIDS apps <https://bids-apps.neuroimaging.io/>`_.
+.. [#f3] See `Datalad <https://www.datalad.org/>`_.
