@@ -1,4 +1,5 @@
 """Console script for cubids."""
+import warnings
 import argparse
 import subprocess
 import os
@@ -16,6 +17,7 @@ from .validator import (build_validator_call,
                         build_subject_paths)
 from .metadata_merge import merge_json_into_json
 
+warnings.simplefilter(action='ignore', category=FutureWarning)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('cubids-cli')
 GIT_CONFIG = os.path.join(os.path.expanduser("~"), '.gitconfig')
@@ -80,9 +82,6 @@ def cubids_validate():
                                         opts.ignore_subject_consistency)
             ret = run_validator(call)
 
-            if ret.returncode != 0:
-                logger.error("Errors returned from validator run, parsing now")
-
             # parse the string output
             parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
             if parsed.shape[1] < 1:
@@ -94,20 +93,20 @@ def cubids_validate():
 
                 if opts.output_prefix:
                     # normally, write dataframe to file in CLI
-                    logger.info("Writing issues out to file")
-                    parsed.to_csv(str(opts.output_prefix) +
-                                  "_validation.csv", index=False)
+                    val_csv = str(opts.output_prefix) + "_validation.csv"
+                    parsed.to_csv(val_csv, index=False)
+                    logger.info("Writing issues out to %s", val_csv)
                     sys.exit(0)
                 else:
                     # user may be in python session, return dataframe
                     return parsed
         else:
-            logger.info("Prepping sequential validator run...")
+            # logger.info("Prepping sequential validator run...")
 
             # build a dictionary with {SubjectLabel: [List of files]}
             subjects_dict = build_subject_paths(opts.bids_dir)
 
-            logger.info("Running validator sequentially...")
+            # logger.info("Running validator sequentially...")
             # iterate over the dictionary
 
             parsed = []
@@ -119,7 +118,7 @@ def cubids_validate():
                                                          " in filter")
             for subject, files_list in tqdm.tqdm(subjects_dict.items()):
 
-                logger.info(" ".join(["Processing subject:", subject]))
+                # logger.info(" ".join(["Processing subject:", subject]))
                 # create a temporary directory and symlink the data
                 with tempfile.TemporaryDirectory() as tmpdirname:
                     for fi in files_list:
@@ -175,9 +174,9 @@ def cubids_validate():
 
                 if opts.output_prefix:
                     # normally, write dataframe to file in CLI
-                    logger.info("Writing issues out to file")
-                    parsed.to_csv(str(opts.output_prefix) +
-                                  "_validation.csv", index=False)
+                    val_csv = str(opts.output_prefix) + "_validation.csv"
+                    parsed.to_csv(val_csv, index=False)
+                    logger.info("Writing issues out to file %s", val_csv)
                     sys.exit(0)
                 else:
                     # user may be in python session, return dataframe
@@ -253,10 +252,6 @@ def cubids_group():
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
-    parser.add_argument('--use-datalad',
-                        action='store_true',
-                        help='ensure that there are no untracked changes '
-                        'before finding groups')
     parser.add_argument('--acq-group-level',
                         default='subject',
                         action='store',
@@ -271,11 +266,8 @@ def cubids_group():
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir),
-                     use_datalad=opts.use_datalad,
                      acq_group_level=opts.acq_group_level,
                      grouping_config=opts.config)
-        if opts.use_datalad and not bod.is_datalad_clean():
-            raise Exception("Untracked change in " + str(opts.bids_dir))
         bod.get_CSVs(str(opts.output_prefix),)
         sys.exit(0)
 
@@ -312,9 +304,6 @@ def cubids_group():
             cmd.insert(3, '-B')
             cmd.insert(4, input_config_dir_link)
             cmd += ['--config', linked_input_config]
-
-    if opts.use_datalad:
-        cmd.append("--use-datalad")
 
     if opts.acq_group_level:
         cmd.append("--acq-group-level")
@@ -562,8 +551,7 @@ def cubids_copy_exemplars():
                         '(*_AcqGrouping.csv from the cubids-group output)')
     parser.add_argument('--use-datalad',
                         action='store_true',
-                        help='ensure that there are no untracked changes '
-                        'before finding groups')
+                        help='check exemplar dataset into DataLad')
     parser.add_argument('--min-group-size',
                         action='store',
                         default=1,
@@ -578,11 +566,6 @@ def cubids_copy_exemplars():
     #                     help='only include an exemplar subject from these '
     #                     'listed Acquisition Groups in the exemplar dataset ',
     #                     required=False)
-    parser.add_argument('--force-unlock',
-                        action='store_true',
-                        default=False,
-                        help='unlock exemplar subjects before copying ',
-                        required=False)
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
@@ -599,7 +582,6 @@ def cubids_copy_exemplars():
                                 " before coyping exemplars")
         bod.copy_exemplars(str(opts.exemplars_dir), str(opts.exemplars_csv),
                            min_group_size=opts.min_group_size,
-                           force_unlock=opts.force_unlock,
                            raise_on_error=True)
         sys.exit(0)
 

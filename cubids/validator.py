@@ -60,9 +60,9 @@ def build_subject_paths(bids_dir):
 
 def run_validator(call, verbose=True):
     """Run the validator with subprocess"""
-    if verbose:
-        logger.info("Running the validator with call:")
-        logger.info('\"' + ' '.join(call) + '\"')
+    # if verbose:
+    #     logger.info("Running the validator with call:")
+    #     logger.info('\"' + ' '.join(call) + '\"')
 
     ret = subprocess.run(call, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
