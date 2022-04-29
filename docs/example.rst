@@ -31,44 +31,52 @@ Now, download and unzip the example data (you can also do this in your Finder wi
     
     $ wget https://github.com/PennLINC/CuBIDS/raw/main/cubids/testdata/BIDS_Dataset.zip
     $ unzip BIDS_Dataset.zip
+    $ rm BIDS_Dataset.zip
 
 Identifying and removing PHI 
 ------------------------------------------
 
-As a first step, we use CuBIDS to identify the metadata fields present in the dataset. 
+As a first step, we use CuBIDS to identify the metadata fields present in the dataset,
+and remove any protected health information (PHI) or other sensitive fields. We want to do this *before* implementing any
+``datalad`` commands, as we must ensure PHI is not tracked as part of version control.
+
 This is accomplished with the following command:
 
 .. code-block:: console
 
-    $ cubids-print-metadata-fields ~/BIDS_Dataset
+    $ cubids-print-metadata-fields BIDS_Dataset
 
 This command returns a total of 66 fields, including acquisition parameters and other metadata 
-fields present in the dataset’s JSON sidecars. Some of these fields contain simulated protected 
-health information (PHI) such as PatientName that we wish to remove. Completing this step prior 
-to checking the BIDS dataset into DataLad is critical, as we must ensure PHI is not tracked as 
-part of version control. To remove the PatientName field from the sidecars, we can use the command:
+fields present in the dataset's JSON sidecars. From the output we can see that the dataset contains
+(simulated) PHI — the `PatientName` field, which we wish to remove. 
+To remove the `PatientName` field from the sidecars, we can use the command:
 
 .. code-block:: console
 
-    $ cubids-remove-metadata-fields ~/BIDS_Dataset –fields PatientName
+    $ cubids-remove-metadata-fields BIDS_Dataset --fields PatientName
 
+The command should succeed silently.
 
 Checking the BIDS dataset into DataLad
 -------------------------------------------
-Now that all PHI has been removed from the metadata, we are ready to check our dataset into DataLad. 
+
+Now that all PHI has been removed from the metadata, we are ready to check our dataset into ``datalad``. 
 To do this, we run the following command:
 
 .. code-block:: console
 
-    $ datalad create -c text2git ~/BIDS_Dataset_Datalad
+    $ datalad create -c text2git BIDS_Dataset_Datalad
 
-The creation of our DataLad dataset will be accordingly reflected in the dataset’s version control 
-history, or “git log.” At any point in the CuBIDS workflow, we can view a summary of our dataset’s 
-version history by running the following commands: 
+This command creates a brand new directory called ``BIDS_Dataset_Datalad`` where
+``datalad`` will begin implementing version control and provenance tracking while
+we implement the rest of our ``CuBIDS`` workflow.
+The creation of our ``datalad`` dataset is accordingly reflected in the dataset's version control 
+history, accessible with ``git log``. At any point in the ``CuBIDS`` workflow,
+we can view a summary of our dataset's version history by running the following commands:
 
 .. code-block:: console 
 
-    $ cd ~/CuBIDS_Test/BIDS_Dataset_DataLad
+    $ cd BIDS_Dataset_DataLad
     $ git log --oneline
 
 This command will write the following to the terminal: 
@@ -80,7 +88,8 @@ dataset and save the changes.
 
 .. code-block:: console
 
-    $ cp -r ~/BIDS_Dataset/* ~/BIDS_Dataset_Datalad
+    $ cd ..
+    $ cp -r BIDS_Dataset/* BIDS_Dataset_Datalad
 
 In addition to being able to access the version history of our data, any point in this workflow, we can 
 also check the status of untracked (not yet saved) changes using the datalad status command, as seen 
@@ -88,7 +97,8 @@ below:
 
 .. code-block:: console 
 
-    $ datalad status -d ~/CuBIDS_Test/BIDS_Dataset_DataLad
+    $ cd BIDS_Dataset_DataLad && datalad status
+    $ cd ..
 
 This command produces a description of the changes we have made to the data since the last commit 
 (see below)
@@ -101,13 +111,14 @@ run save. It is best practice to provide a detailed commit message, for example:
 
 .. code-block:: console
 
-    $ datalad save -d ~/BIDS_Dataset_Datalad -m “checked dataset into datalad”
+    $ datalad save -d ~/CuBIDS_Test/BIDS_Dataset_Datalad -m "checked dataset into datalad"
 
 At this point, we can check our git history, which will display the version history of our dataset 
 thus far, with the following command: 
 
 .. code-block:: console
 
+    $ cd BIDS_Dataset_Datalad/
     $ git log --oneline
 
 which will produce the following: 
@@ -128,7 +139,8 @@ image obliquity, and voxel sizes. To do this, we run:
 
 .. code-block:: console
 
-    $ cubids-add-nifti-info ~/BIDS_Dataset_Datalad –-use-datalad
+    $ cd ..
+    $ cubids-add-nifti-info ~/CuBIDS_Test/BIDS_Dataset_Datalad --use-datalad
 
 This command adds the NIfTI header information to the JSON sidecars and saves those changes. In order 
 to ensure that this command has been executed properly, we can run ``cubids-print-metadata-fields`` 
