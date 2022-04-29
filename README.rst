@@ -25,5 +25,5 @@ This software helps users:
   3. Flexibly tailor heterogenous BIDS data for preprocessing pipeline runs;
   4. Perform metadata-based quality control.
 
-.. image:: docs/cubids_workflow.png
+.. image:: docs/_static/cubids_workflow.png
    :width: 600
