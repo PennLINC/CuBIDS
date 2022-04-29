@@ -25,7 +25,7 @@ From Source
 
 The source code for CuBIDS can be downloaded from the `Github repo`_.
 
-To install the software, you can either clone the public repository:
+To install the software, you can clone the public repository:
 
 .. code-block:: console
 
