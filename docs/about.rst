@@ -1,5 +1,3 @@
-.. include:: ../README.rst
-
 Motivation
 -------------
 
@@ -70,6 +68,7 @@ A variant resting state BOLD group
         * Param Group: ``2`` (Variant Group)
         * Rename Key Group: ``acquisition-singlebandVARIANTNoFmap_datatype-func_suffix-bold_task-rest``
 
+In the next section, we'll discuss these definitions in more detail and demonstrate ``CuBIDS`` usage.
 
 .. rubric:: Footnotes
 

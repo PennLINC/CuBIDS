@@ -24,5 +24,3 @@ This software helps users:
   2. Visualize and summarize heterogeneity of metadata in a BIDS dataset;
   3. Flexibly tailor heterogenous BIDS data for preprocessing pipeline runs;
   4. Perform metadata-based quality control.
-
-For full documentation, please visit our `ReadTheDocs <https://cubids.readthedocs.io/en/latest/?badge=latest>`_ 
