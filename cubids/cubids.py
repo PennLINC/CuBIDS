@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
+from datalad.config import ConfigManager # added datalad config manager for adjusting log level
 from shutil import copytree, copyfile
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -23,7 +24,6 @@ from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 bids.config.set_option('extension_initial_dot', True)
-
 
 class CuBIDS(object):
 
@@ -300,7 +300,9 @@ class CuBIDS(object):
 
                 # first check if IntendedFor renames need to be saved
                 if not self.is_datalad_clean():
-                    IF_rename_msg = "Renamed IntendedFor references"
+                    s1 = "Renamed IntendedFor references to "
+                    s2 = "Variant Group scans"
+                    IF_rename_msg = s1 + s2
                     self.datalad_handle.save(message=IF_rename_msg)
 
                 s1 = "Renamed Variant Group scans according to their variant "
@@ -482,8 +484,8 @@ class CuBIDS(object):
         #     if not self.is_datalad_clean():
         #         self.datalad_save(message="Renamed IntendedFors")
         #         self.reset_bids_layout()
-            else:
-                print("No IntendedFor References to Rename")
+            # else:
+            #     print("No IntendedFor References to Rename")
 
     def copy_exemplars(self, exemplars_dir, exemplars_csv, min_group_size,
                        raise_on_error=True):
@@ -506,8 +508,8 @@ class CuBIDS(object):
         """
         # create the exemplar ds
         if self.use_datalad:
-            subprocess.run(['datalad', 'create', '-c', 'text2git',
-                            exemplars_dir])
+            subprocess.run(['datalad', '--log-level', 'error', 'create', '-c',
+                            'text2git', exemplars_dir])
 
         # load the exemplars csv
         subs = pd.read_csv(exemplars_csv)
@@ -535,9 +537,12 @@ class CuBIDS(object):
         copyfile(str(self.path) + '/' + 'dataset_description.json',
                  exemplars_dir + '/' + 'dataset_description.json')
 
+        s1 = "Copied one subject from each Acquisition Group "
+        s2 = "into the Exemplar Dataset"
+        msg = s1 + s2
         if self.use_datalad:
             subprocess.run(['datalad', 'save', '-d', exemplars_dir,
-                            '-m', 'copied subs into exemplar dir'])
+                            '-m', msg])
 
     def purge(self, scans_txt, raise_on_error=True):
         """Purges all associations of desired scans from a bids dataset.
@@ -601,7 +606,10 @@ class CuBIDS(object):
         # remove association file commands on a clean dataset
         if self.use_datalad:
             if not self.is_datalad_clean():
-                self.datalad_save(message="Purged IntendedFors")
+                s1 = "Purged IntendedFor references to files "
+                s2 = "requested for removal"
+                message = s1 + s2
+                self.datalad_save(message=message)
                 self.reset_bids_layout()
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS

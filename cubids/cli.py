@@ -21,7 +21,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('cubids-cli')
 GIT_CONFIG = os.path.join(os.path.expanduser("~"), '.gitconfig')
-
+logging.getLogger('datalad').setLevel(logging. ERROR)
 
 def cubids_validate():
     '''Command Line Interface function for running the bids validator.'''
@@ -652,8 +652,8 @@ def cubids_add_nifti_info():
         if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
-            if bod.is_datalad_clean() and not opts.force_unlock:
-                raise Exception("Need to unlock " + str(opts.bids_dir))
+            # if bod.is_datalad_clean() and not opts.force_unlock:
+            #     raise Exception("Need to unlock " + str(opts.bids_dir))
         bod.add_nifti_info()
         sys.exit(0)
 

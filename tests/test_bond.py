@@ -941,15 +941,6 @@ def test_validator(tmp_path):
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
 
-    print("RET")
-    print(ret)
-    print("RETURNCODE")
-    print(ret.returncode)
-    print("STDOUT")
-    print(ret.stdout)
-    print("DECODED")
-    print(ret.stdout.decode('UTF-8'))
-
     assert ret.returncode == 0
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
