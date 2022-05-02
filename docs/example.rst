@@ -17,19 +17,25 @@ CSV outputs, but the example should still be useful.
 Throughout this example, we use ``DataLad`` for version control. Although ``DataLad``
 is an optional dependency of ``CuBIDS``, we use it here to demonstrate its
 powerful integration with ``CuBIDS`` and the benefits it can provide its users. 
-We'll replicate this workflow in a new ``CuBIDS_Test`` directory in the user's ``$HOME``, with the
-path to this example dataset as ``$HOME/CuBIDS_Test/BIDS_Dataset``.
+
+Now that we have installed CuBIDS and all necessary dependencies, we are ready to begin the curation 
+process on our example dataset. We create a ``CuBIDS_Test`` directory to function as our working directory 
+and navigate to it as follows:
+
+mkdir $PWD/CuBIDS_Test 
+cd CuBIDS_Test
 
 .. code-block:: console
 
-    $ mkdir -p ~/CuBIDS_Test && cd ~/CuBIDS_Test
     $ conda activate cubids
+    $ mkdir -p $PWD/CuBIDS_Test
+    $ cd CuBIDS_Test
 
 Now, download and unzip the example data (you can also do this in your Finder window):
 
 .. code-block:: console
     
-    $ wget https://github.com/PennLINC/CuBIDS/raw/main/cubids/testdata/BIDS_Dataset.zip
+    $ curl -sSLO https://github.com/PennLINC/CuBIDS/raw/main/cubids/testdata/BIDS_Dataset.zip
     $ unzip BIDS_Dataset.zip
     $ rm BIDS_Dataset.zip
 
@@ -38,7 +44,7 @@ Identifying and removing PHI
 
 As a first step, we use CuBIDS to identify the metadata fields present in the dataset,
 and remove any protected health information (PHI) or other sensitive fields. We want to do this *before* implementing any
-``datalad`` commands, as we must ensure PHI is not tracked as part of version control.
+``DataLad`` commands, as we must ensure PHI is not tracked as part of version control.
 
 This is accomplished with the following command:
 
@@ -55,7 +61,7 @@ To remove the `PatientName` field from the sidecars, we can use the command:
 
     $ cubids-remove-metadata-fields BIDS_Dataset --fields PatientName
 
-The command should succeed silently.
+This command should succeed silently.
 
 Checking the BIDS dataset into DataLad
 -------------------------------------------
@@ -67,8 +73,8 @@ To do this, we run the following command:
 
     $ datalad create -c text2git BIDS_Dataset_DataLad
 
-This command creates a brand new directory called ``BIDS_Dataset_DataLad`` where
-``datalad`` will begin implementing version control and provenance tracking while
+This command creates a new directory called ``BIDS_Dataset_DataLad`` where
+``DataLad`` will begin implementing version control and provenance tracking while
 we implement the rest of our ``CuBIDS`` workflow.
 The creation of our ``datalad`` dataset is accordingly reflected in the dataset's version control 
 history, accessible with ``git log``. At any point in the ``CuBIDS`` workflow,
@@ -78,6 +84,7 @@ we can view a summary of our dataset's version history by running the following 
 
     $ cd BIDS_Dataset_DataLad
     $ git log --oneline
+    $ cd ..
 
 This command will write the following to the terminal: 
 
@@ -113,8 +120,8 @@ run save. It is best practice to provide a detailed commit message, for example:
 
     $ datalad save -d ~/CuBIDS_Test/BIDS_Dataset_DataLad -m "checked dataset into datalad"
 
-At this stage we also recommend moving/removing the ``BIDS_Dataset`` directory — its contents are
-safely copied and tracked in ``BIDS_Dataset_DataLad``.
+At this stage, we also recommend removing the ``BIDS_Dataset`` directory — its contents are
+safely copied into and tracked in ``BIDS_Dataset_DataLad``.
 We can check our ``git`` history to be sure, which will display the version history of our dataset 
 thus far, with the following command: 
 
@@ -122,6 +129,7 @@ thus far, with the following command:
 
     $ cd BIDS_Dataset_DataLad/
     $ git log --oneline
+    $ cd ..
 
 which will produce the following: 
 
@@ -144,8 +152,7 @@ To add them to the sidecar metadata, run:
 
 .. code-block:: console
 
-    $ cd ..
-    $ cubids-add-nifti-info ~/CuBIDS_Test/BIDS_Dataset_DataLad --use-datalad
+    $ cubids-add-nifti-info BIDS_Dataset_DataLad --use-datalad
 
 This command adds the NIfTI header information to the JSON sidecars and saves those changes. In order 
 to ensure that this command has been executed properly, we can run ``cubids-print-metadata-fields`` 
@@ -156,15 +163,15 @@ the changes made to the dataset to the git log as follows:
 
 .. image:: _static/screenshot_4.png
 
-Validation 
------------
+BIDS validation 
+----------------
 
 The next step in the ``CuBIDS`` workflow is to run BIDS validation
 to detect potential curation errors using ``cubids-validate``.
 
 .. code-block:: console
 
-    $ cubids-validate ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/v0 --sequential
+    $ cubids-validate BIDS_Dataset_DataLad v0 --sequential
 
 .. note::  The use of the ``--sequential`` flag forces the validator to treat each participant as its own BIDS dataset. This can be helpful for identifying heterogenous elements, but can be slowed down by extremely large datasets.
 
@@ -188,16 +195,16 @@ the scan. To do this, we run the ``cubids-purge`` command.
 "purge" from the dataset. You can create this file in any
 text editor, as long as it is saved as plain text ``.txt``. For this example, we created the following file: 
 
-.. literalinclude:: _static/No_PED.txt
+.. literalinclude:: _static/no_ped.txt
     :linenos:
 
-(Be sure to modify the path in your walkthrough)
+and saved it in our ``CuBIDS_Test directory``. 
 
 To safely purge this file from the dataset, run:
 
 .. code-block:: console
 
-    $ cubids-purge ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/No_PED.txt --use-datalad 
+    $ cubids-purge BIDS_Dataset_DataLad no_ped.txt --use-datalad 
 
 We elect to use purge instead of simply removing the scan
 due to the fact that purge will ensure all associated files,
@@ -221,7 +228,7 @@ latest changes to the dataset with a detailed commit message as follows:
 
 .. code-block:: console
 
-    $ datalad save -d ~/CuBIDS_Test/BIDS_Dataset_DataLad -m "Added TotalReadoutTime to sub-03_ses-phdiff_acq-HASC55AP_dwi.nii.json"
+    $ datalad save -d BIDS_Dataset_DataLad -m "Added TotalReadoutTime to sub-03_ses-phdiff_acq-HASC55AP_dwi.nii.json"
 
 This change will be reflected in the git history.
 
@@ -231,14 +238,14 @@ To verify that there are no remaining validation errors, we rerun validation wit
 
 .. code-block:: console
 
-    $ cubids-validate ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/v1 --sequential
+    $ cubids-validate BIDS_Dataset_DataLad v1 --sequential
 
 This command should produce no CSV output, and instead print “No issues/warnings parsed, your dataset is 
 BIDS valid” to the terminal, which indicates that the dataset is now free from BIDS validation errors 
 and warnings.
 
-Parsing Heterogeneity
----------------------
+Parsing metadata heterogeneity
+------------------------------
 
 Next, we'll use ``CuBIDS`` to gain some insight on the
 dataset's structure, heterogeneity, and metadata errors.
@@ -250,12 +257,12 @@ in parallel, as validation errors are better understood within the context of a 
 both metadata errors (such as missing or incorrectly specified
 sidecar parameters) that grouping reveals alongside BIDS errors that
 the validator catches, gives users a more comprehensive view of
-the issues they will need to fix during the curation process.
-The command to run the grouping function is:
+the issues they will need to fix during the curation process. Note that ``cubids-group`` requires 
+full paths to both the BIDS Dataset and the output prefix. The command to run the grouping function as follows:
 
 .. code-block:: console
 
-    $ cubids-group ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/v0
+    $ cubids-group $PWD/BIDS_Dataset_DataLad $PWD/v0
 
 This command will produce four tables that describe the dataset's
 heterogeneity in different ways.
@@ -301,30 +308,32 @@ curation step.
    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
    :header-rows: 1
 
-Applying Changes
+Applying changes
 -----------------
 
 Now that all metadata issues have been addressed — both validation and
 ``CuBIDS`` summary — we are ready to rename our files based on their
-RenameKeyGroup values and apply the requested deletion in ``v0_edited_summary.csv``. The cubids-apply 
+RenameKeyGroup values and apply the requested deletion in ``v0_edited_summary.csv``. The ``cubids-apply`` 
 function renames scans in each Variant Parameter Group according to the metadata parameters with a flag “VARIANT”, which is useful 
 because the user will then be able to see, in each scan’s filename, which metadata parameters associated with that scan vary from 
-those in the acquisition’s Dominant Group. We execute ``cubids-apply`` with the following command:
+those in the acquisition’s Dominant Group. Note that like in cubids-group, cubids-apply requires full paths 
+to the BIDS Dataset, summary and files CSVs, and output prefix. We execute cubids-apply with the following 
+command:
 
 .. code-block:: console
 
-    $ cubids-apply ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/v0_edited_summary.csv ~/CuBIDS_Test/v0_files.csv ~/CuBIDS_Test/v1 --use-datalad
+    $ cubids-apply $PWD/BIDS_Dataset_DataLad $PWD/v0_edited_summary.csv $PWD/v0_files.csv $PWD/v1 --use-datalad
 
 
 Checking our git log, we can see that our changes from apply have been saved.
 
 .. image:: _static/screenshot_7.png
 
-As an optional final step, we can check the four grouping CSVs ``cubids-apply`` produces to ensure they look as 
+We can check the four grouping CSVs ``cubids-apply`` produces (``v1_*``) to ensure they look as 
 expected — that all files with variant scanning parameters have been renamed to indicate the parameters 
 that vary in the acquisition fields of their filenames.
 
-Exemplar Testing
+Exemplar testing
 -----------------
 
 The curation of the dataset is complete; finally, it's time
@@ -343,10 +352,14 @@ command, to which we pass in ``v2_AcqGrouping.csv`` as input
 
 .. code-block:: console
 
-    $ cubids-copy-exemplars ~/CuBIDS_Test/BIDS_Dataset_DataLad ~/CuBIDS_Test/Exemplar_Dataset ~/CuBIDS_Test/v1_AcqGrouping.csv --use-datalad
+    $ cubids-copy-exemplars BIDS_Dataset_DataLad Exemplar_Dataset v1_AcqGrouping.csv --use-datalad
 
-Once a preprocessing pipeline completes successfully on the Exemplars,
+Since we used the ``use-datalad`` flag, ``Exemplar_Dataset`` is a DataLad dataset with the version history 
+tracked in its git log (see below): 
+
+.. image:: _static/screenshot_8.png
+
+Once a preprocessing pipeline completes successfully on the Exemplar Dataset, 
 the full dataset can be executed with confidence, as a pipeline's
 behavior on the full range of metadata heterogeneity in the dataset 
 will have already been discovered during exemplar testing. 
-
