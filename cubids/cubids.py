@@ -282,8 +282,12 @@ class CuBIDS(object):
                                           self.new_filenames):
 
                 if Path(from_file).exists():
-                    move_ops.append('mv %s %s' % (from_file, to_file))
-
+                    
+                    # if using datalad, we want to git mv instead of mv
+                    if self.use_datalad:
+                        move_ops.append('git mv %s %s' % (from_file, to_file))
+                    else:
+                        move_ops.append('mv %s %s' % (from_file, to_file))
         full_cmd = "\n".join(merge_commands + move_ops)
         if full_cmd:
             # write full_cmd to a .sh file

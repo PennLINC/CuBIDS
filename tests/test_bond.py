@@ -962,21 +962,9 @@ def test_validator(tmp_path):
     _remove_a_json(test_file)
 
     call = build_validator_call(str(data_root) + "/complete")
-    print("CALL")
-    print(call)
     ret = run_validator(call)
 
     assert ret.returncode == 1
-
-    print("RET")
-    print(ret)
-    print("RETURNCODE")
-    print(ret.returncode)
-    print("STDOUT")
-    print(ret.stdout)
-    print("DECODED")
-    print(ret.stdout.decode('UTF-8'))
-
 
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
 
