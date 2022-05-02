@@ -1,5 +1,5 @@
 ==========================================
-Component Definitions, Commands, & Actions
+Commands & Actions
 ==========================================
 
 Before we implement a ``CuBIDS`` workflow, let's define the terminology
@@ -51,8 +51,7 @@ The ``_summary.csv`` File
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This file contains all the detected Key Groups and Parameter Groups. It provides
-an opportunity to evaluate your data and decide how to handle heterogeneity. Key Groups
-can be merged together, for example, or Parameter Groups can be extracted to their own Key Group.
+an opportunity to evaluate your data and decide how to handle heterogeneity.
 
 Below is an example ``_summary.csv`` from the first DWI run in the PNC [#f1]_. This
 reflects the original data that has been converted to BIDS using a heuristic. It is
@@ -153,51 +152,6 @@ that value. After being applied, there will be new Key Groups and Parameter Grou
 This way, we will know that any outputs with ``acq-NoSDC`` will not have had fieldmap-based distortion
 correction applied.
 
-Merge Parameter Groups
-~~~~~~~~~~~~~~~~~~~~~~
-
-Mistakes can happen when scanning and sometimes you will find some scans with different parameters
-that you will not want to include in your study. Other times there will be an insignificant difference
-where some data is missing from a Parameter Group and you'd like to copy the metadata from another
-Parameter Group. The ``MergeInto`` column can be used for either of these purposes.
-
-In the example data we see that Parameter Group 5 appears to be identical to Parameter Group 3.
-The reason these were separated was because ``DwellTime`` was not included in the metadata for
-Group 5. Since we collected the data and know that the protocol was identical for the scans in
-Group 5, we can add ``3`` to the ``MergeInto`` column for Patameter Group 5.
-
-.. csv-table:: Merge Parameter Groups
-    :align: center
-    :header: "Rename KeyGroup","Merge Into","KeyGroup","Param Group",Counts,"Fieldmap Key00","N Slice Times","Repetition Time"
-
-    ,,datatype-dwi_run-1_suffix-dwi,1,1361,datatype-fmap_fmap-phase1_suffix-phase1,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,2,1,datatype-fmap_fmap-phase1_suffix-phase1,70,8.4
-    ,,datatype-dwi_run-1_suffix-dwi,3,15,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,4,1,datatype-fmap_fmap-phase1_suffix-phase1,70,9
-    ,3,datatype-dwi_run-1_suffix-dwi,5,2,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,6,16,,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,7,2,datatype-fmap_fmap-phase1_suffix-phase1,46,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,8,1,datatype-fmap_fmap-phase1_suffix-phase1,70,12.3
-
-This will copy the metadata from Parameter Group 3 into the metadata of Parameter Group 5, such
-that all the JSON sidecars belonging to files in Parameter Group 5 will have their scanning parameter data
-overwritten to be identical to Parameter Group 3. If we re-run
-the grouping function after these changes are applied, we should see something like:
-
-.. csv-table:: Merge Parameter Groups
-    :align: center
-    :header: "Rename KeyGroup","Merge Into","KeyGroup","Param Group",Counts,"Fieldmap Key00","N Slice Times","Repetition Time"
-
-    ,,datatype-dwi_run-1_suffix-dwi,1,1361,datatype-fmap_fmap-phase1_suffix-phase1,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,2,1,datatype-fmap_fmap-phase1_suffix-phase1,70,8.4
-    ,,datatype-dwi_run-1_suffix-dwi,3,17,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,4,1,datatype-fmap_fmap-phase1_suffix-phase1,70,9
-    ,,datatype-dwi_run-1_suffix-dwi,5,16,,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,6,2,datatype-fmap_fmap-phase1_suffix-phase1,46,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,7,1,datatype-fmap_fmap-phase1_suffix-phase1,70,12.3
-
-The 2 scans from the former group 5 are now included in the count of Group 3.
-
 Deleting a Mistake
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -252,23 +206,23 @@ of ``CuBIDS`` command line tools:
 .. autofunction:: cubids.cli.cubids_validate
 
 
-
 The Big Picture
 ---------------
 
-We find it useful to break up the curation process into 3 stages. These stages are
-not necessarily linear, but all three must happen before the ultimate goal: running
-all your data through pipelines.
+We find it useful to break up the BIDS Dataset Curation process into four components. These components are
+not necessarily linear, but all three must happen before the ultimate goal: running your data successfully through 
+preprocessing pipelines and evenutally being able to use it for analyses.
 
   1. Ensure the data are valid BIDS. This is done using the ``bids-validator`` package.
   2. Detect each :ref:`keygroup` and :ref:`paramgroup` in your BIDS data and modify as necessary.
-  3. Test pipelines on example data from each :ref:`paramgroup`.
+  3. Perform quality control on a BIDS dataset based on metadata.
+  4. Test pipelines on example data from each :ref:`paramgroup`.
 
 Recall the schematic:
 
 .. image:: _static/cubids_workflow.png
 
-In the next section, we'll introduce ``datalad`` and walk through a real example.
+In the next section, we'll introduce ``DataLad`` and walk through a real example.
 
 .. rubric:: Footnotes
 

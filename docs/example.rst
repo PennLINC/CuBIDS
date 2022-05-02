@@ -4,17 +4,17 @@ Example Walkthrough
 
 The ``CuBIDS`` workflow is currently being used in neuroimaging labs at a number of institutions 
 including University of Pennsylvania, Children's Hospital of Philadelphia, the Child Mind Institute, 
-and University of Minnesota's Masonic Institute for the Developing Brain. Below, we'll replicate the process of curating
-a dataset using ``CuBIDS`` as they've done many times before. To do so, we'll use an example dataset that comes
-bundled with the software, and can be found `in the Github repo <https://github.com/PennLINC/CuBIDS/tree/main/cubids/testdata/BIDS_Dataset>`_.
+and University of Minnesota's Masonic Institute for the Developing Brain. To demonstrate the utility of
+``CuBIDS``, here we apply the software to a small example dataset that is included `in our Github repo <https://github.com/PennLINC/CuBIDS/tree/main/cubids/testdata/BIDS_Dataset>`_.
+This example dataset does not contain any PHI. 
 
 Following the installation instructions at :doc:`the installation page <installation>`,
-you should have successfully installed ``CuBIDS``, ``dataLad``, and the ``bids-validator`` inside a
-conda environment titled "mycubids". In this example, we use validator version ``1.7.2``.
+you should have successfully installed ``CuBIDS``, ``DataLad``, and the ``bids-validator`` inside a
+conda environment titled "cubids". In this example, we use validator version ``1.7.2``.
 Using a different version of the validator may result in slightly different validation
 CSV outputs, but the example should still be useful. 
 
-Throughout this example, we use ``datalad`` for version control. Although ``datalad``
+Throughout this example, we use ``DataLad`` for version control. Although ``DataLad``
 is an optional dependency of ``CuBIDS``, we use it here to demonstrate its
 powerful integration with ``CuBIDS`` and the benefits it can provide its users. 
 We'll replicate this workflow in a new ``CuBIDS_Test`` directory in the user's ``$HOME``, with the
