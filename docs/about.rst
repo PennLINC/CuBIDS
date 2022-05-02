@@ -13,10 +13,10 @@ ahead of time gives researchers the ability to **predict pipeline configurations
 **predict potential errors**, avoid running **unwanted or unusable data**, and **budget
 their computational time and resources** effectively.
 
-``CuBIDS`` is designed to facilitate the curation of such large, messy imaging data, so
+``CuBIDS`` is designed to facilitate the curation of large, neuroimaging data so
 that you can infer useful information from descriptive and accurate BIDS labels
-before running pipelines *en masse*. ``CuBIDS`` accomplishes this by detecting
-:ref:`keygroup` s and :ref:`paramgroup` differences in your data (we'll explain what these
+before running pipelines *en masse*. ``CuBIDS`` accomplishes this by summarizing 
+BIDS data using :ref:`keygroup` and :ref:`paramgroup` categorizations in your data (we'll explain what these
 are in more detail in the next section).
 
 The image below demonstrates the ``CuBIDS`` workflow that we'll discuss on the next page.
@@ -24,7 +24,7 @@ The image below demonstrates the ``CuBIDS`` workflow that we'll discuss on the n
 .. image:: _static/cubids_workflow.png
    :width: 600
 
-``CuBIDS`` also pairs well with ``datalad`` for maintaining data provenance, enhancing
+``CuBIDS`` also incorporates ``DataLad`` as an optional dependency for maintaining data provenance, enhancing
 reproducibility, and supporting collaboration [#f3]_.
 
 Definitions
@@ -74,4 +74,4 @@ In the next section, we'll discuss these definitions in more detail and demonstr
 
 .. [#f1] See the `BIDS Specification <https://bids-specification.readthedocs.io>`_.
 .. [#f2] See this list of amazing `BIDS apps <https://bids-apps.neuroimaging.io/>`_.
-.. [#f3] See `Datalad <https://www.datalad.org/>`_.
+.. [#f3] See `DataLad <https://www.datalad.org/>`_.
