@@ -23,6 +23,7 @@ logger = logging.getLogger('cubids-cli')
 GIT_CONFIG = os.path.join(os.path.expanduser("~"), '.gitconfig')
 logging.getLogger('datalad').setLevel(logging. ERROR)
 
+
 def cubids_validate():
     '''Command Line Interface function for running the bids validator.'''
 

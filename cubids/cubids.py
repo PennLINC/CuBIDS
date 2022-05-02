@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
-from datalad.config import ConfigManager # added datalad config manager for adjusting log level
 from shutil import copytree, copyfile
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -24,6 +23,7 @@ from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 bids.config.set_option('extension_initial_dot', True)
+
 
 class CuBIDS(object):
 
