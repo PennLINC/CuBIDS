@@ -282,7 +282,6 @@ class CuBIDS(object):
                                           self.new_filenames):
 
                 if Path(from_file).exists():
-                    
                     # if using datalad, we want to git mv instead of mv
                     if self.use_datalad:
                         move_ops.append('git mv %s %s' % (from_file, to_file))
