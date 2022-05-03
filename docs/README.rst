@@ -16,16 +16,16 @@ CuBIDS: Curation of BIDS
 About
 -----
 
-``CuBIDS`` is a workflow and software package designed to facilitate
-reproducible curation of `BIDS <https://bids-specification.readthedocs.io/>`_ datasets.
-We find it useful to break up the BIDS Dataset Curation process into four components. These components are
-not necessarily linear, but all three must happen before running your data successfully through 
-preprocessing pipelines and evenutally being able to use it for analyses.
+Curation of BIDS, or ``CuBIDS``, is a workflow and software package designed to facilitate
+reproducible curation of neuroimaging `BIDS <https://bids-specification.readthedocs.io/>`_ datasets.
+CuBIDS breaks down BIDS dataset curation into four main components and addresses each one using 
+various command line programs. These components are not necessarily linear but all are critical 
+in the process of preparing BIDS data for successful preprocessing and analysis pipeline runs. 
 
-  1. CuBIDS is a workflow and software package for curating BIDS data.
-  2. CuBIDS summarizes the heterogeneity in a BIDS dataset. 
-  3. CuBIDS prepares BIDS data for successful preprocessing pipeline runs.
-  4. CuBIDS helps users perform metadata-based quality control. 
+  1. CuBIDS aids users in ensuring their neuroimaging data is BIDS valid.
+  2. CuBIDS visualizes and summarizes the heterogeneity in a BIDS dataset. 
+  3. CuBIDS helps users test pipelines on the entire parameter space of a BIDS dataset.
+  4. CuBIDS allows user to perform metadata-based quality control on their BIDS data.
 
 .. image:: _static/cubids_workflow.png
    :width: 600

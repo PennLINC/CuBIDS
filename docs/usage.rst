@@ -117,7 +117,7 @@ seconds and is also variant with respect to EffectiveEchoSpacing and EchoTime. W
 our dataset becasuse we do not want these parameters to affect our analyses.
 To remove these files from your BIDS data, add a ``0`` to ``MergeInto`` and save the new CSV as ``v0_edited_summary.csv``
 
-.. csv-table:: Pre Apply Groupings
+.. csv-table:: Pre Apply Groupings with Deletion Requested
     :file: _static/PNC_pre_apply_summary_dwi_run1_deletion.csv
     :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
     :header-rows: 1
