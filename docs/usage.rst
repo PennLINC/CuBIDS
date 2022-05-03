@@ -5,7 +5,7 @@ Commands & Actions
 Before we implement a ``CuBIDS`` workflow, let's define the terminology
 and take a look at some of the commands available in the software.
 
-More Definitions
+More definitions
 -----------------
 
 .. _keygroup:
@@ -53,7 +53,7 @@ The ``_summary.csv`` File
 This file contains all the detected Key Groups and Parameter Groups. It provides
 an opportunity to evaluate your data and decide how to handle heterogeneity.
 
-Below is an example ``_summary.csv`` from the first DWI run in the PNC [#f1]_. This
+Below is an example ``_summary.csv`` of the run-1 DWI Key Group in the PNC [#f1]_. This
 reflects the original data that has been converted to BIDS using a heuristic. It is
 similar to what you will see when you first use this functionality:
 
@@ -74,15 +74,15 @@ similar to what you will see when you first use this functionality:
 
 .. _filelistfile:
 
-The ``_files.csv`` File
+The ``_files.csv`` file
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This file contains one row per imaging file in the BIDS directory. You won't need to edit this file
 directly, but it keeps track of every file's assignment to Key and Parameter Groups.
 
 
-Heterogenaity Parsing
-----------------------
+Visualizing and summarizing metadata heterogenaity
+----------------------------------------------------
 
 Use ``cubids-group`` to generate your Key Groups and Parameter Groups:
 
@@ -92,7 +92,7 @@ Use ``cubids-group`` to generate your Key Groups and Parameter Groups:
 
 This will output the two files above, prefixed by the second argument ``keyparam_original``.
 
-Appplying Changes 
+Appplying changes 
 ------------------
 
 The ``cubids-apply`` program provides an easy way for users to manipulate their datasets. 
@@ -101,7 +101,7 @@ and organized way. Here, the summary.csv functions as an interface modifications
 ``Parameter Groups`` they want to rename (or delete) in a dedicated column of the summary.csv and 
 pass that edited CSV as an argument to ``cubids-apply``.
 
-Detecting and Renaming Variant Groups
+Detecting and renaming Variant Groups
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Additionally, cubids-apply can automatically rename files in ``Variant Groups`` based on their 
@@ -162,7 +162,7 @@ that value. After being applied, there will be new Key Groups and Parameter Grou
 This way, we will know that any outputs with ``acq-NoSDC`` will not have had fieldmap-based distortion
 correction applied.
 
-Deleting a Mistake
+Deleting a mistake
 ~~~~~~~~~~~~~~~~~~~~~~
 
 To remove files in a Parameter Group from your BIDS data, you simply set the ``MergeInto`` value
@@ -198,7 +198,7 @@ Applying these changes we would see:
     ,,datatype-dwi_run-1_suffix-dwi,6,16,,70,8.1
 
 
-Command Line Tools
+Command line tools
 -------------------
 
 With that brief introduction done, we can introduce the full gamut
@@ -215,7 +215,16 @@ of ``CuBIDS`` command line tools:
 .. autofunction:: cubids.cli.cubids_undo
 .. autofunction:: cubids.cli.cubids_validate
 
-Customizable Configuration
+cubids-validate
+----------------
+
+.. argparse::
+   :ref: cubids.cli.validate.get_parser
+   :prog: cubids-validate
+   :nodefault:
+   :nodefaultconst:
+
+Customizable configuration
 ---------------------------
 ``CuBIDS`` also features an optional, customizable, modality-specific configuration file. 
 This file can be passed as an argument to cubids-group and cubids-apply using the ``–-config`` flag 
@@ -231,7 +240,7 @@ very small differences in scanning parameters (i.e., a TR of 3.0s vs 3.0001s) be
 are listed in the acquisition field when auto-renaming is applied to ``Variant Groups``.
 
 
-Exemplar Testing
+Exemplar testing
 -----------------
 In addition to facilitating curation of large, heterogeneous BIDS datasets, ``CuBIDS`` also prepares 
 datasets for testing BIDS Apps. This portion of the ``CuBIDS`` workflow relies on the concept of the 

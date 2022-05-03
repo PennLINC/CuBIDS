@@ -1,3 +1,7 @@
+===================
+Background 
+===================
+
 Motivation
 -------------
 
@@ -14,7 +18,7 @@ ahead of time gives researchers the ability to **predict pipeline configurations
 their computational time and resources** effectively.
 
 ``CuBIDS`` is designed to facilitate the curation of large, neuroimaging data so
-that you can infer useful information from descriptive and accurate BIDS labels
+that users can infer useful information from descriptive and accurate BIDS labels
 before running pipelines *en masse*. ``CuBIDS`` accomplishes this by summarizing 
 BIDS data using :ref:`keygroup` and :ref:`paramgroup` categorizations in your data (we'll explain what these
 are in more detail in the next section).

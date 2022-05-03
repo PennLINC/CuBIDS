@@ -184,7 +184,7 @@ This command produces the following CSV:
 
 This initial validation run reveals firstly that Phase Encoding Direction (PED) is not specified
 for one of the task-rest BOLD scans. This is an important parameter
-for `fieldmap correction in fMRIPRep <https://fmriprep.org/en/0.6.0/sdc/estimation.html#fmriprep.workflows.epi.init_nonlinear_sdc_wf>`_, 
+for `fieldmap correction in fMRIPRep <nipreps.org/sdcflows/master/index.html>`_, 
 so knowing this ahead of time is valuable information.
 To resolve this, we could either find the PED for this scan elsewhere and 
 edit its sidecar to include it, or remove that scan from the dataset.
@@ -195,8 +195,10 @@ the scan. To do this, we run the ``cubids-purge`` command.
 "purge" from the dataset. You can create this file in any
 text editor, as long as it is saved as plain text ``.txt``. For this example, we created the following file: 
 
-.. literalinclude:: _static/no_ped.txt
-    :linenos:
+... code-block:: console
+    
+    /AN/EXAMPLE/PATH/CuBIDS_Test/BIDS_Dataset_Datalad/sub-02/ses-phdiff/func/sub-02_ses-phdiff_task-rest_bold.nii.gz
+
 
 and saved it in our ``CuBIDS_Test directory``. 
 
@@ -206,10 +208,10 @@ To safely purge this file from the dataset, run:
 
     $ cubids-purge BIDS_Dataset_DataLad no_ped.txt --use-datalad 
 
-We elect to use purge instead of simply removing the scan
-due to the fact that purge will ensure all associated files,
+We elect to use ``cubids-purge`` instead of simply removing the scan
+due to the fact that purge will ensure all associations,
 such as sidecars and IntendedFor references in fieldmaps, are
-also safely deleted. ``CuBIDS``` makes sure this is reflected in the
+also safely deleted. ``CuBIDS`` will reflect these deletions in the
 ``git`` history:
 
 .. image:: _static/screenshot_5.png
@@ -217,14 +219,21 @@ also safely deleted. ``CuBIDS``` makes sure this is reflected in the
 
 Returning again to ``v0_validation.csv``, we can also see that there is one DWI scan missing 
 TotalReadoutTime, a metadata field necessary for 
-`fieldmap correction <https://osf.io/k6rm5/wiki/1.1_Field_map_correction/>`_.
+`fieldmap correction <nipreps.org/sdcflows/master/index.html>`_.
 After conferring with our MR physicist and the scanner technician, we determine 
 that TotalReadoutTime (TRT) was erroneously omitted from the DWI sidecars!
 After some digging, the technician provided us with the correct value, so it's now our job to manually 
-add it to the sidecar for which it is missing. You can do this in any text editor of
-your choice. The example value we'll use is ``"TotalReadoutTime": 0.0717598,``
-We then save the 
-latest changes to the dataset with a detailed commit message as follows:
+add it to the sidecar for which it is missing. Once we have this value, we manually add it to the sidecar 
+for which it is missing by opening ``BIDS_Dataset_DataLad/sub-03/ses-phdiff/dwi/sub-03_ses-phdiff_acq-HASC55AP_dwi.json`` 
+in an editor and adding the following line: 
+
+.. code-block:: console 
+
+    "TotalReadoutTime": 0.0717598,
+
+on a new line anywhere inside the curly braces between lines containing parameters and their values, 
+save the changes, and close the JSON file. We then save the latest changes to the dataset with a 
+detailed commit message as follows:
 
 .. code-block:: console
 
@@ -244,8 +253,8 @@ This command should produce no CSV output, and instead print “No issues/warnin
 BIDS valid” to the terminal, which indicates that the dataset is now free from BIDS validation errors 
 and warnings.
 
-Parsing metadata heterogeneity
-------------------------------
+Visualizing metadata heterogeneity
+-----------------------------------
 
 Next, we'll use ``CuBIDS`` to gain some insight on the
 dataset's structure, heterogeneity, and metadata errors.
