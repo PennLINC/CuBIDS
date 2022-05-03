@@ -57,19 +57,10 @@ Below is an example ``_summary.csv`` of the run-1 DWI Key Group in the PNC [#f1]
 reflects the original data that has been converted to BIDS using a heuristic. It is
 similar to what you will see when you first use this functionality:
 
-
-.. csv-table:: Parameter Group Summary Table
-    :align: center
-    :header: "Rename KeyGroup","Merge Into","KeyGroup","Param Group",Counts,"Fieldmap Key00","N Slice Times","Repetition Time"
-
-    ,,datatype-dwi_run-1_suffix-dwi,1,1361,datatype-fmap_fmap-phase1_suffix-phase1,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,2,1,datatype-fmap_fmap-phase1_suffix-phase1,70,8.4
-    ,,datatype-dwi_run-1_suffix-dwi,3,15,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,4,1,datatype-fmap_fmap-phase1_suffix-phase1,70,9
-    ,,datatype-dwi_run-1_suffix-dwi,5,2,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,6,16,,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,7,2,datatype-fmap_fmap-phase1_suffix-phase1,46,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,8,1,datatype-fmap_fmap-phase1_suffix-phase1,70,12.3
+.. csv-table:: Pre Apply Groupings
+    :file: _static/PNC_pre_apply_summary_dwi_run1.csv
+    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
+    :header-rows: 1
 
 
 .. _filelistfile:
@@ -84,13 +75,14 @@ directly, but it keeps track of every file's assignment to Key and Parameter Gro
 Visualizing and summarizing metadata heterogenaity
 ----------------------------------------------------
 
-Use ``cubids-group`` to generate your Key Groups and Parameter Groups:
+Use ``cubids-group`` to generate your dataset's Key Groups and Parameter Groups:
 
 .. code-block:: console
 
-    $ cubids-group /bids/dir keyparam_original
+    $ cubids-group FULL/PATH/TO/BIDS/DIR FULL/PATH/TO/v0
 
-This will output the two files above, prefixed by the second argument ``keyparam_original``.
+This will output four files, including the summary and files CSVs described above, 
+prefixed by the second argument ``v0``.
 
 Appplying changes 
 ------------------
@@ -101,7 +93,7 @@ and organized way. Here, the summary.csv functions as an interface modifications
 ``Parameter Groups`` they want to rename (or delete) in a dedicated column of the summary.csv and 
 pass that edited CSV as an argument to ``cubids-apply``.
 
-Detecting and renaming Variant Groups
+Detecting Variant Groups
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Additionally, cubids-apply can automatically rename files in ``Variant Groups`` based on their 
@@ -116,88 +108,37 @@ suggest renaming all scans in that Variant Group to include ``acquisition-VARIAN
 filenames. When the user runs ``cubids-apply``, filenames will get renamed according to the auto-generated 
 names in the “Rename Key Group” column in the summary.csv
 
-
-In this example, users can apply the changes to BIDS data using the following command:
-
-.. code-block:: console
-
-    $ cubids-apply /bids/dir keyparam_edited_summary.csv new_keyparam_prefix
-
-The changes in ``keyparam_edited_summary.csv`` will be applied to the BIDS data in ``/bids/dir``
-and the new Key and Parameter Groups will be saved to csv files starting with ``new_keyparam_prefix``.
-
-Continuing with the example data, we see one Parameter group that will have a very different run
-through preprocessing: Parameter Group 6:
-
-
-.. csv-table:: Assign a New Key Group
-    :align: center
-    :header: "Rename KeyGroup","Merge Into","KeyGroup","Param Group",Counts,"Fieldmap Key00","N Slice Times","Repetition Time"
-
-    ,,datatype-dwi_run-1_suffix-dwi,1,1361,datatype-fmap_fmap-phase1_suffix-phase1,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,2,1,datatype-fmap_fmap-phase1_suffix-phase1,70,8.4
-    ,,datatype-dwi_run-1_suffix-dwi,3,15,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,4,1,datatype-fmap_fmap-phase1_suffix-phase1,70,9
-    ,,datatype-dwi_run-1_suffix-dwi,5,2,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    acquisition-NoSDC_datatype-dwi_run-1_suffix-dwi,,datatype-dwi_run-1_suffix-dwi,6,16,,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,7,2,datatype-fmap_fmap-phase1_suffix-phase1,46,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,8,1,datatype-fmap_fmap-phase1_suffix-phase1,70,12.3
-
-By adding a value to the ``RenameKeyGroup`` column, all files in Parameter Group 6 will be renamed to match
-that value. After being applied, there will be new Key Groups and Parameter Groups:
-
-.. csv-table:: New Key Group Assigned
-    :align: center
-    :header: "Rename KeyGroup","Merge Into","KeyGroup","Param Group",Counts,"Fieldmap Key00","N Slice Times","Repetition Time"
-
-    ,,datatype-dwi_run-1_suffix-dwi,1,1361,datatype-fmap_fmap-phase1_suffix-phase1,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,2,1,datatype-fmap_fmap-phase1_suffix-phase1,70,8.4
-    ,,datatype-dwi_run-1_suffix-dwi,3,15,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,4,1,datatype-fmap_fmap-phase1_suffix-phase1,70,9
-    ,,datatype-dwi_run-1_suffix-dwi,5,2,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,6,2,datatype-fmap_fmap-phase1_suffix-phase1,46,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,7,1,datatype-fmap_fmap-phase1_suffix-phase1,70,12.3
-    ,,acquisition-NoSDC_datatype-dwi_run-1_suffix-dwi,1,16,,70,8.1
-
-This way, we will know that any outputs with ``acq-NoSDC`` will not have had fieldmap-based distortion
-correction applied.
-
 Deleting a mistake
 ~~~~~~~~~~~~~~~~~~~~~~
 
 To remove files in a Parameter Group from your BIDS data, you simply set the ``MergeInto`` value
 to ``0``. We see in our data that there is a strange scan that has a ``RepetitionTime`` of 12.3
-seconds (Group 8) and a scan that has only 46 slices (Group 7). These scanning parameters are
-different enough from all the other scans that it would be irresponsible to include them in
-any final analysis. To remove these files from your BIDS data, add a ``0`` to ``MergeInto``:
+seconds and is also variant with respect to EffectiveEchoSpacing and EchoTime. We elect to remove this scan from 
+our dataset becasuse we do not want these parameters to affect our analyses.
+To remove these files from your BIDS data, add a ``0`` to ``MergeInto`` and save the new CSV as ``v0_edited_summary.csv``
 
-.. csv-table:: Merge Parameter Groups
-    :align: center
-    :header: "Rename KeyGroup","Merge Into","KeyGroup","Param Group",Counts,"Fieldmap Key00","N Slice Times","Repetition Time"
+.. csv-table:: Pre Apply Groupings
+    :file: _static/PNC_pre_apply_summary_dwi_run1_deletion.csv
+    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
+    :header-rows: 1
 
-    ,,datatype-dwi_run-1_suffix-dwi,1,1361,datatype-fmap_fmap-phase1_suffix-phase1,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,2,1,datatype-fmap_fmap-phase1_suffix-phase1,70,8.4
-    ,,datatype-dwi_run-1_suffix-dwi,3,15,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,4,1,datatype-fmap_fmap-phase1_suffix-phase1,70,9
-    ,,datatype-dwi_run-1_suffix-dwi,5,2,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,6,16,,70,8.1
-    ,0,datatype-dwi_run-1_suffix-dwi,7,2,datatype-fmap_fmap-phase1_suffix-phase1,46,8.1
-    ,0,datatype-dwi_run-1_suffix-dwi,8,1,datatype-fmap_fmap-phase1_suffix-phase1,70,12.3
+In this example, users can apply the changes to BIDS data using the following command:
+
+.. code-block:: console
+
+    $ cubids-apply FULL/PATH/TO/BIDS/DIR FULL/PATH/TO/v0_edited_summary.csv FULL/PATH/TO/v0_files.csv FULL/PATH/TO/v1
+
+The changes in ``v0_edited_summary.csv`` will be applied to the BIDS data
+and the new Key and Parameter Groups will be saved to csv files starting with ``v1``.
 
 Applying these changes we would see:
 
-.. csv-table:: Merge Parameter Groups
-    :align: center
-    :header: "Rename KeyGroup","Merge Into","KeyGroup","Param Group",Counts,"Fieldmap Key00","N Slice Times","Repetition Time"
-
-    ,,datatype-dwi_run-1_suffix-dwi,1,1361,datatype-fmap_fmap-phase1_suffix-phase1,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,2,1,datatype-fmap_fmap-phase1_suffix-phase1,70,8.4
-    ,,datatype-dwi_run-1_suffix-dwi,3,15,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,4,1,datatype-fmap_fmap-phase1_suffix-phase1,70,9
-    ,,datatype-dwi_run-1_suffix-dwi,5,2,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1
-    ,,datatype-dwi_run-1_suffix-dwi,6,16,,70,8.1
-
-
+.. csv-table:: Post Apply Groupings
+    :file: _static/PNC_post_apply_summary.csv
+    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
+    :header-rows: 1
+    
+	
 Command line tools
 -------------------
 
