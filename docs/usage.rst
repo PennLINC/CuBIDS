@@ -215,14 +215,6 @@ of ``CuBIDS`` command line tools:
 .. autofunction:: cubids.cli.cubids_undo
 .. autofunction:: cubids.cli.cubids_validate
 
-cubids-validate
-----------------
-
-.. argparse::
-   :ref: cubids.cli.validate.get_parser
-   :prog: cubids-validate
-   :nodefault:
-   :nodefaultconst:
 
 Customizable configuration
 ---------------------------
