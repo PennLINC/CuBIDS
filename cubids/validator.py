@@ -68,6 +68,22 @@ def run_validator(call, verbose=True):
                          stderr=subprocess.PIPE)
     return(ret)
 
+def build_drmaa_batch(queue):
+    batch_size = 10 if len(queue) < 1000 else len(queue) // 10
+    batch = []
+    for batch_start in range(0, len(queue), batch_size):
+        script = []
+        tmpdirs = []
+        for idx in range(batch_start, min(batch_start + batch_size, len(queue))):
+            # bids validator ignore files starting with . https://github.com/bids-standard/bids-validator/issues/348
+            line = " ".join(queue[idx]['call']) + ' > ' + os.path.join(queue[idx]['tmpdir'].name, ".cubids")
+            script.append(line)
+            tmpdirs.append(queue[idx]['tmpdir'])
+        batch.append({
+            'script': "\n".join(script),
+            'tmpdirs': tmpdirs
+        })
+    return batch
 
 def parse_validator_output(output):
     """Parse the JSON output of the BIDS validator into a pandas dataframe
