@@ -34,39 +34,48 @@ reproducibility, and supporting collaboration [#f3]_.
 Definitions
 ------------
 
+
+
 .. topic:: Key Group
 
-    * A unique set of `BIDS key-value pairs <https://bids-specification.readthedocs.io/en/stable/02-common-principles.html#file-name-structure>`_ , excluding the subject and session keys.
-    * Derived from the Filename
+    * A set of scans whose filenames share all `BIDS filename key-value pairs <https://bids-specification.readthedocs.io/en/stable/02-common-principles.html#file-name-structure>`_, excluding subject and session
+    * Derived from the BIDS Filename
     * Example structure: ``acquisition-*_datatype-*_run-*_task-*_suffix`` 
 
 .. topic:: Parameter (Param) Group
 
-    * The set of scans with identical critical imaging parameters. 
+    * The set of scans with identical metadata parameters in their sidecars
     * Defined within a Key Group
-    * Numerically identified (e.g. 1, 2, etc.)
+    * Numerically identified (each Key Group will have n Param Groups, where n is the number of unique sets of scanning parameters present in that Key Group. e.g. 1, 2, etc.)
 
 .. topic:: Dominant Group
 
-    * The Param Group that contains the highest number of scans in its Key Group.
+    * The Param Group that contains the most scans in its Key Group
 
 .. topic:: Variant Group
     
-    * Any Param Group that is non-dominant.
+    * Any Param Group that is non-dominant
 
 .. topic:: Rename Key Group
 
-    * Recommended new Key Group name for variant Param Group 
+    * Auto-generated, recommended new Key Group name for Variant Groups 
+    * Based on the metadata parameters that cause scans in Variant Groups to vary from those in their respective Dominant Groups 
+
+.. topic:: Acquisition Group 
+
+    * A collection of sessions across participants that contains the exact same set of Key and Param Groups
+    * We find Acquisition Groups to be a particularly useful categorization of BIDS data, as they identify homogeneous sets of sessions (not individual scans) in a large dataset.
+    * They are also useful for expediting the testing of pipelines; if a BIDS App runs successfully on a single subject from each Acquisition Group, one can be confident that it will handle all combinations of scanning parameters present in the dataset.
 
 Examples
 """"""""
 
-A dominant resting state BOLD group:
+Dominant Group resting state BOLD:
         * Example Filename: ``sub-01_ses-A_task-rest_acq-singleband_bold.nii.gz``
         * Key Group: ``acquisition-singleband_datatype-func_suffix-bold_task-rest``
         * Param Group: ``1`` (Dominaint Group)
 
-A variant resting state BOLD group
+Variant Group resting state BOLD (all scans in this Param Group are missing a fieldmap)
         * Example Filename: ``sub-02_ses-A_task-rest_acq-singleband_bold.nii.gz``
         * Key Group: ``acquisition-singleband_datatype-func_suffix-bold_task-rest``
         * Param Group: ``2`` (Variant Group)
