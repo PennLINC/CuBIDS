@@ -20,7 +20,7 @@ their computational time and resources** effectively.
 ``CuBIDS`` is designed to facilitate the curation of large, neuroimaging data so
 that users can infer useful information from descriptive and accurate BIDS labels
 before running pipelines *en masse*. ``CuBIDS`` accomplishes this by summarizing 
-BIDS data using :ref:`keygroup` and :ref:`paramgroup` categorizations in your data (we'll explain what these
+BIDS data using :ref:`keygroup`, :ref:`paramgroup`, and :ref:`acquisitiongroup` categorizations in your data (we'll explain what these
 are in more detail in the next section).
 
 The image below demonstrates the ``CuBIDS`` workflow that we'll discuss on the next page.
@@ -64,8 +64,6 @@ Definitions
 .. topic:: Acquisition Group 
 
     * A collection of sessions across participants that contains the exact same set of Key and Param Groups
-    * We find Acquisition Groups to be a particularly useful categorization of BIDS data, as they identify homogeneous sets of sessions (not individual scans) in a large dataset.
-    * They are also useful for expediting the testing of pipelines; if a BIDS App runs successfully on a single subject from each Acquisition Group, one can be confident that it will handle all combinations of scanning parameters present in the dataset.
 
 Examples
 """"""""

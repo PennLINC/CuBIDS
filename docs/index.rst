@@ -9,8 +9,8 @@ Contents
    :maxdepth: 2
 
    about
-   installation
    usage
+   installation
    example
    contributing
    authors

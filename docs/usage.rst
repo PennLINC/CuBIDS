@@ -45,6 +45,23 @@ with a ``Warning``, but not necessarily suggest changes. That being said,
 there can be detrimental consequences downstream if the different parameters cause the
 same preprocessing pipelines to configure differently to images of the same Key Group.
 
+
+.. _acquisitiongroup:
+
+Acquisition Group
+~~~~~~~~~~~~~~~~~~
+
+We define an “Acquisition Group” as a collection of sessions across participants that contain the exact 
+same set of Key and Parameter Groups. Since Key Groups are based on the BIDS filenames—and therefore both 
+modality and acquisition specific—each BIDS session directory contains images that belong to a set of 
+Parameter Groups. CuBIDS assigns each session––or set of Parameter Groups¬¬––to an Acquisition Group 
+such that all sessions in an Acquisition Group possesses an identical set of scan acquisitions and 
+metadata parameters across all image modalities present in the dataset. We find Acquisition Groups to be 
+a particularly useful categorization of BIDS data, as they identify homogeneous sets of sessions (not 
+individual scans) in a large dataset. They are also useful for expediting the testing of pipelines; if a 
+BIDS App runs successfully on a single subject from each Acquisition Group, one can be confident that it 
+will handle all combinations of scanning parameters in the entire dataset.
+
 .. _summaryfile:
 
 The ``_summary.csv`` File
@@ -71,6 +88,21 @@ The ``_files.csv`` file
 This file contains one row per imaging file in the BIDS directory. You won't need to edit this file
 directly, but it keeps track of every file's assignment to Key and Parameter Groups.
 
+
+.. _acqgroupcsv:
+
+The ``_AcqGrouping.csv`` file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``_AcqGrouping.csv`` file organizes the dataset by session and tags each one with its Acquisition Group number.
+
+.. _acqgrouptxt:
+
+The ``_AcqGroupInfo.txt`` file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``_AcqGroupInfo.txt`` file lists all Key Groups that belong to a given Acquisition Group along with \
+the number of sessions each group possesses.
 
 Visualizing and summarizing metadata heterogenaity
 ----------------------------------------------------
