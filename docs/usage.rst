@@ -54,7 +54,7 @@ Acquisition Group
 We define an “Acquisition Group” as a collection of sessions across participants that contain the exact 
 same set of Key and Parameter Groups. Since Key Groups are based on the BIDS filenames—and therefore both 
 modality and acquisition specific—each BIDS session directory contains images that belong to a set of 
-Parameter Groups. CuBIDS assigns each session––or set of Parameter Groups¬¬––to an Acquisition Group 
+Parameter Groups. CuBIDS assigns each session––or set of Parameter Groups––to an Acquisition Group 
 such that all sessions in an Acquisition Group possesses an identical set of scan acquisitions and 
 metadata parameters across all image modalities present in the dataset. We find Acquisition Groups to be 
 a particularly useful categorization of BIDS data, as they identify homogeneous sets of sessions (not 
