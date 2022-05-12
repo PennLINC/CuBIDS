@@ -170,6 +170,9 @@ class CuBIDS(object):
                             data["NumVolumes"] = matrix_dims[3]
                         elif img.ndim == 3:
                             data["NumVolumes"] = 1.0
+                    if "ImageOrientation" not in data.keys():
+                        orient = nb.orientations.aff2axcodes(img.affine)
+                        data["ImageOrientation"] = orient
                     with open(sidecar, 'w') as file:
                         json.dump(data, file, indent=4)
 
