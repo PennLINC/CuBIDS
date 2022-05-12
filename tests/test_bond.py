@@ -221,6 +221,7 @@ def test_add_nifti_info_datalad(tmp_path):
     nifti_l_cols = nifti_summary_df.columns.tolist()
     assert 'NumVolumes' in nifti_l_cols
     assert 'Obliquity' in nifti_l_cols
+    assert 'ImageOrientation' in nifti_l_cols
 
 def test_add_nifti_info_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
