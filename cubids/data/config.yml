@@ -13,6 +13,8 @@ derived_params:
       suggest_variant_rename: yes
     Obliquity:
       suggest_variant_rename: yes
+    ImageOrientation:
+      suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
       precision: 3
