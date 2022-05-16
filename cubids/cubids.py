@@ -169,7 +169,7 @@ class CuBIDS(object):
                         if img.ndim == 4:
                             data["NumVolumes"] = matrix_dims[3]
                         elif img.ndim == 3:
-                            data["NumVolumes"] = 1.0
+                            data["NumVolumes"] = 1
                     if "ImageOrientation" not in data.keys():
                         orient = nb.orientations.aff2axcodes(img.affine)
                         joined = ''.join(orient) + '+'
