@@ -172,7 +172,8 @@ class CuBIDS(object):
                             data["NumVolumes"] = 1.0
                     if "ImageOrientation" not in data.keys():
                         orient = nb.orientations.aff2axcodes(img.affine)
-                        data["ImageOrientation"] = str(orient)
+                        joined = ''.join(orient) + '+'
+                        data["ImageOrientation"] = joined
                     with open(sidecar, 'w') as file:
                         json.dump(data, file, indent=4)
 
