@@ -117,7 +117,7 @@ jobs:
                 wget
               export GOPATH=$HOME/go
               mkdir -p $GOPATH
-              go install github.com/golang/dep/tree/v0.5.3/cmd/dep@v0.5.3
+              go get -u github.com/golang/dep/tree/master/cmd/dep
               export VERSION=3.7.3
               wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
               tar -xzf singularity-${VERSION}.tar.gz
