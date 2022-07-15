@@ -384,6 +384,8 @@ jobs:
       - run:
           name: Check whether build should be skipped
           command: |
+            git config --global user.email "circleci@citesting.com"
+            git config --global user.name "CircleCI Test"
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?docs\]' )" != "" ]]; then
               echo "Skipping doc building job"
               circleci step halt
