@@ -61,7 +61,7 @@ class CuBIDS(object):
     def reset_bids_layout(self, validate=False):
         self._layout = bids.BIDSLayout(self.path, validate=validate)
         print("DONE RESETTING BIDS LAYOUT")
-        
+
     def init_datalad(self):
         """Initializes a datalad Dataset at self.path.
 
