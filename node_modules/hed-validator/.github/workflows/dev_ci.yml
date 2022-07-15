@@ -1,0 +1,28 @@
+name: Development Branch CI
+
+on:
+  push:
+    branches: [ hed-3 ]
+  pull_request:
+    branches: [ hed-3 ]
+
+jobs:
+  Build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x, 14.x, 15.x, 16.x]
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v2
+    - name: Set up with Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Download dependencies
+      run: npm ci
+    - name: Test with Node.js ${{ matrix.node-version }}
+      run: npm test

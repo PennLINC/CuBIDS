@@ -1,1 +1,0 @@
-/Users/scovitz/BIDS_Dataset_Datalad/sub-01/ses-phdiff/func/sub-01_ses-phdiff_task-rest_bold.nii.gz

@@ -1,0 +1,3578 @@
+<?xml version="1.0" ?>
+<HED version="8.0.0-alpha.1">
+   <node>
+      <name>Event</name>
+      <node>
+         <name>Sensory-event</name>
+         <description>Something perceivable by the participant. An event meant to be an experimental stimulus should also be tagged with Task-property/Task-role/Experiment-stimulus.</description>
+      </node>
+      <node>
+         <name>Agent-action</name>
+         <description>Any action engaged in by an agent. An event that is a participant response to an experiment stimulus should also be tagged with Agent-property/Agent-task-role/Participant-response.</description>
+      </node>
+      <node>
+         <name>Data-feature</name>
+         <description>An event derived from the data itself or possibly inserted in a post-hoc fashion. Examples are markers for interictal spikes or alpha bursts.</description>
+      </node>
+      <node extensionAllowed="true">
+         <name>Experiment-control</name>
+         <description>An event pertaining to the control of the experiment during its operation.</description>
+      </node>
+      <node>
+         <name>Experiment-procedure</name>
+         <description>An event indicating an experimental procedure as in doing a saliva swab on a participant during the experiment or administering a survey.</description>
+      </node>
+      <node extensionAllowed="true">
+         <name>Experiment-structure</name>
+         <description>An event specifying the structure of the experiment.</description>
+      </node>
+   </node>
+   <node>
+      <name>Agent</name>
+      <description>Something in the experiment that takes an active role or produces an effect. The role or effect may be implicit. Being alive or performing an activity such as a computation may qualify something to be an agent. An agent may also be soething that simulates something else.</description>
+      <node>
+         <name>Animal-agent</name>
+         <description>An animal that is present.</description>
+      </node>
+      <node>
+         <name>Avatar-agent</name>
+      </node>
+      <node>
+         <name>Computational-agent</name>
+      </node>
+      <node>
+         <name>Controller-agent</name>
+         <description>An outside controller such as the experimental control software.</description>
+      </node>
+      <node>
+         <name>Human-agent</name>
+      </node>
+      <node>
+         <name>Robotic-agent</name>
+      </node>
+   </node>
+   <node extensionAllowed="true">
+      <name>Action</name>
+      <description>May or may not be in response to a previous Sensory presentation event.</description>
+      <node>
+         <name>Move</name>
+         <node>
+            <name>Breathe</name>
+            <node>
+               <name>Inhale</name>
+               <description>A deliberate in-breath in response to a task instruction or as part of a task. Group with Attribute/Cognitive modifier/Incidental if the inhalation is incidental to the task (Action/Move/Breathe/Inhale, Attribute/Cognitive modifier/Incidental).</description>
+            </node>
+            <node>
+               <name>Exhale</name>
+               <description>A deliberate out-breath in response to a task instruction or as part of a task. Group with Attribute/Cognitive modifier/Incidental: (Action/Move/Breathe/Exhale, Attribute/Cognitive modifier/Incidental).</description>
+            </node>
+            <node>
+               <name>Hold-breath</name>
+            </node>
+         </node>
+         <node>
+            <name>Move-full-body</name>
+            <node>
+               <name>Bend</name>
+            </node>
+            <node>
+               <name>Dance</name>
+            </node>
+            <node>
+               <name>Fall-down</name>
+               <description>Involuntary fall to floor or ground</description>
+            </node>
+            <node>
+               <name>Flex</name>
+            </node>
+            <node>
+               <name>Jerk</name>
+               <description>When some force applied to the participant causes them to involuntarily accommodate or react to it.</description>
+            </node>
+            <node>
+               <name>Recover-balance</name>
+               <description>A movement made in response to a stumble or unforeseen loss of balance</description>
+            </node>
+            <node>
+               <name>Stretch</name>
+               <description>Stretching the body or body part</description>
+            </node>
+            <node>
+               <name>Shudder</name>
+            </node>
+            <node>
+               <name>Stumble</name>
+               <description>Temporary and involuntary loss of balance</description>
+            </node>
+            <node>
+               <name>Turn</name>
+            </node>
+         </node>
+         <node>
+            <name>Move-head</name>
+            <node>
+               <name>Move-eyes</name>
+               <node>
+                  <name>Blink</name>
+               </node>
+               <node>
+                  <name>Close-eyes</name>
+               </node>
+               <node>
+                  <name>Fixate</name>
+               </node>
+               <node>
+                  <name>Inhibit-blinks</name>
+               </node>
+               <node>
+                  <name>Open-eyes</name>
+               </node>
+               <node>
+                  <name>Saccade</name>
+               </node>
+            </node>
+            <node>
+               <name>Move-mouth</name>
+               <node>
+                  <name>Burp</name>
+               </node>
+               <node>
+                  <name>Clear-throat</name>
+               </node>
+               <node>
+                  <name>Cough</name>
+               </node>
+               <node>
+                  <name>Gurgle</name>
+               </node>
+               <node>
+                  <name>Hiccup</name>
+               </node>
+               <node>
+                  <name>Smile</name>
+               </node>
+               <node>
+                  <name>Sneeze</name>
+               </node>
+               <node>
+                  <name>Sniffle</name>
+               </node>
+               <node>
+                  <name>Swallow</name>
+               </node>
+               <node>
+                  <name>Yawn</name>
+               </node>
+            </node>
+            <node>
+               <name>Nod</name>
+            </node>
+            <node>
+               <name>Shake-head</name>
+            </node>
+         </node>
+         <node>
+            <name>Move-arm-hand</name>
+            <node>
+               <name>Clap</name>
+            </node>
+            <node>
+               <name>Drop</name>
+               <description>For example the participant drops a handheld ball</description>
+            </node>
+            <node>
+               <name>Grab</name>
+            </node>
+            <node>
+               <name>Grasp</name>
+               <description>Grasp an object in one or both hands</description>
+            </node>
+            <node>
+               <name>Hold-down</name>
+            </node>
+            <node>
+               <name>Lift</name>
+               <description>Often grouped with item being lifted.</description>
+            </node>
+            <node>
+               <name>Make-fist</name>
+            </node>
+            <node>
+               <name>Point</name>
+               <description>Should be grouped with Item/Agent/Human/Body part/Hand/Finger tag to specify which finger was used for the action.</description>
+            </node>
+            <node>
+               <name>Press</name>
+               <description>Often grouped with body part doing action and item being pressed.</description>
+            </node>
+            <node>
+               <name>Push</name>
+            </node>
+            <node>
+               <name>Reach</name>
+               <description>Requires a spatial goal such as reaching to touch a button or to grasp something. A body stretch is not a reach.</description>
+            </node>
+            <node>
+               <name>Release</name>
+               <description>Often grouped with item being released.</description>
+            </node>
+            <node>
+               <name>Retract</name>
+               <description>Often grouped with body part doing action and item being retracted.</description>
+            </node>
+            <node>
+               <name>Scratch</name>
+            </node>
+            <node>
+               <name>Snap-fingers</name>
+            </node>
+            <node>
+               <name>Tap</name>
+               <description>Often grouped with body part doing action.</description>
+            </node>
+            <node>
+               <name>Touch</name>
+               <description>May follow a Reach event</description>
+            </node>
+         </node>
+         <node>
+            <name>Move-leg-foot</name>
+            <node>
+               <name>Curl-toes</name>
+            </node>
+            <node>
+               <name>Jog</name>
+            </node>
+            <node>
+               <name>Jump</name>
+            </node>
+            <node>
+               <name>Kick</name>
+            </node>
+            <node>
+               <name>Pedal</name>
+            </node>
+            <node>
+               <name>Run</name>
+            </node>
+            <node>
+               <name>Step</name>
+               <node>
+                  <name>Heel-strike</name>
+               </node>
+               <node>
+                  <name>Toe-off</name>
+               </node>
+            </node>
+            <node>
+               <name>Trot</name>
+            </node>
+            <node>
+               <name>Walk</name>
+            </node>
+         </node>
+      </node>
+      <node>
+         <name>Communicate</name>
+         <node>
+            <name>Communicate-vocally</name>
+            <node>
+               <name>Cry</name>
+            </node>
+            <node>
+               <name>Groan</name>
+            </node>
+            <node>
+               <name>Gulp</name>
+               <description>Communicate anxiety. Use swallow if non-editorial.</description>
+            </node>
+            <node>
+               <name>Laugh</name>
+            </node>
+            <node>
+               <name>Scream</name>
+            </node>
+            <node>
+               <name>Sigh</name>
+            </node>
+            <node>
+               <name>Speak</name>
+               <description>Communicate using spoken language.</description>
+            </node>
+         </node>
+         <node>
+            <name>Gesture</name>
+            <description>Make a expressive communicative movement of hands/arms and, often, face</description>
+            <node>
+               <name>Index-up</name>
+            </node>
+            <node>
+               <name>Pump-fist</name>
+            </node>
+            <node>
+               <name>Spread-hand</name>
+            </node>
+            <node>
+               <name>Shhh</name>
+            </node>
+            <node>
+               <name>Shrug</name>
+            </node>
+            <node>
+               <name>Thumb-up</name>
+            </node>
+            <node>
+               <name>Wave</name>
+            </node>
+         </node>
+         <node>
+            <name>Communicate-musically</name>
+            <node>
+               <name>Hum</name>
+            </node>
+            <node>
+               <name>Sing</name>
+            </node>
+            <node>
+               <name>Vocalize</name>
+               <description>Make a sustained vowel sound such as Ahhh.</description>
+            </node>
+            <node>
+               <name>Whistle</name>
+            </node>
+         </node>
+      </node>
+      <node>
+         <name>Perform</name>
+         <description>Carry out or accomplish an action or task or function.</description>
+         <node>
+            <name>Collide</name>
+         </node>
+         <node>
+            <name>Halt</name>
+            <description>Stop action.</description>
+         </node>
+         <node>
+            <name>Modify</name>
+            <description>Deliberately make a change in something.</description>
+         </node>
+         <node>
+            <name>Operate</name>
+            <description>Control something else.</description>
+         </node>
+         <node>
+            <name>Perceive</name>
+            <node>
+               <name>Feel</name>
+            </node>
+            <node>
+               <name>Listen</name>
+            </node>
+            <node>
+               <name>Look</name>
+            </node>
+            <node>
+               <name>Smell</name>
+            </node>
+            <node>
+               <name>Taste</name>
+            </node>
+         </node>
+         <node>
+            <name>Play</name>
+            <description>As a musical instrument or a game.</description>
+         </node>
+         <node>
+            <name>Read</name>
+         </node>
+         <node>
+            <name>Rest</name>
+         </node>
+         <node>
+            <name>Write</name>
+         </node>
+      </node>
+      <node>
+         <name>Think</name>
+         <node>
+            <name>Allow</name>
+            <description>Allow access to something such as allowing a car to pass</description>
+         </node>
+         <node>
+            <name>Attend-to</name>
+         </node>
+         <node>
+            <name>Count</name>
+         </node>
+         <node>
+            <name>Deny</name>
+            <description>Deny access to something such as preventing someone to pass</description>
+         </node>
+         <node>
+            <name>Detect</name>
+         </node>
+         <node>
+            <name>Discriminate</name>
+         </node>
+         <node>
+            <name>Encode</name>
+         </node>
+         <node>
+            <name>Evade</name>
+         </node>
+         <node>
+            <name>Generate</name>
+         </node>
+         <node>
+            <name>Identify</name>
+         </node>
+         <node>
+            <name>Imagine</name>
+         </node>
+         <node>
+            <name>Predict</name>
+         </node>
+         <node>
+            <name>Respond</name>
+         </node>
+         <node>
+            <name>Recall</name>
+         </node>
+         <node>
+            <name>Repeat</name>
+         </node>
+         <node>
+            <name>Switch-attention</name>
+         </node>
+         <node>
+            <name>Track</name>
+         </node>
+      </node>
+   </node>
+   <node extensionAllowed="true">
+      <name>Item</name>
+      <node>
+         <name>Language</name>
+         <description>An  system of communication that is receivable in a sensory presentation.</description>
+         <node>
+            <name>Character</name>
+            <description>A mark, sign or symbol used as part of language.</description>
+         </node>
+         <node>
+            <name>Glyph</name>
+            <description>A symbol or pictograph.</description>
+         </node>
+         <node>
+            <name>Nonword</name>
+            <description>A group of letters or speech sounds that looks or sounds like a word but that is not accepted as such by native speakers.</description>
+         </node>
+         <node>
+            <name>Phoneme</name>
+            <description>A sound or a group of different sounds perceived to have the same function by speakers of the language.</description>
+         </node>
+         <node>
+            <name>Phrase</name>
+            <description>A small group of words standing together as a conceptual unit.</description>
+         </node>
+         <node>
+            <name>Sentence</name>
+            <description>A set of words that is complete in itself.</description>
+         </node>
+         <node>
+            <name>Syllable</name>
+            <description>A unit of pronunciation having one vowel sound.</description>
+         </node>
+         <node>
+            <name>Textblock</name>
+            <description>A block of text.</description>
+         </node>
+         <node>
+            <name>Word</name>
+            <description>A single distinct meaningful element of a language.</description>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Object</name>
+         <description>Physical object perceptible via Visual, Auditory, Olfactory, and/or Tactile modalities.</description>
+         <node>
+            <name>Geometric</name>
+            <node>
+               <name>Pattern</name>
+               <node>
+                  <name>Dots</name>
+               </node>
+               <node>
+                  <name>Led-pattern</name>
+               </node>
+            </node>
+            <node>
+               <name>2D-shape</name>
+               <node>
+                  <name>Clockface</name>
+               </node>
+               <node>
+                  <name>Cross</name>
+               </node>
+               <node>
+                  <name>Ellipse</name>
+                  <node>
+                     <name>Circle</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Rectangle</name>
+                  <node>
+                     <name>Square</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Single-point</name>
+               </node>
+               <node>
+                  <name>Star</name>
+               </node>
+               <node>
+                  <name>Triangle</name>
+               </node>
+            </node>
+            <node>
+               <name>3D-shape</name>
+               <node>
+                  <name>Box</name>
+                  <node>
+                     <name>Cube</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Cone</name>
+               </node>
+               <node>
+                  <name>Cylinder</name>
+               </node>
+               <node>
+                  <name>Ellipsoid</name>
+                  <node>
+                     <name>Sphere</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Pyradmid</name>
+               </node>
+            </node>
+         </node>
+         <node>
+            <name>Man-made-object</name>
+            <description>A manmade object</description>
+            <node>
+               <name>Media</name>
+               <node>
+                  <name>Media-clip</name>
+                  <node>
+                     <name>Audio-clip</name>
+                  </node>
+                  <node>
+                     <name>Video-clip</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Visualization</name>
+                  <description>A visual representation of something else -- such as using a stick-figure to represent motion capture data.</description>
+                  <node>
+                     <name>Animation</name>
+                  </node>
+                  <node>
+                     <name>Art-installation</name>
+                  </node>
+                  <node>
+                     <name>Braille</name>
+                  </node>
+                  <node>
+                     <name>Cutout</name>
+                  </node>
+                  <node>
+                     <name>Image</name>
+                     <description>A still 2-D representation.</description>
+                     <node>
+                        <name>Cartoon</name>
+                     </node>
+                     <node>
+                        <name>Drawing</name>
+                     </node>
+                     <node>
+                        <name>Icon</name>
+                     </node>
+                     <node>
+                        <name>Painting</name>
+                     </node>
+                     <node>
+                        <name>Photograph</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Movie</name>
+                  </node>
+                  <node>
+                     <name>Outline-visualization</name>
+                  </node>
+                  <node>
+                     <name>Point-light-visualization</name>
+                  </node>
+                  <node>
+                     <name>Sculpture</name>
+                  </node>
+                  <node>
+                     <name>Stick-figure-visualization</name>
+                  </node>
+               </node>
+            </node>
+            <node>
+               <name>Building</name>
+               <description>Whole building or building feature</description>
+               <node>
+                  <name>Room</name>
+               </node>
+               <node>
+                  <name>Roof</name>
+               </node>
+               <node>
+                  <name>Entrance</name>
+               </node>
+               <node>
+                  <name>Attic</name>
+               </node>
+               <node>
+                  <name>Basement</name>
+               </node>
+            </node>
+            <node>
+               <name>Clothing</name>
+            </node>
+            <node>
+               <name>Device</name>
+               <node>
+                  <name>Computing-device</name>
+               </node>
+               <node>
+                  <name>Engine</name>
+               </node>
+               <node>
+                  <name>IO-device</name>
+                  <node>
+                     <name>Input-device</name>
+                     <node>
+                        <name>Button</name>
+                     </node>
+                     <node>
+                        <name>Joystick</name>
+                     </node>
+                     <node>
+                        <name>Keyboard</name>
+                        <node>
+                           <name>Keyboard-key</name>
+                           <node takesValue="true">
+                              <name>#</name>
+                              <description>Value of a keyboard key.</description>
+                           </node>
+                        </node>
+                        <node>
+                           <name>Keypad-key</name>
+                           <node takesValue="true">
+                              <name>#</name>
+                              <description>Value of keypad key.</description>
+                           </node>
+                        </node>
+                     </node>
+                     <node>
+                        <name>Microphone</name>
+                     </node>
+                     <node>
+                        <name>Mouse</name>
+                        <node>
+                           <name>Mouse-button</name>
+                        </node>
+                        <node>
+                           <name>Scroll-wheel</name>
+                        </node>
+                     </node>
+                     <node>
+                        <name>Touch-screen</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Network-device</name>
+                  </node>
+                  <node>
+                     <name>Output-device</name>
+                     <node>
+                        <name>Display-device</name>
+                        <node>
+                           <name>Head-mounted-display</name>
+                        </node>
+                        <node>
+                           <name>LED-display</name>
+                        </node>
+                        <node>
+                           <name>Screen</name>
+                           <node>
+                              <name>Screen-window</name>
+                           </node>
+                        </node>
+                     </node>
+                     <node>
+                        <name>Auditory-device</name>
+                        <node>
+                           <name>Headphones</name>
+                        </node>
+                        <node>
+                           <name>Screen-speaker</name>
+                        </node>
+                        <node>
+                           <name>Loudspeaker</name>
+                        </node>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Recording-device</name>
+                     <node>
+                        <name>EEG-recording</name>
+                     </node>
+                     <node>
+                        <name>File-recording</name>
+                     </node>
+                     <node>
+                        <name>MEG-recording</name>
+                     </node>
+                     <node>
+                        <name>Motion-capture</name>
+                     </node>
+                     <node>
+                        <name>Tape-recording</name>
+                     </node>
+                  </node>
+               </node>
+               <node>
+                  <name>Machine</name>
+                  <node>
+                     <name>Noisemaker</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Measurement-device</name>
+                  <node>
+                     <name>Clock</name>
+                     <node>
+                        <name>Clock-face</name>
+                     </node>
+                  </node>
+               </node>
+               <node>
+                  <name>Robot</name>
+               </node>
+               <node>
+                  <name>Tool</name>
+               </node>
+            </node>
+            <node>
+               <name>Document</name>
+               <description>A physical, written document</description>
+               <node>
+                  <name>Manuscript</name>
+               </node>
+               <node>
+                  <name>Letter</name>
+               </node>
+               <node>
+                  <name>Note</name>
+               </node>
+               <node>
+                  <name>Book</name>
+               </node>
+               <node>
+                  <name>Notebook</name>
+               </node>
+            </node>
+            <node>
+               <name>Furnishing</name>
+               <description>Furniture and appliances and other movable accessories including curtains and rugs</description>
+            </node>
+            <node>
+               <name>Navigational-object</name>
+               <node>
+                  <name>Path</name>
+               </node>
+               <node>
+                  <name>Road</name>
+                  <node>
+                     <name>Lane</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Runway</name>
+               </node>
+               <node>
+                  <name>Sign</name>
+               </node>
+            </node>
+            <node>
+               <name>Vehicle</name>
+               <node>
+                  <name>Aircraft</name>
+               </node>
+               <node>
+                  <name>Bicycle</name>
+               </node>
+               <node>
+                  <name>Boat</name>
+               </node>
+               <node>
+                  <name>Car</name>
+               </node>
+               <node>
+                  <name>Cart</name>
+               </node>
+               <node>
+                  <name>Tractor</name>
+               </node>
+               <node>
+                  <name>Train</name>
+               </node>
+               <node>
+                  <name>Truck</name>
+               </node>
+            </node>
+         </node>
+         <node>
+            <name>Natural-object</name>
+            <description>An object occuring naturally in contrast to a man-made object.</description>
+            <node>
+               <name>Mineral</name>
+               <description>An inorganic substance</description>
+            </node>
+            <node>
+               <name>Natural-feature</name>
+               <description>Some terrain occuring in the outdoors.</description>
+               <node>
+                  <name>Field</name>
+               </node>
+               <node>
+                  <name>Hill</name>
+               </node>
+               <node>
+                  <name>Mountain</name>
+               </node>
+               <node>
+                  <name>River</name>
+               </node>
+               <node>
+                  <name>Waterfall</name>
+               </node>
+            </node>
+         </node>
+         <node>
+            <name>Food</name>
+            <description>Something that is usually solid and can be consumed by an organism.</description>
+         </node>
+         <node>
+            <name>Drink</name>
+            <description>Something that is liquid and can be consumed by an organism.</description>
+         </node>
+      </node>
+      <node>
+         <name>Organism</name>
+         <description>Something living or part of something living.</description>
+         <node>
+            <name>Animal</name>
+            <description>Any multicellular or eukaryotic organism.</description>
+            <node>
+               <name>Human</name>
+            </node>
+         </node>
+         <node>
+            <name>Plant</name>
+         </node>
+         <node>
+            <name>Body-part</name>
+            <node>
+               <name>Head</name>
+               <node>
+                  <name>Hair</name>
+               </node>
+               <node>
+                  <name>Ear</name>
+               </node>
+               <node>
+                  <name>Face</name>
+                  <node>
+                     <name>Cheek</name>
+                  </node>
+                  <node>
+                     <name>Chin</name>
+                  </node>
+                  <node>
+                     <name>Eye</name>
+                  </node>
+                  <node>
+                     <name>Eyebrow</name>
+                  </node>
+                  <node>
+                     <name>Forehead</name>
+                  </node>
+                  <node>
+                     <name>Lip</name>
+                  </node>
+                  <node>
+                     <name>Nose</name>
+                  </node>
+                  <node>
+                     <name>Mouth</name>
+                  </node>
+                  <node>
+                     <name>Teeth</name>
+                  </node>
+               </node>
+            </node>
+            <node>
+               <name>Arm</name>
+               <node>
+                  <name>Elbow</name>
+               </node>
+               <node>
+                  <name>Hand</name>
+                  <node>
+                     <name>Finger</name>
+                     <node>
+                        <name>Index-finger</name>
+                     </node>
+                     <node>
+                        <name>Little-finger</name>
+                     </node>
+                     <node>
+                        <name>Middle-finger</name>
+                     </node>
+                     <node>
+                        <name>Ring-finger</name>
+                     </node>
+                     <node>
+                        <name>Thumb</name>
+                     </node>
+                  </node>
+               </node>
+               <node>
+                  <name>Wrist</name>
+               </node>
+            </node>
+            <node>
+               <name>Leg</name>
+               <node>
+                  <name>Ankle</name>
+               </node>
+               <node>
+                  <name>Foot</name>
+                  <node>
+                     <name>Toe</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Knee</name>
+               </node>
+            </node>
+            <node>
+               <name>Torso</name>
+               <node>
+                  <name>Upper-torso</name>
+                  <node>
+                     <name>Chest</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Lower-torso</name>
+                  <node>
+                     <name>Hips</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Waist</name>
+               </node>
+            </node>
+         </node>
+      </node>
+      <node>
+         <name>Sound</name>
+         <description>Item/Sound can be used in a tag group to describe a sound created by an action Item/Sound, Action/Move/Move leg-foot/Walk, Agent/Human or an object or Item/Sound, Item/Object/Man-made/Vehicle/Car</description>
+         <node>
+            <name>Environmental-sound</name>
+            <description>A background sound from the surrounding environment.</description>
+            <node>
+               <name>Crowd-sound</name>
+               <description>Multiple speech streams at once</description>
+            </node>
+            <node>
+               <name>Noise</name>
+               <node>
+                  <name>White-noise</name>
+               </node>
+               <node>
+                  <name>Colored-noise</name>
+               </node>
+            </node>
+         </node>
+         <node>
+            <name>Musical-sound</name>
+            <description>Any tone or combination of tones with characteristics such as controlled pitch and timbre that can be controlled by an agent.</description>
+            <node>
+               <name>Tone</name>
+            </node>
+            <node>
+               <name>Instrument-sound</name>
+            </node>
+            <node>
+               <name>Vocalized-sound</name>
+            </node>
+         </node>
+         <node>
+            <name>Named-animal-sound</name>
+            <node>
+               <name>Bark</name>
+            </node>
+            <node>
+               <name>Bleat</name>
+            </node>
+            <node>
+               <name>Crow</name>
+            </node>
+            <node>
+               <name>Chirp</name>
+            </node>
+            <node>
+               <name>Growl</name>
+            </node>
+            <node>
+               <name>Meow</name>
+            </node>
+            <node>
+               <name>Moo</name>
+            </node>
+            <node>
+               <name>Purr</name>
+            </node>
+            <node>
+               <name>Roar</name>
+            </node>
+         </node>
+         <node>
+            <name>Named-object-sound</name>
+            <node>
+               <name>Alarm</name>
+            </node>
+            <node>
+               <name>Buzz</name>
+            </node>
+            <node>
+               <name>Ka-ching</name>
+               <description>Cash register sound</description>
+            </node>
+            <node>
+               <name>Click</name>
+            </node>
+            <node>
+               <name>Ding</name>
+            </node>
+            <node>
+               <name>Horn</name>
+            </node>
+            <node>
+               <name>Siren</name>
+            </node>
+         </node>
+      </node>
+   </node>
+   <node>
+      <name>Agent-property</name>
+      <node requireChild="true" extensionAllowed="true">
+         <name>Cognitive-state</name>
+         <node>
+            <name>Alert</name>
+         </node>
+         <node>
+            <name>Anesthetized</name>
+         </node>
+         <node>
+            <name>Asleep</name>
+         </node>
+         <node>
+            <name>Attentive</name>
+         </node>
+         <node>
+            <name>Awake</name>
+         </node>
+         <node>
+            <name>Brain-dead</name>
+         </node>
+         <node>
+            <name>Comatose</name>
+         </node>
+         <node>
+            <name>Drowsy</name>
+         </node>
+         <node>
+            <name>Intoxicated</name>
+            <description>Indicates a state in which participant has consumed alcohol or drugs or other substances that may alter physical or mental state.</description>
+         </node>
+         <node>
+            <name>Locked-in</name>
+         </node>
+         <node>
+            <name>Passive</name>
+         </node>
+         <node>
+            <name>Resting</name>
+         </node>
+         <node>
+            <name>Vegetative</name>
+         </node>
+      </node>
+      <node requireChild="true" extensionAllowed="true">
+         <name>Emotional-state</name>
+         <node>
+            <name>Angry</name>
+         </node>
+         <node>
+            <name>Aroused</name>
+         </node>
+         <node>
+            <name>Awed</name>
+         </node>
+         <node>
+            <name>Compassionate</name>
+         </node>
+         <node>
+            <name>Content</name>
+         </node>
+         <node>
+            <name>Disgusted</name>
+         </node>
+         <node>
+            <name>Emotionally-neutral</name>
+         </node>
+         <node>
+            <name>Empathetic</name>
+         </node>
+         <node>
+            <name>Excited</name>
+         </node>
+         <node>
+            <name>Fearful</name>
+         </node>
+         <node>
+            <name>Feeling-stress</name>
+         </node>
+         <node>
+            <name>Frustrated</name>
+         </node>
+         <node>
+            <name>Grieving</name>
+         </node>
+         <node>
+            <name>Happy</name>
+         </node>
+         <node>
+            <name>Jealous</name>
+         </node>
+         <node>
+            <name>Joyful</name>
+         </node>
+         <node>
+            <name>Loving</name>
+         </node>
+         <node>
+            <name>Relieved</name>
+         </node>
+         <node>
+            <name>Sad</name>
+         </node>
+      </node>
+      <node>
+         <name>Postural-state</name>
+         <description>Indicates the position of an agent. Usually this position or posture is static for some length of time rather than being part of a motion.</description>
+         <node>
+            <name>Crouching</name>
+         </node>
+         <node>
+            <name>Kneeling</name>
+         </node>
+         <node>
+            <name>On-treadmill</name>
+         </node>
+         <node>
+            <name>Prone</name>
+         </node>
+         <node>
+            <name>Sitting</name>
+         </node>
+         <node>
+            <name>Standing</name>
+         </node>
+         <node>
+            <name>Supported-by-chin-rest</name>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Agent-trait</name>
+         <node>
+            <name>Age</name>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node>
+            <name>Gender</name>
+         </node>
+         <node>
+            <name>Sex</name>
+            <node>
+               <name>Female</name>
+            </node>
+            <node>
+               <name>Male</name>
+            </node>
+            <node>
+               <name>Intersex</name>
+            </node>
+         </node>
+         <node>
+            <name>Handedness</name>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+      </node>
+      <node>
+         <name>Social-role</name>
+         <description>The role of the agent not particular to the task.</description>
+         <node>
+            <name>Brother</name>
+         </node>
+         <node>
+            <name>Child</name>
+         </node>
+         <node>
+            <name>Father</name>
+         </node>
+         <node>
+            <name>Mother</name>
+         </node>
+         <node>
+            <name>Sister</name>
+         </node>
+      </node>
+      <node>
+         <name>Agent-task-role</name>
+         <description>The role of the agent in the task.</description>
+         <node>
+            <name>Experimental-controller</name>
+         </node>
+         <node>
+            <name>Experimental-participant</name>
+         </node>
+         <node>
+            <name>Experimenter</name>
+         </node>
+         <node>
+            <name>Follower</name>
+         </node>
+         <node>
+            <name>Friend</name>
+         </node>
+         <node>
+            <name>Leader</name>
+         </node>
+         <node>
+            <name>Stranger</name>
+         </node>
+         <node>
+            <name>Student</name>
+         </node>
+         <node>
+            <name>Teacher</name>
+         </node>
+      </node>
+      <node>
+         <name>Association</name>
+         <node>
+            <name>Associated-with-non-agent</name>
+         </node>
+         <node>
+            <name>Associated-with-other</name>
+            <description>Item such as a cup belonging to another person</description>
+         </node>
+         <node>
+            <name>Associated-with-self</name>
+            <description>Item such as a cup belonging to the participant</description>
+         </node>
+      </node>
+   </node>
+   <node>
+      <name>Data-property</name>
+      <node extensionAllowed="true">
+         <name>Computed-property</name>
+         <description>Feature computed by tool. Should be grouped with a label of the form Toolname_propertyName</description>
+         <node>
+            <name>Computed-prediction</name>
+         </node>
+      </node>
+      <node>
+         <name>Data-value</name>
+         <node takesValue="true">
+            <name>#</name>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Observational-property</name>
+         <description>Manually identified data feature. Should be grouped with a label of the form AgentID_featureName</description>
+         <node extensionAllowed="true">
+            <name>Expert-annotation</name>
+         </node>
+         <node extensionAllowed="true">
+            <name>Instrument-measurement</name>
+         </node>
+      </node>
+      <node>
+         <name>Physical-property</name>
+         <node>
+            <name>Electrical-property</name>
+         </node>
+         <node>
+            <name>Magnetic-property</name>
+         </node>
+         <node>
+            <name>Mechanical-property</name>
+         </node>
+         <node>
+            <name>Organic-property</name>
+         </node>
+         <node>
+            <name>Thermodynamic-property</name>
+            <node>
+               <name>Energy</name>
+            </node>
+            <node>
+               <name>Pressure</name>
+            </node>
+            <node>
+               <name>Temperature</name>
+               <node takesValue="true" isNumeric="true">
+                  <name>#</name>
+               </node>
+            </node>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Quantitative</name>
+         <node>
+            <name>Angle</name>
+            <description>Angle assumed clockwise from vertical unless grouped with axis.</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node>
+            <name>Fraction</name>
+            <description>Fraction of items of a particular type.</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node>
+            <name>Interval</name>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node>
+            <name>Item-count</name>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node>
+            <name>Percentage</name>
+            <description>Percentage of items of a particular type.</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node>
+            <name>Ratio</name>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node>
+            <name>Repetition</name>
+            <description>When the same type of event such as a fixation on the exact same object happens multiple times and it might be necessary to distinguish the first look vs. others</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Spatiotemporal</name>
+         <node>
+            <name>Rate-of-change</name>
+            <node>
+               <name>Acceleration</name>
+               <node takesValue="true" isNumeric="true" unitClass="acceleration">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Jerk-rate</name>
+               <description>Rate at which the acceleration of an object changes with respect to time.</description>
+               <node takesValue="true" isNumeric="true" unitClass="jerk">
+                  <name>#</name>
+               </node>
+            </node>
+            <node requireChild="true">
+               <name>Sampling-rate</name>
+               <description>Number of measurements per unit time.</description>
+               <node takesValue="true" unitClass="frequency">
+                  <name>#</name>
+               </node>
+            </node>
+            <node requireChild="true">
+               <name>Refresh-rate</name>
+               <description>Number of times per second a device displays an image. Also known as the frame rate.</description>
+               <node takesValue="true" isNumeric="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Temporal-rate</name>
+               <description>Number of occurrences in a unit of time.</description>
+               <node takesValue="true" isNumeric="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Velocity</name>
+               <node takesValue="true" isNumeric="true" unitClass="speed">
+                  <name>#</name>
+               </node>
+            </node>
+         </node>
+         <node>
+            <name>Resolution</name>
+            <node>
+               <name>IO-resolution</name>
+               <node>
+                  <name>Screen-resolution</name>
+                  <description>Number of pixels in each dimension for a digital display device.</description>
+                  <node takesValue="true">
+                     <name>#</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Printer-resolution</name>
+                  <description>Number of dots-per-inch for a printer.</description>
+                  <node takesValue="true">
+                     <name>#</name>
+                  </node>
+               </node>
+            </node>
+            <node>
+               <name>Spatial-resolution</name>
+               <description>Linear spacing of a spatial measurement.</description>
+               <node takesValue="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Spectral-resolution</name>
+               <node takesValue="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Temporal-resolution</name>
+               <node takesValue="true">
+                  <name>#</name>
+               </node>
+            </node>
+         </node>
+         <node>
+            <name>Spatial</name>
+            <node>
+               <name>Direction</name>
+               <node takesValue="true" isNumeric="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Distance</name>
+               <description>Distance from a specified position in a specified Direction or grouped with an item from which the distance is measured.</description>
+               <node takesValue="true" isNumeric="true" unitClass="physicalLength">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Orientation</name>
+               <node takesValue="true" isNumeric="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Position</name>
+               <description>Coordinates with respect a specified frame of reference or the default Screen-frame if no frame is given.</description>
+               <node>
+                  <name>X-position</name>
+                  <node takesValue="true" isNumeric="true" unitClass="physicalLength">
+                     <name>#</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Y-position</name>
+                  <node takesValue="true" isNumeric="true" unitClass="physicalLength">
+                     <name>#</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Z-position</name>
+                  <node takesValue="true" isNumeric="true" unitClass="physicalLength">
+                     <name>#</name>
+                  </node>
+               </node>
+            </node>
+            <node>
+               <name>Reference-frame</name>
+               <description>A frame of reference used to express spatial attributes.</description>
+               <node>
+                  <name>Custom-frame</name>
+                  <description>A custom frame of reference which should be defined in terms of one of the default frames of reference or by a library.</description>
+               </node>
+               <node>
+                  <name>Room-frame</name>
+               </node>
+               <node>
+                  <name>Screen-frame</name>
+                  <description>HED default frame of reference with origin at center of screen used to display experimental stimuli. Looking out of the screen has +X is horizontal to the right. +Y is up and +Z is out of the front of the screen.</description>
+               </node>
+               <node>
+                  <name>Screen-facing-frame</name>
+                  <description>HED default frame of reference with origin at the subject Nasion. +X is horizontal to the subject right. +Y is to the subject front and +Z is vertical upward.</description>
+               </node>
+               <node>
+                  <name>World-frame</name>
+               </node>
+            </node>
+            <node>
+               <name>Size</name>
+               <node>
+                  <name>Area</name>
+                  <node takesValue="true" isNumeric="true" unitClass="area">
+                     <name>#</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Length</name>
+                  <description>A measurement of the size along the longest dimension.</description>
+                  <node takesValue="true" isNumeric="true" unitClass="physicalLength">
+                     <name>#</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Width</name>
+                  <description>A measurement along the shortest of two or three dimensions.</description>
+                  <node takesValue="true" isNumeric="true" unitClass="physicalLength">
+                     <name>#</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Height</name>
+                  <description>A measurement in a direction perpendicular to Length and Width in 3D. In 2D, it is perpendicular to both the Length and Height.</description>
+                  <node takesValue="true" isNumeric="true" unitClass="physicalLength">
+                     <name>#</name>
+                  </node>
+               </node>
+               <node>
+                  <name>Volume</name>
+                  <node takesValue="true" isNumeric="true" unitClass="volume">
+                     <name>#</name>
+                  </node>
+               </node>
+            </node>
+            <node>
+               <name>Surface-properties</name>
+               <node>
+                  <name>Rough</name>
+               </node>
+               <node>
+                  <name>Smooth</name>
+               </node>
+            </node>
+         </node>
+         <node>
+            <name>Temporal</name>
+            <node>
+               <name>Delay</name>
+               <description>An indicator that the associated tag group represents something temporally offset from the current event. The delay value can be positive or negative and should always appear in a tag group indicating what is delayed.</description>
+               <node takesValue="true" isNumeric="true" unitClass="time">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Duration</name>
+               <description>Time extent of something.</description>
+               <node takesValue="true" isNumeric="true" unitClass="time">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Onset</name>
+            </node>
+            <node>
+               <name>Offset</name>
+            </node>
+            <node>
+               <name>Pause</name>
+               <description>Indicating something stopped such as a break or waiting for input.</description>
+            </node>
+            <node>
+               <name>Temporal-value</name>
+               <node takesValue="true" isNumeric="true" unitClass="time">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Time-out</name>
+            </node>
+            <node>
+               <name>Time-sync</name>
+               <description>Indicates a marker inserted into the recorded data to allow post hoc synchronization of concurrently recorded data streams.</description>
+            </node>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Statistical-property</name>
+         <node>
+            <name>Accuracy</name>
+         </node>
+         <node>
+            <name>Data-mean</name>
+         </node>
+         <node>
+            <name>Data-median</name>
+         </node>
+         <node>
+            <name>Data-minimum</name>
+         </node>
+         <node>
+            <name>Data-maximum</name>
+         </node>
+         <node>
+            <name>Probability</name>
+            <description>Use to specify the level of certainty about the occurrence of the event.</description>
+         </node>
+         <node>
+            <name>Statistical-precision</name>
+         </node>
+         <node>
+            <name>Statistical-recall</name>
+         </node>
+         <node>
+            <name>Standard-deviation</name>
+         </node>
+         <node>
+            <name>Uncertainty</name>
+            <description>Use to specify the level of error.</description>
+         </node>
+      </node>
+   </node>
+   <node>
+      <name>Task-property</name>
+      <node>
+         <name>Attentional-strategy</name>
+         <node>
+            <name>Bottom-up-attention</name>
+         </node>
+         <node>
+            <name>Covert-attention</name>
+         </node>
+         <node>
+            <name>Divided-attention</name>
+         </node>
+         <node>
+            <name>Focused-attention</name>
+         </node>
+         <node>
+            <name>Orienting-attention</name>
+         </node>
+         <node>
+            <name>Overt-attention</name>
+         </node>
+         <node>
+            <name>Selective-attention</name>
+         </node>
+         <node>
+            <name>Sustained-attention</name>
+         </node>
+         <node>
+            <name>Top-down-attention</name>
+         </node>
+      </node>
+      <node>
+         <name>Task-effect-evidence</name>
+         <node>
+            <name>Computational-evidence</name>
+            <description>Prediction made by computer program.</description>
+         </node>
+         <node>
+            <name>External-evidence</name>
+            <description>External judgment assumed to be ground truth such as from an experiment control software or an annotator about participant actions such as answering a question, failing to answer in time, etc. Related to participant indication</description>
+         </node>
+         <node>
+            <name>Intended-effect</name>
+            <description>How the stimulus is expected to effect the participants based on the experimental design.</description>
+         </node>
+         <node>
+            <name>Behavioral-evidence</name>
+         </node>
+      </node>
+      <node>
+         <name>Task-role</name>
+         <description>The purpose with respect to the task.</description>
+         <node>
+            <name>Activity</name>
+            <description>Something that is part of the overall task or is necessary to the overall experiment but is not directly part of a stimulus-response cycle. Examples would be taking a survey or provided providing a silva sample.</description>
+         </node>
+         <node>
+            <name>Background-subtask</name>
+            <description>A part of the task which should be performed in the background.</description>
+         </node>
+         <node>
+            <name>Experimental-stimulus</name>
+            <description>Part of something designed to elicit a response in the experiment.</description>
+         </node>
+         <node>
+            <name>Failure</name>
+         </node>
+         <node>
+            <name>Incidental</name>
+            <description>Usually associated with a sensory event intended to give instructions to the participant about the task or behavior.</description>
+         </node>
+         <node>
+            <name>Instructional</name>
+            <description>Usually associated with a sensory event intended to give instructions to the participant about the task or behavior.</description>
+         </node>
+         <node>
+            <name>Mishap</name>
+            <description>Unplanned disruption such as an equipment or experiment control abnormality or experimenter error.</description>
+         </node>
+         <node>
+            <name>Participant-response</name>
+            <description>Something related to a participant actions in performing the task.</description>
+         </node>
+         <node>
+            <name>Primary-subtask</name>
+            <description>A part of the task which should be the primary focus of the participant.</description>
+         </node>
+         <node>
+            <name>Warning</name>
+            <description>Something that should warn the participant that the parameters of the task have been or are about to be exceeded such as a warning message about getting too close to the shoulder of the road in a driving task.</description>
+         </node>
+      </node>
+      <node>
+         <name>Task-response-type</name>
+         <description>How the participant response should be interpreted in terms of the task specification.</description>
+         <node>
+            <name>Appropriate</name>
+         </node>
+         <node>
+            <name>Correction</name>
+         </node>
+         <node>
+            <name>Erroneous</name>
+         </node>
+         <node>
+            <name>Imagined</name>
+            <description>This is used to identity something that only happened in the imagination of the participant as in imagined movements in motor imagery paradigms.</description>
+         </node>
+         <node>
+            <name>Inappropriate</name>
+         </node>
+         <node>
+            <name>Indeterminate</name>
+         </node>
+         <node>
+            <name>Missed</name>
+         </node>
+         <node>
+            <name>Near-miss</name>
+         </node>
+         <node>
+            <name>Successful</name>
+         </node>
+      </node>
+      <node>
+         <name>Task-stimulus-type</name>
+         <description>The stimulus purpose in the task.</description>
+         <node>
+            <name>Cue</name>
+         </node>
+         <node>
+            <name>Distractor</name>
+         </node>
+         <node>
+            <name>Expected</name>
+            <description>Of low information value as in frequent non-targets in an RSVP paradigm.</description>
+         </node>
+         <node>
+            <name>Extraneous</name>
+         </node>
+         <node>
+            <name>Feedback</name>
+         </node>
+         <node>
+            <name>Meaningful</name>
+         </node>
+         <node>
+            <name>Newly-learned</name>
+         </node>
+         <node>
+            <name>Non-informative</name>
+         </node>
+         <node>
+            <name>Non-target</name>
+            <description>Make sure to tag Expected if the Non-target is frequent</description>
+         </node>
+         <node>
+            <name>Not-meaningful</name>
+         </node>
+         <node>
+            <name>Novel</name>
+            <description>Genuinely novel such as an event occurring once or so per experiment</description>
+         </node>
+         <node>
+            <name>Oddball</name>
+            <description>Unexpected or infrequent</description>
+         </node>
+         <node>
+            <name>Planned</name>
+         </node>
+         <node>
+            <name>Penalty</name>
+         </node>
+         <node>
+            <name>Priming</name>
+         </node>
+         <node>
+            <name>Reward</name>
+         </node>
+         <node>
+            <name>Signal-go</name>
+         </node>
+         <node>
+            <name>Signal-stop</name>
+         </node>
+         <node>
+            <name>Target</name>
+            <description>Something the subject is looking for</description>
+         </node>
+         <node>
+            <name>Threat</name>
+         </node>
+         <node>
+            <name>Timed</name>
+         </node>
+         <node>
+            <name>Unexpected</name>
+         </node>
+      </node>
+   </node>
+   <node extensionAllowed="true">
+      <name>Attribute</name>
+      <description>Subtree tree for general properties.</description>
+      <node>
+         <name>Informational</name>
+         <description>Informational properties.</description>
+         <node requireChild="true">
+            <name>Def</name>
+            <description>A label that specifically corresponds to a Definition name and indicates that this label represents tags in an unexpanded definition.</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node requireChild="true">
+            <name>Def-expand</name>
+            <description>A label that specifically corresponds to a Definition name and indicates that this label is in a group containing an expanded definition and should not be expanded again.</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node requireChild="true">
+            <name>Definition</name>
+            <description>A tag used within a tag group also containing a Label tag to indicate that the Label represents that group of tags.</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node requireChild="true">
+            <name>Description</name>
+            <description>Human-readable text description of the event.</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node>
+            <name>Experimental-note</name>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node requireChild="true">
+            <name>ID</name>
+            <description>An alphanumeric code usually used to identify a particular instance of an item.</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node requireChild="true">
+            <name>Label</name>
+            <description>A string of 20 or fewer characters identifying something. Labels usually refer to general classes of things while IDs refer to specific instances.</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+         <node>
+            <name>Metadata</name>
+            <description>A tag used within a tag group indicate to designate information about the data such as file size or author.</description>
+            <node>
+               <name>CogAtlas</name>
+               <description>A tag used within a tag group indicate a relationship to the CognitiveAtlas terminology.</description>
+               <node takesValue="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>CogPo</name>
+               <description>A tag used within a tag group indicate a relationship to the CogPO terminology.</description>
+               <node takesValue="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Creation-date</name>
+               <node takesValue="true" unitClass="datetime">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Library-name</name>
+               <node takesValue="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Path-name</name>
+               <node takesValue="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Subject</name>
+               <node takesValue="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Version</name>
+               <node takesValue="true">
+                  <name>#</name>
+               </node>
+            </node>
+         </node>
+         <node>
+            <name>Parameter</name>
+            <description>As a Name:Value</description>
+            <node takesValue="true">
+               <name>#</name>
+            </node>
+         </node>
+      </node>
+      <node>
+         <name>Organizational</name>
+         <node>
+            <name>Collection</name>
+            <description>A tag designating a grouping of items such as in a set or list.</description>
+         </node>
+         <node>
+            <name>Control-variable</name>
+            <description>An aspect of the experiment that is fixed throughout the study and usually is explicitly controlled.</description>
+         </node>
+         <node>
+            <name>Event-context</name>
+            <description>A tag indicating the overall environment and setup of the experiment or a portion of the experiment. This event is often inserted into a recording at the beginning of an experimental record to describe information such as whether the experiment is conducted indoors or outdoors or whether the experiment is conducted in the real-world or in a controlled laboratory setting. Tags specifying subject metadata might also be included.</description>
+         </node>
+         <node>
+            <name>Event-stream</name>
+            <description>An ordered list of events</description>
+         </node>
+         <node>
+            <name>Experimental-condition</name>
+            <description>An aspect of the experiment or task that is to be varied during the experiment. Task-conditions are sometimes called independent variables or contrasts.</description>
+         </node>
+         <node>
+            <name>Experimental-indicator</name>
+            <description>An aspect of the experiment or task that is measured as task conditions are varied during the experiment. Experiment indicators are sometimes called dependent variables.</description>
+         </node>
+         <node>
+            <name>Experimental-intertrial</name>
+            <description>A tag used to indicate a part of the experiment between trials usually where nothing is happening.</description>
+         </node>
+         <node>
+            <name>Experimental-trial</name>
+            <description>A tag used to indicate a particular organizational part in the experimental design often containing a stimulus-response pair or stimulus-response-feedback triad.</description>
+         </node>
+         <node>
+            <name>Permutation</name>
+            <description>A tag used within a tag group also containing a Label tag to indicate that the Label represents events that are permutations of each other.</description>
+         </node>
+         <node>
+            <name>Recording</name>
+            <description>Indicates an uninterrupted block of time during which data was acquired using a fixed scanning protocol or sensor positioning. Recording tags are usually have temporal scope which is the entire recording.</description>
+         </node>
+         <node>
+            <name>Task</name>
+            <description>A tag used to indicate a linkage the structured activities performed as part of the experiment.</description>
+         </node>
+         <node>
+            <name>Time-block</name>
+            <description>A tag used to indicate a contiguous time block in the experiment during which something is fixed or noted.</description>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Relational</name>
+         <node>
+            <name>Comparative-relation</name>
+            <node>
+               <name>Less-than</name>
+            </node>
+            <node>
+               <name>Less-than-or-equal-to</name>
+            </node>
+            <node>
+               <name>Greater-than</name>
+            </node>
+            <node>
+               <name>Greater-than-or-equal-to</name>
+            </node>
+            <node>
+               <name>Equal-to</name>
+            </node>
+            <node>
+               <name>Not-equal-to</name>
+            </node>
+         </node>
+         <node>
+            <name>Connective-relation</name>
+            <node>
+               <name>Belongs-to</name>
+               <description>As in owned by</description>
+            </node>
+            <node>
+               <name>Connected-to</name>
+            </node>
+            <node>
+               <name>Contained-in</name>
+            </node>
+            <node>
+               <name>Described-by</name>
+            </node>
+            <node>
+               <name>From-to</name>
+            </node>
+            <node>
+               <name>Group-of</name>
+            </node>
+            <node>
+               <name>Implied-by</name>
+            </node>
+            <node>
+               <name>Interacts-with</name>
+            </node>
+            <node>
+               <name>Member-of</name>
+            </node>
+            <node>
+               <name>Part-of</name>
+            </node>
+            <node>
+               <name>Performed-by</name>
+            </node>
+            <node>
+               <name>Related-to</name>
+            </node>
+         </node>
+         <node>
+            <name>Ordering-relation</name>
+            <node>
+               <name>Early-item</name>
+               <description>Indication that this item appears early in a sequence.</description>
+            </node>
+            <node>
+               <name>First-item</name>
+               <description>Indication that this is the first item in a sequence.</description>
+            </node>
+            <node>
+               <name>Next-item</name>
+               <description>Indication that this item appears immediately after the previous item in a sequence.</description>
+            </node>
+            <node>
+               <name>Later-item</name>
+               <description>Indication that this item appears later in a sequence.</description>
+            </node>
+            <node>
+               <name>Last-item</name>
+               <description>Indication that this is the last item in a sequence.</description>
+            </node>
+         </node>
+         <node>
+            <name>Quantitative-relation</name>
+            <node>
+               <name>Estimated</name>
+            </node>
+            <node>
+               <name>Approximated</name>
+            </node>
+            <node>
+               <name>Exact</name>
+            </node>
+         </node>
+         <node>
+            <name>Spatiotemporal-relation</name>
+            <node>
+               <name>Directional-relation</name>
+               <node>
+                  <name>Away-from</name>
+               </node>
+               <node>
+                  <name>Backward</name>
+               </node>
+               <node>
+                  <name>Closing</name>
+               </node>
+               <node>
+                  <name>Decreasing</name>
+               </node>
+               <node>
+                  <name>Downward</name>
+               </node>
+               <node>
+                  <name>Forward</name>
+               </node>
+               <node>
+                  <name>Increasing</name>
+               </node>
+               <node>
+                  <name>Leftward</name>
+               </node>
+               <node>
+                  <name>Rightward</name>
+               </node>
+               <node>
+                  <name>Opening</name>
+               </node>
+               <node>
+                  <name>Towards</name>
+               </node>
+               <node>
+                  <name>Upward</name>
+               </node>
+            </node>
+            <node>
+               <name>Orientational-relation</name>
+               <node>
+                  <name>Horizontally-oriented</name>
+               </node>
+               <node>
+                  <name>Oblique</name>
+               </node>
+               <node>
+                  <name>Rotated</name>
+               </node>
+               <node>
+                  <name>Vertically-oriented</name>
+               </node>
+            </node>
+            <node>
+               <name>Positional-relation</name>
+               <description>Should be grouped with what it is positionally related to.</description>
+               <node>
+                  <name>Above</name>
+               </node>
+               <node>
+                  <name>Across</name>
+               </node>
+               <node>
+                  <name>Adjacent-to</name>
+               </node>
+               <node>
+                  <name>Ahead-of</name>
+               </node>
+               <node>
+                  <name>Around</name>
+               </node>
+               <node>
+                  <name>Back-of</name>
+               </node>
+               <node>
+                  <name>Behind</name>
+               </node>
+               <node>
+                  <name>Below</name>
+               </node>
+               <node>
+                  <name>Between</name>
+                  <description>Should be grouped with the items between designates.</description>
+               </node>
+               <node>
+                  <name>Bilateral</name>
+               </node>
+               <node>
+                  <name>Bottom-of</name>
+                  <description>At the bottom of something. Should be grouped with the item that it is positionally related to.</description>
+               </node>
+               <node>
+                  <name>Boundary-of</name>
+               </node>
+               <node>
+                  <name>Center-of</name>
+                  <description>At the center of something. Should be grouped with the item that it is positionally related to.</description>
+               </node>
+               <node>
+                  <name>Close-to</name>
+               </node>
+               <node>
+                  <name>Edge-of</name>
+               </node>
+               <node>
+                  <name>Far-from</name>
+               </node>
+               <node>
+                  <name>Front-of</name>
+               </node>
+               <node>
+                  <name>Inside-of</name>
+               </node>
+               <node>
+                  <name>Left-of</name>
+               </node>
+               <node>
+                  <name>Left-side</name>
+               </node>
+               <node>
+                  <name>Outside-of</name>
+               </node>
+               <node>
+                  <name>Over</name>
+               </node>
+               <node>
+                  <name>Right-of</name>
+               </node>
+               <node>
+                  <name>Right-side</name>
+               </node>
+               <node>
+                  <name>Top-of</name>
+               </node>
+               <node>
+                  <name>Under</name>
+               </node>
+            </node>
+            <node>
+               <name>Temporal-relation</name>
+               <node>
+                  <name>After</name>
+               </node>
+               <node>
+                  <name>Asynchronous-with</name>
+               </node>
+               <node>
+                  <name>Before</name>
+               </node>
+               <node>
+                  <name>During</name>
+               </node>
+               <node>
+                  <name>Synchronous-with</name>
+               </node>
+               <node>
+                  <name>Waiting-for</name>
+               </node>
+            </node>
+            <node>
+               <name>Variability-relation</name>
+               <node>
+                  <name>Constant</name>
+               </node>
+               <node>
+                  <name>Continuous</name>
+               </node>
+               <node>
+                  <name>Deterministic</name>
+               </node>
+               <node>
+                  <name>Discrete</name>
+               </node>
+               <node>
+                  <name>Flickering</name>
+                  <description>Irregular changes in time.</description>
+               </node>
+               <node>
+                  <name>Fractal</name>
+               </node>
+               <node>
+                  <name>Random</name>
+               </node>
+               <node>
+                  <name>Repetitive</name>
+               </node>
+               <node>
+                  <name>Sudden</name>
+               </node>
+               <node>
+                  <name>Varying</name>
+               </node>
+            </node>
+         </node>
+         <node>
+            <name>Thermal-relation</name>
+            <node>
+               <name>Cold</name>
+            </node>
+            <node>
+               <name>Colder-than</name>
+            </node>
+            <node>
+               <name>Hot</name>
+            </node>
+            <node>
+               <name>Hotter-than</name>
+            </node>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Categorical</name>
+         <node>
+            <name>Abnormal</name>
+         </node>
+         <node>
+            <name>All</name>
+         </node>
+         <node>
+            <name>Asymmetric</name>
+         </node>
+         <node>
+            <name>Congruent</name>
+         </node>
+         <node>
+            <name>Constrained</name>
+         </node>
+         <node>
+            <name>Correct</name>
+         </node>
+         <node>
+            <name>Deep</name>
+         </node>
+         <node>
+            <name>Disordered</name>
+         </node>
+         <node>
+            <name>False</name>
+         </node>
+         <node>
+            <name>Familiar</name>
+            <description>Something known or encountered before.</description>
+         </node>
+         <node>
+            <name>Famous</name>
+            <description>Something known by many people but necessarily because of direct contact.</description>
+         </node>
+         <node>
+            <name>High</name>
+         </node>
+         <node>
+            <name>Incongruent</name>
+         </node>
+         <node>
+            <name>Incorrect</name>
+         </node>
+         <node>
+            <name>Invalid</name>
+         </node>
+         <node>
+            <name>Involuntary</name>
+         </node>
+         <node>
+            <name>Liminal</name>
+         </node>
+         <node>
+            <name>Low</name>
+         </node>
+         <node>
+            <name>Masked</name>
+            <description>Ability to perceive influenced by presence of another stimulus</description>
+         </node>
+         <node>
+            <name>Medium</name>
+         </node>
+         <node>
+            <name>None</name>
+         </node>
+         <node>
+            <name>Normal</name>
+         </node>
+         <node>
+            <name>Negative</name>
+         </node>
+         <node>
+            <name>Ordered</name>
+         </node>
+         <node>
+            <name>Positive</name>
+         </node>
+         <node>
+            <name>Shallow</name>
+         </node>
+         <node>
+            <name>Some</name>
+         </node>
+         <node>
+            <name>Subliminal</name>
+         </node>
+         <node>
+            <name>Supraliminal</name>
+         </node>
+         <node>
+            <name>Symmetric</name>
+         </node>
+         <node>
+            <name>True</name>
+         </node>
+         <node>
+            <name>Unconstrained</name>
+         </node>
+         <node>
+            <name>Unfamiliar</name>
+            <description>Something not known or encountered before.</description>
+         </node>
+         <node>
+            <name>Unmasked</name>
+            <description>Ability to perceive not influenced by presence of another stimulus</description>
+         </node>
+         <node>
+            <name>Valid</name>
+         </node>
+         <node>
+            <name>Voluntary</name>
+         </node>
+      </node>
+      <node>
+         <name>Descriptive</name>
+         <description>Indicate the type of thing.</description>
+         <node>
+            <name>Abstract</name>
+         </node>
+         <node>
+            <name>Clinical</name>
+         </node>
+         <node>
+            <name>Complex</name>
+         </node>
+         <node>
+            <name>Composite</name>
+         </node>
+         <node>
+            <name>Numerical</name>
+         </node>
+         <node>
+            <name>Symbolic</name>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Sensory</name>
+         <node>
+            <name>Auditory</name>
+            <node>
+               <name>Audible</name>
+            </node>
+            <node>
+               <name>Frequency</name>
+               <node takesValue="true" isNumeric="true" unitClass="frequency">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Loudness</name>
+               <node takesValue="true" isNumeric="true">
+                  <name>#</name>
+               </node>
+            </node>
+            <node>
+               <name>Monophonic</name>
+               <description>Consisting of one independent audio channel</description>
+            </node>
+            <node>
+               <name>Ramp-up</name>
+               <description>Increasing in amplitude</description>
+            </node>
+            <node>
+               <name>Ramp-down</name>
+               <description>Decreasing in amplitude</description>
+            </node>
+            <node>
+               <name>Silent</name>
+            </node>
+            <node>
+               <name>Stereophonic</name>
+               <description>Consisting of more than one independent audio channel</description>
+            </node>
+            <node>
+               <name>Timbre</name>
+               <description>Sound quality</description>
+            </node>
+         </node>
+         <node>
+            <name>Gustatory</name>
+            <description>Pertaining to sensations of relating to taste.</description>
+            <node>
+               <name>Bitter</name>
+            </node>
+            <node>
+               <name>Salty</name>
+            </node>
+            <node>
+               <name>Savory</name>
+            </node>
+            <node>
+               <name>Sour</name>
+            </node>
+            <node>
+               <name>Sweet</name>
+            </node>
+         </node>
+         <node>
+            <name>Tactile</name>
+            <description>Pertaining to sensations of relating to touch.</description>
+            <node>
+               <name>Tactile-pressure</name>
+            </node>
+            <node>
+               <name>Tactile-texture</name>
+            </node>
+            <node>
+               <name>Tactile-vibration</name>
+            </node>
+         </node>
+         <node>
+            <name>Olfactory</name>
+            <description>Pertaining to sensations of relating to smell.</description>
+         </node>
+         <node>
+            <name>Somatic</name>
+            <description>Pertaining to sensations of nervous system such as pain.</description>
+            <node>
+               <name>Pain</name>
+            </node>
+            <node>
+               <name>Stress</name>
+            </node>
+         </node>
+         <node>
+            <name>Vestibular</name>
+         </node>
+         <node>
+            <name>Visual</name>
+            <node>
+               <name>Luminance</name>
+            </node>
+            <node>
+               <name>Color</name>
+               <node>
+                  <name>Color-shade</name>
+                  <node>
+                     <name>Dark-shade</name>
+                  </node>
+                  <node>
+                     <name>Light-shade</name>
+                  </node>
+               </node>
+               <node>
+                  <name>HSV-color</name>
+                  <node>
+                     <name>Hue</name>
+                     <node takesValue="true" isNumeric="true">
+                        <name>#</name>
+                        <description>Angular value between 0 and 360</description>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Saturation</name>
+                     <node takesValue="true" isNumeric="true">
+                        <name>#</name>
+                        <description>B value of RGB between 0 and 1</description>
+                     </node>
+                  </node>
+                  <node>
+                     <name>HSV-value</name>
+                     <node takesValue="true" isNumeric="true">
+                        <name>#</name>
+                        <description>G value of RGB between 0 and 1</description>
+                     </node>
+                  </node>
+               </node>
+               <node>
+                  <name>RGB-color</name>
+                  <node>
+                     <name>RGB-red</name>
+                     <node takesValue="true" isNumeric="true">
+                        <name>#</name>
+                        <description>R value of RGB between 0 and 1</description>
+                     </node>
+                  </node>
+                  <node>
+                     <name>RGB-blue</name>
+                     <node takesValue="true" isNumeric="true">
+                        <name>#</name>
+                        <description>B value of RGB between 0 and 1</description>
+                     </node>
+                  </node>
+                  <node>
+                     <name>RGB-green</name>
+                     <node takesValue="true" isNumeric="true">
+                        <name>#</name>
+                        <description>G value of RGB between 0 and 1</description>
+                     </node>
+                  </node>
+               </node>
+               <node>
+                  <name>Grayscale</name>
+                  <description>Indicates gray scale</description>
+                  <node takesValue="true" isNumeric="true">
+                     <name>#</name>
+                     <description>White intensity between 0 and 1</description>
+                  </node>
+               </node>
+               <node>
+                  <name>CSS-color</name>
+                  <description>One of 140 colors supported by all browsers. For more details such as the color RGB or HEX values,  check:  https://www.w3schools.com/colors/colors_groups.asp</description>
+                  <node>
+                     <name>Blue-color</name>
+                     <node>
+                        <name>CadetBlue</name>
+                     </node>
+                     <node>
+                        <name>SteelBlue</name>
+                     </node>
+                     <node>
+                        <name>LightSteelBlue</name>
+                     </node>
+                     <node>
+                        <name>LightBlue</name>
+                     </node>
+                     <node>
+                        <name>PowderBlue</name>
+                     </node>
+                     <node>
+                        <name>LightSkyBlue</name>
+                     </node>
+                     <node>
+                        <name>SkyBlue</name>
+                     </node>
+                     <node>
+                        <name>CornflowerBlue</name>
+                     </node>
+                     <node>
+                        <name>DeepSkyBlue</name>
+                     </node>
+                     <node>
+                        <name>DodgerBlue</name>
+                     </node>
+                     <node>
+                        <name>RoyalBlue</name>
+                     </node>
+                     <node>
+                        <name>Blue</name>
+                     </node>
+                     <node>
+                        <name>MediumBlue</name>
+                     </node>
+                     <node>
+                        <name>DarkBlue</name>
+                     </node>
+                     <node>
+                        <name>Navy</name>
+                     </node>
+                     <node>
+                        <name>MidnightBlue</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Brown-color</name>
+                     <node>
+                        <name>Cornsilk</name>
+                     </node>
+                     <node>
+                        <name>BlanchedAlmond</name>
+                     </node>
+                     <node>
+                        <name>Bisque</name>
+                     </node>
+                     <node>
+                        <name>NavajoWhite</name>
+                     </node>
+                     <node>
+                        <name>Wheat</name>
+                     </node>
+                     <node>
+                        <name>BurlyWood</name>
+                     </node>
+                     <node>
+                        <name>Tan</name>
+                     </node>
+                     <node>
+                        <name>RosyBrown</name>
+                     </node>
+                     <node>
+                        <name>SandyBrown</name>
+                     </node>
+                     <node>
+                        <name>GoldenRod</name>
+                     </node>
+                     <node>
+                        <name>DarkGoldenRod</name>
+                     </node>
+                     <node>
+                        <name>Peru</name>
+                     </node>
+                     <node>
+                        <name>Chocolate</name>
+                     </node>
+                     <node>
+                        <name>Olive</name>
+                     </node>
+                     <node>
+                        <name>SaddleBrown</name>
+                     </node>
+                     <node>
+                        <name>Sienna</name>
+                     </node>
+                     <node>
+                        <name>Brown</name>
+                     </node>
+                     <node>
+                        <name>Maroon</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Cyan-color</name>
+                     <node>
+                        <name>Aqua</name>
+                     </node>
+                     <node>
+                        <name>Cyan</name>
+                     </node>
+                     <node>
+                        <name>LightCyan</name>
+                     </node>
+                     <node>
+                        <name>PaleTurquoise</name>
+                     </node>
+                     <node>
+                        <name>Aquamarine</name>
+                     </node>
+                     <node>
+                        <name>Turquoise</name>
+                     </node>
+                     <node>
+                        <name>MediumTurquoise</name>
+                     </node>
+                     <node>
+                        <name>DarkTurquoise</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Green-color</name>
+                     <node>
+                        <name>GreenYellow</name>
+                     </node>
+                     <node>
+                        <name>Chartreuse</name>
+                     </node>
+                     <node>
+                        <name>LawnGreen</name>
+                     </node>
+                     <node>
+                        <name>Lime</name>
+                     </node>
+                     <node>
+                        <name>LimeGreen</name>
+                     </node>
+                     <node>
+                        <name>PaleGreen</name>
+                     </node>
+                     <node>
+                        <name>LightGreen</name>
+                     </node>
+                     <node>
+                        <name>MediumSpringGreen</name>
+                     </node>
+                     <node>
+                        <name>SpringGreen</name>
+                     </node>
+                     <node>
+                        <name>MediumSeaGreen</name>
+                     </node>
+                     <node>
+                        <name>SeaGreen</name>
+                     </node>
+                     <node>
+                        <name>ForestGreen</name>
+                     </node>
+                     <node>
+                        <name>Green</name>
+                     </node>
+                     <node>
+                        <name>DarkGreen</name>
+                     </node>
+                     <node>
+                        <name>YellowGreen</name>
+                     </node>
+                     <node>
+                        <name>OliveDrab</name>
+                     </node>
+                     <node>
+                        <name>DarkOliveGreen</name>
+                     </node>
+                     <node>
+                        <name>MediumAquaMarine</name>
+                     </node>
+                     <node>
+                        <name>DarkSeaGreen</name>
+                     </node>
+                     <node>
+                        <name>LightSeaGreen</name>
+                     </node>
+                     <node>
+                        <name>DarkCyan</name>
+                     </node>
+                     <node>
+                        <name>Teal</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Gray-color</name>
+                     <node>
+                        <name>Gainsboro</name>
+                     </node>
+                     <node>
+                        <name>LightGray</name>
+                     </node>
+                     <node>
+                        <name>Silver</name>
+                     </node>
+                     <node>
+                        <name>DarkGray</name>
+                     </node>
+                     <node>
+                        <name>DimGray</name>
+                     </node>
+                     <node>
+                        <name>Gray</name>
+                     </node>
+                     <node>
+                        <name>LightSlateGray</name>
+                     </node>
+                     <node>
+                        <name>SlateGray</name>
+                     </node>
+                     <node>
+                        <name>DarkSlateGray</name>
+                     </node>
+                     <node>
+                        <name>Black</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Orange-color</name>
+                     <node>
+                        <name>Orange</name>
+                     </node>
+                     <node>
+                        <name>DarkOrange</name>
+                     </node>
+                     <node>
+                        <name>Coral</name>
+                     </node>
+                     <node>
+                        <name>Tomato</name>
+                     </node>
+                     <node>
+                        <name>OrangeRed</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Pink-color</name>
+                     <node>
+                        <name>Pink</name>
+                     </node>
+                     <node>
+                        <name>LightPink</name>
+                     </node>
+                     <node>
+                        <name>HotPink</name>
+                     </node>
+                     <node>
+                        <name>DeepPink</name>
+                     </node>
+                     <node>
+                        <name>PaleVioletRed</name>
+                     </node>
+                     <node>
+                        <name>MediumVioletRed</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Purple-color</name>
+                     <node>
+                        <name>Lavender</name>
+                     </node>
+                     <node>
+                        <name>Thistle</name>
+                     </node>
+                     <node>
+                        <name>Plum</name>
+                     </node>
+                     <node>
+                        <name>Orchid</name>
+                     </node>
+                     <node>
+                        <name>Violet</name>
+                     </node>
+                     <node>
+                        <name>Fuchsia</name>
+                     </node>
+                     <node>
+                        <name>Magenta</name>
+                     </node>
+                     <node>
+                        <name>MediumOrchid</name>
+                     </node>
+                     <node>
+                        <name>DarkOrchid</name>
+                     </node>
+                     <node>
+                        <name>DarkViolet</name>
+                     </node>
+                     <node>
+                        <name>BlueViolet</name>
+                     </node>
+                     <node>
+                        <name>DarkMagenta</name>
+                     </node>
+                     <node>
+                        <name>Purple</name>
+                     </node>
+                     <node>
+                        <name>MediumPurple</name>
+                     </node>
+                     <node>
+                        <name>MediumSlateBlue</name>
+                     </node>
+                     <node>
+                        <name>SlateBlue</name>
+                     </node>
+                     <node>
+                        <name>DarkSlateBlue</name>
+                     </node>
+                     <node>
+                        <name>RebeccaPurple</name>
+                     </node>
+                     <node>
+                        <name>Indigo</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Red-color</name>
+                     <node>
+                        <name>LightSalmon</name>
+                     </node>
+                     <node>
+                        <name>Salmon</name>
+                     </node>
+                     <node>
+                        <name>DarkSalmon</name>
+                     </node>
+                     <node>
+                        <name>LightCoral</name>
+                     </node>
+                     <node>
+                        <name>IndianRed</name>
+                     </node>
+                     <node>
+                        <name>Crimson</name>
+                     </node>
+                     <node>
+                        <name>Red</name>
+                     </node>
+                     <node>
+                        <name>FireBrick</name>
+                     </node>
+                     <node>
+                        <name>DarkRed</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>Yellow-color</name>
+                     <node>
+                        <name>Gold</name>
+                     </node>
+                     <node>
+                        <name>Yellow</name>
+                     </node>
+                     <node>
+                        <name>LightYellow</name>
+                     </node>
+                     <node>
+                        <name>LemonChiffon</name>
+                     </node>
+                     <node>
+                        <name>LightGoldenRodYellow</name>
+                     </node>
+                     <node>
+                        <name>PapayaWhip</name>
+                     </node>
+                     <node>
+                        <name>Moccasin</name>
+                     </node>
+                     <node>
+                        <name>PeachPuff</name>
+                     </node>
+                     <node>
+                        <name>PaleGoldenRod</name>
+                     </node>
+                     <node>
+                        <name>Khaki</name>
+                     </node>
+                     <node>
+                        <name>DarkKhaki</name>
+                     </node>
+                  </node>
+                  <node>
+                     <name>White-color</name>
+                     <node>
+                        <name>White</name>
+                     </node>
+                     <node>
+                        <name>Snow</name>
+                     </node>
+                     <node>
+                        <name>HoneyDew</name>
+                     </node>
+                     <node>
+                        <name>MintCream</name>
+                     </node>
+                     <node>
+                        <name>Azure</name>
+                     </node>
+                     <node>
+                        <name>AliceBlue</name>
+                     </node>
+                     <node>
+                        <name>GhostWhite</name>
+                     </node>
+                     <node>
+                        <name>WhiteSmoke</name>
+                     </node>
+                     <node>
+                        <name>SeaShell</name>
+                     </node>
+                     <node>
+                        <name>Beige</name>
+                     </node>
+                     <node>
+                        <name>OldLace</name>
+                     </node>
+                     <node>
+                        <name>FloralWhite</name>
+                     </node>
+                     <node>
+                        <name>Ivory</name>
+                     </node>
+                     <node>
+                        <name>AntiqueWhite</name>
+                     </node>
+                     <node>
+                        <name>Linen</name>
+                     </node>
+                     <node>
+                        <name>LavenderBlush</name>
+                     </node>
+                     <node>
+                        <name>MistyRose</name>
+                     </node>
+                  </node>
+               </node>
+            </node>
+            <node>
+               <name>View</name>
+               <node>
+                  <name>2D-view</name>
+               </node>
+               <node>
+                  <name>3D-view</name>
+               </node>
+               <node>
+                  <name>Background-view</name>
+               </node>
+               <node>
+                  <name>Bistable-view</name>
+                  <description>Something having two stable visual forms that have two distinguishable stable forms as in optical illusions.</description>
+               </node>
+               <node>
+                  <name>Foreground-view</name>
+               </node>
+               <node>
+                  <name>Foveal-view</name>
+                  <description>Visual presentation directly on the fovea.</description>
+               </node>
+               <node>
+                  <name>Map-view</name>
+                  <description>A representation of a geographical location.</description>
+                  <node>
+                     <name>Aerial-view</name>
+                     <description>A representation from an overhead view such as captured by a drone.</description>
+                  </node>
+                  <node>
+                     <name>Satellite-view</name>
+                     <description>A representation as captured by technology such as a satellite.</description>
+                  </node>
+                  <node>
+                     <name>Street-view</name>
+                     <description>A panoramic view from a position on the ground.</description>
+                  </node>
+               </node>
+               <node>
+                  <name>Peripheral-view</name>
+               </node>
+            </node>
+         </node>
+      </node>
+      <node extensionAllowed="true">
+         <name>Environmental</name>
+         <node>
+            <name>Indoors</name>
+         </node>
+         <node>
+            <name>Outdoors</name>
+         </node>
+         <node>
+            <name>Real-world</name>
+         </node>
+         <node>
+            <name>Virtual-world</name>
+         </node>
+         <node>
+            <name>Augmented-reality</name>
+         </node>
+         <node>
+            <name>Motion-platform</name>
+         </node>
+         <node>
+            <name>Urban</name>
+         </node>
+         <node>
+            <name>Rural</name>
+            <node>
+               <name>Wooden-walkway</name>
+            </node>
+         </node>
+         <node>
+            <name>Terrain</name>
+            <node>
+               <name>Composite-terrain</name>
+            </node>
+            <node>
+               <name>Dirt-terrain</name>
+            </node>
+            <node>
+               <name>Grassy-terrain</name>
+            </node>
+            <node>
+               <name>Gravel-terrain</name>
+            </node>
+            <node>
+               <name>Leaf-covered-terrain</name>
+            </node>
+            <node>
+               <name>Muddy-terrain</name>
+            </node>
+            <node>
+               <name>Paved-terrain</name>
+            </node>
+            <node>
+               <name>Rocky-terrain</name>
+            </node>
+            <node>
+               <name>Sloped-terrain</name>
+            </node>
+            <node>
+               <name>Uneven-terrain</name>
+            </node>
+         </node>
+      </node>
+      <node>
+         <name>Anatomical</name>
+      </node>
+   </node>
+   <unitClasses>
+      <unitClass defaultUnits="m-per-s^2">
+         <name>acceleration</name>
+         <units>
+            <unit SIUnit="true" unitSymbol="true">m-per-s^2</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="radian">
+         <name>angle</name>
+         <units>
+            <unit SIUnit="true">radian</unit>
+            <unit SIUnit="true" unitSymbol="true">rad</unit>
+            <unit>degree</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="m^2">
+         <name>area</name>
+         <units>
+            <unit SIUnit="true" unitSymbol="true">m^2</unit>
+            <unit unitSymbol="true">px^2</unit>
+            <unit>pixel^2</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="$">
+         <name>currency</name>
+         <units>
+            <unit>dollar</unit>
+            <unit unitSymbol="true">$</unit>
+            <unit>point</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="YYYY-MM-DDThh:mm:ss">
+         <name>dateTime</name>
+         <units>
+            <unit>YYYY-MM-DDThh:mm:ss</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="Hz">
+         <name>frequency</name>
+         <units>
+            <unit SIUnit="true">hertz</unit>
+            <unit SIUnit="true" unitSymbol="true">Hz</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="dB">
+         <name>intensity</name>
+         <units>
+            <unit unitSymbol="true">dB</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="m-per-s^3">
+         <name>jerk</name>
+         <units>
+            <unit unitSymbol="true">m-per-s^3</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="cd">
+         <name>luminousIntensity</name>
+         <units>
+            <unit SIUnit="true">candela</unit>
+            <unit SIUnit="true" unitSymbol="true">cd</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="B">
+         <name>memorySize</name>
+         <units>
+            <unit SIUnit="true">byte</unit>
+            <unit SIUnit="true" unitSymbol="true">B</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="m">
+         <name>physicalLength</name>
+         <units>
+            <unit SIUnit="true">metre</unit>
+            <unit SIUnit="true" unitSymbol="true">m</unit>
+            <unit>foot</unit>
+            <unit>mile</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="px">
+         <name>pixels</name>
+         <units>
+            <unit>pixel</unit>
+            <unit unitSymbol="true">px</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="m-per-s">
+         <name>speed</name>
+         <units>
+            <unit SIUnit="true" unitSymbol="true">m-per-s</unit>
+            <unit unitSymbol="true">mph</unit>
+            <unit unitSymbol="true">kph</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="s">
+         <name>time</name>
+         <units>
+            <unit SIUnit="true">second</unit>
+            <unit SIUnit="true" unitSymbol="true">s</unit>
+            <unit>day</unit>
+            <unit>minute</unit>
+            <unit>hour</unit>
+         </units>
+      </unitClass>
+      <unitClass defaultUnits="m^3">
+         <name>volume</name>
+         <units>
+            <unit SIUnit="true" unitSymbol="true">m^3</unit>
+         </units>
+      </unitClass>
+   </unitClasses>
+   <unitModifiers>
+      <unitModifier SIUnitModifier="true">
+         <name>deca</name>
+         <description>SI unit multiple representing 10^1</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>da</name>
+         <description>SI unit multiple representing 10^1</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>hecto</name>
+         <description>SI unit multiple representing 10^2</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>h</name>
+         <description>SI unit multiple representing 10^2</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>kilo</name>
+         <description>SI unit multiple representing 10^3</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>k</name>
+         <description>SI unit multiple representing 10^3</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>mega</name>
+         <description>SI unit multiple representing 10^6</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>M</name>
+         <description>SI unit multiple representing 10^6</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>giga</name>
+         <description>SI unit multiple representing 10^9</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>G</name>
+         <description>SI unit multiple representing 10^9</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>tera</name>
+         <description>SI unit multiple representing 10^12</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>T</name>
+         <description>SI unit multiple representing 10^12</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>peta</name>
+         <description>SI unit multiple representing 10^15</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>P</name>
+         <description>SI unit multiple representing 10^15</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>exa</name>
+         <description>SI unit multiple representing 10^18</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>E</name>
+         <description>SI unit multiple representing 10^18</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>zetta</name>
+         <description>SI unit multiple representing 10^21</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>Z</name>
+         <description>SI unit multiple representing 10^21</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>yotta</name>
+         <description>SI unit multiple representing 10^24</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>Y</name>
+         <description>SI unit multiple representing 10^24</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>deci</name>
+         <description>SI unit submultiple representing 10^-1</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>d</name>
+         <description>SI unit submultiple representing 10^-1</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>centi</name>
+         <description>SI unit submultiple representing 10^-2</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>c</name>
+         <description>SI unit submultiple representing 10^-2</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>milli</name>
+         <description>SI unit submultiple representing 10^-3</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>m</name>
+         <description>SI unit submultiple representing 10^-3</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>micro</name>
+         <description>SI unit submultiple representing 10^-6</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>u</name>
+         <description>SI unit submultiple representing 10^-6</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>nano</name>
+         <description>SI unit submultiple representing 10^-9</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>n</name>
+         <description>SI unit submultiple representing 10^-9</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>pico</name>
+         <description>SI unit submultiple representing 10^-12</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>p</name>
+         <description>SI unit submultiple representing 10^-12</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>femto</name>
+         <description>SI unit submultiple representing 10^-15</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>f</name>
+         <description>SI unit submultiple representing 10^-15</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>atto</name>
+         <description>SI unit submultiple representing 10^-18</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>a</name>
+         <description>SI unit submultiple representing 10^-18</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>zepto</name>
+         <description>SI unit submultiple representing 10^-21</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>z</name>
+         <description>SI unit submultiple representing 10^-21</description>
+      </unitModifier>
+      <unitModifier SIUnitModifier="true">
+         <name>yocto</name>
+         <description>SI unit submultiple representing 10^-24</description>
+      </unitModifier>
+      <unitModifier SIUnitSymbolModifier="true">
+         <name>y</name>
+         <description>SI unit submultiple representing 10^-24</description>
+      </unitModifier>
+      <unitModifier>
+         <name>Schema attributes</name>
+      </unitModifier>
+      <unitModifier>
+         <name>defaultUnits</name>
+         <description>Default units for a tag.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>extensionAllowed</name>
+         <description>Users can add unlimited levels of child nodes under this tag.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>isNumeric</name>
+         <description>The tag hashtag placeholder must be replaced by a numerical value.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>position</name>
+         <description>Used to specify the order of the required and recommended tags in canonical order for display. The position attribute value should be an integer and the order can start at 0 or 1. Required or recommended tags without this attribute or with negative position will be shown after the others in canonical ordering.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>predicateType</name>
+         <description>One of propertyOf, subclassOf, passThrough -- used to facilitate mapping to OWL or RDF.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>recommended</name>
+         <description>A HED string tagging an event is recommended to include this tag.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>relatedTag</name>
+         <description>Additional HED tags suggested to be used with this tag. This attribute is used by tagging tools.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>requireChild</name>
+         <description>One of its descendants must be chosen to tag an event.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>required</name>
+         <description>Every HED string tagging an event should include this tag.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>SIUnit</name>
+         <description>Designates the name of an SI unit so it can be modified by multiple and submultiple names. Note that some units such as byte are designated as SI units although they are not part of the standard.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>SIUnitModifier</name>
+         <description>SI unit modifier indicating a multiple or submultiple of a base unit.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>SIUnitSymbolModifier</name>
+         <description>SI unit symbol modifier indicating a multiple or submultiple of a base unit symbol.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>suggestedTag</name>
+         <description>Additional HED tags suggested to be used with this tag. This attribute is used by tagging tools.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>takesValue</name>
+         <description>This tag will have a hashtag placeholder child in the schema which is expected to be replaced with a user-defined value.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>unique</name>
+         <description>Only one of this tag or its descendants can be used within a single tag group or event.</description>
+      </unitModifier>
+      <unitModifier>
+         <name>unitSymbol</name>
+         <description>Abbreviation or symbol representing a type of unit. Unit symbols  represent both the singular and the plural and thus cannot be pluralized.</description>
+      </unitModifier>
+   </unitModifiers>
+   <epilogue>This is the new format for the mediawiki schema</epilogue>
+</HED>

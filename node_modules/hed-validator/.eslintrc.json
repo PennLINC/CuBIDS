@@ -1,0 +1,24 @@
+{
+  "plugins": ["prettier"],
+  "parserOptions": {
+    "ecmaVersion": 2017,
+    "sourceType": "module"
+  },
+  "env": {
+    "es6": true,
+    "browser": true,
+    "commonjs": true,
+    "node": true,
+    "jest": true
+  },
+  "globals": {
+    "Uint8Array": false
+  },
+  "extends": ["eslint:recommended", "prettier"],
+  "rules": {
+    "prettier/prettier": "error",
+    "no-console": ["error", { "allow": ["warn"] }],
+    "linebreak-style": ["error", "unix"],
+    "guard-for-in": "error"
+  }
+}

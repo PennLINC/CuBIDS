@@ -35,7 +35,6 @@ Definitions
 ------------
 
 
-
 .. topic:: Key Group
 
     * A set of scans whose filenames share all `BIDS filename key-value pairs <https://bids-specification.readthedocs.io/en/stable/02-common-principles.html#file-name-structure>`_, excluding subject and session
