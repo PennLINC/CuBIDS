@@ -625,7 +625,7 @@ class CuBIDS(object):
         to_remove = []
 
         for path in Path(self.path).glob("sub-*/**/*.nii.gz"):
-            
+
             if str(path) in scans:
                 print("PURGING THIS NIFTI: ", str(path))
                 bids_file = self.layout.get_file(str(path))
