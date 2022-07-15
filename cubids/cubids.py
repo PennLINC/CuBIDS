@@ -585,9 +585,10 @@ class CuBIDS(object):
         for scan in scans:
             if_scans.append(_get_intended_for_reference(scan))
 
-        for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
+        for path in Path(self.path).glob("sub-*/*/fmap/*.json"):
 
             json_file = self.layout.get_file(str(path))
+            print("CHECKING JSON FOR INTENDED FOR REFS: ", str(json_file))
 
             data = json_file.get_dict()
 
@@ -623,11 +624,13 @@ class CuBIDS(object):
 
         to_remove = []
 
-        for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
-
+        for path in Path(self.path).glob("sub-*/**/*.nii.gz"):
+            
             if str(path) in scans:
+                print("PURGING THIS NIFTI: ", str(path))
                 bids_file = self.layout.get_file(str(path))
                 associations = bids_file.get_associations()
+                print("ASSOCIATIONS TO PURGE: ", associations)
 
                 for assoc in associations:
                     filepath = assoc.path
