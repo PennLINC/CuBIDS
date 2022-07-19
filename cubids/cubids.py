@@ -59,6 +59,7 @@ class CuBIDS(object):
         return self._layout
 
     def reset_bids_layout(self, validate=False):
+        print("RESETTING BIDS LAYOUT")
         self._layout = bids.BIDSLayout(self.path, validate=validate)
         print("DONE RESETTING BIDS LAYOUT")
 
@@ -944,16 +945,17 @@ class CuBIDS(object):
                 to save your CSVs
                 example path: /Users/Covitz/PennLINC/RBC/CCNP/
         """
-
+        print("IN GET CSVS")
+        print("CACHING FIELDMAPS")
         self._cache_fieldmaps()
-
+        print("FIELDMAPS CACHED")
         big_df, summary = self.get_param_groups_dataframes()
 
         summary = summary.sort_values(by=['Modality', 'KeyGroupCount'],
                                       ascending=[True, False])
         big_df = big_df.sort_values(by=['Modality', 'KeyGroupCount'],
                                     ascending=[True, False])
-
+        print("GOT GROUPINGS, writing out summary/files csvs")
         big_df.to_csv(path_prefix + "_files.csv", index=False)
         summary.to_csv(path_prefix + "_summary.csv", index=False)
 
