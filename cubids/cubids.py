@@ -960,6 +960,8 @@ class CuBIDS(object):
             # first check if code/CuBIDS dir exits
             # if not, create it
             self.cubids_code_dir()
+            # send outputs to code/CuBIDS in BIDS tree
+            path_prefix = self.path + '/code/CuBIDS/' + path_prefix
 
         big_df, summary = self.get_param_groups_dataframes()
 
