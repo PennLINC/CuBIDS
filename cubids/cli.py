@@ -74,6 +74,16 @@ def cubids_validate():
                         required=False)
     opts = parser.parse_args()
 
+    # check status of output_prefix, absolute or relative?
+    abs_path_output = True
+    if '/' not in str(opts.output_prefix):
+        # not an absolute path --> put in code/CuBIDS dir
+        abs_path_output = False
+        # check if code/CuBIDS dir exists
+        if not Path(str(opts.bids_dir) + '/code/CuBIDS').is_dir():
+            # if not, create it
+            subprocess.run(['mkdir', str(opts.bids_dir) + '/code/CuBIDS'])
+
     # Run directly from python using subprocess
     if opts.container is None:
 
@@ -94,8 +104,16 @@ def cubids_validate():
                 logger.info("BIDS issues/warnings found in the dataset")
 
                 if opts.output_prefix:
-                    # normally, write dataframe to file in CLI
-                    val_csv = str(opts.output_prefix) + "_validation.csv"
+                    # check if absolute or relative path
+                    if abs_path_output:
+                        # normally, write dataframe to file in CLI
+                        val_csv = str(opts.output_prefix) + "_validation.csv"
+                    else:
+                        val_csv = str(opts.bids_dir) \
+                                  + '/code/CuBIDS/' \
+                                  + str(opts.output_prefix) \
+                                  + "_validation.csv"
+
                     parsed.to_csv(val_csv, index=False)
                     logger.info("Writing issues out to %s", val_csv)
                     sys.exit(0)
@@ -176,7 +194,14 @@ def cubids_validate():
 
                 if opts.output_prefix:
                     # normally, write dataframe to file in CLI
-                    val_csv = str(opts.output_prefix) + "_validation.csv"
+                    if abs_path_output:
+                        val_csv = str(opts.output_prefix) + "_validation.csv"
+                    else:
+                        val_csv = str(opts.bids_dir) \
+                                  + '/code/CuBIDS/' \
+                                  + str(opts.output_prefix) \
+                                  + "_validation.csv"
+
                     parsed.to_csv(val_csv, index=False)
                     logger.info("Writing issues out to file %s", val_csv)
                     sys.exit(0)

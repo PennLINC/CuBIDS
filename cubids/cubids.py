@@ -43,7 +43,7 @@ class CuBIDS(object):
         self.acq_group_level = acq_group_level
         self.scans_txt = None  # txt file of scans to purge (for purge only)
         self.force_unlock = force_unlock  # force unlock for add-nifti-info
-
+        self.cubids_code_dir = Path(self.path + '/code/CuBIDS').is_dir()
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
         if self.use_datalad:
             self.init_datalad()
@@ -59,6 +59,17 @@ class CuBIDS(object):
 
     def reset_bids_layout(self, validate=False):
         self._layout = bids.BIDSLayout(self.path, validate=validate)
+
+    def cubids_code_dir(self):
+        # check if BIDS_ROOT/code/CuBIDS exists
+        if not self.code_cubids_dir:
+            # if doesn't exist, create it
+            self.create_cubids_code_dir()
+        return self.cubids_code_dir
+
+    def create_cubids_code_dir(self):
+        subprocess.run(['mkdir', self.path + '/code/CuBIDS'])
+        self.cubids_code_dir = True
 
     def init_datalad(self):
         """Initializes a datalad Dataset at self.path.
@@ -942,6 +953,14 @@ class CuBIDS(object):
 
         self._cache_fieldmaps()
 
+        # check if path_prefix is absolute or relative
+        # if relative, put output in BIDS_ROOT/code/CuBIDS/ dir
+        if '/' not in path_prefix:
+            # path is relative
+            # first check if code/CuBIDS dir exits
+            # if not, create it
+            self.cubids_code_dir()
+
         big_df, summary = self.get_param_groups_dataframes()
 
         summary = summary.sort_values(by=['Modality', 'KeyGroupCount'],
@@ -950,6 +969,7 @@ class CuBIDS(object):
                                     ascending=[True, False])
 
         big_df.to_csv(path_prefix + "_files.csv", index=False)
+
         summary.to_csv(path_prefix + "_summary.csv", index=False)
 
         # Calculate the acq groups
