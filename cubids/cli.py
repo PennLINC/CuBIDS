@@ -40,7 +40,8 @@ def cubids_validate():
                         type=Path,
                         action='store',
                         help='file prefix to which tabulated validator output '
-                        'is written.')
+                        'is written, will be located at '
+                        'BIDS_ROOT/code/CuBIDS/output_prefix_validation.csv')
     parser.add_argument('--sequential',
                         action='store_true',
                         default=False,
@@ -248,8 +249,9 @@ def cubids_group():
     parser.add_argument('output_prefix',
                         type=Path,
                         action='store',
-                        help='file prefix to which a _summary.csv, _files.csv '
-                        'and _group.csv are written.')
+                        help='file prefix to which a _summary.tsv, _files.tsv '
+                        '_AcqGrouping.tsv, and _AcqGroupInfo.txt, are '
+                        'written, located in BIDS_ROOT/code/CuBIDS/.')
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
