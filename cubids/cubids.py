@@ -234,10 +234,10 @@ class CuBIDS(object):
                 (files_df[["ParamGroup", "KeyGroup"]] == source_id).all(1)]
 
             # Get a source json file
-            source_json = img_to_new_ext(source_files.iloc[0].FilePath,
-                                         '.json')
+            img_full_path = self.path + source_files.iloc[0].FilePath
+            source_json = img_to_new_ext(img_full_path, '.json')
             for dest_nii in dest_files.FilePath:
-                dest_json = img_to_new_ext(dest_nii, '.json')
+                dest_json = img_to_new_ext(self.path + dest_nii, '.json')
                 if Path(dest_json).exists() and Path(source_json).exists():
                     merge_commands.append(
                         'bids-sidecar-merge %s %s'
@@ -249,9 +249,10 @@ class CuBIDS(object):
         for rm_id in deletions:
             files_to_rm = files_df.loc[
                 (files_df[["ParamGroup", "KeyGroup"]] == rm_id).all(1)]
+
             for rm_me in files_to_rm.FilePath:
-                if Path(rm_me).exists():
-                    to_remove.append(rm_me)
+                if Path(self.path + rm_me).exists():
+                    to_remove.append(self.path + rm_me)
                     # delete_commands.append("rm " + rm_me)
 
         # call purge associations on list of files to remove
@@ -276,7 +277,7 @@ class CuBIDS(object):
             to_change = list(key_groups.keys())
 
             for row in range(len(files_df)):
-                file_path = files_df.loc[row, 'FilePath']
+                file_path = self.path + files_df.loc[row, 'FilePath']
                 if Path(file_path).exists() and '/fmap/' not in file_path:
 
                     key_param_group = files_df.loc[row, 'KeyParamGroup']
@@ -802,6 +803,12 @@ class CuBIDS(object):
             labeled_files.append(labeled_file_params)
 
         big_df = _order_columns(pd.concat(labeled_files, ignore_index=True))
+
+        # make Filepaths relative to bids dir
+        for row in range(len(big_df)):
+            long_name = big_df.loc[row, 'FilePath']
+            big_df.loc[row, 'FilePath'] = long_name.replace(self.path, '')
+
         summary = _order_columns(pd.concat(param_group_summaries,
                                  ignore_index=True))
 

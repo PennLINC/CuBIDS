@@ -697,8 +697,8 @@ def test_apply_csv_changes(tmp_path):
             deleted_f.append(mod2_files_df.loc[row, 'FilePath'])
 
     for f in deleted_f:
-        assert Path(f).exists() == True
-        assert Path(f.replace('nii.gz', 'json')).exists() == True
+        assert Path(str(data_root / "complete") + f).exists() == True
+        assert Path(str(data_root / "complete") + f.replace('nii.gz', 'json')).exists() == True
 
     # apply deletion
     complete_cubids.apply_csv_changes(mod2_path,
