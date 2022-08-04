@@ -66,7 +66,7 @@ def run_validator(call, verbose=True):
 
     ret = subprocess.run(call, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
-    return(ret)
+    return (ret)
 
 
 def parse_validator_output(output):
@@ -105,7 +105,7 @@ def parse_validator_output(output):
         return_dict['code'] = issue_dict.get('code', '')
         return_dict['url'] = issue_dict.get('helpUrl', '')
 
-        return(return_dict)
+        return (return_dict)
 
     df = pd.DataFrame()
 
