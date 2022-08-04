@@ -23,7 +23,7 @@ from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 bids.config.set_option('extension_initial_dot', True)
-import pdb
+
 
 class CuBIDS(object):
 
@@ -581,7 +581,6 @@ class CuBIDS(object):
         with open(scans_txt, 'r') as fd:
             reader = csv.reader(fd)
             for row in reader:
-                pdb.set_trace()
                 scans.append(self.path + '/' + str(row[0]))
 
         # check to ensure scans are all real files in the ds!

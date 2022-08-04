@@ -276,7 +276,11 @@ def cubids_group():
                         action='store',
                         help='file prefix to which a _summary.tsv, _files.tsv '
                         '_AcqGrouping.tsv, and _AcqGroupInfo.txt, are '
-                        'written, located in BIDS_ROOT/code/CuBIDS/.')
+                        'written. If users pass in just a filename prefix '
+                        'e.g. V1, then CuBIDS will put the four grouping '
+                        'outputs in bids_dir/code/CuBIDS. If the user '
+                        'specifies a full path (e.g. /Users/scovitz/BIDS/V1 '
+                        'then output files will go to the specied location.')
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
@@ -368,7 +372,7 @@ def cubids_apply():
                         type=Path,
                         action='store',
                         help='file prefix for writing the new _summary.csv, '
-                        '_files.csv and _group.csv that have been edited.')
+                        '_files.csv and _group.csv that have been edited')
     parser.add_argument('--use-datalad',
                         action='store_true',
                         help='ensure that there are no untracked changes '
@@ -561,7 +565,7 @@ def cubids_copy_exemplars():
     parser.add_argument('bids_dir',
                         type=Path,
                         action='store',
-                        help='absolute path to the root of a BIDS dataset. '
+                        help='path to the root of a BIDS dataset. '
                         'It should contain sub-X directories and '
                         'dataset_description.json.')
     parser.add_argument('exemplars_dir',
@@ -718,13 +722,13 @@ def cubids_purge():
     parser.add_argument('bids_dir',
                         type=Path,
                         action='store',
-                        help='absolute path to the root of a BIDS dataset. '
+                        help='path to the root of a BIDS dataset. '
                         'It should contain sub-X directories and '
                         'dataset_description.json.')
     parser.add_argument('scans',
                         type=Path,
                         action='store',
-                        help='absolute path to the txt file of scans whose '
+                        help='path to the txt file of scans whose '
                         'associations should be purged.')
     parser.add_argument('--use-datalad',
                         action='store_true',
