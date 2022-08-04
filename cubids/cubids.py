@@ -23,7 +23,7 @@ from .metadata_merge import (
     check_merging_operations, group_by_acquisition_sets)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 bids.config.set_option('extension_initial_dot', True)
-
+import pdb
 
 class CuBIDS(object):
 
@@ -581,7 +581,8 @@ class CuBIDS(object):
         with open(scans_txt, 'r') as fd:
             reader = csv.reader(fd)
             for row in reader:
-                scans.append(str(row[0]))
+                pdb.set_trace()
+                scans.append(self.path + '/' + str(row[0]))
 
         # check to ensure scans are all real files in the ds!
 
@@ -595,7 +596,7 @@ class CuBIDS(object):
         # sub, ses, modality only (no self.path)
         if_scans = []
         for scan in scans:
-            if_scans.append(_get_intended_for_reference(scan))
+            if_scans.append(_get_intended_for_reference(self.path + scan))
 
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
 

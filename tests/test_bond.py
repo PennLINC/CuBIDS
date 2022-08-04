@@ -110,12 +110,11 @@ def test_copy_exemplars(tmp_path):
 def test_purge_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
     scans = []
-    scan_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
-        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
+    scan_name = "sub-03/ses-phdiff/func/sub-03_ses-phdiff_task-rest_bold.nii.gz"
     json_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
         / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
     scans.append(scan_name)
-    scans.append(data_root / "complete" / "sub-01" / "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz")
+    scans.append("sub-01/ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz")
 
     # create and save .txt with list of scans
     purge_path = str(tmp_path / "purge_scans.txt")
@@ -124,7 +123,7 @@ def test_purge_no_datalad(tmp_path):
             filehandle.write('%s\n' % listitem)
     bod = CuBIDS(data_root / "complete", use_datalad=False)
 
-    assert Path(scan_name).exists()
+    assert Path(data_root / "complete" / scan_name).exists()
     assert Path(json_name).exists()
 
     # Check that IntendedFor purge worked
@@ -139,7 +138,7 @@ def test_purge_no_datalad(tmp_path):
     with open(str(data_root / "complete" / "sub-01" / "ses-phdiff" / "fmap" / "sub-01_ses-phdiff_acq-v4_phasediff.json")) as f:
         purged_dict = json.load(f)
 
-    assert not Path(scan_name).exists()
+    assert not Path(data_root / "complete" / scan_name).exists()
     assert not Path(json_name).exists()
     assert "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz" not in purged_dict.values()
     assert isinstance(purged_dict['IntendedFor'], list)
@@ -148,8 +147,7 @@ def test_purge_no_datalad(tmp_path):
 def test_purge(tmp_path):
     data_root = get_data(tmp_path)
     scans = []
-    scan_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
-        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
+    scan_name = "sub-03/ses-phdiff/func/sub-03_ses-phdiff_task-rest_bold.nii.gz"
     json_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
         / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
     scans.append(scan_name)
@@ -162,7 +160,7 @@ def test_purge(tmp_path):
     bod.datalad_save()
 
     assert bod.is_datalad_clean()
-    assert Path(scan_name).exists()
+    assert Path(data_root / "complete" / scan_name).exists()
     assert Path(json_name).exists()
 
     # create and save .txt with list of scans
