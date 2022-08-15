@@ -75,7 +75,7 @@ reflects the original data that has been converted to BIDS using a heuristic. It
 similar to what you will see when you first use this functionality:
 
 .. csv-table:: Pre Apply Groupings
-    :file: _static/PNC_pre_apply_summary_dwi_run1.tsv
+    :file: _static/PNC_pre_apply_summary_dwi_run1.csv
     :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
     :header-rows: 1
 
@@ -150,7 +150,7 @@ our dataset becasuse we do not want these parameters to affect our analyses.
 To remove these files from your BIDS data, add a ``0`` to ``MergeInto`` and save the new tsv as ``v0_edited_summary.tsv``
 
 .. csv-table:: Pre Apply Groupings with Deletion Requested
-    :file: _static/PNC_pre_apply_summary_dwi_run1_deletion.tsv
+    :file: _static/PNC_pre_apply_summary_dwi_run1_deletion.csv
     :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
     :header-rows: 1
 
@@ -166,7 +166,7 @@ and the new Key and Parameter Groups will be saved to tsv files starting with ``
 Applying these changes we would see:
 
 .. csv-table:: Post Apply Groupings
-    :file: _static/PNC_post_apply_summary.tsv
+    :file: _static/PNC_post_apply_summary.csv
     :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
     :header-rows: 1
     
