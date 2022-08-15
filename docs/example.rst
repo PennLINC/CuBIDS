@@ -178,7 +178,7 @@ to detect potential curation errors using ``cubids-validate``.
 This command produces the following tsv: 
 
 .. csv-table:: v0_validation.tsv
-   :file: _static/v0_validation.tsv
+   :file: _static/v0_validation.csv
    :widths: 10, 10, 10, 10, 10, 40, 10
    :header-rows: 1
 
@@ -292,7 +292,7 @@ might be present within the sidecars' metadata. Below, we see insances of missin
 metadata fields in a handful of sidecars, which may impact successful execution of BIDS Apps. 
 
 .. csv-table:: v0_summary.tsv
-   :file: _static/v0_summary.tsv
+   :file: _static/v0_summary.csv
    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
    :header-rows: 1
 
@@ -313,7 +313,7 @@ Make this change and save this edited version of ``v0_summary.tsv`` as ``v0_edit
 curation step. 
 
 .. csv-table:: v0_edited_summary.tsv
-   :file: _static/v0_edited_summary.tsv
+   :file: _static/v0_edited_summary.csv
    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
    :header-rows: 1
 
