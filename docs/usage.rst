@@ -74,7 +74,7 @@ Below is an example ``_summary.tsv`` of the run-1 DWI Key Group in the PNC [#f1]
 reflects the original data that has been converted to BIDS using a heuristic. It is
 similar to what you will see when you first use this functionality:
 
-.. tsv-table:: Pre Apply Groupings
+.. csv-table:: Pre Apply Groupings
     :file: _static/PNC_pre_apply_summary_dwi_run1.tsv
     :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
     :header-rows: 1
@@ -149,7 +149,7 @@ seconds and is also variant with respect to EffectiveEchoSpacing and EchoTime. W
 our dataset becasuse we do not want these parameters to affect our analyses.
 To remove these files from your BIDS data, add a ``0`` to ``MergeInto`` and save the new tsv as ``v0_edited_summary.tsv``
 
-.. tsv-table:: Pre Apply Groupings with Deletion Requested
+.. csv-table:: Pre Apply Groupings with Deletion Requested
     :file: _static/PNC_pre_apply_summary_dwi_run1_deletion.tsv
     :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
     :header-rows: 1
@@ -165,7 +165,7 @@ and the new Key and Parameter Groups will be saved to tsv files starting with ``
 
 Applying these changes we would see:
 
-.. tsv-table:: Post Apply Groupings
+.. csv-table:: Post Apply Groupings
     :file: _static/PNC_post_apply_summary.tsv
     :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3
     :header-rows: 1

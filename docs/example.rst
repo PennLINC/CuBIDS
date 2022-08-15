@@ -177,7 +177,7 @@ to detect potential curation errors using ``cubids-validate``.
 
 This command produces the following tsv: 
 
-.. tsv-table:: v0_validation.tsv
+.. csv-table:: v0_validation.tsv
    :file: _static/v0_validation.tsv
    :widths: 10, 10, 10, 10, 10, 40, 10
    :header-rows: 1
@@ -291,7 +291,7 @@ present in the dataset, it did not identify any potential issues that
 might be present within the sidecars' metadata. Below, we see insances of missing
 metadata fields in a handful of sidecars, which may impact successful execution of BIDS Apps. 
 
-.. tsv-table:: v0_summary.tsv
+.. csv-table:: v0_summary.tsv
    :file: _static/v0_summary.tsv
    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
    :header-rows: 1
@@ -312,7 +312,7 @@ scans in that Parameter Group (in this example, just one scan) are removed.
 Make this change and save this edited version of ``v0_summary.tsv`` as ``v0_edited_summary.tsv``, which will be passed to ``cubids-apply`` in our next 
 curation step. 
 
-.. tsv-table:: v0_edited_summary.tsv
+.. csv-table:: v0_edited_summary.tsv
    :file: _static/v0_edited_summary.tsv
    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
    :header-rows: 1
