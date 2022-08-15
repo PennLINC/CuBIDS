@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
+import pdb
 from shutil import copytree, copyfile
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -60,16 +61,14 @@ class CuBIDS(object):
     def reset_bids_layout(self, validate=False):
         self._layout = bids.BIDSLayout(self.path, validate=validate)
 
-    def cubids_code_dir(self):
-        # check if BIDS_ROOT/code/CuBIDS exists
-        if not self.code_cubids_dir:
-            # if doesn't exist, create it
-            self.create_cubids_code_dir()
-        return self.cubids_code_dir
-
     def create_cubids_code_dir(self):
-        subprocess.run(['mkdir', self.path + '/code/CuBIDS'])
-        self.cubids_code_dir = True
+        # check if BIDS_ROOT/code/CuBIDS exists
+        if not self.cubids_code_dir:
+            pdb.set_trace()
+            subprocess.run(['mkdir', self.path + '/code'])
+            subprocess.run(['mkdir', self.path + '/code/CuBIDS/'])
+            self.cubids_code_dir = True
+        return self.cubids_code_dir
 
     def init_datalad(self):
         """Initializes a datalad Dataset at self.path.
@@ -192,10 +191,10 @@ class CuBIDS(object):
             self.datalad_save(message="Added nifti info to sidecars")
             self.reset_bids_layout()
 
-    def apply_csv_changes(self, summary_csv, files_csv, new_prefix,
+    def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix,
                           raise_on_error=True):
-        """Applies changes documented in the edited _summary csv
-        and generates the new csv files.
+        """Applies changes documented in the edited _summary tsv
+        and generates the new tsv files.
 
         This function looks at the RenameKeyGroup and MergeInto
         columns and modifies the bids datset according to the
@@ -205,26 +204,35 @@ class CuBIDS(object):
         -----------
             orig_prefix : str
                 Path prefix and file stem for the original
-                _summary and _files csvs.
+                _summary and _files tsvs.
                 For example, if orig_prefix is
-                '/cbica/projects/HBN/old_CSVs' then the paths to
-                the summary and files csvs will be
-                '/cbica/projects/HBN/old_CSVs_summary.csv' and
-                '/cbica/projects/HBN/old_CSVs_files.csv' respectively.
+                '/cbica/projects/HBN/old_tsvs' then the paths to
+                the summary and files tsvs will be
+                '/cbica/projects/HBN/old_tsvs_summary.tsv' and
+                '/cbica/projects/HBN/old_tsvs_files.tsv' respectively.
             new_prefix : str
                 Path prefix and file stem for the new summary and
-                files csvs.
+                files tsvs.
         """
         # reset lists of old and new filenames
         self.old_filenames = []
         self.new_filenames = []
 
-        files_df = pd.read_csv(files_csv)
-        summary_df = pd.read_csv(summary_csv)
+        if '/' not in str(summary_tsv):
+            if not self.cubids_code_dir:
+                self.create_cubids_code_dir()
+            summary_tsv = self.path + '/code/CuBIDS/' + summary_tsv
+        if '/' not in str(files_tsv):
+            if not self.cubids_code_dir:
+                self.create_cubids_code_dir()
+            files_tsv = self.path + '/code/CuBIDS/' + files_tsv
+
+        summary_df = pd.read_table(summary_tsv)
+        files_df = pd.read_table(files_tsv)
 
         # Check that the MergeInto column only contains valid merges
         ok_merges, deletions = check_merging_operations(
-            summary_csv, raise_on_error=raise_on_error)
+            summary_tsv, raise_on_error=raise_on_error)
 
         merge_commands = []
         for source_id, dest_id in ok_merges:
@@ -339,7 +347,10 @@ class CuBIDS(object):
             print("Not running any commands")
 
         self.reset_bids_layout()
-        self.get_CSVs(new_prefix)
+        self.get_TSVs(new_prefix)
+
+        # remove renames file that gets created under the hood
+        subprocess.run(['rm', '-rf', 'renames'])
 
     def change_filename(self, filepath, entities):
         """Applies changes to a filename based on the renamed
@@ -506,7 +517,7 @@ class CuBIDS(object):
             # else:
             #     print("No IntendedFor References to Rename")
 
-    def copy_exemplars(self, exemplars_dir, exemplars_csv, min_group_size,
+    def copy_exemplars(self, exemplars_dir, exemplars_tsv, min_group_size,
                        raise_on_error=True):
         """Copies one subject from each Acquisition Group into a new directory
         for testing *preps, raises an error if the subjects are not unlocked,
@@ -516,22 +527,22 @@ class CuBIDS(object):
         -----------
             exemplars_dir: str
                 path to the directory that will contain one subject
-                from each Acqusition Gorup (*_AcqGrouping.csv)
-                example path: /Users/Covitz/CSVs/CCNP_Acq_Groups/
+                from each Acqusition Gorup (*_AcqGrouping.tsv)
+                example path: /Users/Covitz/tsvs/CCNP_Acq_Groups/
 
-            exemplars_csv: str
-                path to the .csv file that lists one subject
-                from each Acqusition Group (*_AcqGrouping.csv
+            exemplars_tsv: str
+                path to the .tsv file that lists one subject
+                from each Acqusition Group (*_AcqGrouping.tsv
                 from the cubids-group output)
-                example path: /Users/Covitz/CSVs/CCNP_Acq_Grouping.csv
+                example path: /Users/Covitz/tsvs/CCNP_Acq_Grouping.tsv
         """
         # create the exemplar ds
         if self.use_datalad:
             subprocess.run(['datalad', '--log-level', 'error', 'create', '-c',
                             'text2git', exemplars_dir])
 
-        # load the exemplars csv
-        subs = pd.read_csv(exemplars_csv)
+        # load the exemplars tsv
+        subs = pd.read_table(exemplars_tsv)
 
         # if min group size flag set, drop acq groups with less than min
         if int(min_group_size) > 1:
@@ -871,7 +882,7 @@ class CuBIDS(object):
                         rename_cols.append("UsedAsFieldmap")
 
         dom_dict = {}
-        # loop through summary csv and create dom_dict
+        # loop through summary tsv and create dom_dict
         for row in range(len(summary)):
             # if 'NumVolumes' in summary.columns \
             #         and str(summary.loc[row, "NumVolumes"]) == 'nan':
@@ -937,7 +948,7 @@ class CuBIDS(object):
                 summary.at[row, 'RenameKeyGroup'] = new_name
 
             # convert all "nan" to empty str
-            # so they don't show up in the summary csv
+            # so they don't show up in the summary tsv
             if summary.loc[row, "RenameKeyGroup"] == 'nan':
                 summary.at[row, "RenameKeyGroup"] = ''
 
@@ -947,14 +958,14 @@ class CuBIDS(object):
 
         return (big_df, summary)
 
-    def get_CSVs(self, path_prefix):
-        """Creates the _summary and _files CSVs for the bids dataset.
+    def get_TSVs(self, path_prefix):
+        """Creates the _summary and _files tsvs for the bids dataset.
 
         Parameters:
         -----------
             prefix_path: str
                 prefix of the path to the directory where you want
-                to save your CSVs
+                to save your tsvs
                 example path: /Users/Covitz/PennLINC/RBC/CCNP/
         """
 
@@ -966,7 +977,7 @@ class CuBIDS(object):
             # path is relative
             # first check if code/CuBIDS dir exits
             # if not, create it
-            self.cubids_code_dir()
+            self.create_cubids_code_dir()
             # send outputs to code/CuBIDS in BIDS tree
             path_prefix = self.path + '/code/CuBIDS/' + path_prefix
 
@@ -977,12 +988,12 @@ class CuBIDS(object):
         big_df = big_df.sort_values(by=['Modality', 'KeyGroupCount'],
                                     ascending=[True, False])
 
-        big_df.to_csv(path_prefix + "_files.csv", index=False)
+        big_df.to_csv(path_prefix + "_files.tsv", sep="\t", index=False)
 
-        summary.to_csv(path_prefix + "_summary.csv", index=False)
+        summary.to_csv(path_prefix + "_summary.tsv", sep="\t", index=False)
 
         # Calculate the acq groups
-        group_by_acquisition_sets(path_prefix + "_files.csv", path_prefix,
+        group_by_acquisition_sets(path_prefix + "_files.tsv", path_prefix,
                                   self.acq_group_level)
 
         print("Detected " + str(len(summary)) + " Parameter Groups.")

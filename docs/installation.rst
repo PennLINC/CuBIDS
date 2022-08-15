@@ -55,7 +55,7 @@ Now that we have npm installed, we can install the ``bids-validator`` using the 
     $ npm install -g bids-validator@1.7.2
 
 In our example walkthrough, we use ``bids-validator`` v1.7.2. using a different version of the 
-validator may result in slightly different validation CSV printouts, but ``CuBIDS`` is compatible with all 
+validator may result in slightly different validation tsv printouts, but ``CuBIDS`` is compatible with all 
 versions of the validator at or above v1.6.2.
 
 We also recommend using ``CuBIDS`` with the optional ``DatLad`` version control capabilities.

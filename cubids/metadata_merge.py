@@ -9,12 +9,12 @@ from .constants import IMAGING_PARAMS
 DIRECT_IMAGING_PARAMS = IMAGING_PARAMS - set(["NSliceTimes"])
 
 
-def check_merging_operations(action_csv, raise_on_error=False):
-    """Checks that the merges in an action csv are possible.
+def check_merging_operations(action_tsv, raise_on_error=False):
+    """Checks that the merges in an action tsv are possible.
 
     To be mergable the
     """
-    actions = pd.read_csv(action_csv)
+    actions = pd.read_table(action_tsv)
     ok_merges = []
     deletions = []
     overwrite_merges = []
@@ -160,14 +160,14 @@ def merge_json_into_json(from_file, to_file,
     return 0
 
 
-def group_by_acquisition_sets(files_csv, output_prefix, acq_group_level):
+def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     '''Finds unique sets of Key/Param groups across subjects.
     '''
     from bids.layout import parse_file_entities
     from bids import config
     config.set_option('extension_initial_dot', True)
 
-    files_df = pd.read_csv(files_csv)
+    files_df = pd.read_table(files_tsv, )
     acq_groups = defaultdict(list)
     for _, row in files_df.iterrows():
         file_entities = parse_file_entities(row.FilePath)
@@ -210,7 +210,8 @@ def group_by_acquisition_sets(files_csv, output_prefix, acq_group_level):
 
     # Write the mapping of subject/session to
     acq_group_df = pd.DataFrame(grouped_sub_sess)
-    acq_group_df.to_csv(output_prefix + "_AcqGrouping.csv", index=False)
+    acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t",
+                        index=False)
 
     # Write the summary of acq groups to a text file
     with open(output_prefix + "_AcqGroupInfo.txt", "w") as infotxt:
