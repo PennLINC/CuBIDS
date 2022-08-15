@@ -64,13 +64,13 @@ will handle all combinations of scanning parameters in the entire dataset.
 
 .. _summaryfile:
 
-The ``_summary.csv`` File
+The ``_summary.tsv`` File
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This file contains all the detected Key Groups and Parameter Groups. It provides
 an opportunity to evaluate your data and decide how to handle heterogeneity.
 
-Below is an example ``_summary.csv`` of the run-1 DWI Key Group in the PNC [#f1]_. This
+Below is an example ``_summary.tsv`` of the run-1 DWI Key Group in the PNC [#f1]_. This
 reflects the original data that has been converted to BIDS using a heuristic. It is
 similar to what you will see when you first use this functionality:
 
@@ -82,19 +82,19 @@ similar to what you will see when you first use this functionality:
 
 .. _filelistfile:
 
-The ``_files.csv`` file
+The ``_files.tsv`` file
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This file contains one row per imaging file in the BIDS directory. You won't need to edit this file
 directly, but it keeps track of every file's assignment to Key and Parameter Groups.
 
 
-.. _acqgroupcsv:
+.. _acqgrouptsv:
 
-The ``_AcqGrouping.csv`` file
+The ``_AcqGrouping.tsv`` file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``_AcqGrouping.csv`` file organizes the dataset by session and tags each one with its Acquisition Group number.
+The ``_AcqGrouping.tsv`` file organizes the dataset by session and tags each one with its Acquisition Group number.
 
 .. _acqgrouptxt:
 
@@ -113,7 +113,7 @@ Use ``cubids-group`` to generate your dataset's Key Groups and Parameter Groups:
 
     $ cubids-group FULL/PATH/TO/BIDS/DIR FULL/PATH/TO/v0
 
-This will output four files, including the summary and files CSVs described above, 
+This will output four files, including the summary and files tsvs described above, 
 prefixed by the second argument ``v0``.
 
 Appplying changes 
@@ -121,24 +121,24 @@ Appplying changes
 
 The ``cubids-apply`` program provides an easy way for users to manipulate their datasets. 
 Specifically, ``cubids-apply`` can rename files according to the users’ specification in a tracked 
-and organized way. Here, the summary.csv functions as an interface modifications; users can mark 
-``Parameter Groups`` they want to rename (or delete) in a dedicated column of the summary.csv and 
-pass that edited CSV as an argument to ``cubids-apply``.
+and organized way. Here, the summary.tsv functions as an interface modifications; users can mark 
+``Parameter Groups`` they want to rename (or delete) in a dedicated column of the summary.tsv and 
+pass that edited tsv as an argument to ``cubids-apply``.
 
 Detecting Variant Groups
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Additionally, cubids-apply can automatically rename files in ``Variant Groups`` based on their 
 scanning parameters that vary from those in their Key Groups’ Dominant Parameter Groups. Renaming 
-is automatically suggested when the summary.csv is generated from a cubids-group run, with the suggested 
-new name listed in the CSV’s “Rename Key Group” column. CuBIDS populates this column for all Variant 
+is automatically suggested when the summary.tsv is generated from a cubids-group run, with the suggested 
+new name listed in the tsv’s “Rename Key Group” column. CuBIDS populates this column for all Variant 
 Groups—e.g., every Parameter Group except the Dominant one. Specifically, CuBIDS will suggest renaming 
 all non-dominant Parameter Group to include VARIANT* in their acquisition field where * is the reason 
 the Parameter Group varies from the Dominant Group. For example, when CuBIDS encounters a Parameter 
 Group with a repetition time that varies from the one present in the Dominant Group, it will automatically 
 suggest renaming all scans in that Variant Group to include ``acquisition-VARIANTRepetitionTime`` in thier 
 filenames. When the user runs ``cubids-apply``, filenames will get renamed according to the auto-generated 
-names in the “Rename Key Group” column in the summary.csv
+names in the “Rename Key Group” column in the summary.tsv
 
 Deleting a mistake
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -147,7 +147,7 @@ To remove files in a Parameter Group from your BIDS data, you simply set the ``M
 to ``0``. We see in our data that there is a strange scan that has a ``RepetitionTime`` of 12.3
 seconds and is also variant with respect to EffectiveEchoSpacing and EchoTime. We elect to remove this scan from 
 our dataset becasuse we do not want these parameters to affect our analyses.
-To remove these files from your BIDS data, add a ``0`` to ``MergeInto`` and save the new CSV as ``v0_edited_summary.csv``
+To remove these files from your BIDS data, add a ``0`` to ``MergeInto`` and save the new tsv as ``v0_edited_summary.tsv``
 
 .. csv-table:: Pre Apply Groupings with Deletion Requested
     :file: _static/PNC_pre_apply_summary_dwi_run1_deletion.csv
@@ -158,10 +158,10 @@ In this example, users can apply the changes to BIDS data using the following co
 
 .. code-block:: console
 
-    $ cubids-apply FULL/PATH/TO/BIDS/DIR FULL/PATH/TO/v0_edited_summary.csv FULL/PATH/TO/v0_files.csv FULL/PATH/TO/v1
+    $ cubids-apply FULL/PATH/TO/BIDS/DIR FULL/PATH/TO/v0_edited_summary.tsv FULL/PATH/TO/v0_files.tsv FULL/PATH/TO/v1
 
-The changes in ``v0_edited_summary.csv`` will be applied to the BIDS data
-and the new Key and Parameter Groups will be saved to csv files starting with ``v1``.
+The changes in ``v0_edited_summary.tsv`` will be applied to the BIDS data
+and the new Key and Parameter Groups will be saved to tsv files starting with ``v1``.
 
 Applying these changes we would see:
 

@@ -40,7 +40,11 @@ def cubids_validate():
                         type=Path,
                         action='store',
                         help='file prefix to which tabulated validator output '
-                        'is written.')
+                        'is written. If users pass in just a filename prefix '
+                        'e.g. V1, then CuBIDS will put the validation '
+                        'output in bids_dir/code/CuBIDS. If the user '
+                        'specifies a path (e.g. /Users/scovitz/BIDS/V1) '
+                        'then output files will go to the specified location.')
     parser.add_argument('--sequential',
                         action='store_true',
                         default=False,
@@ -73,6 +77,17 @@ def cubids_validate():
                         required=False)
     opts = parser.parse_args()
 
+    # check status of output_prefix, absolute or relative?
+    abs_path_output = True
+    if '/' not in str(opts.output_prefix):
+        # not an absolute path --> put in code/CuBIDS dir
+        abs_path_output = False
+        # check if code/CuBIDS dir exists
+        if not Path(str(opts.bids_dir) + '/code/CuBIDS').is_dir():
+            # if not, create it
+            subprocess.run(['mkdir', str(opts.bids_dir) + '/code'])
+            subprocess.run(['mkdir', str(opts.bids_dir) + '/code/CuBIDS/'])
+
     # Run directly from python using subprocess
     if opts.container is None:
 
@@ -93,10 +108,18 @@ def cubids_validate():
                 logger.info("BIDS issues/warnings found in the dataset")
 
                 if opts.output_prefix:
-                    # normally, write dataframe to file in CLI
-                    val_csv = str(opts.output_prefix) + "_validation.csv"
-                    parsed.to_csv(val_csv, index=False)
-                    logger.info("Writing issues out to %s", val_csv)
+                    # check if absolute or relative path
+                    if abs_path_output:
+                        # normally, write dataframe to file in CLI
+                        val_tsv = str(opts.output_prefix) + "_validation.tsv"
+                    else:
+                        val_tsv = str(opts.bids_dir) \
+                                  + '/code/CuBIDS/' \
+                                  + str(opts.output_prefix) \
+                                  + "_validation.tsv"
+
+                    parsed.to_csv(val_tsv, sep="\t", index=False)
+                    logger.info("Writing issues out to %s", val_tsv)
                     sys.exit(0)
                 else:
                     # user may be in python session, return dataframe
@@ -175,9 +198,16 @@ def cubids_validate():
 
                 if opts.output_prefix:
                     # normally, write dataframe to file in CLI
-                    val_csv = str(opts.output_prefix) + "_validation.csv"
-                    parsed.to_csv(val_csv, index=False)
-                    logger.info("Writing issues out to file %s", val_csv)
+                    if abs_path_output:
+                        val_tsv = str(opts.output_prefix) + "_validation.tsv"
+                    else:
+                        val_tsv = str(opts.bids_dir) \
+                                  + '/code/CuBIDS/' \
+                                  + str(opts.output_prefix) \
+                                  + "_validation.tsv"
+
+                    parsed.to_csv(val_tsv, sep="\t", index=False)
+                    logger.info("Writing issues out to file %s", val_tsv)
                     sys.exit(0)
                 else:
                     # user may be in python session, return dataframe
@@ -186,8 +216,8 @@ def cubids_validate():
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
-    output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/csv:rw"
-    linked_output_prefix = "/csv/" + opts.output_prefix.name
+    output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/tsv:rw"
+    linked_output_prefix = "/tsv/" + opts.output_prefix.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
@@ -248,8 +278,13 @@ def cubids_group():
     parser.add_argument('output_prefix',
                         type=Path,
                         action='store',
-                        help='file prefix to which a _summary.csv, _files.csv '
-                        'and _group.csv are written.')
+                        help='file prefix to which a _summary.tsv, _files.tsv '
+                        '_AcqGrouping.tsv, and _AcqGroupInfo.txt, are '
+                        'written. If users pass in just a filename prefix '
+                        'e.g. V1, then CuBIDS will put the four grouping '
+                        'outputs in bids_dir/code/CuBIDS. If the user '
+                        'specifies a path (e.g. /Users/scovitz/BIDS/V1 '
+                        'then output files will go to the specified location.')
     parser.add_argument('--container',
                         action='store',
                         help='Docker image tag or Singularity image file.')
@@ -269,13 +304,13 @@ def cubids_group():
         bod = CuBIDS(data_root=str(opts.bids_dir),
                      acq_group_level=opts.acq_group_level,
                      grouping_config=opts.config)
-        bod.get_CSVs(str(opts.output_prefix),)
+        bod.get_TSVs(str(opts.output_prefix),)
         sys.exit(0)
 
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
-    output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/csv:rw"
+    output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/tsv:rw"
 
     apply_config = opts.config is not None
     if apply_config:
@@ -283,7 +318,7 @@ def cubids_group():
             opts.config.parent.absolute()) + ":/in_config:ro"
         linked_input_config = "/in_config/" + opts.config.name
 
-    linked_output_prefix = "/csv/" + opts.output_prefix.name
+    linked_output_prefix = "/tsv/" + opts.output_prefix.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
@@ -316,10 +351,10 @@ def cubids_group():
 
 
 def cubids_apply():
-    ''' Command Line Interface funciton for applying the csv changes.'''
+    ''' Command Line Interface funciton for applying the tsv changes.'''
 
     parser = argparse.ArgumentParser(
-        description="cubids-apply: apply the changes specified in a csv "
+        description="cubids-apply: apply the changes specified in a tsv "
         "to a BIDS directory",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('bids_dir',
@@ -327,21 +362,31 @@ def cubids_apply():
                         action='store',
                         help='the root of a BIDS dataset. It should contain '
                         'sub-X directories and dataset_description.json')
-    parser.add_argument('edited_summary_csv',
+    parser.add_argument('edited_summary_tsv',
                         type=Path,
                         action='store',
-                        help='the _summary.csv that has been edited in the '
-                        'MergeInto and RenameKeyGroup columns.')
-    parser.add_argument('files_csv',
+                        help='path to the _summary.tsv that has been edited '
+                        'in the MergeInto and RenameKeyGroup columns. If the '
+                        ' summary table is located in the code/CuBIDS '
+                        'directory, then users can just pass the summary tsv '
+                        'filename instead of the full path to the tsv')
+    parser.add_argument('files_tsv',
                         type=Path,
                         action='store',
-                        help='the _files.csv that the _summary.csv '
-                        'corresponds to.')
-    parser.add_argument('new_csv_prefix',
+                        help='path to the _files.tsv that has been edited '
+                        'in the MergeInto and RenameKeyGroup columns. If the '
+                        ' files table is located in the code/CuBIDS '
+                        'directory, then users can just pass the files tsv '
+                        'filename instead of the full path to the tsv')
+    parser.add_argument('new_tsv_prefix',
                         type=Path,
                         action='store',
-                        help='file prefix for writing the new _summary.csv, '
-                        '_files.csv and _group.csv that have been edited.')
+                        help='file prefix for writing the post-apply grouping '
+                        'outputs. If users pass in just a filename prefix '
+                        'e.g. V2, then CuBIDS will put the four grouping '
+                        'outputs in bids_dir/code/CuBIDS. If the user '
+                        'specifies a path (e.g. /Users/scovitz/BIDS/V2 '
+                        'then output files will go to the specified location.')
     parser.add_argument('--use-datalad',
                         action='store_true',
                         help='ensure that there are no untracked changes '
@@ -369,21 +414,21 @@ def cubids_apply():
         if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.apply_csv_changes(str(opts.edited_summary_csv),
-                              str(opts.files_csv),
-                              str(opts.new_csv_prefix),
+        bod.apply_tsv_changes(str(opts.edited_summary_tsv),
+                              str(opts.files_tsv),
+                              str(opts.new_tsv_prefix),
                               raise_on_error=False)
         sys.exit(0)
 
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids"
-    input_summary_csv_dir_link = str(
-        opts.edited_csv_prefix.parent.absolute()) + ":/in_summary_csv:ro"
-    input_files_csv_dir_link = str(
-        opts.edited_csv_prefix.parent.absolute()) + ":/in_files_csv:ro"
-    output_csv_dir_link = str(
-        opts.new_csv_prefix.parent.absolute()) + ":/out_csv:rw"
+    input_summary_tsv_dir_link = str(
+        opts.edited_tsv_prefix.parent.absolute()) + ":/in_summary_tsv:ro"
+    input_files_tsv_dir_link = str(
+        opts.edited_tsv_prefix.parent.absolute()) + ":/in_files_tsv:ro"
+    output_tsv_dir_link = str(
+        opts.new_tsv_prefix.parent.absolute()) + ":/out_tsv:rw"
 
     # FROM BOND-GROUP
     apply_config = opts.config is not None
@@ -392,24 +437,24 @@ def cubids_apply():
             opts.config.parent.absolute()) + ":/in_config:ro"
         linked_input_config = "/in_config/" + opts.config.name
 
-    linked_output_prefix = "/csv/" + opts.output_prefix.name
+    linked_output_prefix = "/tsv/" + opts.output_prefix.name
 
     ####
 
-    linked_input_summary_csv = "/in_summary_csv/" \
-        + opts.edited_summary_csv.name
-    linked_input_files_csv = "/in_files_csv/" + opts.files_csv.name
-    linked_output_prefix = "/out_csv/" + opts.new_csv_prefix.name
+    linked_input_summary_tsv = "/in_summary_tsv/" \
+        + opts.edited_summary_tsv.name
+    linked_input_files_tsv = "/in_files_tsv/" + opts.files_tsv.name
+    linked_output_prefix = "/out_tsv/" + opts.new_tsv_prefix.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm',
                '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', input_summary_csv_dir_link,
-               '-v', input_files_csv_dir_link,
-               '-v', output_csv_dir_link,
+               '-v', input_summary_tsv_dir_link,
+               '-v', input_files_tsv_dir_link,
+               '-v', output_tsv_dir_link,
                '--entrypoint', 'cubids-apply',
-               opts.container, '/bids', linked_input_summary_csv,
-               linked_input_files_csv, linked_output_prefix]
+               opts.container, '/bids', linked_input_summary_tsv,
+               linked_input_files_tsv, linked_output_prefix]
         if apply_config:
             cmd.insert(3, '-v')
             cmd.insert(4, input_config_dir_link)
@@ -418,12 +463,12 @@ def cubids_apply():
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               '-B', input_summary_csv_dir_link,
-               '-B', input_files_csv_dir_link,
-               '-B', output_csv_dir_link,
+               '-B', input_summary_tsv_dir_link,
+               '-B', input_files_tsv_dir_link,
+               '-B', output_tsv_dir_link,
                opts.container, 'cubids-apply',
-               '/bids', linked_input_summary_csv,
-               linked_input_files_csv, linked_output_prefix]
+               '/bids', linked_input_summary_tsv,
+               linked_input_files_tsv, linked_output_prefix]
         if apply_config:
             cmd.insert(3, '-B')
             cmd.insert(4, input_config_dir_link)
@@ -534,7 +579,7 @@ def cubids_copy_exemplars():
     parser.add_argument('bids_dir',
                         type=Path,
                         action='store',
-                        help='absolute path to the root of a BIDS dataset. '
+                        help='path to the root of a BIDS dataset. '
                         'It should contain sub-X directories and '
                         'dataset_description.json.')
     parser.add_argument('exemplars_dir',
@@ -544,12 +589,12 @@ def cubids_copy_exemplars():
                         'containing one subject from each Acquisition Group. '
                         'It should contain sub-X directories and '
                         'dataset_description.json.')
-    parser.add_argument('exemplars_csv',
+    parser.add_argument('exemplars_tsv',
                         type=Path,
                         action='store',
-                        help='absolute path to the .csv file that lists one '
+                        help='absolute path to the .tsv file that lists one '
                         'subject from each Acqusition Group '
-                        '(*_AcqGrouping.csv from the cubids-group output)')
+                        '(*_AcqGrouping.tsv from the cubids-group output)')
     parser.add_argument('--use-datalad',
                         action='store_true',
                         help='check exemplar dataset into DataLad')
@@ -581,7 +626,7 @@ def cubids_copy_exemplars():
                 raise Exception("Untracked changes. Need to save "
                                 + str(opts.bids_dir) +
                                 " before coyping exemplars")
-        bod.copy_exemplars(str(opts.exemplars_dir), str(opts.exemplars_csv),
+        bod.copy_exemplars(str(opts.exemplars_dir), str(opts.exemplars_tsv),
                            min_group_size=opts.min_group_size,
                            raise_on_error=True)
         sys.exit(0)
@@ -590,14 +635,14 @@ def cubids_copy_exemplars():
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
     exemplars_dir_link = str(opts.exemplars_dir.absolute()) + ":/exemplars:ro"
-    exemplars_csv_link = str(opts.exemplars_csv.absolute()) + ":/in_csv:ro"
+    exemplars_tsv_link = str(opts.exemplars_tsv.absolute()) + ":/in_tsv:ro"
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', exemplars_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', exemplars_csv_link, '--entrypoint',
+               '-v', exemplars_tsv_link, '--entrypoint',
                'cubids-copy-exemplars',
-               opts.container, '/bids', '/exemplars', '/in_csv']
+               opts.container, '/bids', '/exemplars', '/in_tsv']
 
         if opts.force_unlock:
             cmd.append('--force-unlock')
@@ -607,9 +652,9 @@ def cubids_copy_exemplars():
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                '-B', exemplars_dir_link,
-               '-B', exemplars_csv_link, opts.container,
+               '-B', exemplars_tsv_link, opts.container,
                'cubids-copy-exemplars',
-               '/bids', '/exemplars', '/in_csv']
+               '/bids', '/exemplars', '/in_tsv']
         if opts.force_unlock:
             cmd.append('--force-unlock')
         if opts.min_group_size:
@@ -691,13 +736,13 @@ def cubids_purge():
     parser.add_argument('bids_dir',
                         type=Path,
                         action='store',
-                        help='absolute path to the root of a BIDS dataset. '
+                        help='path to the root of a BIDS dataset. '
                         'It should contain sub-X directories and '
                         'dataset_description.json.')
     parser.add_argument('scans',
                         type=Path,
                         action='store',
-                        help='absolute path to the txt file of scans whose '
+                        help='path to the txt file of scans whose '
                         'associations should be purged.')
     parser.add_argument('--use-datalad',
                         action='store_true',

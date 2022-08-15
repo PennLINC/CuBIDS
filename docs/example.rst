@@ -12,7 +12,7 @@ Following the installation instructions at :doc:`the installation page <installa
 you should have successfully installed ``CuBIDS``, ``DataLad``, and the ``bids-validator`` inside a
 conda environment titled "cubids". In this example, we use validator version ``1.7.2``.
 Using a different version of the validator may result in slightly different validation
-CSV outputs, but the example should still be useful. 
+tsv outputs, but the example should still be useful. 
 
 Throughout this example, we use ``DataLad`` for version control. Although ``DataLad``
 is an optional dependency of ``CuBIDS``, we use it here to demonstrate its
@@ -175,9 +175,9 @@ to detect potential curation errors using ``cubids-validate``.
 
 .. note::  The use of the ``--sequential`` flag forces the validator to treat each participant as its own BIDS dataset. This can be helpful for identifying heterogenous elements, but can be slowed down by extremely large datasets.
 
-This command produces the following CSV: 
+This command produces the following tsv: 
 
-.. csv-table:: v0_validation.csv
+.. csv-table:: v0_validation.tsv
    :file: _static/v0_validation.csv
    :widths: 10, 10, 10, 10, 10, 40, 10
    :header-rows: 1
@@ -217,7 +217,7 @@ also safely deleted. ``CuBIDS`` will reflect these deletions in the
 .. image:: _static/screenshot_5.png
 
 
-Returning again to ``v0_validation.csv``, we can also see that there is one DWI scan missing 
+Returning again to ``v0_validation.tsv``, we can also see that there is one DWI scan missing 
 TotalReadoutTime, a metadata field necessary for 
 `fieldmap correction <nipreps.org/sdcflows/master/index.html>`_.
 After conferring with our MR physicist and the scanner technician, we determine 
@@ -249,7 +249,7 @@ To verify that there are no remaining validation errors, we rerun validation wit
 
     $ cubids-validate BIDS_Dataset_DataLad v1 --sequential
 
-This command should produce no CSV output, and instead print “No issues/warnings parsed, your dataset is 
+This command should produce no tsv output, and instead print “No issues/warnings parsed, your dataset is 
 BIDS valid” to the terminal, which indicates that the dataset is now free from BIDS validation errors 
 and warnings.
 
@@ -276,43 +276,43 @@ full paths to both the BIDS Dataset and the output prefix. The command to run th
 This command will produce four tables that describe the dataset's
 heterogeneity in different ways.
 
-#. ``v0_summary.csv`` contains all detected Key and Parameter groups and provides a high-level overview of the heterogeneity in the entire dataset.
-#. ``v0_files.csv`` maps each imaging file in the BIDS directory to a Key and Parameter group.
-#. ``v0_AcqGrouping.csv`` maps each session in the dataset to an Acquisition Group.
+#. ``v0_summary.tsv`` contains all detected Key and Parameter groups and provides a high-level overview of the heterogeneity in the entire dataset.
+#. ``v0_files.tsv`` maps each imaging file in the BIDS directory to a Key and Parameter group.
+#. ``v0_AcqGrouping.tsv`` maps each session in the dataset to an Acquisition Group.
 #. ``v0_AcqGroupInfo.txt`` lists the set of scanning parameters present in each Acquisition Group.
 
-By first examining ``v0_summary.csv`` users are given he opportunity to
+By first examining ``v0_summary.tsv`` users are given he opportunity to
 conduct metadata quality assurance (QA). The file can help identify
 instances of incomplete, incorrect, or unusable parameter groups,
 based on acquisition fields such as dimension and voxel sizes, number of volumes, obliquity, and more. 
 
-While ``v0_validation.csv`` identified all the BIDS validation errors 
+While ``v0_validation.tsv`` identified all the BIDS validation errors 
 present in the dataset, it did not identify any potential issues that
 might be present within the sidecars' metadata. Below, we see insances of missing
 metadata fields in a handful of sidecars, which may impact successful execution of BIDS Apps. 
 
-.. csv-table:: v0_summary.csv
+.. csv-table:: v0_summary.tsv
    :file: _static/v0_summary.csv
    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
    :header-rows: 1
 
-Examining ``v0_summary.csv`` we can see that one DWI Parameter Group — ``acquisition-HASC55AP_datatype-dwi_suffix-dwi__2`` — contains
+Examining ``v0_summary.tsv`` we can see that one DWI Parameter Group — ``acquisition-HASC55AP_datatype-dwi_suffix-dwi__2`` — contains
 only one scan (see "Counts" column) with only 10 volumes (see 
 "NumVolumes" column). Since the majority of DWI scans in this dataset 
 have 61 volumes, ``CuBIDS`` assigns this single scan to a "Variant"
 (i.e. non-dominant) Parameter Group, and automatically populates
-that Parameter Group's "RenameKeyGroup" column in ``v0_summary.csv``
+that Parameter Group's "RenameKeyGroup" column in ``v0_summary.tsv``
 with a suggested name: ``acquisition-HASC55APVARIANTNumVolumes_datatype-dwi_suffix-dwi``.
 This time, though, we elect to remove this scan because it does not have enough volumes to be usable for most analyses. 
 To do this, we can either use ``cubids-purge`` again, *or* we could
-edit v0_summary.csv by adding ``0`` to the ``MergeInto`` column
+edit v0_summary.tsv by adding ``0`` to the ``MergeInto`` column
 in the row (Parameter Group) we want to remove. This will ensure all
 scans in that Parameter Group (in this example, just one scan) are removed. 
 
-Make this change and save this edited version of ``v0_summary.csv`` as ``v0_edited_summary.csv``, which will be passed to ``cubids-apply`` in our next 
+Make this change and save this edited version of ``v0_summary.tsv`` as ``v0_edited_summary.tsv``, which will be passed to ``cubids-apply`` in our next 
 curation step. 
 
-.. csv-table:: v0_edited_summary.csv
+.. csv-table:: v0_edited_summary.tsv
    :file: _static/v0_edited_summary.csv
    :widths: 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
    :header-rows: 1
@@ -322,23 +322,23 @@ Applying changes
 
 Now that all metadata issues have been addressed — both validation and
 ``CuBIDS`` summary — we are ready to rename our files based on their
-RenameKeyGroup values and apply the requested deletion in ``v0_edited_summary.csv``. The ``cubids-apply`` 
+RenameKeyGroup values and apply the requested deletion in ``v0_edited_summary.tsv``. The ``cubids-apply`` 
 function renames scans in each Variant Parameter Group according to the metadata parameters with a flag “VARIANT”, which is useful 
 because the user will then be able to see, in each scan’s filename, which metadata parameters associated with that scan vary from 
 those in the acquisition’s Dominant Group. Note that like in cubids-group, cubids-apply requires full paths 
-to the BIDS Dataset, summary and files CSVs, and output prefix. We execute cubids-apply with the following 
+to the BIDS Dataset, summary and files tsvs, and output prefix. We execute cubids-apply with the following 
 command:
 
 .. code-block:: console
 
-    $ cubids-apply $PWD/BIDS_Dataset_DataLad $PWD/v0_edited_summary.csv $PWD/v0_files.csv $PWD/v1 --use-datalad
+    $ cubids-apply $PWD/BIDS_Dataset_DataLad $PWD/v0_edited_summary.tsv $PWD/v0_files.tsv $PWD/v1 --use-datalad
 
 
 Checking our git log, we can see that our changes from apply have been saved.
 
 .. image:: _static/screenshot_7.png
 
-We can check the four grouping CSVs ``cubids-apply`` produces (``v1_*``) to ensure they look as 
+We can check the four grouping tsvs ``cubids-apply`` produces (``v1_*``) to ensure they look as 
 expected — that all files with variant scanning parameters have been renamed to indicate the parameters 
 that vary in the acquisition fields of their filenames.
 
@@ -356,12 +356,12 @@ pinpoint specific metadata values and scans that may trigger
 pipeline failures. These acquisition groups could then be evaluated in
 more detail and flagged for remediation or exclusion. The *Exemplar 
 Dataset* can easily be created with the ``cubids-copy-exemplars``
-command, to which we pass in ``v2_AcqGrouping.csv`` as input
-(the post ``cubids-apply`` acquisition grouping CSV).
+command, to which we pass in ``v2_AcqGrouping.tsv`` as input
+(the post ``cubids-apply`` acquisition grouping tsv).
 
 .. code-block:: console
 
-    $ cubids-copy-exemplars BIDS_Dataset_DataLad Exemplar_Dataset v1_AcqGrouping.csv --use-datalad
+    $ cubids-copy-exemplars BIDS_Dataset_DataLad Exemplar_Dataset v1_AcqGrouping.tsv --use-datalad
 
 Since we used the ``use-datalad`` flag, ``Exemplar_Dataset`` is a DataLad dataset with the version history 
 tracked in its git log (see below): 
