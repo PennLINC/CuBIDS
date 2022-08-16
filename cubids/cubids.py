@@ -13,7 +13,6 @@ from bids.utils import listify
 import numpy as np
 import pandas as pd
 import nibabel as nb
-import re
 import datalad.api as dlapi
 import pdb
 from shutil import copytree, copyfile
@@ -60,9 +59,8 @@ class CuBIDS(object):
         return self._layout
 
     def reset_bids_layout(self, validate=False):
-        # create BIDS Layout Indexer class 
-        indexer = bids.BIDSLayoutIndexer(validate=validate,
-                                         ignore="*/\.*") 
+        # create BIDS Layout Indexer class
+        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore="*/.*")
 
         self._layout = bids.BIDSLayout(self.path,
                                        validate=validate,
