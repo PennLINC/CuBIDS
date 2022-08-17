@@ -328,7 +328,7 @@ Now that all metadata issues have been addressed — both validation and
 RenameKeyGroup values and apply the requested deletion in ``v0_edited_summary.tsv``. The ``cubids-apply`` 
 function renames scans in each Variant Parameter Group according to the metadata parameters with a flag “VARIANT”, which is useful 
 because the user will then be able to see, in each scan’s filename, which metadata parameters associated with that scan vary from 
-those in the acquisition’s Dominant Group. If the edited summary and files csvs are located in
+those in the acquisition’s Dominant Group. If the edited summary and files tsvs are located in
 the ``bids_dir/code/CuBIDS`` directory, the user may just pass in those filenames. 
 Otherwise, specifying the path to those files is ncessary.
 We can execute cubids-apply with the following command:
