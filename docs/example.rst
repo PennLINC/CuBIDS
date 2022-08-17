@@ -266,12 +266,15 @@ in parallel, as validation errors are better understood within the context of a 
 both metadata errors (such as missing or incorrectly specified
 sidecar parameters) that grouping reveals alongside BIDS errors that
 the validator catches, gives users a more comprehensive view of
-the issues they will need to fix during the curation process. Note that ``cubids-group`` requires 
-full paths to both the BIDS Dataset and the output prefix. The command to run the grouping function as follows:
+the issues they will need to fix during the curation process. Note that if users
+choose to provide just a pass in just a filename prefix (e.g. V1) for the second argument, 
+then CuBIDS will put the four grouping outputs in ``bids_dir/code/CuBIDS``. If users 
+provide a path (e.g. ``/Users/scovitz/BIDS/V1``), then output files will go to the 
+specified location. An example command for running the grouping function as follows:
 
 .. code-block:: console
 
-    $ cubids-group $PWD/BIDS_Dataset_DataLad $PWD/v0
+    $ cubids-group BIDS_Dataset_DataLad v0
 
 This command will produce four tables that describe the dataset's
 heterogeneity in different ways.
@@ -325,13 +328,14 @@ Now that all metadata issues have been addressed — both validation and
 RenameKeyGroup values and apply the requested deletion in ``v0_edited_summary.tsv``. The ``cubids-apply`` 
 function renames scans in each Variant Parameter Group according to the metadata parameters with a flag “VARIANT”, which is useful 
 because the user will then be able to see, in each scan’s filename, which metadata parameters associated with that scan vary from 
-those in the acquisition’s Dominant Group. Note that like in cubids-group, cubids-apply requires full paths 
-to the BIDS Dataset, summary and files tsvs, and output prefix. We execute cubids-apply with the following 
-command:
+those in the acquisition’s Dominant Group. If the edited summary and files csvs are located in
+the ``bids_dir/code/CuBIDS`` directory, the user may just pass in those filenames. 
+Otherwise, specifying the path to those files is ncessary.
+We can execute cubids-apply with the following command:
 
 .. code-block:: console
 
-    $ cubids-apply $PWD/BIDS_Dataset_DataLad $PWD/v0_edited_summary.tsv $PWD/v0_files.tsv $PWD/v1 --use-datalad
+    $ cubids-apply BIDS_Dataset_DataLad v0_edited_summary.tsv v0_files.tsv v1 --use-datalad
 
 
 Checking our git log, we can see that our changes from apply have been saved.
