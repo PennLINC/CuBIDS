@@ -53,7 +53,7 @@ Acquisition Group
 
 We define an “Acquisition Group” as a collection of sessions across participants that contain the exact 
 same set of Key and Parameter Groups. Since Key Groups are based on the BIDS filenames—and therefore both 
-modality and acquisition specific—each BIDS session directory contains images that belong to a set of 
+MRI image type and acquisition specific—each BIDS session directory contains images that belong to a set of 
 Parameter Groups. CuBIDS assigns each session––or set of Parameter Groups––to an Acquisition Group 
 such that all sessions in an Acquisition Group possesses an identical set of scan acquisitions and 
 metadata parameters across all image modalities present in the dataset. We find Acquisition Groups to be 
@@ -191,10 +191,10 @@ of ``CuBIDS`` command line tools:
 
 Customizable configuration
 ---------------------------
-``CuBIDS`` also features an optional, customizable, modality-specific configuration file. 
+``CuBIDS`` also features an optional, customizable, MRI image type-specific configuration file. 
 This file can be passed as an argument to cubids-group and cubids-apply using the ``–-config`` flag 
-and allows users to customize grouping settings based on modality and parameter. Each ``Key Group`` 
-is associated with one (and only one) modality, as BIDS filenames include modality-specific values 
+and allows users to customize grouping settings based on MRI image type and parameter. Each ``Key Group`` 
+is associated with one (and only one) MRI image type, as BIDS filenames include MRI image type-specific values 
 as their suffixes. This easy-to-modify configuration file provides several benefits to curation. 
 First, it allows users to add and remove metadata parameters from the set that determines groupings. 
 This can be very useful if a user deems a specific metadata parameter irrelevant and wishes to collapse 
