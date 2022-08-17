@@ -804,6 +804,44 @@ class CuBIDS(object):
         tup_ret = tuple(l_ret)
         return tup_ret
 
+    def get_data_dictionary(self, name, df):
+        """Creates a BIDS data dictionary from dataframe columns 
+
+        Parameters:
+        -----------
+
+            name: str
+                Data dictionary name (should be identical to filename of TSV) 
+
+            df: Pandas DataFrame
+                Pre export TSV that will be converted to a json dictioanry 
+
+        Returns:
+        -----------
+
+            data_dict: dictionary 
+                Python dictionary in BIDS data dictionary format
+        """
+       
+        # Build column dictionary 
+        col_list = df.columns.values.tolist()
+        col_dict = {}
+        for col in range(len(col_list)):
+            col_dict[col + 1] = col_list[col]
+
+        header_dict = {}
+        # build header dictionary 
+        header_dict['Long Description'] = name 
+        header_dict['Description'] = 'https://cubids.readthedocs.io/en/latest/usage.html'
+        header_dict['Version'] = 'CuBIDS v1.0.5'
+        header_dict['Levels'] = col_dict 
+
+        # Build top level dictionary
+        data_dict = {}
+        data_dict[name] = header_dict 
+
+        return data_dict
+
     def get_param_groups_dataframes(self):
         '''Creates DataFrames of files x param groups and a summary'''
 
@@ -992,6 +1030,17 @@ class CuBIDS(object):
                                       ascending=[True, False])
         big_df = big_df.sort_values(by=['Modality', 'KeyGroupCount'],
                                     ascending=[True, False])
+        
+        # Create json dictionaries for summary and files tsvs
+        files_dict = self.get_data_dictionary('Files TSV', big_df)
+        summary_dict = self.get_data_dictionary('Summary TSV', summary)
+
+        # Save data dictionaires as JSONs   
+        with open(path_prefix + "_files.json", "w") as outfile:
+            json.dump(files_dict, outfile)
+        
+        with open(path_prefix + "_summary.json", "w") as outfile:
+            json.dump(files_dict, outfile)
 
         big_df.to_csv(path_prefix + "_files.tsv", sep="\t", index=False)
 

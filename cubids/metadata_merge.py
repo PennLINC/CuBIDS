@@ -159,6 +159,45 @@ def merge_json_into_json(from_file, to_file,
 
     return 0
 
+def get_data_dictionary(name, df):
+        """Creates a BIDS data dictionary from dataframe columns 
+
+        Parameters:
+        -----------
+
+            name: str
+                Data dictionary name (should be identical to filename of TSV) 
+
+            df: Pandas DataFrame
+                Pre export TSV that will be converted to a json dictioanry 
+
+        Returns:
+        -----------
+
+            data_dict: dictionary 
+                Python dictionary in BIDS data dictionary format
+        """
+       
+        # Build column dictionary 
+        col_list = df.columns.values.tolist()
+        col_dict = {}
+        for col in range(len(col_list)):
+            col_dict[col + 1] = col_list[col]
+
+        header_dict = {}
+        # build header dictionary 
+        header_dict['Long Description'] = name 
+        header_dict['Description'] = 'https://cubids.readthedocs.io/en/latest/usage.html'
+        header_dict['Version'] = 'CuBIDS v1.0.5'
+        header_dict['Levels'] = col_dict 
+
+        # Build top level dictionary
+        data_dict = {}
+        data_dict[name] = header_dict 
+
+        return data_dict
+
+
 
 def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     '''Finds unique sets of Key/Param groups across subjects.
@@ -213,7 +252,24 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t",
                         index=False)
 
+    # Create data dictionary for acq group tsv
+    acq_dict = get_data_dictionary('Acq Group TSV', acq_group_df)
+    with open(output_prefix + "_AcqGrouping.json", "w") as outfile:
+            json.dump(acq_dict, outfile)
+
     # Write the summary of acq groups to a text file
     with open(output_prefix + "_AcqGroupInfo.txt", "w") as infotxt:
         infotxt.write(
             "\n".join([" ".join(map(str, line)) for line in acq_group_info]))
+
+    # Create and save AcqGroupInfo data dictionary
+    header_dict = {}
+    header_dict['Long Description'] = 'Acquisition Group Info'
+    header_dict['Description'] = 'https://cubids.readthedocs.io/en/latest/usage.html'
+    header_dict['Version'] = 'CuBIDS v1.0.5'
+
+    acq_info_dict = {}
+    acq_info_dict['AcqGroupInfo.txt Data Dictionary'] = header_dict
+
+    with open(output_prefix + "_AcqGroupInfo.json", "w") as outfile:
+            json.dump(acq_info_dict, outfile)
