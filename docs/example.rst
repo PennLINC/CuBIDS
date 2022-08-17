@@ -330,7 +330,7 @@ function renames scans in each Variant Parameter Group according to the metadata
 because the user will then be able to see, in each scan’s filename, which metadata parameters associated with that scan vary from 
 those in the acquisition’s Dominant Group. If the edited summary and files tsvs are located in
 the ``bids_dir/code/CuBIDS`` directory, the user may just pass in those filenames. 
-Otherwise, specifying the path to those files is ncessary.
+Otherwise, specifying the path to those files is necessary.
 We can execute cubids-apply with the following command:
 
 .. code-block:: console
