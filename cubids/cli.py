@@ -242,7 +242,7 @@ def cubids_validate():
                '-v', output_dir_link_t,
                '-v', output_dir_link_j,
                '--entrypoint', 'cubids-validate', opts.container,
-               '/bids', linked_output_prefix_t, linked_output_prefix_j]
+               '/bids', linked_output_prefix_t]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
         if opts.ignore_subject_consistency:
