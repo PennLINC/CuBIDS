@@ -239,7 +239,7 @@ def cubids_validate():
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', output_dir_link, '--entrypoint', 'cubids-validate',
+               '-v', output_dir_link_t, output_dir_link_j, '--entrypoint', 'cubids-validate',
                opts.container, '/bids', linked_output_prefix_t,
                linked_output_prefix_j]
         if opts.ignore_nifti_headers:
@@ -249,7 +249,7 @@ def cubids_validate():
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               '-B', output_dir_link, opts.container, 'cubids-validate',
+               '-B', output_dir_link_t, output_dir_link_j, opts.container, 'cubids-validate',
                '/bids', linked_output_prefix_t, linked_output_prefix_j]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
