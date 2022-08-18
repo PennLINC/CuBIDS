@@ -233,12 +233,14 @@ def cubids_validate():
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
     output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/tsv:rw"
-    linked_output_prefix = "/tsv/" + opts.output_prefix.name
+    linked_output_prefix_t = "/tsv/" + opts.output_prefix.name
+    linked_output_prefix_j = "/json/" + opts.output_prefix.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
                '-v', output_dir_link, '--entrypoint', 'cubids-validate',
-               opts.container, '/bids', linked_output_prefix]
+               opts.container, '/bids', linked_output_prefix_t,
+               linked_output_prefix_j]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
         if opts.ignore_subject_consistency:
@@ -247,7 +249,7 @@ def cubids_validate():
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
                '-B', output_dir_link, opts.container, 'cubids-validate',
-               '/bids', linked_output_prefix]
+               '/bids', linked_output_prefix_t, linked_output_prefix_j]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
         if opts.ignore_subject_consistency:
