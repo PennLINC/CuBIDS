@@ -160,14 +160,11 @@ def merge_json_into_json(from_file, to_file,
     return 0
 
 
-def get_data_dictionary(name, df):
+def get_acq_dictionary(df):
     """Creates a BIDS data dictionary from dataframe columns
 
     Parameters:
     -----------
-
-        name: str
-            Data dictionary name (should be identical to filename of TSV)
 
         df: Pandas DataFrame
             Pre export TSV that will be converted to a json dictionary
@@ -175,29 +172,17 @@ def get_data_dictionary(name, df):
     Returns:
     -----------
 
-        data_dict: dictionary
+        acq_dict: dictionary
             Python dictionary in BIDS data dictionary format
     """
+    acq_dict = {}
+    acq_dict["subject"] = {"Description": "Participant ID"}
+    acq_dict["session"] = {"Description": "Session ID"}
+    docs = " https://cubids.readthedocs.io/en/latest/about.html#definitions"
+    desc = "Acquisition Group. See Read the Docs for more information"
+    acq_dict["AcqGroup"] = {"Description": desc + docs}
 
-    # Build column dictionary
-    col_list = df.columns.values.tolist()
-    col_dict = {}
-    for col in range(len(col_list)):
-        col_dict[col + 1] = col_list[col]
-
-    header_dict = {}
-    # build header dictionary
-    header_dict['Long Description'] = name
-    description = 'https://cubids.readthedocs.io/en/latest/usage.html'
-    header_dict['Description'] = description
-    header_dict['Version'] = 'CuBIDS v1.0.5'
-    header_dict['Levels'] = col_dict
-
-    # Build top level dictionary
-    data_dict = {}
-    data_dict[name] = header_dict
-
-    return data_dict
+    return acq_dict
 
 
 def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
@@ -254,9 +239,9 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
                         index=False)
 
     # Create data dictionary for acq group tsv
-    acq_dict = get_data_dictionary('Acq Group TSV', acq_group_df)
+    acq_dict = get_acq_dictionary(acq_group_df)
     with open(output_prefix + "_AcqGrouping.json", "w") as outfile:
-        json.dump(acq_dict, outfile)
+        json.dump(acq_dict, outfile, indent=4)
 
     # Write the summary of acq groups to a text file
     with open(output_prefix + "_AcqGroupInfo.txt", "w") as infotxt:
@@ -274,4 +259,4 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     acq_info_dict['AcqGroupInfo.txt Data Dictionary'] = header_dict
 
     with open(output_prefix + "_AcqGroupInfo.json", "w") as outfile:
-        json.dump(acq_info_dict, outfile)
+        json.dump(acq_info_dict, outfile, indent=4)

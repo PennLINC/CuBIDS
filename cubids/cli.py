@@ -9,12 +9,13 @@ import logging
 import tempfile
 import tqdm
 import shutil
+import json
 import pandas as pd
 from cubids import CuBIDS
 from pathlib import Path
 from .validator import (build_validator_call,
                         run_validator, parse_validator_output,
-                        build_subject_paths)
+                        build_subject_paths, get_val_dictionary)
 from .metadata_merge import merge_json_into_json
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -112,6 +113,7 @@ def cubids_validate():
                     if abs_path_output:
                         # normally, write dataframe to file in CLI
                         val_tsv = str(opts.output_prefix) + "_validation.tsv"
+
                     else:
                         val_tsv = str(opts.bids_dir) \
                                   + '/code/CuBIDS/' \
@@ -119,6 +121,13 @@ def cubids_validate():
                                   + "_validation.tsv"
 
                     parsed.to_csv(val_tsv, sep="\t", index=False)
+
+                    # build validation data dictionary json sidecar
+                    val_dict = get_val_dictionary(parsed)
+                    val_json = val_tsv.replace('tsv', 'json')
+                    with open(val_json, "w") as outfile:
+                        json.dump(val_dict, outfile, indent=4)
+
                     logger.info("Writing issues out to %s", val_tsv)
                     sys.exit(0)
                 else:
@@ -207,6 +216,13 @@ def cubids_validate():
                                   + "_validation.tsv"
 
                     parsed.to_csv(val_tsv, sep="\t", index=False)
+
+                    # build validation data dictionary json sidecar
+                    val_dict = get_val_dictionary(parsed)
+                    val_json = val_tsv.replace('tsv', 'json')
+                    with open(val_json, "w") as outfile:
+                        json.dump(val_dict, outfile, indent=4)
+
                     logger.info("Writing issues out to file %s", val_tsv)
                     sys.exit(0)
                 else:

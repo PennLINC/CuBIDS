@@ -122,3 +122,15 @@ def parse_validator_output(output):
         df = pd.concat([df, parsed], ignore_index=True)
 
     return df
+
+
+def get_val_dictionary(df):
+    val_dict = {}
+    val_dict["files"] = {"Description": "File with warning orerror"}
+    val_dict["type"] = {"Description": "BIDS validation warning or error"}
+    val_dict["severity"] = {"Description": "gravity of problem (warning/error"}
+    val_dict["description"] = {"Description": "Description of warning/error"}
+    val_dict["code"] = {"Description": "BIDS validator issue code number"}
+    val_dict["url"] = {"Description": "Link to the issue's neurostars thread"}
+
+    return val_dict
