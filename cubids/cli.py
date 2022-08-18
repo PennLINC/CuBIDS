@@ -232,7 +232,8 @@ def cubids_validate():
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
-    output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/tsv:rw"
+    output_dir_link_t = str(opts.output_prefix.parent.absolute()) + ":/tsv:rw"
+    output_dir_link_j = str(opts.output_prefix.parent.absolute()) + ":/json:rw"
     linked_output_prefix_t = "/tsv/" + opts.output_prefix.name
     linked_output_prefix_j = "/json/" + opts.output_prefix.name
     if container_type == 'docker':
