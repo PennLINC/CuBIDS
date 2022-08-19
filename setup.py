@@ -56,6 +56,6 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     url='https://github.com/pennlinc/cubids',
-    version='1.0.3',
+    version='1.0.5',
     zip_safe=False,
 )

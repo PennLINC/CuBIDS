@@ -160,6 +160,31 @@ def merge_json_into_json(from_file, to_file,
     return 0
 
 
+def get_acq_dictionary(df):
+    """Creates a BIDS data dictionary from dataframe columns
+
+    Parameters:
+    -----------
+
+        df: Pandas DataFrame
+            Pre export TSV that will be converted to a json dictionary
+
+    Returns:
+    -----------
+
+        acq_dict: dictionary
+            Python dictionary in BIDS data dictionary format
+    """
+    acq_dict = {}
+    acq_dict["subject"] = {"Description": "Participant ID"}
+    acq_dict["session"] = {"Description": "Session ID"}
+    docs = " https://cubids.readthedocs.io/en/latest/about.html#definitions"
+    desc = "Acquisition Group. See Read the Docs for more information"
+    acq_dict["AcqGroup"] = {"Description": desc + docs}
+
+    return acq_dict
+
+
 def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     '''Finds unique sets of Key/Param groups across subjects.
     '''
@@ -213,7 +238,25 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t",
                         index=False)
 
+    # Create data dictionary for acq group tsv
+    acq_dict = get_acq_dictionary(acq_group_df)
+    with open(output_prefix + "_AcqGrouping.json", "w") as outfile:
+        json.dump(acq_dict, outfile, indent=4)
+
     # Write the summary of acq groups to a text file
     with open(output_prefix + "_AcqGroupInfo.txt", "w") as infotxt:
         infotxt.write(
             "\n".join([" ".join(map(str, line)) for line in acq_group_info]))
+
+    # Create and save AcqGroupInfo data dictionary
+    header_dict = {}
+    header_dict['Long Description'] = 'Acquisition Group Info'
+    description = 'https://cubids.readthedocs.io/en/latest/usage.html'
+    header_dict['Description'] = description
+    header_dict['Version'] = 'CuBIDS v1.0.5'
+
+    acq_info_dict = {}
+    acq_info_dict['AcqGroupInfo.txt Data Dictionary'] = header_dict
+
+    with open(output_prefix + "_AcqGroupInfo.json", "w") as outfile:
+        json.dump(acq_info_dict, outfile, indent=4)

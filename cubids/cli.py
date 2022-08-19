@@ -9,12 +9,13 @@ import logging
 import tempfile
 import tqdm
 import shutil
+import json
 import pandas as pd
 from cubids import CuBIDS
 from pathlib import Path
 from .validator import (build_validator_call,
                         run_validator, parse_validator_output,
-                        build_subject_paths)
+                        build_subject_paths, get_val_dictionary)
 from .metadata_merge import merge_json_into_json
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -112,6 +113,7 @@ def cubids_validate():
                     if abs_path_output:
                         # normally, write dataframe to file in CLI
                         val_tsv = str(opts.output_prefix) + "_validation.tsv"
+
                     else:
                         val_tsv = str(opts.bids_dir) \
                                   + '/code/CuBIDS/' \
@@ -119,6 +121,13 @@ def cubids_validate():
                                   + "_validation.tsv"
 
                     parsed.to_csv(val_tsv, sep="\t", index=False)
+
+                    # build validation data dictionary json sidecar
+                    val_dict = get_val_dictionary(parsed)
+                    val_json = val_tsv.replace('tsv', 'json')
+                    with open(val_json, "w") as outfile:
+                        json.dump(val_dict, outfile, indent=4)
+
                     logger.info("Writing issues out to %s", val_tsv)
                     sys.exit(0)
                 else:
@@ -207,6 +216,13 @@ def cubids_validate():
                                   + "_validation.tsv"
 
                     parsed.to_csv(val_tsv, sep="\t", index=False)
+
+                    # build validation data dictionary json sidecar
+                    val_dict = get_val_dictionary(parsed)
+                    val_json = val_tsv.replace('tsv', 'json')
+                    with open(val_json, "w") as outfile:
+                        json.dump(val_dict, outfile, indent=4)
+
                     logger.info("Writing issues out to file %s", val_tsv)
                     sys.exit(0)
                 else:
@@ -216,13 +232,16 @@ def cubids_validate():
     # Run it through a container
     container_type = _get_container_type(opts.container)
     bids_dir_link = str(opts.bids_dir.absolute()) + ":/bids:ro"
-    output_dir_link = str(opts.output_prefix.parent.absolute()) + ":/tsv:rw"
-    linked_output_prefix = "/tsv/" + opts.output_prefix.name
+    output_dir_link_t = str(opts.output_prefix.parent.absolute()) + ":/tsv:rw"
+    output_dir_link_j = str(opts.output_prefix.parent.absolute()) + ":/json:rw"
+    linked_output_prefix_t = "/tsv/" + opts.output_prefix.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
-               '-v', output_dir_link, '--entrypoint', 'cubids-validate',
-               opts.container, '/bids', linked_output_prefix]
+               '-v', output_dir_link_t,
+               '-v', output_dir_link_j,
+               '--entrypoint', 'cubids-validate', opts.container,
+               '/bids', linked_output_prefix_t]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
         if opts.ignore_subject_consistency:
@@ -230,8 +249,10 @@ def cubids_validate():
     elif container_type == 'singularity':
         cmd = ['singularity', 'exec', '--cleanenv',
                '-B', bids_dir_link,
-               '-B', output_dir_link, opts.container, 'cubids-validate',
-               '/bids', linked_output_prefix]
+               '-B', output_dir_link_t,
+               '-B', output_dir_link_j,
+               opts.container, 'cubids-validate', '/bids',
+               linked_output_prefix_t]
         if opts.ignore_nifti_headers:
             cmd.append('--ignore_nifti_headers')
         if opts.ignore_subject_consistency:

@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
-import pdb
 from shutil import copytree, copyfile
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -45,6 +44,7 @@ class CuBIDS(object):
         self.scans_txt = None  # txt file of scans to purge (for purge only)
         self.force_unlock = force_unlock  # force unlock for add-nifti-info
         self.cubids_code_dir = Path(self.path + '/code/CuBIDS').is_dir()
+        self.data_dict = {}  # data dictionary for TSV outputs
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
         if self.use_datalad:
             self.init_datalad()
@@ -69,7 +69,6 @@ class CuBIDS(object):
     def create_cubids_code_dir(self):
         # check if BIDS_ROOT/code/CuBIDS exists
         if not self.cubids_code_dir:
-            pdb.set_trace()
             subprocess.run(['mkdir', self.path + '/code'])
             subprocess.run(['mkdir', self.path + '/code/CuBIDS/'])
             self.cubids_code_dir = True
@@ -804,6 +803,115 @@ class CuBIDS(object):
         tup_ret = tuple(l_ret)
         return tup_ret
 
+    def create_data_dictionary(self):
+
+        sidecar_params = self.grouping_config.get('sidecar_params')
+        for mod in sidecar_params.keys():
+            mod_dict = sidecar_params[mod]
+            for s_param in mod_dict.keys():
+                if s_param not in self.data_dict.keys():
+                    self.data_dict[s_param] = {"Description":
+                                               "Scanning Parameter"}
+
+        relational_params = self.grouping_config.get('relational_params')
+        for r_param in relational_params.keys():
+            if r_param not in self.data_dict.keys():
+                self.data_dict[r_param] = {"Description":
+                                           "Scanning Parameter"}
+
+        derived_params = self.grouping_config.get('derived_params')
+        for mod in derived_params.keys():
+            mod_dict = derived_params[mod]
+            for d_param in mod_dict.keys():
+                if d_param not in self.data_dict.keys():
+                    self.data_dict[d_param] = {"Description":
+                                               "NIfTI Header Parameter"}
+
+        # Manually add non-sidecar columns/descriptions to data_dict
+        desc1 = "Column where users mark groups to manually check"
+        self.data_dict["ManualCheck"] = {}
+        self.data_dict["ManualCheck"]["Description"] = desc1
+        desc2 = "Column to mark notes about the param group"
+        self.data_dict["Notes"] = {}
+        self.data_dict["Notes"]["Description"] = desc2
+        desc31 = "Auto-generated suggested rename of Non-Domiannt Groups"
+        desc32 = " based on variant scanning parameters"
+        self.data_dict["RenameKeyGroup"] = {}
+        self.data_dict["RenameKeyGroup"]["Description"] = desc31 + desc32
+        desc4 = "Number of Files in the Parameter Group"
+        self.data_dict["Counts"] = {}
+        self.data_dict["Counts"]["Description"] = desc4
+        self.data_dict["Modality"] = {}
+        self.data_dict["Modality"]["Description"] = "MRI image type"
+        desc5 = "Column to mark groups to remove with a '0'"
+        self.data_dict["MergeInto"] = {}
+        self.data_dict["MergeInto"]["Description"] = desc5
+        self.data_dict["FilePath"] = {}
+        self.data_dict["FilePath"]["Description"] = "Location of file"
+        desc6 = "Number of participants in a Key Group"
+        self.data_dict["KeyGroupCount"] = {}
+        self.data_dict["KeyGroupCount"]["Description"] = desc6
+        desc71 = "A set of scans whose filenames share all BIDS filename"
+        desc72 = " key-value pairs, excluding subject and session"
+        self.data_dict["KeyGroup"] = {}
+        self.data_dict["KeyGroup"]["Description"] = desc71 + desc72
+        desc81 = "The set of scans with identical metadata parameters in their"
+        desc82 = " sidecars (defined within a Key Group and denoted"
+        desc83 = " numerically)"
+        self.data_dict["ParamGroup"] = {}
+        self.data_dict["ParamGroup"]["Description"] = desc81 + desc82 + desc83
+        desc91 = "Key Group name and Param Group number separated by a double"
+        desc92 = " underscore"
+        self.data_dict["KeyParamGroup"] = {}
+        self.data_dict["KeyParamGroup"]["Description"] = desc91 + desc92
+
+    def get_data_dictionary(self, df):
+        """Creates a BIDS data dictionary from dataframe columns
+
+        Parameters:
+        -----------
+
+            name: str
+                Data dictionary name (should be identical to filename of TSV)
+
+            df: Pandas DataFrame
+                Pre export TSV that will be converted to a json dictionary
+
+        Returns:
+        -----------
+
+            data_dict: dictionary
+                Python dictionary in BIDS data dictionary format
+        """
+
+        json_dict = {}
+
+        # Build column dictionary
+        col_list = df.columns.values.tolist()
+
+        data_dict_keys = self.data_dict.keys()
+
+        for col in data_dict_keys:
+            if col in col_list:
+                json_dict[col] = self.data_dict[col]
+
+        # for col in range(len(col_list)):
+        #     col_dict[col + 1] = col_list[col]
+
+        # header_dict = {}
+        # # build header dictionary
+        # header_dict['Long Description'] = name
+        # description = 'https://cubids.readthedocs.io/en/latest/usage.html'
+        # header_dict['Description'] = description
+        # header_dict['Version'] = 'CuBIDS v1.0.5'
+        # header_dict['Levels'] = col_dict
+
+        # # Build top level dictionary
+        # data_dict = {}
+        # data_dict[name] = header_dict
+
+        return json_dict
+
     def get_param_groups_dataframes(self):
         '''Creates DataFrames of files x param groups and a summary'''
 
@@ -849,8 +957,8 @@ class CuBIDS(object):
         summary.insert(0, "ManualCheck", np.nan)
         summary.insert(0, "Notes", np.nan)
 
-        # NOW WANT TO AUTOMATE RENAME!
-        # loop though imaging and derrived param keys
+        # Now automate suggested rename based on variant params
+        # loop though imaging and derived param keys
 
         sidecar = self.grouping_config.get('sidecar_params')
         sidecar = sidecar[modality]
@@ -992,6 +1100,18 @@ class CuBIDS(object):
                                       ascending=[True, False])
         big_df = big_df.sort_values(by=['Modality', 'KeyGroupCount'],
                                     ascending=[True, False])
+
+        # Create json dictionaries for summary and files tsvs
+        self.create_data_dictionary()
+        files_dict = self.get_data_dictionary(big_df)
+        summary_dict = self.get_data_dictionary(summary)
+
+        # Save data dictionaires as JSONs
+        with open(path_prefix + "_files.json", "w") as outfile:
+            json.dump(files_dict, outfile, indent=4)
+
+        with open(path_prefix + "_summary.json", "w") as outfile:
+            json.dump(summary_dict, outfile, indent=4)
 
         big_df.to_csv(path_prefix + "_files.tsv", sep="\t", index=False)
 
