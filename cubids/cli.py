@@ -235,7 +235,6 @@ def cubids_validate():
     output_dir_link_t = str(opts.output_prefix.parent.absolute()) + ":/tsv:rw"
     output_dir_link_j = str(opts.output_prefix.parent.absolute()) + ":/json:rw"
     linked_output_prefix_t = "/tsv/" + opts.output_prefix.name
-    linked_output_prefix_j = "/json/" + opts.output_prefix.name
     if container_type == 'docker':
         cmd = ['docker', 'run', '--rm', '-v', bids_dir_link,
                '-v', GIT_CONFIG+":/root/.gitconfig",
