@@ -7,6 +7,7 @@ import bids.layout
 import json
 import csv
 import os
+import re
 from pathlib import Path
 from bids.layout import parse_file_entities
 from bids.utils import listify
@@ -60,7 +61,8 @@ class CuBIDS(object):
 
     def reset_bids_layout(self, validate=False):
         # create BIDS Layout Indexer class
-        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore="*/.*")
+        ignores = ["code","stimuli","sourcedata","models",re.compile(r'^\.'), re.compile(r'/\.')]
+        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores)
 
         self._layout = bids.BIDSLayout(self.path,
                                        validate=validate,
