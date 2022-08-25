@@ -61,11 +61,14 @@ class CuBIDS(object):
 
     def reset_bids_layout(self, validate=False):
         # create BIDS Layout Indexer class
-        ignores = ["code","stimuli","sourcedata","models",re.compile(r'^\.'), re.compile(r'/\.')]
-        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=False)
+        ignores = ["code", "stimuli", "sourcedata", "models",
+                   re.compile(r'^\.'), re.compile(r'/\.')]
+        indexer = bids.BIDSLayoutIndexer(validate=validate,
+                                         ignore=ignores)
 
         self._layout = bids.BIDSLayout(self.path,
-                                       validate=validate)
+                                       validate=validate,
+                                       indexer=indexer)
 
     def create_cubids_code_dir(self):
         # check if BIDS_ROOT/code/CuBIDS exists
@@ -656,7 +659,6 @@ class CuBIDS(object):
             if str(path) in scans:
                 bids_file = self.layout.get_file(str(path))
                 associations = bids_file.get_associations()
-
                 for assoc in associations:
                     filepath = assoc.path
 
