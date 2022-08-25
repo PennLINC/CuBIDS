@@ -62,11 +62,10 @@ class CuBIDS(object):
     def reset_bids_layout(self, validate=False):
         # create BIDS Layout Indexer class
         ignores = ["code","stimuli","sourcedata","models",re.compile(r'^\.'), re.compile(r'/\.')]
-        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores)
+        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=False)
 
         self._layout = bids.BIDSLayout(self.path,
-                                       validate=validate,
-                                       indexer=indexer)
+                                       validate=validate)
 
     def create_cubids_code_dir(self):
         # check if BIDS_ROOT/code/CuBIDS exists
