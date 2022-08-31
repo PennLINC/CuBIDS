@@ -64,7 +64,8 @@ class CuBIDS(object):
         ignores = ["code", "stimuli", "sourcedata", "models",
                    re.compile(r'^\.'), re.compile(r'/\.')]
         indexer = bids.BIDSLayoutIndexer(validate=validate,
-                                         ignore=ignores)
+                                         ignore=ignores,
+                                         index_metadata=False)
 
         self._layout = bids.BIDSLayout(self.path,
                                        validate=validate,
@@ -165,7 +166,6 @@ class CuBIDS(object):
                 # add nifti info to corresponding sidecars​
                 sidecar = img_to_new_ext(str(path), '.json')
                 if Path(sidecar).exists():
-
                     with open(sidecar) as f:
                         data = json.load(f)
 
@@ -197,7 +197,7 @@ class CuBIDS(object):
 
         if self.use_datalad:
             self.datalad_save(message="Added nifti info to sidecars")
-            self.reset_bids_layout()
+        self.reset_bids_layout()
 
     def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix,
                           raise_on_error=True):
@@ -425,10 +425,12 @@ class CuBIDS(object):
         self.new_filenames.append(new_path)
 
         # NOW NEED TO RENAME ASSOCIATIONS
-        bids_file = self.layout.get_file(filepath)
-        associations = bids_file.get_associations()
-        for assoc in associations:
-            assoc_path = assoc.path
+        # bids_file = self.layout.get_file(filepath)
+        bids_file = filepath
+        # associations = bids_file.get_associations()
+        associations = self.get_nifti_associations(str(bids_file))
+        for assoc_path in associations:
+            # assoc_path = assoc.path
             if Path(assoc_path).exists():
                 # print("FILE: ", filepath)
                 # print("ASSOC: ", assoc.path)
@@ -436,7 +438,7 @@ class CuBIDS(object):
                 if '.nii' not in str(assoc_path):
                     self.old_filenames.append(assoc_path)
                     new_ext_path = img_to_new_ext(new_path,
-                                                  ''.join(Path(assoc.path)
+                                                  ''.join(Path(assoc_path)
                                                           .suffixes))
                     self.new_filenames.append(new_ext_path)
 
@@ -658,13 +660,15 @@ class CuBIDS(object):
 
             if str(path) in scans:
                 bids_file = self.layout.get_file(str(path))
-                associations = bids_file.get_associations()
+                # associations = bids_file.get_associations()
+                associations = self.get_nifti_associations(str(bids_file))
                 for assoc in associations:
-                    filepath = assoc.path
+                    to_remove.append(assoc)
+                    # filepath = assoc.path
 
-                    # ensure association is not an IntendedFor reference!
-                    if '.nii' not in str(filepath):
-                        to_remove.append(filepath)
+            # ensure association is not an IntendedFor reference!
+            if '.nii' not in str(path):
+
                 if '/dwi/' in str(path):
                     # add the bval and bvec if there
                     if Path(img_to_new_ext(str(path), '.bval')).exists():
@@ -718,6 +722,15 @@ class CuBIDS(object):
         else:
             print("Not running any association removals")
 
+    def get_nifti_associations(self, nifti):
+        # get all assocation files of a nifti image
+        no_ext_file = str(nifti).split('/')[-1].split('.')[0]
+        associations = []
+        for path in Path(self.path).rglob("sub-*/**/*.*"):
+            if no_ext_file in str(path) and '.nii.gz' not in str(path):
+                associations.append(str(path))
+        return associations
+
     def _cache_fieldmaps(self):
         """Searches all fieldmaps and creates a lookup for each file.
 
@@ -731,10 +744,14 @@ class CuBIDS(object):
         suffix = '(phase1|phasediff|epi|fieldmap)'
         fmap_files = self.layout.get(suffix=suffix, regex_search=True,
                                      extension=['.nii.gz', '.nii'])
+
         misfits = []
         files_to_fmaps = defaultdict(list)
         for fmap_file in tqdm(fmap_files):
-            intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
+            # intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
+            fmap_json = img_to_new_ext(fmap_file.path, '.json')
+            if_list = get_sidecar_metadata(fmap_json).get("IntendedFor")
+            intentions = listify(if_list)
             subject_prefix = "sub-%s" % fmap_file.entities['subject']
 
             if intentions is not None:
@@ -1159,8 +1176,8 @@ class CuBIDS(object):
 
         for bidsfile in files_to_change:
             # get the sidecar file
-            bidsjson_file = bidsfile.get_associations()
-
+            # bidsjson_file = bidsfile.get_associations()
+            bidsjson_file = img_to_new_ext(str(bidsfile), '.json')
             if not bidsjson_file:
                 print("NO JSON FILES FOUND IN ASSOCIATIONS")
                 continue
@@ -1315,7 +1332,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     dfs = []
     # path needs to be relative to the root with no leading prefix
     for path in files:
-        metadata = layout.get_metadata(path)
+        # metadata = layout.get_metadata(path)
+        metadata = get_sidecar_metadata(img_to_new_ext(path, '.json'))
         intentions = metadata.get("IntendedFor", [])
         slice_times = metadata.get("SliceTiming", [])
 
@@ -1443,6 +1461,14 @@ def round_params(param_group_df, config, modality):
                 param_group_df[column_name].round(column_fmt['precision'])
 
     return param_group_df
+
+
+def get_sidecar_metadata(json_file):
+    # get all metadata values in a file's sidecar
+    # transform json dictionary to python dictionary
+    with open(json_file) as json_file:
+        data = json.load(json_file)
+    return data
 
 
 def format_params(param_group_df, config, modality):
