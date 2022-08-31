@@ -212,26 +212,48 @@ def test_add_nifti_info_datalad(tmp_path):
 
     # now add nifti info
     bod.add_nifti_info()
-    nifti_tsv_prefix = str(tmp_path / "nifti_tsvs")
-    bod.get_TSVs(nifti_tsv_prefix)
-    nifti_summary_tsv = nifti_tsv_prefix + "_summary.tsv"
-    nifti_summary_df = pd.read_table(nifti_summary_tsv)
-    nifti_l_cols = nifti_summary_df.columns.tolist()
-    assert 'NumVolumes' in nifti_l_cols
-    assert 'Obliquity' in nifti_l_cols
-    assert 'ImageOrientation' in nifti_l_cols
+
+    found_fields = set()
+    for json_file in Path(bod.path).rglob("*.json"):
+        if '.git' not in str(json_file):
+            with open(json_file, "r") as jsonr:
+                metadata = json.load(jsonr)
+            found_fields.update(metadata.keys())
+    assert 'NumVolumes' in found_fields
+    assert 'Obliquity' in found_fields
+    assert 'ImageOrientation' in found_fields
+
+    # nifti_tsv_prefix = str(tmp_path / "nifti_tsvs")
+    # bod.get_TSVs(nifti_tsv_prefix)
+    # nifti_summary_tsv = nifti_tsv_prefix + "_summary.tsv"
+    # nifti_summary_df = pd.read_table(nifti_summary_tsv)
+    # nifti_l_cols = nifti_summary_df.columns.tolist()
+    # assert 'NumVolumes' in nifti_l_cols
+    # assert 'Obliquity' in nifti_l_cols
+    # assert 'ImageOrientation' in nifti_l_cols
 
 def test_add_nifti_info_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "complete", use_datalad=False, force_unlock=False)
     bod.add_nifti_info()
-    tsv_prefix = str(tmp_path / "tsvs")
-    bod.get_TSVs(tsv_prefix)
-    summary_tsv = tsv_prefix + "_summary.tsv"
-    summary_df = pd.read_table(summary_tsv)
-    l_cols = summary_df.columns.tolist()
-    assert 'NumVolumes' in l_cols
-    assert 'Obliquity' in l_cols
+
+    found_fields = set()
+    for json_file in Path(bod.path).rglob("*.json"):
+        if '.git' not in str(json_file):
+            with open(json_file, "r") as jsonr:
+                metadata = json.load(jsonr)
+            found_fields.update(metadata.keys())
+    assert 'NumVolumes' in found_fields
+    assert 'Obliquity' in found_fields
+    assert 'ImageOrientation' in found_fields
+
+    # tsv_prefix = str(tmp_path / "tsvs")
+    # bod.get_TSVs(tsv_prefix)
+    # summary_tsv = tsv_prefix + "_summary.tsv"
+    # summary_df = pd.read_table(summary_tsv)
+    # l_cols = summary_df.columns.tolist()
+    # assert 'NumVolumes' in l_cols
+    # assert 'Obliquity' in l_cols
 
 #TODO: add tests that return an error for invalid merge
 def test_tsv_merge_no_datalad(tmp_path):
