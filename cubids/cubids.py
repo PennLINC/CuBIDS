@@ -668,7 +668,7 @@ class CuBIDS(object):
 
             # ensure association is not an IntendedFor reference!
             if '.nii' not in str(path):
-                        
+
                 if '/dwi/' in str(path):
                     # add the bval and bvec if there
                     if Path(img_to_new_ext(str(path), '.bval')).exists():
@@ -723,12 +723,7 @@ class CuBIDS(object):
             print("Not running any association removals")
 
     def get_nifti_associations(self, nifti):
-    # get all assocation files of a nifti image
-    # pre_dot = str(bids_file).split('.')[0]
-    # associations = []
-    # for path in self.path: 
-    #     if pre_dot in str(path) and '.nii.gz' not in str(path):
-    #         associations.append(str(path)
+        # get all assocation files of a nifti image
         no_ext_file = str(nifti).split('/')[-1].split('.')[0]
         associations = []
         for path in Path(self.path).rglob("sub-*/**/*.*"):
@@ -753,7 +748,10 @@ class CuBIDS(object):
         misfits = []
         files_to_fmaps = defaultdict(list)
         for fmap_file in tqdm(fmap_files):
-            intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
+            # intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
+            fmap_json = img_to_new_ext(fmap_file.path, '.json')
+            if_list = get_sidecar_metadata(fmap_json).get("IntendedFor")
+            intentions = listify(if_list)
             subject_prefix = "sub-%s" % fmap_file.entities['subject']
 
             if intentions is not None:
@@ -1334,7 +1332,8 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
     dfs = []
     # path needs to be relative to the root with no leading prefix
     for path in files:
-        metadata = layout.get_metadata(path)
+        # metadata = layout.get_metadata(path)
+        metadata = get_sidecar_metadata(img_to_new_ext(path, '.json'))
         intentions = metadata.get("IntendedFor", [])
         slice_times = metadata.get("SliceTiming", [])
 
@@ -1462,6 +1461,14 @@ def round_params(param_group_df, config, modality):
                 param_group_df[column_name].round(column_fmt['precision'])
 
     return param_group_df
+
+
+def get_sidecar_metadata(json_file):
+    # get all metadata values in a file's sidecar
+    # transform json dictionary to python dictionary
+    with open(json_file) as json_file:
+        data = json.load(json_file)
+    return data
 
 
 def format_params(param_group_df, config, modality):
