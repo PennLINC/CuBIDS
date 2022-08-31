@@ -490,8 +490,9 @@ class CuBIDS(object):
         ses_path = self.path + '/' + sub + '/' + ses
         for path in Path(ses_path).rglob("fmap/*.json"):
             self.IF_rename_paths.append(str(path))
-            json_file = self.layout.get_file(str(path))
-            data = json_file.get_dict()
+            # json_file = self.layout.get_file(str(path))
+            # data = json_file.get_dict()
+            data = get_sidecar_metadata(str(path))
 
             if 'IntendedFor' in data.keys():
                 # check if IntendedFor field is a str or list
@@ -503,7 +504,7 @@ class CuBIDS(object):
                                 _get_intended_for_reference(new_path)
 
                         # update the json with the new data dictionary
-                        _update_json(json_file.path, data)
+                        _update_json(str(path), data)
 
                 if isinstance(data['IntendedFor'], list):
                     for item in data['IntendedFor']:
@@ -516,7 +517,7 @@ class CuBIDS(object):
                                     _get_intended_for_reference(new_path))
 
                         # update the json with the new data dictionary
-                        _update_json(json_file.path, data)
+                        _update_json(str(path), data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -620,9 +621,9 @@ class CuBIDS(object):
 
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
 
-            json_file = self.layout.get_file(str(path))
-
-            data = json_file.get_dict()
+            # json_file = self.layout.get_file(str(path))
+            # data = json_file.get_dict()
+            data = get_sidecar_metadata(str(path))
 
             # remove scan references in the IntendedFor
 
@@ -632,7 +633,7 @@ class CuBIDS(object):
                     if data['IntendedFor'] in if_scans:
                         data['IntendedFor'] = []
                         # update the json with the new data dictionary
-                        _update_json(json_file.path, data)
+                        _update_json(str(path), data)
 
                 if isinstance(data['IntendedFor'], list):
                     for item in data['IntendedFor']:
@@ -640,7 +641,7 @@ class CuBIDS(object):
                             data['IntendedFor'].remove(item)
 
                             # update the json with the new data dictionary
-                            _update_json(json_file.path, data)
+                            _update_json(str(path), data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -659,9 +660,9 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
 
             if str(path) in scans:
-                bids_file = self.layout.get_file(str(path))
+                # bids_file = self.layout.get_file(str(path))
                 # associations = bids_file.get_associations()
-                associations = self.get_nifti_associations(str(bids_file))
+                associations = self.get_nifti_associations(str(path))
                 for assoc in associations:
                     to_remove.append(assoc)
                     # filepath = assoc.path
