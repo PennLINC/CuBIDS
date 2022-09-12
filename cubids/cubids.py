@@ -166,8 +166,11 @@ class CuBIDS(object):
                 # add nifti info to corresponding sidecars​
                 sidecar = img_to_new_ext(str(path), '.json')
                 if Path(sidecar).exists():
-                    with open(sidecar) as f:
-                        data = json.load(f)
+                    try:
+                        with open(sidecar) as f:
+                            data = json.load(f)
+                    except Exception:
+                        print("Error parsing this sidecar: ", sidecar)
 
                     if "Obliquity" not in data.keys():
                         data["Obliquity"] = str(obliquity)
