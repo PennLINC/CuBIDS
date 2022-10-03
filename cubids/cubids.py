@@ -63,7 +63,7 @@ class CuBIDS(object):
 
     def reset_bids_layout(self, validate=False):
         # create BIDS Layout Indexer class
-        ignores = ["code", "stimuli", "sourcedata", "models", "*/.git", "*/.datalad"]
+        ignores = ["code", "stimuli", "sourcedata", "models", re.compile(r"^\.")]
         print('IGNORES')
         print(ignores)
         indexer = bids.BIDSLayoutIndexer(validate=validate,
