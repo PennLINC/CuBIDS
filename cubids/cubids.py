@@ -65,6 +65,7 @@ class CuBIDS(object):
         # create BIDS Layout Indexer class
         ignores = ["code", "stimuli", "sourcedata", "models",
                    re.compile(r'^\.'), re.compile(r'/\.')]
+        print(ignores)
         indexer = bids.BIDSLayoutIndexer(validate=validate,
                                          ignore=ignores,
                                          index_metadata=False)
