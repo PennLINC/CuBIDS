@@ -56,7 +56,9 @@ class CuBIDS(object):
     @property
     def layout(self):
         if self._layout is None:
+            print("SETTING BIDS LAYOUT")
             self.reset_bids_layout()
+            print("BIDS LAYOUT SET")
         return self._layout
 
     def reset_bids_layout(self, validate=False):
