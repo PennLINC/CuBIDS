@@ -56,13 +56,17 @@ class CuBIDS(object):
     @property
     def layout(self):
         if self._layout is None:
+            print("SETTING LAYOUT OBJECT")
             self.reset_bids_layout()
+            print("LAYOUT OBJECT SET")
         return self._layout
 
     def reset_bids_layout(self, validate=False):
         # create BIDS Layout Indexer class
         ignores = ["code", "stimuli", "sourcedata", "models",
                    re.compile(r'^\.'), re.compile(r'/\.')]
+        print('IGNORES')
+        print(ignores)
         indexer = bids.BIDSLayoutIndexer(validate=validate,
                                          ignore=ignores,
                                          index_metadata=False)
