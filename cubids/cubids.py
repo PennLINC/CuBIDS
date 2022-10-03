@@ -68,7 +68,7 @@ class CuBIDS(object):
         #print(ignores)
         indexer = bids.BIDSLayoutIndexer(validate=validate,
                                          index_metadata=False,
-                                         ignore=re.compile(r"[a-zA-Z0-9]*\."))
+                                         ignore=[re.compile(r"[a-zA-Z0-9]*\.")])
 
         self._layout = bids.BIDSLayout(self.path,
                                        validate=validate,
