@@ -802,10 +802,13 @@ class CuBIDS(object):
         # entities do not also get added to matching_files
         to_include = []
         for filepath in matching_files:
-            f_key_group = _file_to_key_group(filepath)
+            if '.git/' not in filepath:
+                f_key_group = _file_to_key_group(filepath)
 
-            if f_key_group == key_group:
-                to_include.append(filepath)
+                if f_key_group == key_group:
+                    to_include.append(filepath)
+            else:
+                print(filepath)
 
         # get the modality associated with the key group
         modalities = ['/dwi/', '/anat/', '/func/', '/perf/', '/fmap/']
