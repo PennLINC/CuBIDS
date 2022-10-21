@@ -116,7 +116,7 @@ Use ``cubids-group`` to generate your dataset's Key Groups and Parameter Groups:
 This will output four files, including the summary and files tsvs described above, 
 prefixed by the second argument ``v0``.
 
-Appplying changes 
+Applying changes 
 ------------------
 
 The ``cubids-apply`` program provides an easy way for users to manipulate their datasets. 
@@ -136,7 +136,7 @@ Groups—e.g., every Parameter Group except the Dominant one. Specifically, CuBI
 all non-dominant Parameter Group to include VARIANT* in their acquisition field where * is the reason 
 the Parameter Group varies from the Dominant Group. For example, when CuBIDS encounters a Parameter 
 Group with a repetition time that varies from the one present in the Dominant Group, it will automatically 
-suggest renaming all scans in that Variant Group to include ``acquisition-VARIANTRepetitionTime`` in thier 
+suggest renaming all scans in that Variant Group to include ``acquisition-VARIANTRepetitionTime`` in their 
 filenames. When the user runs ``cubids-apply``, filenames will get renamed according to the auto-generated 
 names in the “Rename Key Group” column in the summary.tsv
 
@@ -146,7 +146,7 @@ Deleting a mistake
 To remove files in a Parameter Group from your BIDS data, you simply set the ``MergeInto`` value
 to ``0``. We see in our data that there is a strange scan that has a ``RepetitionTime`` of 12.3
 seconds and is also variant with respect to EffectiveEchoSpacing and EchoTime. We elect to remove this scan from 
-our dataset becasuse we do not want these parameters to affect our analyses.
+our dataset because we do not want these parameters to affect our analyses.
 To remove these files from your BIDS data, add a ``0`` to ``MergeInto`` and save the new tsv as ``v0_edited_summary.tsv``
 
 .. csv-table:: Pre Apply Groupings with Deletion Requested

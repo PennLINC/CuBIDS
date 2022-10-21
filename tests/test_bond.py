@@ -817,7 +817,7 @@ def _add_ext_files(img_path):
 
 
 def _edit_a_json(json_file):
-    """Open a json file, write somthing to it and save it to the same name."""
+    """Open a json file, write something to it and save it to the same name."""
     with open(json_file, "r") as metadatar:
         metadata = json.load(metadatar)
 

@@ -173,7 +173,7 @@ to detect potential curation errors using ``cubids-validate``.
 
     $ cubids-validate BIDS_Dataset_DataLad v0 --sequential
 
-.. note::  The use of the ``--sequential`` flag forces the validator to treat each participant as its own BIDS dataset. This can be helpful for identifying heterogenous elements, but can be slowed down by extremely large datasets.
+.. note::  The use of the ``--sequential`` flag forces the validator to treat each participant as its own BIDS dataset. This can be helpful for identifying heterogeneous elements, but can be slowed down by extremely large datasets.
 
 This command produces the following tsv: 
 
