@@ -21,6 +21,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 from sphinx import __version__ as sphinxversion
+import sklearn
 import cubids
 from packaging import version as pver  # Avoid distutils.LooseVersion which is deprecated
 
