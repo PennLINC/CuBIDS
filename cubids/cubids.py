@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 import nibabel as nb
 import datalad.api as dlapi
-import sklearn
 from shutil import copytree, copyfile
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
