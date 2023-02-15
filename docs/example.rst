@@ -195,7 +195,9 @@ the scan. To do this, we run the ``cubids-purge`` command.
 "purge" from the dataset. You can create this file in any
 text editor, as long as it is saved as plain text ``.txt``. For this example, we created the following file: 
 
-... code-block:: console
+.. code-block:: console
+    
+    $ cat no_ped.txt
     
     /AN/EXAMPLE/PATH/CuBIDS_Test/BIDS_Dataset_Datalad/sub-02/ses-phdiff/func/sub-02_ses-phdiff_task-rest_bold.nii.gz
 
