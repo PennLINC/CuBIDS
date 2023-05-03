@@ -45,6 +45,11 @@ with a ``Warning``, but not necessarily suggest changes. That being said,
 there can be detrimental consequences downstream if the different parameters cause the
 same preprocessing pipelines to configure differently to images of the same Key Group.
 
+Acquisition Group
+~~~~~~~~~~~~~~~~~
+
+Acquisition Groups are sets of subjects who's images belong to all the same Key and Parameter Groups. The Acquistion Groups that subjects belong to are listed in ``_AcqGrouping.csv``, while the Key Groups and Parameter Groups that define each Acquisition Group are noted in ``_AcqGroupingInfo.txt``.
+
 
 .. _acquisitiongroup:
 
