@@ -1,0 +1,9 @@
+#!/bin/bash
+mv /Users/scovitz/BIDS_Dataset_Datalad/sub-02/ses-phdiff/dwi/sub-02_ses-phdiff_acq-HASC55AP_dwi.nii.gz /Users/scovitz/BIDS_Dataset_Datalad/sub-02/ses-phdiff/dwi/sub-02_ses-phdiff_acq-HASC55APVARIANTEchoTimeFlipAngle_dwi.nii.gz
+mv /Users/scovitz/BIDS_Dataset_Datalad/sub-02/ses-phdiff/dwi/sub-02_ses-phdiff_acq-HASC55AP_dwi.json /Users/scovitz/BIDS_Dataset_Datalad/sub-02/ses-phdiff/dwi/sub-02_ses-phdiff_acq-HASC55APVARIANTEchoTimeFlipAngle_dwi.json
+mv /Users/scovitz/BIDS_Dataset_Datalad/sub-02/ses-phdiff/dwi/sub-02_ses-phdiff_acq-HASC55AP_dwi.bval /Users/scovitz/BIDS_Dataset_Datalad/sub-02/ses-phdiff/dwi/sub-02_ses-phdiff_acq-HASC55APVARIANTEchoTimeFlipAngle_dwi.bval
+mv /Users/scovitz/BIDS_Dataset_Datalad/sub-02/ses-phdiff/dwi/sub-02_ses-phdiff_acq-HASC55AP_dwi.bvec /Users/scovitz/BIDS_Dataset_Datalad/sub-02/ses-phdiff/dwi/sub-02_ses-phdiff_acq-HASC55APVARIANTEchoTimeFlipAngle_dwi.bvec
+mv /Users/scovitz/BIDS_Dataset_Datalad/sub-03/ses-phdiff/dwi/sub-03_ses-phdiff_acq-HASC55AP_dwi.nii.gz /Users/scovitz/BIDS_Dataset_Datalad/sub-03/ses-phdiff/dwi/sub-03_ses-phdiff_acq-HASC55APVARIANTEchoTime_dwi.nii.gz
+mv /Users/scovitz/BIDS_Dataset_Datalad/sub-03/ses-phdiff/dwi/sub-03_ses-phdiff_acq-HASC55AP_dwi.json /Users/scovitz/BIDS_Dataset_Datalad/sub-03/ses-phdiff/dwi/sub-03_ses-phdiff_acq-HASC55APVARIANTEchoTime_dwi.json
+mv /Users/scovitz/BIDS_Dataset_Datalad/sub-03/ses-phdiff/dwi/sub-03_ses-phdiff_acq-HASC55AP_dwi.bval /Users/scovitz/BIDS_Dataset_Datalad/sub-03/ses-phdiff/dwi/sub-03_ses-phdiff_acq-HASC55APVARIANTEchoTime_dwi.bval
+mv /Users/scovitz/BIDS_Dataset_Datalad/sub-03/ses-phdiff/dwi/sub-03_ses-phdiff_acq-HASC55AP_dwi.bvec /Users/scovitz/BIDS_Dataset_Datalad/sub-03/ses-phdiff/dwi/sub-03_ses-phdiff_acq-HASC55APVARIANTEchoTime_dwi.bvec
