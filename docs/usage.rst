@@ -91,8 +91,29 @@ directly, but it keeps track of every file's assignment to Key and Parameter Gro
 
 .. _acqgrouptsv:
 
+Modifying Key and Parameter Group Assignments
+---------------------------------------------
+
+Sometimes we see that there are important differences in acquisition parameters within a Key Group.
+If these differences impact how a pipeline will process the data, it makes sense to assign the scans
+in that Parameter Group to a different Key Group (i.e. assign them a different BIDS name). This can
+be accomplished by editing the empty columns in the `_summary.csv` file produced by ``cubids-group``.
+
+Once the columns have been edited you can apply the changes to BIDS data using
+
+.. code-block:: console
+
+    $ cubids-apply /bids/dir keyparam_edited new_keyparam_prefix
+
+The changes in ``keyparam_edited_summary.csv`` will be applied to the BIDS data in ``/bids/dir``
+and the new Key and Parameter groups will be saved to csv files starting with ``new_keyparam_prefix``. Note:
+fieldmaps keygroups with variant parameters will be identified but not renamed. 
+
+
+
 The ``_AcqGrouping.tsv`` file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 The ``_AcqGrouping.tsv`` file organizes the dataset by session and tags each one with its Acquisition Group number.
 
