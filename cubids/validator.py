@@ -60,18 +60,17 @@ def build_subject_paths(bids_dir):
 
 def run_validator(call, verbose=True):
     """Run the validator with subprocess"""
-    if verbose:
-        logger.info("Running the validator with call:")
-        logger.info('\"' + ' '.join(call) + '\"')
+    # if verbose:
+    #     logger.info("Running the validator with call:")
+    #     logger.info('\"' + ' '.join(call) + '\"')
 
     ret = subprocess.run(call, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
-    return(ret)
+    return (ret)
 
 
 def parse_validator_output(output):
     """Parse the JSON output of the BIDS validator into a pandas dataframe
-
     Parameters:
     -----------
         - path : string
@@ -106,7 +105,7 @@ def parse_validator_output(output):
         return_dict['code'] = issue_dict.get('code', '')
         return_dict['url'] = issue_dict.get('helpUrl', '')
 
-        return(return_dict)
+        return (return_dict)
 
     df = pd.DataFrame()
 
@@ -114,12 +113,24 @@ def parse_validator_output(output):
 
         parsed = parse_issue(warn)
         parsed = pd.DataFrame(parsed)
-        df = df.append(parsed, ignore_index=True)
+        df = pd.concat([df, parsed], ignore_index=True)
 
     for err in issues['errors']:
 
         parsed = parse_issue(err)
         parsed = pd.DataFrame(parsed)
-        df = df.append(parsed, ignore_index=True)
+        df = pd.concat([df, parsed], ignore_index=True)
 
     return df
+
+
+def get_val_dictionary(df):
+    val_dict = {}
+    val_dict["files"] = {"Description": "File with warning orerror"}
+    val_dict["type"] = {"Description": "BIDS validation warning or error"}
+    val_dict["severity"] = {"Description": "gravity of problem (warning/error"}
+    val_dict["description"] = {"Description": "Description of warning/error"}
+    val_dict["code"] = {"Description": "BIDS validator issue code number"}
+    val_dict["url"] = {"Description": "Link to the issue's neurostars thread"}
+
+    return val_dict

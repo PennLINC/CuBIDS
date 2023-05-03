@@ -13,6 +13,8 @@ derived_params:
       suggest_variant_rename: yes
     Obliquity:
       suggest_variant_rename: yes
+    ImageOrientation:
+      suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
       precision: 3
@@ -50,6 +52,8 @@ derived_params:
       tolerance: 0.001
       precision: 3
       suggest_variant_rename: yes
+    ImageOrientation:
+      suggest_variant_rename: yes
   fmap:
     Dim1Size:
       suggest_variant_rename: yes
@@ -73,6 +77,8 @@ derived_params:
     VoxelSizeDim3:
       tolerance: 0.001
       precision: 3
+      suggest_variant_rename: yes
+    ImageOrientation:
       suggest_variant_rename: yes
   func:
     Dim1Size:
@@ -99,6 +105,8 @@ derived_params:
       tolerance: 0.001
       precision: 3
       suggest_variant_rename: yes
+    ImageOrientation:
+      suggest_variant_rename: yes
   perf:
     Dim1Size:
       suggest_variant_rename: yes
@@ -124,6 +132,8 @@ derived_params:
       tolerance: 0.001
       precision: 3
       suggest_variant_rename: yes
+    ImageOrientation:
+      suggest_variant_rename: yes
   other:
     Dim1Size:
       suggest_variant_rename: yes
@@ -148,6 +158,8 @@ derived_params:
     VoxelSizeDim3:
       tolerance: 0.001
       precision: 3
+      suggest_variant_rename: yes
+    ImageOrientation:
       suggest_variant_rename: yes
 # These fields reflect relationships between images.
 # Not modality specific

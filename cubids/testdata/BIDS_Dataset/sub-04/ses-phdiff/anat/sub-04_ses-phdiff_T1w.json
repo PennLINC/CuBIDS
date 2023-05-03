@@ -1,0 +1,33 @@
+{
+    "Manufacturer": "Siemens",
+    "ManufacturersModelName": "Prisma_fit",
+    "AcquisitionNumber": 1,
+    "InstitutionName": "HUP",
+    "InstitutionAddress": "Spruce_Street_3400_Philadelphia_Pennsylvania_US_19104",
+    "DeviceSerialNumber": "167024",
+    "SoftwareVersions": "syngo_MR_E11",
+    "ProcedureStepDescription": "MR_HEAD_WO_IV_CONTRAST",
+    "ScanningSequence": "GR_IR",
+    "SequenceVariant": "SK_SP_MP",
+    "SeriesDescription": "ABCD_T1w_MPR_vNav",
+    "BodyPartExamined": "BRAIN",
+    "ProtocolName": "ABCD_T1w_MPR_vNav",
+    "SequenceName": "tfl3d1_16ns",
+    "ImageType": [
+        "ORIGINAL",
+        "PRIMARY",
+        "M",
+        "ND",
+        "NORM"
+    ],
+    "AcquisitionTime": "16:15:31.770000",
+    "MagneticFieldStrength": 3,
+    "FlipAngle": 8,
+    "EchoTime": 0.0029,
+    "RepetitionTime": 2.5,
+    "InversionTime": 1.07,
+    "PhaseEncodingLines": 256,
+    "PhaseEncodingDirection": "i-",
+    "ConversionSoftware": "dcm2niix",
+    "ConversionSoftwareVersion": "v1.0.20170724 (OpenJPEG build) GCC6.1.0"
+}

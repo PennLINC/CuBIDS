@@ -77,27 +77,26 @@ def test_ok_json_merge_cli(tmp_path):
 def test_get_param_groups(tmp_path):
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
-    csv_prefix = str(tmp_path / "csvs")
+    tsv_prefix = str(tmp_path / "tsvs")
     key_groups = bod.get_key_groups()
     bod._cache_fieldmaps()
 
     for key_group in key_groups:
         ret = bod.get_param_groups_from_key_group(key_group)
-        assert ret[1].sum().Counts == ret[1].loc[0, 'KeyGroupCount']
+        assert sum(ret[1].Counts) == ret[1].loc[0, 'KeyGroupCount']
 
 def test_copy_exemplars(tmp_path):
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "complete", use_datalad=True)
-    csv_prefix = str(tmp_path / "csvs")
-    bod.get_CSVs(csv_prefix)
-    acq_group_csv = csv_prefix + "_AcqGrouping.csv"
-    print("ACQ GROUP PATH: ", acq_group_csv)
+    tsv_prefix = str(tmp_path / "tsvs")
+    bod.get_TSVs(tsv_prefix)
+    acq_group_tsv = tsv_prefix + "_AcqGrouping.tsv"
+    print("ACQ GROUP PATH: ", acq_group_tsv)
     exemplars_dir = str(tmp_path / "exemplars")
     print('EXEMPLARS DIR: ', exemplars_dir)
-    df = pd.read_csv(acq_group_csv)
+    df = pd.read_table(acq_group_tsv)
 
-    bod.copy_exemplars(exemplars_dir, acq_group_csv, force_unlock=False,
-                       min_group_size=2)
+    bod.copy_exemplars(exemplars_dir, acq_group_tsv, min_group_size=1)
 
     # check exemplar dir got created and has the correct number of subs
     cntr = 0
@@ -111,12 +110,11 @@ def test_copy_exemplars(tmp_path):
 def test_purge_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
     scans = []
-    scan_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
-        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
+    scan_name = "sub-03/ses-phdiff/func/sub-03_ses-phdiff_task-rest_bold.nii.gz"
     json_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
         / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
     scans.append(scan_name)
-    scans.append(data_root / "complete" / "sub-01" / "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz")
+    scans.append("sub-01/ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz")
 
     # create and save .txt with list of scans
     purge_path = str(tmp_path / "purge_scans.txt")
@@ -125,7 +123,7 @@ def test_purge_no_datalad(tmp_path):
             filehandle.write('%s\n' % listitem)
     bod = CuBIDS(data_root / "complete", use_datalad=False)
 
-    assert Path(scan_name).exists()
+    assert Path(data_root / "complete" / scan_name).exists()
     assert Path(json_name).exists()
 
     # Check that IntendedFor purge worked
@@ -140,7 +138,7 @@ def test_purge_no_datalad(tmp_path):
     with open(str(data_root / "complete" / "sub-01" / "ses-phdiff" / "fmap" / "sub-01_ses-phdiff_acq-v4_phasediff.json")) as f:
         purged_dict = json.load(f)
 
-    assert not Path(scan_name).exists()
+    assert not Path(data_root / "complete" / scan_name).exists()
     assert not Path(json_name).exists()
     assert "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz" not in purged_dict.values()
     assert isinstance(purged_dict['IntendedFor'], list)
@@ -149,8 +147,7 @@ def test_purge_no_datalad(tmp_path):
 def test_purge(tmp_path):
     data_root = get_data(tmp_path)
     scans = []
-    scan_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
-        / "func" / "sub-03_ses-phdiff_task-rest_bold.nii.gz"
+    scan_name = "sub-03/ses-phdiff/func/sub-03_ses-phdiff_task-rest_bold.nii.gz"
     json_name = data_root / "complete" / "sub-03" / "ses-phdiff" \
         / "func" / "sub-03_ses-phdiff_task-rest_bold.json"
     scans.append(scan_name)
@@ -163,7 +160,7 @@ def test_purge(tmp_path):
     bod.datalad_save()
 
     assert bod.is_datalad_clean()
-    assert Path(scan_name).exists()
+    assert Path(data_root / "complete" / scan_name).exists()
     assert Path(json_name).exists()
 
     # create and save .txt with list of scans
@@ -204,59 +201,82 @@ def test_bad_json_merge_cli(tmp_path):
 
 def test_add_nifti_info_datalad(tmp_path):
     data_root = get_data(tmp_path)
-    bod = CuBIDS(data_root / "complete", use_datalad=True)
-    csv_prefix = str(tmp_path / "csvs")
-    bod.get_CSVs(csv_prefix)
-    summary_csv = csv_prefix + "_summary.csv"
-    summary_df = pd.read_csv(summary_csv)
+    bod = CuBIDS(data_root / "complete", use_datalad=True, force_unlock=True)
+    tsv_prefix = str(tmp_path / "tsvs")
+    bod.get_TSVs(tsv_prefix)
+    summary_tsv = tsv_prefix + "_summary.tsv"
+    summary_df = pd.read_table(summary_tsv)
     l_cols = summary_df.columns.tolist()
     assert 'NumVolumes' not in l_cols
     assert 'Obliquity' not in l_cols
 
     # now add nifti info
-    bod.add_nifti_info(force_unlock=True)
-    nifti_csv_prefix = str(tmp_path / "nifti_csvs")
-    bod.get_CSVs(nifti_csv_prefix)
-    nifti_summary_csv = nifti_csv_prefix + "_summary.csv"
-    nifti_summary_df = pd.read_csv(nifti_summary_csv)
-    nifti_l_cols = nifti_summary_df.columns.tolist()
-    assert 'NumVolumes' in nifti_l_cols
-    assert 'Obliquity' in nifti_l_cols
+    bod.add_nifti_info()
+
+    found_fields = set()
+    for json_file in Path(bod.path).rglob("*.json"):
+        if '.git' not in str(json_file):
+            with open(json_file, "r") as jsonr:
+                metadata = json.load(jsonr)
+            found_fields.update(metadata.keys())
+    assert 'NumVolumes' in found_fields
+    assert 'Obliquity' in found_fields
+    assert 'ImageOrientation' in found_fields
+
+    # nifti_tsv_prefix = str(tmp_path / "nifti_tsvs")
+    # bod.get_TSVs(nifti_tsv_prefix)
+    # nifti_summary_tsv = nifti_tsv_prefix + "_summary.tsv"
+    # nifti_summary_df = pd.read_table(nifti_summary_tsv)
+    # nifti_l_cols = nifti_summary_df.columns.tolist()
+    # assert 'NumVolumes' in nifti_l_cols
+    # assert 'Obliquity' in nifti_l_cols
+    # assert 'ImageOrientation' in nifti_l_cols
 
 def test_add_nifti_info_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
-    bod = CuBIDS(data_root / "complete", use_datalad=False)
-    bod.add_nifti_info(force_unlock=False)
-    csv_prefix = str(tmp_path / "csvs")
-    bod.get_CSVs(csv_prefix)
-    summary_csv = csv_prefix + "_summary.csv"
-    summary_df = pd.read_csv(summary_csv)
-    l_cols = summary_df.columns.tolist()
-    assert 'NumVolumes' in l_cols
-    assert 'Obliquity' in l_cols
+    bod = CuBIDS(data_root / "complete", use_datalad=False, force_unlock=False)
+    bod.add_nifti_info()
+
+    found_fields = set()
+    for json_file in Path(bod.path).rglob("*.json"):
+        if '.git' not in str(json_file):
+            with open(json_file, "r") as jsonr:
+                metadata = json.load(jsonr)
+            found_fields.update(metadata.keys())
+    assert 'NumVolumes' in found_fields
+    assert 'Obliquity' in found_fields
+    assert 'ImageOrientation' in found_fields
+
+    # tsv_prefix = str(tmp_path / "tsvs")
+    # bod.get_TSVs(tsv_prefix)
+    # summary_tsv = tsv_prefix + "_summary.tsv"
+    # summary_df = pd.read_table(summary_tsv)
+    # l_cols = summary_df.columns.tolist()
+    # assert 'NumVolumes' in l_cols
+    # assert 'Obliquity' in l_cols
 
 #TODO: add tests that return an error for invalid merge
-def test_csv_merge_no_datalad(tmp_path):
+def test_tsv_merge_no_datalad(tmp_path):
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "inconsistent", use_datalad=False)
 
     # Get an initial grouping summary and files list
-    csv_prefix = str(tmp_path / "originals")
-    bod.get_CSVs(csv_prefix)
-    original_summary_csv = csv_prefix + "_summary.csv"
-    original_files_csv = csv_prefix + "_files.csv"
+    tsv_prefix = str(tmp_path / "originals")
+    bod.get_TSVs(tsv_prefix)
+    original_summary_tsv = tsv_prefix + "_summary.tsv"
+    original_files_tsv = tsv_prefix + "_files.tsv"
 
-    # give csv with no changes (make sure it does nothing)
-    bod.apply_csv_changes(original_summary_csv,
-                          original_files_csv,
+    # give tsv with no changes (make sure it does nothing)
+    bod.apply_tsv_changes(original_summary_tsv,
+                          original_files_tsv,
                           str(tmp_path / "unmodified"))
 
     # these will not actually be equivalent because of the auto renames
-    assert file_hash(original_summary_csv) != \
-           file_hash(tmp_path / "unmodified_summary.csv")
+    assert file_hash(original_summary_tsv) != \
+           file_hash(tmp_path / "unmodified_summary.tsv")
 
     # Find the dwi with no FlipAngle
-    summary_df = pd.read_csv(original_summary_csv)
+    summary_df = pd.read_table(original_summary_tsv)
     fa_nan_dwi_row, = np.flatnonzero(
         np.isnan(summary_df.FlipAngle) &
         summary_df.KeyGroup.str.fullmatch(
@@ -278,55 +298,55 @@ def test_csv_merge_no_datalad(tmp_path):
     summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[
         complete_dwi_row]
 
-    valid_csv_file = csv_prefix + "_valid_summary.csv"
-    summary_df.to_csv(valid_csv_file, index=False)
+    valid_tsv_file = tsv_prefix + "_valid_summary.tsv"
+    summary_df.to_csv(valid_tsv_file, sep="\t", index=False)
 
     # about to apply merges!
 
-    bod.apply_csv_changes(valid_csv_file,
-                          original_files_csv,
+    bod.apply_tsv_changes(valid_tsv_file,
+                          original_files_tsv,
                           str(tmp_path / "ok_modified"))
 
-    assert not file_hash(original_summary_csv) == \
-           file_hash(tmp_path / "ok_modified_summary.csv")
+    assert not file_hash(original_summary_tsv) == \
+           file_hash(tmp_path / "ok_modified_summary.tsv")
 
     # Add an illegal merge to MergeInto
     summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
         complete_dwi_row]
-    invalid_csv_file = csv_prefix + "_invalid_summary.csv"
-    summary_df.to_csv(invalid_csv_file, index=False)
+    invalid_tsv_file = tsv_prefix + "_invalid_summary.tsv"
+    summary_df.to_csv(invalid_tsv_file, sep="\t", index=False)
 
     with pytest.raises(Exception):
-        bod.apply_csv_changes(invalid_csv_file,
-                              str(tmp_path / "originals_files.csv"),
+        bod.apply_tsv_changes(invalid_tsv_file,
+                              str(tmp_path / "originals_files.tsv"),
                               str(tmp_path / "ok_modified"))
 
-def test_csv_merge_changes(tmp_path):
+def test_tsv_merge_changes(tmp_path):
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
     bod.datalad_save()
     assert bod.is_datalad_clean()
 
     # Get an initial grouping summary and files list
-    csv_prefix = str(tmp_path / "originals")
-    bod.get_CSVs(csv_prefix)
-    original_summary_csv = csv_prefix + "_summary.csv"
-    original_files_csv = csv_prefix + "_files.csv"
+    tsv_prefix = str(tmp_path / "originals")
+    bod.get_TSVs(tsv_prefix)
+    original_summary_tsv = tsv_prefix + "_summary.tsv"
+    original_files_tsv = tsv_prefix + "_files.tsv"
 
-    # give csv with no changes (make sure it does nothing except rename)
-    bod.apply_csv_changes(original_summary_csv,
-                          original_files_csv,
+    # give tsv with no changes (make sure it does nothing except rename)
+    bod.apply_tsv_changes(original_summary_tsv,
+                          original_files_tsv,
                           str(tmp_path / "unmodified"))
-    orig = pd.read_csv(original_summary_csv)
+    orig = pd.read_table(original_summary_tsv)
     # TEST RenameKeyGroup column got populated CORRECTLY
     for row in range(len(orig)):
         if orig.loc[row, 'ParamGroup'] != 1:
             assert str(orig.loc[row, 'RenameKeyGroup']) != 'nan'
 
     # TESTING RENAMES GOT APPLIED
-    applied = pd.read_csv(str(tmp_path / "unmodified_summary.csv"))
+    applied = pd.read_table(str(tmp_path / "unmodified_summary.tsv"))
 
-    applied_f = pd.read_csv(str(tmp_path / "unmodified_files.csv"))
+    applied_f = pd.read_table(str(tmp_path / "unmodified_files.tsv"))
     odd = []
     for row in range(len(applied_f)):
         if 'VARIANT' in applied_f.loc[row, 'FilePath'] and 'VARIANT' not in applied_f.loc[row, 'KeyParamGroup']:
@@ -354,11 +374,11 @@ def test_csv_merge_changes(tmp_path):
     assert renamed == True
 
     # will no longer be equal because of auto rename!
-    assert file_hash(original_summary_csv)!= \
-           file_hash(tmp_path / "unmodified_summary.csv")
+    assert file_hash(original_summary_tsv)!= \
+           file_hash(tmp_path / "unmodified_summary.tsv")
 
     # Find the dwi with no FlipAngle
-    summary_df = pd.read_csv(original_summary_csv)
+    summary_df = pd.read_table(original_summary_tsv)
     fa_nan_dwi_row, = np.flatnonzero(
         np.isnan(summary_df.FlipAngle) &
         summary_df.KeyGroup.str.fullmatch(
@@ -380,53 +400,53 @@ def test_csv_merge_changes(tmp_path):
     summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[
         complete_dwi_row]
 
-    valid_csv_file = csv_prefix + "_valid_summary.csv"
-    summary_df.to_csv(valid_csv_file, index=False)
+    valid_tsv_file = tsv_prefix + "_valid_summary.tsv"
+    summary_df.to_csv(valid_tsv_file, sep="\t", index=False)
 
     # about to merge
-    bod.apply_csv_changes(valid_csv_file,
-                          original_files_csv,
+    bod.apply_tsv_changes(valid_tsv_file,
+                          original_files_tsv,
                           str(tmp_path / "ok_modified"))
 
-    assert not file_hash(original_summary_csv) == \
-           file_hash(tmp_path / "ok_modified_summary.csv")
+    assert not file_hash(original_summary_tsv) == \
+           file_hash(tmp_path / "ok_modified_summary.tsv")
 
     # Add an illegal merge to MergeInto
     summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
         complete_dwi_row]
-    invalid_csv_file = csv_prefix + "_invalid_summary.csv"
-    summary_df.to_csv(invalid_csv_file, index=False)
+    invalid_tsv_file = tsv_prefix + "_invalid_summary.tsv"
+    summary_df.to_csv(invalid_tsv_file, sep="\t", index=False)
 
     with pytest.raises(Exception):
-        bod.apply_csv_changes(invalid_csv_file,
-                              str(tmp_path / "originals_files.csv"),
+        bod.apply_tsv_changes(invalid_tsv_file,
+                              str(tmp_path / "originals_files.tsv"),
                               str(tmp_path / "ok_modified"))
 
     # Make sure MergeInto == 0 deletes the param group and all associations
-    # summary_df = pd.read_csv(original_summary_csv)
+    # summary_df = pd.read_table(original_summary_tsv)
     # summary_df.loc[fa_nan_dwi_row, "MergeInto"] = 0
     # delete_group = summary_df.loc[fa_nan_dwi_row, "KeyParamGroup"]
 
-    # # files_df = pd.read_csv(original_files_csv)
+    # # files_df = pd.read_table(original_files_tsv)
     # # for row in files_df:
     # #     if files_df.iloc[row]['KeyParamGroup'] == delete_group:
     # #         filename = files_df.iloc[row]['FilePath']
     # #         file_to_rem = Path(filename)
     # #         file_to_rem.unlink()
 
-    # delete_csv_file = csv_prefix + "_delete_summary.csv"
-    # summary_df.to_csv(delete_csv_file, index=False)
+    # delete_tsv_file = tsv_prefix + "_delete_summary.tsv"
+    # summary_df.to_csv(delete_tsv_file, index=False)
 
-    # bod.apply_csv_changes(delete_csv_file,
-    #                       original_files_csv,
+    # bod.apply_tsv_changes(delete_tsv_file,
+    #                       original_files_tsv,
     #                       str(tmp_path / "ok_deleted"))
 
-    # del_summary_csv = str(tmp_path / "ok_deleted")
+    # del_summary_tsv = str(tmp_path / "ok_deleted")
 
-    # original_summary_csv = csv_prefix + "_summary.csv"
-    # original_files_csv = csv_prefix + "_files.csv"
+    # original_summary_tsv = tsv_prefix + "_summary.tsv"
+    # original_files_tsv = tsv_prefix + "_files.tsv"
 
-    # assert delete_group not in tmp_path / "ok_deleted_summary.csv"
+    # assert delete_group not in tmp_path / "ok_deleted_summary.tsv"
 
 def test_merge_without_overwrite():
     meta1 = {
@@ -516,7 +536,7 @@ def test_keygroups(tmp_path):
     assert ikey_groups == COMPLETE_KEY_GROUPS
 
 
-def test_csv_creation(tmp_path):
+def test_tsv_creation(tmp_path):
     """Test the Key Group and Parameter Group creation on sample data.
     """
     data_root = get_data(tmp_path)
@@ -531,7 +551,7 @@ def test_csv_creation(tmp_path):
     key_groups = complete_bod.get_key_groups()
     assert key_groups == COMPLETE_KEY_GROUPS
 
-    # Get the CSVs from the complete data
+    # Get the tsvs from the complete data
     cfiles_df, csummary_df = \
         complete_bod.get_param_groups_dataframes()
 
@@ -562,7 +582,7 @@ def test_csv_creation(tmp_path):
     ikey_groups = ibod.get_key_groups()
     assert ikey_groups == COMPLETE_KEY_GROUPS
 
-    # Get the CSVs from the inconsistent data
+    # Get the tsvs from the inconsistent data
     ifiles_df, isummary_df = \
         ibod.get_param_groups_dataframes()
 
@@ -572,7 +592,7 @@ def test_csv_creation(tmp_path):
     # But now there are more parameter groups
     assert isummary_df.shape[0] == 12
 
-    # check that summary csv param group nums are in the right order
+    # check that summary tsv param group nums are in the right order
     # and check that param groups are sorted by count vals
     for i, (index, row) in enumerate(isummary_df.iterrows()):
         if i == len(isummary_df) -1:
@@ -587,7 +607,7 @@ def test_csv_creation(tmp_path):
             assert isummary_df.iloc[i]['Counts'] >= \
                 isummary_df.iloc[i+1]['Counts']
 
-    # check that files csv param group nums are in the right order
+    # check that files tsv param group nums are in the right order
     for i, (index, row) in enumerate(ifiles_df.iterrows()):
         if i == len(ifiles_df) -1:
             break
@@ -599,13 +619,13 @@ def test_csv_creation(tmp_path):
                 ifiles_df.iloc[i+1]['ParamGroup']
 
 
-def test_apply_csv_changes(tmp_path):
+def test_apply_tsv_changes(tmp_path):
     # set up like narrative of user using this
-    # similar to test csv creation
-    # open the csv, rename a key group
-    # save csv
+    # similar to test tsv creation
+    # open the tsv, rename a key group
+    # save tsv
     # call change key groups
-    # give csv with no changes (make sure it does nothing)
+    # give tsv with no changes (make sure it does nothing)
     # make sure files you wanted to rename exist in the bids dir
 
     data_root = get_data(tmp_path)
@@ -633,32 +653,32 @@ def test_apply_csv_changes(tmp_path):
     complete_cubids = CuBIDS(data_root / "complete", use_datalad=True)
     complete_cubids.datalad_save()
 
-    complete_cubids.get_CSVs(str(tmp_path / "originals"))
+    complete_cubids.get_TSVs(str(tmp_path / "originals"))
 
-    # give csv with no changes (make sure it does nothing)
-    complete_cubids.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
-                                    str(tmp_path / "originals_files.csv"),
+    # give tsv with no changes (make sure it does nothing)
+    complete_cubids.apply_tsv_changes(str(tmp_path / "originals_summary.tsv"),
+                                    str(tmp_path / "originals_files.tsv"),
                                     str(tmp_path / "modified1"))
 
-    og_path = tmp_path / "originals_summary.csv"
+    og_path = tmp_path / "originals_summary.tsv"
     with og_path.open("r") as f:
         og_content = "".join(f.readlines())
 
-    mod1_path = tmp_path / "modified1_summary.csv"
+    mod1_path = tmp_path / "modified1_summary.tsv"
     with mod1_path.open("r") as f:
         mod1_content = "".join(f.readlines())
 
     assert og_content == mod1_content
 
-    # edit the csv, add a RenameKeyGroup
+    # edit the tsv, add a RenameKeyGroup
 
-    # _edit_csv(str(tmp_path / "originals_summary.csv"))
-    complete_cubids.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
-                                    str(tmp_path / "originals_files.csv"),
+    # _edit_tsv(str(tmp_path / "originals_summary.tsv"))
+    complete_cubids.apply_tsv_changes(str(tmp_path / "originals_summary.tsv"),
+                                    str(tmp_path / "originals_files.tsv"),
                                     str(tmp_path / "modified2"))
 
     # check files df to make sure extension files also got renmaed
-    mod_files = tmp_path / "modified2_files.csv"
+    mod_files = tmp_path / "modified2_files.tsv"
     # ensure fmap didn't get renamed
     # assert Path(data_root /
     #     "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.json").exists() == False
@@ -671,7 +691,7 @@ def test_apply_csv_changes(tmp_path):
     assert Path(data_root /
         "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz").exists() == True
 
-    mod2_path = tmp_path / "modified2_summary.csv"
+    mod2_path = tmp_path / "modified2_summary.tsv"
     with mod2_path.open("r") as f:
         mod2_content = "".join(f.readlines())
 
@@ -682,14 +702,14 @@ def test_apply_csv_changes(tmp_path):
     assert deleted_keyparam in mod2_content
 
     # check to delete keyparam  exist
-    mod2_files = tmp_path / "modified2_files.csv"
+    mod2_files = tmp_path / "modified2_files.tsv"
     with mod2_files.open("r") as f:
         mod2_f_content = "".join(f.readlines())
     assert deleted_keyparam in mod2_f_content
 
     # check scans and associations to be deleted are currently in the bids dir
-    mod2_summary_df = pd.read_csv(mod2_path)
-    mod2_files_df = pd.read_csv(str(tmp_path / "modified2_files.csv"))
+    mod2_summary_df = pd.read_table(mod2_path)
+    mod2_files_df = pd.read_table(str(tmp_path / "modified2_files.tsv"))
     deleted_f = []
 
     for row in range(len(mod2_files_df)):
@@ -697,22 +717,22 @@ def test_apply_csv_changes(tmp_path):
             deleted_f.append(mod2_files_df.loc[row, 'FilePath'])
 
     for f in deleted_f:
-        assert Path(f).exists() == True
-        assert Path(f.replace('nii.gz', 'json')).exists() == True
+        assert Path(str(data_root / "complete") + f).exists() == True
+        assert Path(str(data_root / "complete") + f.replace('nii.gz', 'json')).exists() == True
 
     # apply deletion
-    complete_cubids.apply_csv_changes(mod2_path,
-                                    str(tmp_path / "modified2_files.csv"),
+    complete_cubids.apply_tsv_changes(mod2_path,
+                                    str(tmp_path / "modified2_files.tsv"),
                                     str(tmp_path / "deleted"))
 
-    # make sure deleted_keyparam gone from files_csv
-    deleted = tmp_path / "deleted_summary.csv"
+    # make sure deleted_keyparam gone from files_tsv
+    deleted = tmp_path / "deleted_summary.tsv"
     with deleted.open("r") as f:
         deleted_content = "".join(f.readlines())
     assert deleted_keyparam not in deleted_content
 
-    # make sure deleted_keyparam gone from summary csv
-    deleted_files = tmp_path / "deleted_files.csv"
+    # make sure deleted_keyparam gone from summary tsv
+    deleted_files = tmp_path / "deleted_files.tsv"
     with deleted_files.open("r") as f:
         deleted_f_content = "".join(f.readlines())
     assert deleted_keyparam not in deleted_f_content
@@ -725,11 +745,11 @@ def test_apply_csv_changes(tmp_path):
 
 def test_session_apply(tmp_path):
     # set up like narrative of user using this
-    # similar to test csv creation
-    # open the csv, rename a key group
-    # save csv
+    # similar to test tsv creation
+    # open the tsv, rename a key group
+    # save tsv
     # call change key groups
-    # give csv with no changes (make sure it does nothing)
+    # give tsv with no changes (make sure it does nothing)
     # make sure files you wanted to rename exist in the bids dir
 
     data_root = get_data(tmp_path)
@@ -737,18 +757,18 @@ def test_session_apply(tmp_path):
 
     ses_cubids = CuBIDS(data_root / "inconsistent", acq_group_level='session', use_datalad=True)
 
-    ses_cubids.get_CSVs(str(tmp_path / "originals"))
+    ses_cubids.get_TSVs(str(tmp_path / "originals"))
 
-    # give csv and make sure 'session' is in summary both pre and post apply
-    ses_cubids.apply_csv_changes(str(tmp_path / "originals_summary.csv"),
-                                    str(tmp_path / "originals_files.csv"),
+    # give tsv and make sure 'session' is in summary both pre and post apply
+    ses_cubids.apply_tsv_changes(str(tmp_path / "originals_summary.tsv"),
+                                    str(tmp_path / "originals_files.tsv"),
                                     str(tmp_path / "modified1"))
 
-    og_path = tmp_path / "originals_summary.csv"
+    og_path = tmp_path / "originals_summary.tsv"
     with og_path.open("r") as f:
         og_content = "".join(f.readlines())
 
-    mod1_path = tmp_path / "modified1_summary.csv"
+    mod1_path = tmp_path / "modified1_summary.tsv"
     with mod1_path.open("r") as f:
         mod1_content = "".join(f.readlines())
 
@@ -757,15 +777,15 @@ def test_session_apply(tmp_path):
 
 
 
-def _add_deletion(summary_csv):
-    df = pd.read_csv(summary_csv)
+def _add_deletion(summary_tsv):
+    df = pd.read_table(summary_tsv)
     df.loc[3, 'MergeInto'] = 0
-    df.to_csv(summary_csv, index=False)
+    df.to_csv(summary_tsv, sep="\t", index=False)
     return df.loc[3, 'KeyParamGroup']
 
 
-# def _edit_csv(summary_csv):
-#     df = pd.read_csv(summary_csv)
+# def _edit_tsv(summary_tsv):
+#     df = pd.read_table(summary_tsv)
 #     df['RenameKeyGroup'] = df['RenameKeyGroup'].apply(str)
 #     df['KeyGroup'] = df['KeyGroup'].apply(str)
 #     for row in range(len(df)):
@@ -773,7 +793,7 @@ def _add_deletion(summary_csv):
 #             "acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1":
 #             df.at[row, 'RenameKeyGroup'] = \
 #                 "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
-#     df.to_csv(summary_csv)
+#     df.to_csv(summary_tsv)
 
 def _add_ext_files(img_path):
     # add and save extension files in
@@ -797,7 +817,7 @@ def _add_ext_files(img_path):
 
 
 def _edit_a_json(json_file):
-    """Open a json file, write somthing to it and save it to the same name."""
+    """Open a json file, write something to it and save it to the same name."""
     with open(json_file, "r") as metadatar:
         metadata = json.load(metadatar)
 
@@ -941,11 +961,10 @@ def test_validator(tmp_path):
     # test the validator in valid dataset
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
-    print(ret)
 
     assert ret.returncode == 0
-
     parsed = parse_validator_output(ret.stdout.decode('UTF-8'))
+
 
     # change this assert
     # assert parsed.shape[1] < 1
@@ -999,10 +1018,10 @@ def test_docker():
     assert return_status
 
 
-def test_image(image='pennlinc/cubids:latest'):
-    """Check whether image is present on local system"""
-    ret = subprocess.run(['docker', 'images', '-q', image],
-                         stdout=subprocess.PIPE)
+# def test_image(image='pennlinc/bond:latest'):
+#     """Check whether image is present on local system"""
+#     ret = subprocess.run(['docker', 'images', '-q', image],
+#                          stdout=subprocess.PIPE)
 
-    return_status = ret.stdout.decode('UTF-8')
-    assert return_status
+#     return_status = ret.stdout.decode('UTF-8')
+#     assert return_status

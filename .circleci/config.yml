@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 jobs:
 
   build:
@@ -20,9 +20,8 @@ jobs:
             - docker-v1-{{ .Branch }}-
             - docker-v1-master-
             - docker-v1-
-          paths:
-            - /tmp/cache/docker.tar.gz
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - run:
           name: Load Docker image layer cache
           no_output_timeout: 30m
@@ -40,9 +39,9 @@ jobs:
             # Build docker image
             e=1 && for i in {1..5}; do
               docker build \
-                --cache-from=pennlinc/cubids \
+                --cache-from=pennlinc/bond \
                 --rm=false \
-                -t pennlinc/cubids:latest \
+                -t pennlinc/bond:latest \
                 --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
                 --build-arg VCS_REF=`git rev-parse --short HEAD` . \
               && e=0 && break || sleep 15
@@ -53,7 +52,7 @@ jobs:
           no_output_timeout: 40m
           command: |
             mkdir -p /tmp/cache
-            docker save pennlinc/cubids:latest \
+            docker save pennlinc/bond:latest \
             | pigz -3 > /tmp/cache/docker.tar.gz
 
       - save_cache:
@@ -63,7 +62,7 @@ jobs:
 
   setup_conda:
     machine:
-      image: ubuntu-1604:202004-01
+      image: ubuntu-2004:202201-02
     steps:
       - run:
            name: install miniconda
@@ -79,26 +78,22 @@ jobs:
              conda create -n cubids python=3.7
              source activate cubids
              conda install -c conda-forge -y datalad
+             conda install pip
+             conda install pytest
              # Add nodejs and the validator
-             conda install nodejs
-             npm install -g yarn && \
-             mkdir -p /tmp/validator && \
-             cd /tmp/validator && \
-             git clone  -b 'master' --single-branch --depth 1 \
-                 --single-branch https://github.com/bids-standard/bids-validator.git  && \
-             cd /tmp/validator/bids-validator && \
-             yarn --ignore-engines && \
-             cd bids-validator && npm install -g
+             #  conda install nodejs
+             #  npm install -g yarn && \
+             #  npm install -g bids-validator
 
       - persist_to_workspace:
           root: /tmp
           paths:
             - miniconda
-            - validator
+
 
   get_singularity:
     machine:
-      image: ubuntu-1604:202004-01
+      image: ubuntu-2004:202201-02
     steps:
       - restore_cache:
           keys:
@@ -122,7 +117,6 @@ jobs:
                 wget
               export GOPATH=$HOME/go
               mkdir -p $GOPATH
-              go get -u github.com/golang/dep/cmd/dep
               export VERSION=3.7.3
               wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
               tar -xzf singularity-${VERSION}.tar.gz
@@ -142,7 +136,7 @@ jobs:
 
   install_and_test_singularity:
     machine:
-      image: ubuntu-1604:202004-01
+      image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
@@ -178,6 +172,14 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
+            conda install -c conda-forge -y datalad
+            conda install pip
+            # Add nodejs and the validator
+            sudo apt update
+            sudo apt install nodejs npm
+            npm install -g yarn 
+            npm install -g bids-validator
+            pip install pytest
             pip install .
 
       - run:
@@ -196,7 +198,7 @@ jobs:
           command: |
               singularity build \
                 /home/circleci/cubids-latest.sif \
-                docker-daemon://pennlinc/cubids:latest
+                docker-daemon://pennlinc/bond:latest
 
       - run:
           name: Test cubids-validate
@@ -268,7 +270,7 @@ jobs:
 
   install_and_test:
     machine:
-      image: ubuntu-1604:202004-01
+      image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
@@ -294,11 +296,16 @@ jobs:
             fi
 
       - run:
-          name: Install CuBIDS
+          name: Test CuBIDS
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
-            pip install .[all]
+            pip install .
+            pip install pytest
+            sudo apt update
+            sudo apt install nodejs npm
+            npm install -g yarn && \
+            npm install -g bids-validator
             py.test -sv tests
 
       - run:
@@ -313,7 +320,7 @@ jobs:
             cubids-validate \
               /tmp/bids/docker-validate \
               /tmp/validate_testing/docker \
-              --container pennlinc/cubids:latest
+              --container pennlinc/bond:latest
 
       - run:
           name: Test Docker group
@@ -327,7 +334,7 @@ jobs:
             cubids-group \
               /tmp/bids/docker-group \
               /tmp/group_testing/docker \
-              --container pennlinc/cubids:latest
+              --container pennlinc/bond:latest
 
       - run:
           name: Test Docker save
@@ -341,7 +348,7 @@ jobs:
             cubids-datalad-save \
               /tmp/bids/docker-save \
               -m 'test docker save!' \
-              --container pennlinc/cubids:latest
+              --container pennlinc/bond:latest
       - run:
           name: Test cubids-remove-metadata-fields
           command: |
@@ -353,12 +360,12 @@ jobs:
             # Get the original metadata fields
             cubids-print-metadata-fields \
               /tmp/bids/metatest \
-              --container pennlinc/cubids:latest > /tmp/origmd.txt
+              --container pennlinc/bond:latest > /tmp/origmd.txt
 
             # Remove some fields
             cubids-remove-metadata-fields \
               /tmp/bids/metatest \
-              --container pennlinc/cubids:latest \
+              --container pennlinc/bond:latest \
               --fields DeviceSerialNumber AcquisitionTime \
                        InstitutionAddress InstitutionName \
                        StationName NotARealField > /tmp/removedmd.txt
@@ -401,6 +408,7 @@ jobs:
           name: Build documentation
           no_output_timeout: 45m
           command: |
+            pip install sphinx-rtd-theme
             make SPHINXOPTS="-W" -C docs html
       - store_artifacts:
           path: /tmp/src/CuBIDS/docs/_build/html
@@ -440,12 +448,12 @@ jobs:
           command: |
             if [[ -n "$DOCKER_PASS" ]]; then
               docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker tag pennlinc/CuBIDS pennlinc/CuBIDS:unstable
-              docker push pennlinc/CuBIDS:unstable
+              docker tag pennlinc/bond pennlinc/bond:unstable
+              docker push pennlinc/bond:unstable
               if [[ -n "$CIRCLE_TAG" ]]; then
-                docker push pennlinc/CuBIDS:latest
-                docker tag pennlinc/CuBIDS pennlinc/CuBIDS:$CIRCLE_TAG
-                docker push pennlinc/CuBIDS:$CIRCLE_TAG
+                docker push pennlinc/bond:latest
+                docker tag pennlinc/bond pennlinc/bond:$CIRCLE_TAG
+                docker push pennlinc/bond:$CIRCLE_TAG
               fi
             fi
 
