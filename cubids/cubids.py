@@ -1477,10 +1477,10 @@ def get_sidecar_metadata(json_file):
     try:
         with open(json_file) as json_file:
             data = json.load(json_file)
-        return data
     except Exception:
         print("Error loading sidecar: ", json_file)
         return None
+    return data
 
 
 def format_params(param_group_df, config, modality):
