@@ -70,7 +70,7 @@ jobs:
              cd /tmp
              export MINICONDA=/tmp/miniconda
              export PATH="$MINICONDA/bin:$PATH"
-             wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+             wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-s390x.sh -O miniconda.sh
              bash miniconda.sh -b -f -p $MINICONDA
              conda config --set always_yes yes
              conda update conda
