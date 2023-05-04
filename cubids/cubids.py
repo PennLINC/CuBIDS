@@ -499,6 +499,9 @@ class CuBIDS(object):
             # json_file = self.layout.get_file(str(path))
             # data = json_file.get_dict()
             data = get_sidecar_metadata(str(path))
+            if data == "Erroneous sidecar":
+                print('Error parsing sidecar: ', str(path))
+                continue
 
             if 'IntendedFor' in data.keys():
                 # check if IntendedFor field is a str or list
@@ -630,9 +633,11 @@ class CuBIDS(object):
             # json_file = self.layout.get_file(str(path))
             # data = json_file.get_dict()
             data = get_sidecar_metadata(str(path))
+            if data == "Erroneous sidecar":
+                print('Error parsing sidecar: ', str(path))
+                continue
 
             # remove scan references in the IntendedFor
-
             if 'IntendedFor' in data.keys():
                 # check if IntendedFor field value is a list or a string
                 if isinstance(data['IntendedFor'], str):
@@ -757,7 +762,11 @@ class CuBIDS(object):
         for fmap_file in tqdm(fmap_files):
             # intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
             fmap_json = img_to_new_ext(fmap_file.path, '.json')
-            if_list = get_sidecar_metadata(fmap_json).get("IntendedFor")
+            metadata = get_sidecar_metadata(fmap_json)
+            if metadata == "Erroneous sidecar":
+                print('Error parsing sidecar: ', str(fmap_json))
+                continue
+            if_list = metadata.get("IntendedFor")
             intentions = listify(if_list)
             subject_prefix = "sub-%s" % fmap_file.entities['subject']
 
@@ -823,6 +832,9 @@ class CuBIDS(object):
         ret = _get_param_groups(
             to_include, self.layout, self.fieldmap_lookup, key_group,
             self.grouping_config, modality, self.keys_files)
+
+        if ret == "erroneous sidecar found":
+            return "erroneous sidecar found"
 
         # add modality to the retun tuple
         l_ret = list(ret)
@@ -946,8 +958,11 @@ class CuBIDS(object):
         labeled_files = []
         param_group_summaries = []
         for key_group in key_groups:
-            labeled_file_params, param_summary, modality = \
-                self.get_param_groups_from_key_group(key_group)
+            try:
+                labeled_file_params, param_summary, modality = \
+                    self.get_param_groups_from_key_group(key_group)
+            except Exception:
+                continue
             if labeled_file_params is None:
                 continue
             param_group_summaries.append(param_summary)
@@ -1338,58 +1353,62 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
 
     dfs = []
     # path needs to be relative to the root with no leading prefix
+
     for path in files:
         # metadata = layout.get_metadata(path)
         metadata = get_sidecar_metadata(img_to_new_ext(path, '.json'))
-        intentions = metadata.get("IntendedFor", [])
-        slice_times = metadata.get("SliceTiming", [])
+        if metadata == "Erroneous sidecar":
+            print('Error parsing sidecar: ', img_to_new_ext(path, '.json'))
+        else:
+            intentions = metadata.get("IntendedFor", [])
+            slice_times = metadata.get("SliceTiming", [])
 
-        wanted_keys = metadata.keys() & imaging_params
-        example_data = {key: metadata[key] for key in wanted_keys}
-        example_data["KeyGroup"] = key_group_name
+            wanted_keys = metadata.keys() & imaging_params
+            example_data = {key: metadata[key] for key in wanted_keys}
+            example_data["KeyGroup"] = key_group_name
 
-        # Get the fieldmaps out and add their types
-        if 'FieldmapKey' in relational_params:
-            fieldmap_types = sorted([_file_to_key_group(fmap.path) for
-                                    fmap in fieldmap_lookup[path]])
+            # Get the fieldmaps out and add their types
+            if 'FieldmapKey' in relational_params:
+                fieldmap_types = sorted([_file_to_key_group(fmap.path) for
+                                        fmap in fieldmap_lookup[path]])
 
-            # check if config says columns or bool
-            if relational_params['FieldmapKey']['display_mode'] == \
-                    'bool':
-                if len(fieldmap_types) > 0:
-                    example_data['HasFieldmap'] = True
+                # check if config says columns or bool
+                if relational_params['FieldmapKey']['display_mode'] == \
+                        'bool':
+                    if len(fieldmap_types) > 0:
+                        example_data['HasFieldmap'] = True
+                    else:
+                        example_data['HasFieldmap'] = False
                 else:
-                    example_data['HasFieldmap'] = False
-            else:
-                for fmap_num, fmap_type in enumerate(fieldmap_types):
-                    example_data['FieldmapKey%02d' % fmap_num] = fmap_type
+                    for fmap_num, fmap_type in enumerate(fieldmap_types):
+                        example_data['FieldmapKey%02d' % fmap_num] = fmap_type
 
-        # Add the number of slice times specified
-        if "NSliceTimes" in derived_params:
-            example_data["NSliceTimes"] = len(slice_times)
+            # Add the number of slice times specified
+            if "NSliceTimes" in derived_params:
+                example_data["NSliceTimes"] = len(slice_times)
 
-        example_data["FilePath"] = path
+            example_data["FilePath"] = path
 
-        # If it's a fieldmap, see what key group it's intended to correct
-        if "IntendedForKey" in relational_params:
-            intended_key_groups = sorted([_file_to_key_group(intention) for
-                                          intention in intentions])
+            # If it's a fieldmap, see what key group it's intended to correct
+            if "IntendedForKey" in relational_params:
+                intended_key_groups = sorted([_file_to_key_group(intention) for
+                                             intention in intentions])
 
-            # check if config says columns or bool
-            if relational_params['IntendedForKey']['display_mode'] == \
-                    'bool':
-                if len(intended_key_groups) > 0:
-                    example_data["UsedAsFieldmap"] = True
+                # check if config says columns or bool
+                if relational_params['IntendedForKey']['display_mode'] == \
+                        'bool':
+                    if len(intended_key_groups) > 0:
+                        example_data["UsedAsFieldmap"] = True
+                    else:
+                        example_data["UsedAsFieldmap"] = False
                 else:
-                    example_data["UsedAsFieldmap"] = False
-            else:
-                for intention_num, intention_key_group in \
-                        enumerate(intended_key_groups):
-                    example_data[
-                        "IntendedForKey%02d" % intention_num] = \
-                                intention_key_group
+                    for intention_num, intention_key_group in \
+                            enumerate(intended_key_groups):
+                        example_data[
+                            "IntendedForKey%02d" % intention_num] = \
+                                    intention_key_group
 
-        dfs.append(example_data)
+            dfs.append(example_data)
 
     # Assign each file to a ParamGroup
 
@@ -1406,10 +1425,13 @@ def _get_param_groups(files, layout, fieldmap_lookup, key_group_name,
         if "Cluster_" + col not in list(df.columns) and col != 'FilePath':
             check_cols.append(col)
 
-    # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
-    deduped = df.drop('FilePath', axis=1).drop_duplicates(subset=check_cols,
-                                                          ignore_index=True)
+    # Find the unique ParamGroups and assign ID numbers in "ParamGroup"\
+    try:
+        deduped = df.drop('FilePath', axis=1)
+    except Exception:
+        return "erroneous sidecar found"
 
+    deduped = deduped.drop_duplicates(subset=check_cols, ignore_index=True)
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
 
     # add the modality as a column
@@ -1477,10 +1499,10 @@ def get_sidecar_metadata(json_file):
     try:
         with open(json_file) as json_file:
             data = json.load(json_file)
+            return data
     except Exception:
-        print("Error loading sidecar: ", json_file)
-        return None
-    return data
+        # print("Error loading sidecar: ", json_filename)
+        return "Erroneous sidecar"
 
 
 def format_params(param_group_df, config, modality):
