@@ -1163,7 +1163,7 @@ class CuBIDS(object):
         group_by_acquisition_sets(path_prefix + "_files.tsv", path_prefix,
                                   self.acq_group_level)
 
-        print("CuBIDS Detected " + str(len(summary)) + " Parameter Groups.")
+        print("CuBIDS detected " + str(len(summary)) + " Parameter Groups.")
 
     def get_key_groups(self):
         '''Identifies the key groups for the bids dataset'''
