@@ -70,12 +70,12 @@ jobs:
              cd /tmp
              export MINICONDA=/tmp/miniconda
              export PATH="$MINICONDA/bin:$PATH"
-             wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86.sh -O miniconda.sh
+             wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
              bash miniconda.sh -b -f -p $MINICONDA
              conda config --set always_yes yes
              conda update conda
              conda info -a
-             conda create -n cubids python=3.7
+             conda create -n cubids python=3.8
              source activate cubids
              conda install -c conda-forge -y datalad
              conda install pip
