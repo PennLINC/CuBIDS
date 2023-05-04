@@ -56,9 +56,9 @@ class CuBIDS(object):
     @property
     def layout(self):
         if self._layout is None:
-            print("SETTING LAYOUT OBJECT")
+            # print("SETTING LAYOUT OBJECT")
             self.reset_bids_layout()
-            print("LAYOUT OBJECT SET")
+            # print("LAYOUT OBJECT SET")
         return self._layout
 
     def reset_bids_layout(self, validate=False):
@@ -1163,7 +1163,7 @@ class CuBIDS(object):
         group_by_acquisition_sets(path_prefix + "_files.tsv", path_prefix,
                                   self.acq_group_level)
 
-        print("Detected " + str(len(summary)) + " Parameter Groups.")
+        print("CuBIDS Detected " + str(len(summary)) + " Parameter Groups.")
 
     def get_key_groups(self):
         '''Identifies the key groups for the bids dataset'''
