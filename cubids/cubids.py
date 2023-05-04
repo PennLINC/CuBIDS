@@ -1464,8 +1464,9 @@ def round_params(param_group_df, config, modality):
         if column_name not in param_group_df:
             continue
         if 'precision' in column_fmt:
-            param_group_df[column_name] = \
-                param_group_df[column_name].round(column_fmt['precision'])
+            if isinstance(param_group_df[column_name], float):
+                param_group_df[column_name] = \
+                    param_group_df[column_name].round(column_fmt['precision'])
 
     return param_group_df
 
@@ -1473,9 +1474,13 @@ def round_params(param_group_df, config, modality):
 def get_sidecar_metadata(json_file):
     # get all metadata values in a file's sidecar
     # transform json dictionary to python dictionary
-    with open(json_file) as json_file:
-        data = json.load(json_file)
-    return data
+    try:
+        with open(json_file) as json_file:
+            data = json.load(json_file)
+        return data
+    except Exception:
+        print("Error loading sidecar: ", json_file)
+        return None
 
 
 def format_params(param_group_df, config, modality):
