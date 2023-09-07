@@ -13,7 +13,7 @@ jobs:
       - run:
           name: Install parallel gzip and python3
           command: |
-            apk add --no-cache pigz python3 python3-pip tar
+            apk add --no-cache pigz python3 py3-pip tar
       - restore_cache:
           keys:
             - docker-v1-{{ .Branch }}-{{ .Revision }}
