@@ -37,8 +37,8 @@ jobs:
               VERSION="$CIRCLE_TAG"
             fi
             git checkout $CIRCLE_BRANCH
-            echo "${VERSION}" > /src/CuBIDS/cubids/VERSION
-            echo "include cubids/VERSION" >> /src/CuBIDS/MANIFEST.in
+            echo "${VERSION}" > /tmp/src/CuBIDS/cubids/VERSION
+            echo "include cubids/VERSION" >> /tmp/src/CuBIDS/MANIFEST.in
             pip install . --progress-bar off
       - run:
           name: Build Docker image
