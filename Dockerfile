@@ -46,12 +46,13 @@ RUN conda install -y \
     conda clean -tipsy; sync && \
     rm -rf ~/.conda ~/.cache/pip/*; sync
 
+RUN echo "${VERSION}" > /src/CuBIDS/cubids/VERSION && \
+    echo "include cubids/VERSION" >> /src/CuBIDS/MANIFEST.in && \
+    ls -ltra /src/CuBIDS/ && \
+    pip3 install --no-cache-dir "/src/CuBIDS[all]"
+
 # get the validator
 RUN npm install -g yarn && \
     npm install -g bids-validator
 
-RUN echo "${VERSION}" > /src/CuBIDS/cubids/VERSION && \
-    echo "include cubids/VERSION" >> /src/CuBIDS/MANIFEST.in && \
-    pip3 install --no-cache-dir "/src/CuBIDS"
-
-ENTRYPOINT [ "/bin/bash"]
+ENTRYPOINT ["/bin/bash"]
