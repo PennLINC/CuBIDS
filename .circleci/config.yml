@@ -36,12 +36,18 @@ jobs:
           name: Build Docker image
           no_output_timeout: 3h
           command: |
+            # Get version, update files.
+            THISVERSION=$(python3 -c "from cubids import __version__; print(__version__)")
+
             # Build docker image
             e=1 && for i in {1..5}; do
               docker build \
+                --cache-from=pennlinc/bond \
+                --rm=false \
                 -t pennlinc/bond:latest \
                 --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-                --build-arg VCS_REF=`git rev-parse --short HEAD` . \
+                --build-arg VCS_REF=`git rev-parse --short HEAD` \
+                --build-arg VERSION="${CIRCLE_TAG:-$THISVERSION}" . \
               && e=0 && break || sleep 15
             done && [ "$e" -eq "0" ]
 
