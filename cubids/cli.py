@@ -379,7 +379,7 @@ def cubids_group():
             acq_group_level=opts.acq_group_level,
             grouping_config=opts.config,
         )
-        bod.get_TSVs(
+        bod.get_tsvs(
             str(opts.output_prefix),
         )
         sys.exit(0)
@@ -832,7 +832,6 @@ def cubids_copy_exemplars():
             str(opts.exemplars_dir),
             str(opts.exemplars_tsv),
             min_group_size=opts.min_group_size,
-            raise_on_error=True,
         )
         sys.exit(0)
 
@@ -1023,7 +1022,7 @@ def cubids_purge():
         if opts.use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception("Untracked change in " + str(opts.bids_dir))
-        bod.purge(str(opts.scans), raise_on_error=False)
+        bod.purge(str(opts.scans))
         sys.exit(0)
 
     # Run it through a container

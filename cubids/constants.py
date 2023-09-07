@@ -1,3 +1,4 @@
+"""Constants for CuBIDS."""
 ID_VARS = set(["KeyGroup", "ParamGroup", "FilePath"])
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
 # Multi-dimensional keys SliceTiming
