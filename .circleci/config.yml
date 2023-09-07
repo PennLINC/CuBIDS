@@ -14,7 +14,7 @@ jobs:
           name: Install parallel gzip and python3
           command: |
             apt-get update
-            apt-get install -y --no-install-recommends pigz python3 python3-pip tar git
+            apt-get install -y --no-install-recommends docker git pigz python3 python3-pip tar
       - restore_cache:
           keys:
             - docker-v1-{{ .Branch }}-{{ .Revision }}
