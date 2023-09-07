@@ -1,5 +1,9 @@
 FROM ubuntu:bionic-20220531
 
+COPY . /src/CuBIDS
+
+ARG VERSION=0.0.1
+
 # setup installation
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -42,14 +46,12 @@ RUN conda install -y \
     conda clean -tipsy; sync && \
     rm -rf ~/.conda ~/.cache/pip/*; sync
 
-
 # get the validator
 RUN npm install -g yarn && \
     npm install -g bids-validator
 
-COPY . /src/CuBIDS
-RUN python --version && \
-    pip3 --version && \
+RUN echo "${VERSION}" > /src/CuBIDS/cubids/VERSION && \
+    echo "include cubids/VERSION" >> /src/CuBIDS/MANIFEST.in && \
     pip3 install --no-cache-dir "/src/CuBIDS"
 
 ENTRYPOINT [ "/bin/bash"]
