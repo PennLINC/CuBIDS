@@ -15,11 +15,14 @@ import pandas as pd
 import tqdm
 
 from cubids import CuBIDS
-
-from .metadata_merge import merge_json_into_json
-from .validator import (build_subject_paths, build_validator_call,
-                        get_val_dictionary, parse_validator_output,
-                        run_validator)
+from cubids.metadata_merge import merge_json_into_json
+from cubids.validator import (
+    build_subject_paths,
+    build_validator_call,
+    get_val_dictionary,
+    parse_validator_output,
+    run_validator,
+)
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 logging.basicConfig(level=logging.INFO)
@@ -29,35 +32,38 @@ logging.getLogger("datalad").setLevel(logging.ERROR)
 
 
 def cubids_validate():
-    """Command Line Interface function for running the bids validator."""
-
+    """Run the bids validator."""
     parser = argparse.ArgumentParser(
-        description="cubids-validate: Wrapper around the official " "BIDS Validator",
+        description="cubids-validate: Wrapper around the official BIDS Validator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "bids_dir",
         type=Path,
         action="store",
-        help="the root of a BIDS dataset. It should contain "
-        "sub-X directories and dataset_description.json",
+        help=(
+            "the root of a BIDS dataset. It should contain "
+            "sub-X directories and dataset_description.json"
+        ),
     )
     parser.add_argument(
         "output_prefix",
         type=Path,
         action="store",
-        help="file prefix to which tabulated validator output "
-        "is written. If users pass in just a filename prefix "
-        "e.g. V1, then CuBIDS will put the validation "
-        "output in bids_dir/code/CuBIDS. If the user "
-        "specifies a path (e.g. /Users/scovitz/BIDS/V1) "
-        "then output files will go to the specified location.",
+        help=(
+            "file prefix to which tabulated validator output "
+            "is written. If users pass in just a filename prefix "
+            "e.g. V1, then CuBIDS will put the validation "
+            "output in bids_dir/code/CuBIDS. If the user "
+            "specifies a path (e.g. /Users/scovitz/BIDS/V1) "
+            "then output files will go to the specified location."
+        ),
     )
     parser.add_argument(
         "--sequential",
         action="store_true",
         default=False,
-        help="Run the BIDS validator sequentially " "on each subject.",
+        help="Run the BIDS validator sequentially on each subject.",
         required=False,
     )
     parser.add_argument(
@@ -70,24 +76,28 @@ def cubids_validate():
         "--ignore_nifti_headers",
         action="store_true",
         default=False,
-        help="Disregard NIfTI header content during" " validation",
+        help="Disregard NIfTI header content during validation",
         required=False,
     )
     parser.add_argument(
         "--ignore_subject_consistency",
         action="store_true",
         default=True,
-        help="Skip checking that any given file for one"
-        " subject is present for all other subjects",
+        help=(
+            "Skip checking that any given file for one "
+            "subject is present for all other subjects"
+        ),
         required=False,
     )
     parser.add_argument(
         "--sequential-subjects",
         action="store",
         default=None,
-        help="List: Filter the sequential run to only include"
-        " the listed subjects. e.g. --sequential-subjects "
-        "sub-01 sub-02 sub-03",
+        help=(
+            "List: Filter the sequential run to only include "
+            "the listed subjects. e.g. --sequential-subjects "
+            "sub-01 sub-02 sub-03"
+        ),
         nargs="+",
         required=False,
     )
@@ -118,7 +128,7 @@ def cubids_validate():
             # parse the string output
             parsed = parse_validator_output(ret.stdout.decode("UTF-8"))
             if parsed.shape[1] < 1:
-                logger.info("No issues/warnings parsed, your dataset" " is BIDS valid.")
+                logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
                 sys.exit(0)
             else:
                 logger.info("BIDS issues/warnings found in the dataset")
@@ -163,11 +173,9 @@ def cubids_validate():
 
             if opts.sequential_subjects:
                 subjects_dict = {
-                    k: v
-                    for k, v in subjects_dict.items()
-                    if k in opts.sequential_subjects
+                    k: v for k, v in subjects_dict.items() if k in opts.sequential_subjects
                 }
-            assert len(list(subjects_dict.keys())) > 1, "No subjects found" " in filter"
+            assert len(list(subjects_dict.keys())) > 1, "No subjects found in filter"
             for subject, files_list in tqdm.tqdm(subjects_dict.items()):
                 # logger.info(" ".join(["Processing subject:", subject]))
                 # create a temporary directory and symlink the data
@@ -197,9 +205,7 @@ def cubids_validate():
                     ret = run_validator(call)
                     # parse output
                     if ret.returncode != 0:
-                        logger.error(
-                            "Errors returned " "from validator run, parsing now"
-                        )
+                        logger.error("Errors returned from validator run, parsing now")
 
                     # parse the output and add to list if it returns a df
                     decoded = ret.stdout.decode("UTF-8")
@@ -210,7 +216,7 @@ def cubids_validate():
 
             # concatenate the parsed data and exit
             if len(parsed) < 1:
-                logger.info("No issues/warnings parsed, your dataset" " is BIDS valid.")
+                logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
                 sys.exit(0)
 
             else:
@@ -304,31 +310,25 @@ def cubids_validate():
 
 
 def bids_sidecar_merge():
+    """Merge critical keys from one sidecar to another."""
     parser = argparse.ArgumentParser(
-        description="bids-sidecar-merge: merge critical keys from one "
-        "sidecar to another",
+        description=("bids-sidecar-merge: merge critical keys from one sidecar to another"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument(
-        "from_json", type=Path, action="store", help="Source json file."
-    )
+    parser.add_argument("from_json", type=Path, action="store", help="Source json file.")
     parser.add_argument(
         "to_json",
         type=Path,
         action="store",
-        help="destination json. This file will have data "
-        "from `from_json` copied into it.",
+        help=("destination json. This file will have data from `from_json` copied into it."),
     )
     opts = parser.parse_args()
-    merge_status = merge_json_into_json(
-        opts.from_json, opts.to_json, raise_on_error=False
-    )
+    merge_status = merge_json_into_json(opts.from_json, opts.to_json, raise_on_error=False)
     sys.exit(merge_status)
 
 
 def cubids_group():
-    """Command Line Interface function for finding key and param groups."""
-
+    """Find key and param groups."""
     parser = argparse.ArgumentParser(
         description="cubids-group: find key and parameter groups in BIDS",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -337,20 +337,24 @@ def cubids_group():
         "bids_dir",
         type=Path,
         action="store",
-        help="the root of a BIDS dataset. It should contain "
-        "sub-X directories and dataset_description.json",
+        help=(
+            "the root of a BIDS dataset. It should contain "
+            "sub-X directories and dataset_description.json"
+        ),
     )
     parser.add_argument(
         "output_prefix",
         type=Path,
         action="store",
-        help="file prefix to which a _summary.tsv, _files.tsv "
-        "_AcqGrouping.tsv, and _AcqGroupInfo.txt, are "
-        "written. If users pass in just a filename prefix "
-        "e.g. V1, then CuBIDS will put the four grouping "
-        "outputs in bids_dir/code/CuBIDS. If the user "
-        "specifies a path (e.g. /Users/scovitz/BIDS/V1 "
-        "then output files will go to the specified location.",
+        help=(
+            "file prefix to which a _summary.tsv, _files.tsv "
+            "_AcqGrouping.tsv, and _AcqGroupInfo.txt, are "
+            "written. If users pass in just a filename prefix "
+            "e.g. V1, then CuBIDS will put the four grouping "
+            "outputs in bids_dir/code/CuBIDS. If the user "
+            "specifies a path (e.g. /Users/scovitz/BIDS/V1 "
+            "then output files will go to the specified location."
+        ),
     )
     parser.add_argument(
         "--container",
@@ -361,8 +365,7 @@ def cubids_group():
         "--acq-group-level",
         default="subject",
         action="store",
-        help="Level at which acquisition groups are created "
-        'options: "subject" or "session"',
+        help=("Level at which acquisition groups are created " 'options: "subject" or "session"'),
     )
     parser.add_argument(
         "--config", action="store", type=Path, help="path to a config file for grouping"
@@ -443,55 +446,61 @@ def cubids_group():
 
 
 def cubids_apply():
-    """Command Line Interface funciton for applying the tsv changes."""
-
+    """Apply the tsv changes."""
     parser = argparse.ArgumentParser(
-        description="cubids-apply: apply the changes specified in a tsv "
-        "to a BIDS directory",
+        description=("cubids-apply: apply the changes specified in a tsv to a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "bids_dir",
         type=Path,
         action="store",
-        help="the root of a BIDS dataset. It should contain "
-        "sub-X directories and dataset_description.json",
+        help=(
+            "the root of a BIDS dataset. It should contain "
+            "sub-X directories and dataset_description.json"
+        ),
     )
     parser.add_argument(
         "edited_summary_tsv",
         type=Path,
         action="store",
-        help="path to the _summary.tsv that has been edited "
-        "in the MergeInto and RenameKeyGroup columns. If the "
-        " summary table is located in the code/CuBIDS "
-        "directory, then users can just pass the summary tsv "
-        "filename instead of the full path to the tsv",
+        help=(
+            "path to the _summary.tsv that has been edited "
+            "in the MergeInto and RenameKeyGroup columns. If the "
+            " summary table is located in the code/CuBIDS "
+            "directory, then users can just pass the summary tsv "
+            "filename instead of the full path to the tsv"
+        ),
     )
     parser.add_argument(
         "files_tsv",
         type=Path,
         action="store",
-        help="path to the _files.tsv that has been edited "
-        "in the MergeInto and RenameKeyGroup columns. If the "
-        " files table is located in the code/CuBIDS "
-        "directory, then users can just pass the files tsv "
-        "filename instead of the full path to the tsv",
+        help=(
+            "path to the _files.tsv that has been edited "
+            "in the MergeInto and RenameKeyGroup columns. If the "
+            "files table is located in the code/CuBIDS "
+            "directory, then users can just pass the files tsv "
+            "filename instead of the full path to the tsv"
+        ),
     )
     parser.add_argument(
         "new_tsv_prefix",
         type=Path,
         action="store",
-        help="file prefix for writing the post-apply grouping "
-        "outputs. If users pass in just a filename prefix "
-        "e.g. V2, then CuBIDS will put the four grouping "
-        "outputs in bids_dir/code/CuBIDS. If the user "
-        "specifies a path (e.g. /Users/scovitz/BIDS/V2 "
-        "then output files will go to the specified location.",
+        help=(
+            "file prefix for writing the post-apply grouping "
+            "outputs. If users pass in just a filename prefix "
+            "e.g. V2, then CuBIDS will put the four grouping "
+            "outputs in bids_dir/code/CuBIDS. If the user "
+            "specifies a path (e.g. /Users/scovitz/BIDS/V2 "
+            "then output files will go to the specified location."
+        ),
     )
     parser.add_argument(
         "--use-datalad",
         action="store_true",
-        help="ensure that there are no untracked changes " "before finding groups",
+        help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
         "--container",
@@ -502,8 +511,7 @@ def cubids_apply():
         "--acq-group-level",
         default="subject",
         action="store",
-        help="Level at which acquisition groups are created "
-        'options: "subject" or "session"',
+        help=("Level at which acquisition groups are created " 'options: "subject" or "session"'),
     )
     parser.add_argument(
         "--config", action="store", type=Path, help="path to a config file for grouping"
@@ -535,9 +543,7 @@ def cubids_apply():
     input_summary_tsv_dir_link = (
         str(opts.edited_tsv_prefix.parent.absolute()) + ":/in_summary_tsv:ro"
     )
-    input_files_tsv_dir_link = (
-        str(opts.edited_tsv_prefix.parent.absolute()) + ":/in_files_tsv:ro"
-    )
+    input_files_tsv_dir_link = str(opts.edited_tsv_prefix.parent.absolute()) + ":/in_files_tsv:ro"
     output_tsv_dir_link = str(opts.new_tsv_prefix.parent.absolute()) + ":/out_tsv:rw"
 
     # FROM BOND-GROUP
@@ -549,7 +555,6 @@ def cubids_apply():
     linked_output_prefix = "/tsv/" + opts.output_prefix.name
 
     ####
-
     linked_input_summary_tsv = "/in_summary_tsv/" + opts.edited_summary_tsv.name
     linked_input_files_tsv = "/in_files_tsv/" + opts.files_tsv.name
     linked_output_prefix = "/out_tsv/" + opts.new_tsv_prefix.name
@@ -619,19 +624,19 @@ def cubids_apply():
 
 
 def cubids_datalad_save():
-    """Command Line Interfcae function for performing datalad save."""
-
+    """Perform datalad save."""
     parser = argparse.ArgumentParser(
-        description="cubids-datalad-save: perform a DataLad save on a BIDS "
-        "directory",
+        description=("cubids-datalad-save: perform a DataLad save on a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "bids_dir",
         type=Path,
         action="store",
-        help="the root of a BIDS dataset. It should contain "
-        "sub-X directories and dataset_description.json",
+        help=(
+            "the root of a BIDS dataset. It should contain "
+            "sub-X directories and dataset_description.json"
+        ),
     )
     parser.add_argument("-m", action="store", help="message for this commit")
     parser.add_argument(
@@ -685,8 +690,7 @@ def cubids_datalad_save():
 
 
 def cubids_undo():
-    """Command Line Interface function for reverting a commit."""
-
+    """Revert the most recent commit."""
     parser = argparse.ArgumentParser(
         description="cubids-undo: revert most recent commit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -695,8 +699,10 @@ def cubids_undo():
         "bids_dir",
         type=Path,
         action="store",
-        help="the root of a BIDS dataset. It should contain "
-        "sub-X directories and dataset_description.json",
+        help=(
+            "the root of a BIDS dataset. It should contain "
+            "sub-X directories and dataset_description.json"
+        ),
     )
     parser.add_argument(
         "--container",
@@ -745,37 +751,44 @@ def cubids_undo():
 
 
 def cubids_copy_exemplars():
-    """Command Line Interface function for purging scan associations."""
-
+    """Create and save a directory with one subject from each acquisition group."""
     parser = argparse.ArgumentParser(
-        description="cubids-copy-exemplars: create and save a directory with "
-        " one subject from each Acquisition Group in the BIDS dataset",
+        description=(
+            "cubids-copy-exemplars: create and save a directory with "
+            "one subject from each Acquisition Group in the BIDS dataset"
+        ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "bids_dir",
         type=Path,
         action="store",
-        help="path to the root of a BIDS dataset. "
-        "It should contain sub-X directories and "
-        "dataset_description.json.",
+        help=(
+            "path to the root of a BIDS dataset. "
+            "It should contain sub-X directories and "
+            "dataset_description.json."
+        ),
     )
     parser.add_argument(
         "exemplars_dir",
         type=Path,
         action="store",
-        help="absolute path to the root of a BIDS dataset "
-        "containing one subject from each Acquisition Group. "
-        "It should contain sub-X directories and "
-        "dataset_description.json.",
+        help=(
+            "absolute path to the root of a BIDS dataset "
+            "containing one subject from each Acquisition Group. "
+            "It should contain sub-X directories and "
+            "dataset_description.json."
+        ),
     )
     parser.add_argument(
         "exemplars_tsv",
         type=Path,
         action="store",
-        help="absolute path to the .tsv file that lists one "
-        "subject from each Acqusition Group "
-        "(*_AcqGrouping.tsv from the cubids-group output)",
+        help=(
+            "absolute path to the .tsv file that lists one "
+            "subject from each Acqusition Group "
+            "(*_AcqGrouping.tsv from the cubids-group output)"
+        ),
     )
     parser.add_argument(
         "--use-datalad", action="store_true", help="check exemplar dataset into DataLad"
@@ -784,9 +797,11 @@ def cubids_copy_exemplars():
         "--min-group-size",
         action="store",
         default=1,
-        help="minimum number of subjects an Acquisition Group "
-        "must have in order to be included in the exemplar "
-        "dataset ",
+        help=(
+            "minimum number of subjects an Acquisition Group "
+            "must have in order to be included in the exemplar "
+            "dataset "
+        ),
         required=False,
     )
     # parser.add_argument('--include-groups',
@@ -879,25 +894,28 @@ def cubids_copy_exemplars():
 
 
 def cubids_add_nifti_info():
-    """Command Line Interface function for purging scan associations."""
-
+    """Add information from nifti files to the dataset's sidecars."""
     parser = argparse.ArgumentParser(
-        description="cubids-add-nifti-info: Add information from nifti"
-        "files to the sidecars of each dataset",
+        description=(
+            "cubids-add-nifti-info: Add information from nifti"
+            "files to the sidecars of each dataset"
+        ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "bids_dir",
         type=Path,
         action="store",
-        help="absolute path to the root of a BIDS dataset. "
-        "It should contain sub-X directories and "
-        "dataset_description.json.",
+        help=(
+            "absolute path to the root of a BIDS dataset. "
+            "It should contain sub-X directories and "
+            "dataset_description.json."
+        ),
     )
     parser.add_argument(
         "--use-datalad",
         action="store_true",
-        help="ensure that there are no untracked changes " "before finding groups",
+        help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
         "--force-unlock",
@@ -966,8 +984,7 @@ def cubids_add_nifti_info():
 
 
 def cubids_purge():
-    """Command Line Interface function for purging scan associations."""
-
+    """Purge scan associations."""
     parser = argparse.ArgumentParser(
         description="cubids-purge: purge associations from the dataset",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -976,20 +993,22 @@ def cubids_purge():
         "bids_dir",
         type=Path,
         action="store",
-        help="path to the root of a BIDS dataset. "
-        "It should contain sub-X directories and "
-        "dataset_description.json.",
+        help=(
+            "path to the root of a BIDS dataset. "
+            "It should contain sub-X directories and "
+            "dataset_description.json."
+        ),
     )
     parser.add_argument(
         "scans",
         type=Path,
         action="store",
-        help="path to the txt file of scans whose " "associations should be purged.",
+        help="path to the txt file of scans whose associations should be purged.",
     )
     parser.add_argument(
         "--use-datalad",
         action="store_true",
-        help="ensure that there are no untracked changes " "before finding groups",
+        help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
         "--container",
@@ -1051,25 +1070,26 @@ def cubids_purge():
 
 
 def cubids_remove_metadata_fields():
-    """Command Line Interface function for deteling fields from metadata."""
-
+    """Delete fields from metadata."""
     parser = argparse.ArgumentParser(
-        description="cubids-remove-metadata-fields: delete fields from " "metadata",
+        description="cubids-remove-metadata-fields: delete fields from metadata",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "bids_dir",
         type=Path,
         action="store",
-        help="the root of a BIDS dataset. It should contain "
-        "sub-X directories and dataset_description.json",
+        help=(
+            "the root of a BIDS dataset. It should contain "
+            "sub-X directories and dataset_description.json"
+        ),
     )
     parser.add_argument(
         "--fields",
         nargs="+",
         action="store",
         default=[],
-        help="space-separated list of metadata fields to " "remove.",
+        help="space-separated list of metadata fields to remove.",
     )
     parser.add_argument(
         "--container",
@@ -1118,18 +1138,19 @@ def cubids_remove_metadata_fields():
 
 
 def cubids_print_metadata_fields():
-    """Command Line Interface function that prints unique metadata fields."""
-
+    """Print unique metadata fields."""
     parser = argparse.ArgumentParser(
-        description="cubids-print-metadata-fields: print all unique " "metadata fields",
+        description="cubids-print-metadata-fields: print all unique metadata fields",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "bids_dir",
         type=Path,
         action="store",
-        help="the root of a BIDS dataset. It should contain "
-        "sub-X directories and dataset_description.json",
+        help=(
+            "the root of a BIDS dataset. It should contain "
+            "sub-X directories and dataset_description.json"
+        ),
     )
     parser.add_argument(
         "--container",
@@ -1177,8 +1198,7 @@ def cubids_print_metadata_fields():
 
 
 def _get_container_type(image_name):
-    """Gets and returns the container type."""
-
+    """Get and return the container type."""
     # If it's a file on disk, it must be a singularity image
     if Path(image_name).exists():
         return "singularity"

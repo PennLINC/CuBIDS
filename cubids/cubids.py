@@ -79,9 +79,7 @@ class CuBIDS(object):
             re.compile(r"/\."),
         ]
 
-        indexer = bids.BIDSLayoutIndexer(
-            validate=validate, ignore=ignores, index_metadata=False
-        )
+        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=False)
 
         self._layout = bids.BIDSLayout(self.path, validate=validate, indexer=indexer)
 
@@ -144,9 +142,7 @@ class CuBIDS(object):
         Uses git reset --hard to revert to the previous commit.
         """
         if not self.is_datalad_clean():
-            raise Exception(
-                "Untracked changes present. " "Run clear_untracked_changes first"
-            )
+            raise Exception("Untracked changes present. " "Run clear_untracked_changes first")
         reset_proc = subprocess.run(["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
@@ -211,9 +207,7 @@ class CuBIDS(object):
             self.datalad_save(message="Added nifti info to sidecars")
         self.reset_bids_layout()
 
-    def apply_tsv_changes(
-        self, summary_tsv, files_tsv, new_prefix, raise_on_error=True
-    ):
+    def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True):
         """Applies changes documented in the edited _summary tsv
         and generates the new tsv files.
 
@@ -252,18 +246,12 @@ class CuBIDS(object):
         files_df = pd.read_table(files_tsv)
 
         # Check that the MergeInto column only contains valid merges
-        ok_merges, deletions = check_merging_operations(
-            summary_tsv, raise_on_error=raise_on_error
-        )
+        ok_merges, deletions = check_merging_operations(summary_tsv, raise_on_error=raise_on_error)
 
         merge_commands = []
         for source_id, dest_id in ok_merges:
-            dest_files = files_df.loc[
-                (files_df[["ParamGroup", "KeyGroup"]] == dest_id).all(1)
-            ]
-            source_files = files_df.loc[
-                (files_df[["ParamGroup", "KeyGroup"]] == source_id).all(1)
-            ]
+            dest_files = files_df.loc[(files_df[["ParamGroup", "KeyGroup"]] == dest_id).all(1)]
+            source_files = files_df.loc[(files_df[["ParamGroup", "KeyGroup"]] == source_id).all(1)]
 
             # Get a source json file
             img_full_path = self.path + source_files.iloc[0].FilePath
@@ -271,17 +259,13 @@ class CuBIDS(object):
             for dest_nii in dest_files.FilePath:
                 dest_json = img_to_new_ext(self.path + dest_nii, ".json")
                 if Path(dest_json).exists() and Path(source_json).exists():
-                    merge_commands.append(
-                        "bids-sidecar-merge %s %s" % (source_json, dest_json)
-                    )
+                    merge_commands.append("bids-sidecar-merge %s %s" % (source_json, dest_json))
 
         # Get the delete commands
         # delete_commands = []
         to_remove = []
         for rm_id in deletions:
-            files_to_rm = files_df.loc[
-                (files_df[["ParamGroup", "KeyGroup"]] == rm_id).all(1)
-            ]
+            files_to_rm = files_df.loc[(files_df[["ParamGroup", "KeyGroup"]] == rm_id).all(1)]
 
             for rm_me in files_to_rm.FilePath:
                 if Path(self.path + rm_me).exists():
@@ -405,9 +389,7 @@ class CuBIDS(object):
         if "run" in list(entities.keys()) and "run-0" in filepath:
             entities["run"] = "0" + str(entities["run"])
 
-        filename = "_".join(
-            ["{}-{}".format(key, entities[key]) for key in entity_file_keys]
-        )
+        filename = "_".join(["{}-{}".format(key, entities[key]) for key in entity_file_keys])
         filename = (
             filename.replace("acquisition", "acq")
             .replace("direction", "dir")
@@ -450,9 +432,7 @@ class CuBIDS(object):
                 # ensure assoc not an IntendedFor reference
                 if ".nii" not in str(assoc_path):
                     self.old_filenames.append(assoc_path)
-                    new_ext_path = img_to_new_ext(
-                        new_path, "".join(Path(assoc_path).suffixes)
-                    )
+                    new_ext_path = img_to_new_ext(new_path, "".join(Path(assoc_path).suffixes))
                     self.new_filenames.append(new_ext_path)
 
         # MAKE SURE THESE AREN'T COVERED BY get_associations!!!
@@ -524,9 +504,7 @@ class CuBIDS(object):
                             # remove old filename
                             data["IntendedFor"].remove(item)
                             # add new filename
-                            data["IntendedFor"].append(
-                                _get_intended_for_reference(new_path)
-                            )
+                            data["IntendedFor"].append(_get_intended_for_reference(new_path))
 
                         # update the json with the new data dictionary
                         _update_json(str(path), data)
@@ -540,9 +518,7 @@ class CuBIDS(object):
         # else:
         #     print("No IntendedFor References to Rename")
 
-    def copy_exemplars(
-        self, exemplars_dir, exemplars_tsv, min_group_size, raise_on_error=True
-    ):
+    def copy_exemplars(self, exemplars_dir, exemplars_tsv, min_group_size, raise_on_error=True):
         """Copies one subject from each Acquisition Group into a new directory
         for testing *preps, raises an error if the subjects are not unlocked,
         unlocks each subject before copying if --force_unlock is set.
@@ -993,18 +969,14 @@ class CuBIDS(object):
         summary = _order_columns(pd.concat(param_group_summaries, ignore_index=True))
 
         # create new col that strings key and param group together
-        summary["KeyParamGroup"] = (
-            summary["KeyGroup"] + "__" + summary["ParamGroup"].map(str)
-        )
+        summary["KeyParamGroup"] = summary["KeyGroup"] + "__" + summary["ParamGroup"].map(str)
 
         # move this column to the front of the dataframe
         key_param_col = summary.pop("KeyParamGroup")
         summary.insert(0, "KeyParamGroup", key_param_col)
 
         # do the same for the files df
-        big_df["KeyParamGroup"] = (
-            big_df["KeyGroup"] + "__" + big_df["ParamGroup"].map(str)
-        )
+        big_df["KeyParamGroup"] = big_df["KeyGroup"] + "__" + big_df["ParamGroup"].map(str)
 
         # move this column to the front of the dataframe
         key_param_col = big_df.pop("KeyParamGroup")
@@ -1153,12 +1125,8 @@ class CuBIDS(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        summary = summary.sort_values(
-            by=["Modality", "KeyGroupCount"], ascending=[True, False]
-        )
-        big_df = big_df.sort_values(
-            by=["Modality", "KeyGroupCount"], ascending=[True, False]
-        )
+        summary = summary.sort_values(by=["Modality", "KeyGroupCount"], ascending=[True, False])
+        big_df = big_df.sort_values(by=["Modality", "KeyGroupCount"], ascending=[True, False])
 
         # Create json dictionaries for summary and files tsvs
         self.create_data_dictionary()
@@ -1177,9 +1145,7 @@ class CuBIDS(object):
         summary.to_csv(path_prefix + "_summary.tsv", sep="\t", index=False)
 
         # Calculate the acq groups
-        group_by_acquisition_sets(
-            path_prefix + "_files.tsv", path_prefix, self.acq_group_level
-        )
+        group_by_acquisition_sets(path_prefix + "_files.tsv", path_prefix, self.acq_group_level)
 
         print("CuBIDS detected " + str(len(summary)) + " Parameter Groups.")
 
@@ -1422,12 +1388,8 @@ def _get_param_groups(
                     else:
                         example_data["UsedAsFieldmap"] = False
                 else:
-                    for intention_num, intention_key_group in enumerate(
-                        intended_key_groups
-                    ):
-                        example_data[
-                            "IntendedForKey%02d" % intention_num
-                        ] = intention_key_group
+                    for intention_num, intention_key_group in enumerate(intended_key_groups):
+                        example_data["IntendedForKey%02d" % intention_num] = intention_key_group
 
             dfs.append(example_data)
 
@@ -1474,9 +1436,7 @@ def _get_param_groups(
 
     # Sort by counts and relabel the param groups
     param_groups_with_counts.sort_values(by=["Counts"], inplace=True, ascending=False)
-    param_groups_with_counts["ParamGroup"] = (
-        np.arange(param_groups_with_counts.shape[0]) + 1
-    )
+    param_groups_with_counts["ParamGroup"] = np.arange(param_groups_with_counts.shape[0]) + 1
 
     # Send the new, ordered param group ids to the files list
     ordered_labeled_files = pd.merge(

@@ -40,9 +40,7 @@ def build_subject_paths(bids_dir):
     subjects = glob.glob(bids_dir)
 
     if len(subjects) < 1:
-        raise ValueError(
-            "Couldn't find any subjects " "in the specified directory:\n" + bids_dir
-        )
+        raise ValueError("Couldn't find any subjects " "in the specified directory:\n" + bids_dir)
 
     subjects_dict = {}
 
