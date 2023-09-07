@@ -1,98 +1,36 @@
 version: 2.1
-jobs:
+orbs:
+  codecov: codecov/codecov@3.2.4
 
+.dockersetup:
+  &dockersetup
+  docker:
+    - image: ubuntu:bionic-20220531
+  working_directory: /src/CuBIDS
+
+runinstall:
+  &runinstall
+  name: Install CuBIDS
+  command: |
+    VERSION=0+build
+    if [[ -n "$CIRCLE_TAG" ]]; then
+      VERSION="$CIRCLE_TAG"
+    fi
+    git checkout $CIRCLE_BRANCH
+    echo "${VERSION}" > /src/CuBIDS/cubids/VERSION
+    echo "include cubids/VERSION" >> /src/CuBIDS/MANIFEST.in
+    pip install .[tests] --progress-bar off
+
+jobs:
   build:
+    <<: *dockersetup
     environment:
       TZ: "/usr/share/zoneinfo/America/New_York"
       SCRATCH: "/scratch"
-    docker:
-      - image: docker:18.06.1-ce-git
     working_directory: /tmp/src/CuBIDS
     steps:
       - checkout
-      - run:
-          name: Install parallel gzip and python3
-          command: |
-            apk add --no-cache pigz python3 tar
-      - restore_cache:
-          keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
-            - docker-v1-{{ .Branch }}-
-            - docker-v1-main-
-            - docker-v1-
-      - setup_remote_docker:
-          version: 19.03.13
-      - run:
-          name: Load Docker image layer cache
-          no_output_timeout: 30m
-          command: |
-            docker info
-            set +o pipefail
-            if [ -f /tmp/cache/docker.tar.gz ]; then
-              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-              docker images
-            fi
-      - run:
-          name: Build Docker image
-          no_output_timeout: 3h
-          command: |
-            # Get version, update files.
-            THISVERSION=$(python3 -c "from cubids import __version__; print(__version__)")
-
-            # Build docker image
-            e=1 && for i in {1..5}; do
-              docker build \
-                --cache-from=pennlinc/bond \
-                --rm=false \
-                -t pennlinc/bond:latest \
-                --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-                --build-arg VCS_REF=`git rev-parse --short HEAD` \
-                --build-arg VERSION="${CIRCLE_TAG:-$THISVERSION}" . \
-              && e=0 && break || sleep 15
-            done && [ "$e" -eq "0" ]
-
-      - run:
-          name: Docker save
-          no_output_timeout: 40m
-          command: |
-            mkdir -p /tmp/cache
-            docker save pennlinc/bond:latest \
-            | pigz -3 > /tmp/cache/docker.tar.gz
-
-      - save_cache:
-         key: docker-v1-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
-         paths:
-           - /tmp/cache/docker.tar.gz
-
-  setup_conda:
-    machine:
-      image: ubuntu-2004:202201-02
-    steps:
-      - run:
-           name: install miniconda
-           command: |
-             cd /tmp
-             export MINICONDA=/tmp/miniconda
-             export PATH="$MINICONDA/bin:$PATH"
-             wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-             bash miniconda.sh -b -f -p $MINICONDA
-             conda config --set always_yes yes
-             conda update conda
-             conda info -a
-             conda create -n cubids python=3.8
-             source activate cubids
-             conda install -c conda-forge -y datalad
-             conda install pip
-             conda install pytest
-             # Add nodejs and the validator
-             #  conda install nodejs
-             #  npm install -g yarn && \
-             #  npm install -g bids-validator
-
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - miniconda
+      - run: *runinstall
 
   get_singularity:
     machine:
@@ -272,32 +210,12 @@ jobs:
             exit 1
 
   install_and_test:
-    machine:
-      image: ubuntu-2004:202201-02
-    working_directory: /home/circleci/src/CuBIDS
+    <<: *dockersetup
     steps:
       - checkout:
           path: /home/circleci/src/CuBIDS
-
       - attach_workspace:
           at: /tmp
-
-      - restore_cache:
-          keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
-
-      - run:
-          name: Load Docker image layer cache
-          no_output_timeout: 30m
-          command: |
-            docker info
-            set +o pipefail
-            if [ -f /tmp/cache/docker.tar.gz ]; then
-              sudo apt update && sudo apt -y install pigz
-              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-              docker images
-            fi
-
       - run:
           name: Test CuBIDS
           command: |
@@ -309,7 +227,6 @@ jobs:
             npm install -g bids-validator
             pip install .[tests]
             pytest cubids
-
       - run:
           name: Test Docker validate
           command: |
@@ -323,7 +240,6 @@ jobs:
               /tmp/bids/docker-validate \
               /tmp/validate_testing/docker \
               --container pennlinc/bond:latest
-
       - run:
           name: Test Docker group
           command: |
@@ -337,7 +253,6 @@ jobs:
               /tmp/bids/docker-group \
               /tmp/group_testing/docker \
               --container pennlinc/bond:latest
-
       - run:
           name: Test Docker save
           command: |
@@ -382,40 +297,40 @@ jobs:
       - run: echo Deploying!
 
   deploy_docker:
+    environment:
+      TZ: "/usr/share/zoneinfo/America/New_York"
     machine:
-      image: circleci/classic:201711-01
+      image: cimg/base:2020.09
     working_directory: /tmp/src/CuBIDS
     steps:
-      - checkout:
-          path: /home/circleci/src/CuBIDS
+      - checkout
+      - setup_remote_docker:
+          version: 19.03.13
+          docker_layer_caching: true
       - run:
-          name: Check whether build should be skipped
+          name: Build Docker image
+          no_output_timeout: 3h
           command: |
-            cd /home/circleci/src/CuBIDS
-            if [[ "$( git log --format='format:%s' -n 1 $CIRCLE_SHA1 | grep -i -E '^docs?(\(\w+\))?:' )" != "" ]]; then
-              echo "Only docs build"
-              circleci step halt
-            fi
-      - restore_cache:
-          keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
-      - run:
-          name: Load Docker image layer cache
-          no_output_timeout: 30m
-          command: |
-            docker info
-            set +o pipefail
-            if [ -f /tmp/cache/docker.tar.gz ]; then
-              sudo apt update && sudo apt -y install pigz
-              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-              docker images
-            fi
+            # Get version, update files.
+            THISVERSION=$(python3 -c "from cubids import __version__; print(__version__)")
+
+            # Build docker image
+            e=1 && for i in {1..5}; do
+              docker build \
+                --cache-from=pennlinc/bond \
+                --rm=false \
+                -t pennlinc/bond:latest \
+                --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
+                --build-arg VCS_REF=`git rev-parse --short HEAD` \
+                --build-arg VERSION="${CIRCLE_TAG:-$THISVERSION}" . \
+              && e=0 && break || sleep 15
+            done && [ "$e" -eq "0" ]
       - run:
           name: Deploy to Docker Hub
           no_output_timeout: 40m
           command: |
-            if [[ -n "$DOCKER_PASS" ]]; then
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
+            if [[ -n "$DOCKERHUB_TOKEN" ]]; then
+              docker login -u $DOCKER_USER -p $DOCKERHUB_TOKEN
               docker tag pennlinc/bond pennlinc/bond:unstable
               docker push pennlinc/bond:unstable
               if [[ -n "$CIRCLE_TAG" ]]; then
