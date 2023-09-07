@@ -19,7 +19,7 @@ jobs:
         python-version: '3.7'
     - name: Install dependencies
       run: |
-        flake8 flake8-absolute-import flake8-black flake8-docstrings \
+        pip install flake8 flake8-absolute-import flake8-black flake8-docstrings \
         flake8-isort flake8-pyproject flake8-unused-arguments \
         flake8-use-fstring pep8-naming
     - name: Run linters
