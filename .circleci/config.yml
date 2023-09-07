@@ -495,7 +495,6 @@ workflows:
 
       - deployable:
           requires:
-            - build_docs
             - install_and_test
             - install_and_test_singularity
           filters:
