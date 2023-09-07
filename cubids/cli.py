@@ -150,7 +150,7 @@ def cubids_validate():
                     parsed.to_csv(val_tsv, sep="\t", index=False)
 
                     # build validation data dictionary json sidecar
-                    val_dict = get_val_dictionary(parsed)
+                    val_dict = get_val_dictionary()
                     val_json = val_tsv.replace("tsv", "json")
                     with open(val_json, "w") as outfile:
                         json.dump(val_dict, outfile, indent=4)
@@ -241,7 +241,7 @@ def cubids_validate():
                     parsed.to_csv(val_tsv, sep="\t", index=False)
 
                     # build validation data dictionary json sidecar
-                    val_dict = get_val_dictionary(parsed)
+                    val_dict = get_val_dictionary()
                     val_json = val_tsv.replace("tsv", "json")
                     with open(val_json, "w") as outfile:
                         json.dump(val_dict, outfile, indent=4)

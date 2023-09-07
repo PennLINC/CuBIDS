@@ -1,3 +1,4 @@
+"""Methods for validating BIDS datasets."""
 import glob
 import json
 import logging
@@ -11,8 +12,7 @@ logger = logging.getLogger("cubids-cli")
 
 
 def build_validator_call(path, ignore_headers=False, ignore_subject=True):
-    """Build a subprocess command to the bids validator"""
-
+    """Build a subprocess command to the bids validator."""
     # build docker call
     command = ["bids-validator", "--verbose", "--json"]
 
@@ -27,8 +27,7 @@ def build_validator_call(path, ignore_headers=False, ignore_subject=True):
 
 
 def build_subject_paths(bids_dir):
-    """Build a list of BIDS dirs with 1 subject each"""
-
+    """Build a list of BIDS dirs with 1 subject each."""
     bids_dir = str(bids_dir)
     if not bids_dir.endswith("/"):
         bids_dir += "/"
@@ -55,8 +54,8 @@ def build_subject_paths(bids_dir):
     return subjects_dict
 
 
-def run_validator(call, verbose=True):
-    """Run the validator with subprocess"""
+def run_validator(call):
+    """Run the validator with subprocess."""
     # if verbose:
     #     logger.info("Running the validator with call:")
     #     logger.info('\"' + ' '.join(call) + '\"')
@@ -66,14 +65,16 @@ def run_validator(call, verbose=True):
 
 
 def parse_validator_output(output):
-    """Parse the JSON output of the BIDS validator into a pandas dataframe
-    Parameters:
-    -----------
-        - path : string
-            Path to JSON file of BIDS validator output
+    """Parse the JSON output of the BIDS validator into a pandas dataframe.
+
+    Parameters
+    ----------
+    path : string
+        Path to JSON file of BIDS validator output
+
     Returns
-    -----------
-        - Pandas DataFrame
+    -------
+        Pandas DataFrame
     """
 
     def get_nested(dct, *keys):
@@ -116,7 +117,8 @@ def parse_validator_output(output):
     return df
 
 
-def get_val_dictionary(df):
+def get_val_dictionary():
+    """Get value dictionary."""
     val_dict = {}
     val_dict["files"] = {"Description": "File with warning orerror"}
     val_dict["type"] = {"Description": "BIDS validation warning or error"}
