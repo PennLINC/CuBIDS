@@ -6,18 +6,17 @@ jobs:
       TZ: "/usr/share/zoneinfo/America/New_York"
       SCRATCH: "/scratch"
     docker:
-      - image: ubuntu:bionic-20220531
+      - image: docker:git
     working_directory: /tmp/src/CuBIDS
     steps:
       - checkout
       - run:
           name: Install parallel gzip and python3
           command: |
-            apt-get update
-            apt-get install -y --no-install-recommends docker git pigz python3 python3-pip tar
+            apk add --no-cache pigz python3 py3-pip tar
       - restore_cache:
           keys:
-            - docker-v2-{{ .Branch }}-{{ .Revision }}
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
       - setup_remote_docker:
           version: 19.03.13
       - run:
@@ -69,7 +68,7 @@ jobs:
             | pigz -3 > /tmp/cache/docker.tar.gz
 
       - save_cache:
-         key: docker-v2-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
+         key: docker-v1-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
          paths:
            - /tmp/cache/docker.tar.gz
 
@@ -156,7 +155,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - docker-v2-{{ .Branch }}-{{ .Revision }}
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
 
       - restore_cache:
           keys:
@@ -287,7 +286,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - docker-v2-{{ .Branch }}-{{ .Revision }}
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
 
       - run:
           name: Load cached Docker image
@@ -401,7 +400,7 @@ jobs:
             fi
       - restore_cache:
           keys:
-            - docker-v2-{{ .Branch }}-{{ .Revision }}
+            - docker-v1-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Load Docker image layer cache
           no_output_timeout: 30m
