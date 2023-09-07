@@ -104,6 +104,11 @@ def _parse_validate():
 
 
 def _enter_validate(argv=None):
+    warnings.warn(
+        "Calling cubids-validate is deprecated. Please use cubids validate.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_validate().parse_args(argv)
     # args = vars(options).copy()
     cubids_validate(options)
@@ -333,6 +338,11 @@ def _parse_bids_sidecar_merge():
 
 
 def _enter_bids_sidecar_merge(argv=None):
+    warnings.warn(
+        "Calling bids-sidecar-merge is deprecated. Please use cubids bids-sidecar-merge.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_bids_sidecar_merge().parse_args(argv)
     # args = vars(options).copy()
     bids_sidecar_merge(options)
@@ -390,6 +400,11 @@ def _parse_group():
 
 
 def _enter_group(argv=None):
+    warnings.warn(
+        "Calling cubids-group is deprecated. Please use cubids group.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_group().parse_args(argv)
     # args = vars(options).copy()
     cubids_group(options)
@@ -545,6 +560,11 @@ def _parse_apply():
 
 
 def _enter_apply(argv=None):
+    warnings.warn(
+        "Calling cubids-apply is deprecated. Please use cubids apply.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_apply().parse_args(argv)
     # args = vars(options).copy()
     cubids_apply(options)
@@ -682,6 +702,11 @@ def _parse_datalad_save():
 
 
 def _enter_datalad_save(argv=None):
+    warnings.warn(
+        "Calling cubids-datalad-save is deprecated. Please use cubids datalad-save.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_datalad_save().parse_args(argv)
     # args = vars(options).copy()
     cubids_datalad_save(options)
@@ -756,6 +781,11 @@ def _parse_undo():
 
 
 def _enter_undo(argv=None):
+    warnings.warn(
+        "Calling cubids-undo is deprecated. Please use cubids undo.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_undo().parse_args(argv)
     # args = vars(options).copy()
     cubids_undo(options)
@@ -871,6 +901,11 @@ def _parse_copy_exemplars():
 
 
 def _enter_copy_exemplars(argv=None):
+    warnings.warn(
+        "Calling cubids-copy-exemplars is deprecated. Please use cubids copy-exemplars.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_copy_exemplars().parse_args(argv)
     # args = vars(options).copy()
     cubids_copy_exemplars(options)
@@ -989,6 +1024,11 @@ def _parse_add_nifti_info():
 
 
 def _enter_add_nifti_info(argv=None):
+    warnings.warn(
+        "Calling cubids-add-nifti-info is deprecated. Please use cubids add-nifti-info.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_add_nifti_info().parse_args(argv)
     # args = vars(options).copy()
     cubids_add_nifti_info(options)
@@ -1085,6 +1125,11 @@ def _parse_purge():
 
 
 def _enter_purge(argv=None):
+    warnings.warn(
+        "Calling cubids-purge is deprecated. Please use cubids purge.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_purge().parse_args(argv)
     # args = vars(options).copy()
     cubids_purge(options)
@@ -1175,6 +1220,12 @@ def _parse_remove_metadata_fields():
 
 
 def _enter_remove_metadata_fields(argv=None):
+    warnings.warn(
+        "Calling cubids-remove-metadata-fields is deprecated. "
+        "Please use cubids remove-metadata-fields.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_remove_metadata_fields().parse_args(argv)
     # args = vars(options).copy()
     cubids_remove_metadata_fields(options)
@@ -1247,6 +1298,12 @@ def _parse_print_metadata_fields():
 def _enter_print_metadata_fields(argv=None):
     options = _parse_print_metadata_fields().parse_args(argv)
     # args = vars(options).copy()
+    warnings.warn(
+        "Calling cubids-print-metadata-fields is deprecated. "
+        "Please use cubids print-metadata-fields.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     cubids_print_metadata_fields(options)
 
 
@@ -1344,4 +1401,4 @@ def _main(argv=None):
     options = _get_parser().parse_args(argv)
     args = vars(options).copy()
     args.pop("func")
-    options.func(**args)
+    options.func(deprecated=False, **args)
