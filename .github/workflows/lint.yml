@@ -23,4 +23,4 @@ jobs:
         flake8-isort flake8-pyproject flake8-unused-arguments \
         flake8-use-fstring pep8-naming
     - name: Run linters
-      run: python -m flake8 xcp_d
+      run: python -m flake8 cubids
