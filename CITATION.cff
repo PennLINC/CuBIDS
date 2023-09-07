@@ -4,10 +4,7 @@
 cff-version: 1.2.0
 title: >-
   Curation of BIDS (CuBIDS)
-message: >-
-  If you use this software, please cite it using the
-  metadata from this file, as well as the NeuroImage paper
-  (doi:10.1016/j.neuroimage.2022.119609).
+message: If you use this software, please cite it using the metadata from this file, as well as the NeuroImage paper (doi:10.1016/j.neuroimage.2022.119609).
 type: software
 authors:
   - given-names: Sydney
