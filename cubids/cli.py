@@ -31,8 +31,7 @@ GIT_CONFIG = os.path.join(os.path.expanduser("~"), ".gitconfig")
 logging.getLogger("datalad").setLevel(logging.ERROR)
 
 
-def cubids_validate():
-    """Run the bids validator."""
+def _parse_validate():
     parser = argparse.ArgumentParser(
         description="cubids-validate: Wrapper around the official BIDS Validator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -101,8 +100,17 @@ def cubids_validate():
         nargs="+",
         required=False,
     )
-    opts = parser.parse_args()
+    return parser
 
+
+def _enter_validate(argv=None):
+    options = _parse_validate().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_validate(options)
+
+
+def cubids_validate(opts):
+    """Run the bids validator."""
     # check status of output_prefix, absolute or relative?
     abs_path_output = True
     if "/" not in str(opts.output_prefix):
@@ -309,8 +317,7 @@ def cubids_validate():
     sys.exit(proc.returncode)
 
 
-def bids_sidecar_merge():
-    """Merge critical keys from one sidecar to another."""
+def _parse_bids_sidecar_merge():
     parser = argparse.ArgumentParser(
         description=("bids-sidecar-merge: merge critical keys from one sidecar to another"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -322,13 +329,22 @@ def bids_sidecar_merge():
         action="store",
         help=("destination json. This file will have data from `from_json` copied into it."),
     )
-    opts = parser.parse_args()
+    return parser
+
+
+def _enter_bids_sidecar_merge(argv=None):
+    options = _parse_bids_sidecar_merge().parse_args(argv)
+    # args = vars(options).copy()
+    bids_sidecar_merge(options)
+
+
+def bids_sidecar_merge(opts):
+    """Merge critical keys from one sidecar to another."""
     merge_status = merge_json_into_json(opts.from_json, opts.to_json, raise_on_error=False)
     sys.exit(merge_status)
 
 
-def cubids_group():
-    """Find key and param groups."""
+def _parse_group():
     parser = argparse.ArgumentParser(
         description="cubids-group: find key and parameter groups in BIDS",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -370,8 +386,17 @@ def cubids_group():
     parser.add_argument(
         "--config", action="store", type=Path, help="path to a config file for grouping"
     )
-    opts = parser.parse_args()
+    return parser
 
+
+def _enter_group(argv=None):
+    options = _parse_group().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_group(options)
+
+
+def cubids_group(opts):
+    """Find key and param groups."""
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(
@@ -445,8 +470,7 @@ def cubids_group():
     sys.exit(proc.returncode)
 
 
-def cubids_apply():
-    """Apply the tsv changes."""
+def _parse_apply():
     parser = argparse.ArgumentParser(
         description=("cubids-apply: apply the changes specified in a tsv to a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -516,8 +540,18 @@ def cubids_apply():
     parser.add_argument(
         "--config", action="store", type=Path, help="path to a config file for grouping"
     )
-    opts = parser.parse_args()
 
+    return parser
+
+
+def _enter_apply(argv=None):
+    options = _parse_apply().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_apply(options)
+
+
+def cubids_apply(opts):
+    """Apply the tsv changes."""
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(
@@ -623,8 +657,7 @@ def cubids_apply():
     sys.exit(proc.returncode)
 
 
-def cubids_datalad_save():
-    """Perform datalad save."""
+def _parse_datalad_save():
     parser = argparse.ArgumentParser(
         description=("cubids-datalad-save: perform a DataLad save on a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -644,8 +677,18 @@ def cubids_datalad_save():
         action="store",
         help="Docker image tag or Singularity image file.",
     )
-    opts = parser.parse_args()
 
+    return parser
+
+
+def _enter_datalad_save(argv=None):
+    options = _parse_datalad_save().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_datalad_save(options)
+
+
+def cubids_datalad_save(opts):
+    """Perform datalad save."""
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=True)
@@ -689,8 +732,7 @@ def cubids_datalad_save():
     sys.exit(proc.returncode)
 
 
-def cubids_undo():
-    """Revert the most recent commit."""
+def _parse_undo():
     parser = argparse.ArgumentParser(
         description="cubids-undo: revert most recent commit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -709,8 +751,18 @@ def cubids_undo():
         action="store",
         help="Docker image tag or Singularity image file.",
     )
-    opts = parser.parse_args()
 
+    return parser
+
+
+def _enter_undo(argv=None):
+    options = _parse_undo().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_undo(options)
+
+
+def cubids_undo(opts):
+    """Revert the most recent commit."""
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=True)
@@ -750,8 +802,7 @@ def cubids_undo():
     sys.exit(proc.returncode)
 
 
-def cubids_copy_exemplars():
-    """Create and save a directory with one subject from each acquisition group."""
+def _parse_copy_exemplars():
     parser = argparse.ArgumentParser(
         description=(
             "cubids-copy-exemplars: create and save a directory with "
@@ -816,8 +867,17 @@ def cubids_copy_exemplars():
         action="store",
         help="Docker image tag or Singularity image file.",
     )
-    opts = parser.parse_args()
+    return parser
 
+
+def _enter_copy_exemplars(argv=None):
+    options = _parse_copy_exemplars().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_copy_exemplars(options)
+
+
+def cubids_copy_exemplars(opts):
+    """Create and save a directory with one subject from each acquisition group."""
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
@@ -892,8 +952,7 @@ def cubids_copy_exemplars():
     sys.exit(proc.returncode)
 
 
-def cubids_add_nifti_info():
-    """Add information from nifti files to the dataset's sidecars."""
+def _parse_add_nifti_info():
     parser = argparse.ArgumentParser(
         description=(
             "cubids-add-nifti-info: Add information from nifti"
@@ -926,8 +985,17 @@ def cubids_add_nifti_info():
         action="store",
         help="Docker image tag or Singularity image file.",
     )
-    opts = parser.parse_args()
+    return parser
 
+
+def _enter_add_nifti_info(argv=None):
+    options = _parse_add_nifti_info().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_add_nifti_info(options)
+
+
+def cubids_add_nifti_info(opts):
+    """Add information from nifti files to the dataset's sidecars."""
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(
@@ -982,8 +1050,7 @@ def cubids_add_nifti_info():
     sys.exit(proc.returncode)
 
 
-def cubids_purge():
-    """Purge scan associations."""
+def _parse_purge():
     parser = argparse.ArgumentParser(
         description="cubids-purge: purge associations from the dataset",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -1014,8 +1081,17 @@ def cubids_purge():
         action="store",
         help="Docker image tag or Singularity image file.",
     )
-    opts = parser.parse_args()
+    return parser
 
+
+def _enter_purge(argv=None):
+    options = _parse_purge().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_purge(options)
+
+
+def cubids_purge(opts):
+    """Purge scan associations."""
     # Run directly from python using
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=opts.use_datalad)
@@ -1068,8 +1144,7 @@ def cubids_purge():
     sys.exit(proc.returncode)
 
 
-def cubids_remove_metadata_fields():
-    """Delete fields from metadata."""
+def _parse_remove_metadata_fields():
     parser = argparse.ArgumentParser(
         description="cubids-remove-metadata-fields: delete fields from metadata",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -1095,8 +1170,18 @@ def cubids_remove_metadata_fields():
         action="store",
         help="Docker image tag or Singularity image file.",
     )
-    opts = parser.parse_args()
 
+    return parser
+
+
+def _enter_remove_metadata_fields(argv=None):
+    options = _parse_remove_metadata_fields().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_remove_metadata_fields(options)
+
+
+def cubids_remove_metadata_fields(opts):
+    """Delete fields from metadata."""
     # Run directly from python
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=False)
@@ -1136,8 +1221,7 @@ def cubids_remove_metadata_fields():
     sys.exit(proc.returncode)
 
 
-def cubids_print_metadata_fields():
-    """Print unique metadata fields."""
+def _parse_print_metadata_fields():
     parser = argparse.ArgumentParser(
         description="cubids-print-metadata-fields: print all unique metadata fields",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -1156,8 +1240,18 @@ def cubids_print_metadata_fields():
         action="store",
         help="Docker image tag or Singularity image file.",
     )
-    opts = parser.parse_args()
 
+    return parser
+
+
+def _enter_print_metadata_fields(argv=None):
+    options = _parse_print_metadata_fields().parse_args(argv)
+    # args = vars(options).copy()
+    cubids_print_metadata_fields(options)
+
+
+def cubids_print_metadata_fields(opts):
+    """Print unique metadata fields."""
     # Run directly from python
     if opts.container is None:
         bod = CuBIDS(data_root=str(opts.bids_dir), use_datalad=False)
@@ -1207,3 +1301,47 @@ def _get_container_type(image_name):
         return "docker"
 
     raise Exception("Unable to determine the container type of " + image_name)
+
+
+COMMANDS = [
+    ("validate", _parse_validate, cubids_validate),
+    ("sidecar-merge", _parse_bids_sidecar_merge, bids_sidecar_merge),
+    ("group", _parse_group, cubids_group),
+    ("apply", _parse_apply, cubids_apply),
+    ("purge", _parse_purge, cubids_purge),
+    ("add-nifti-info", _parse_add_nifti_info, cubids_add_nifti_info),
+    ("copy-exemplars", _parse_copy_exemplars, cubids_copy_exemplars),
+    ("undo", _parse_undo, cubids_undo),
+    ("datalad-save", _parse_datalad_save, cubids_datalad_save),
+    ("print-metadata-fields", _parse_print_metadata_fields, cubids_print_metadata_fields),
+    ("remove-metadata-fields", _parse_remove_metadata_fields, cubids_remove_metadata_fields),
+]
+
+
+def _get_parser():
+    """Create the general "cubids" parser object."""
+    from cubids import __version__
+
+    parser = argparse.ArgumentParser(prog="cubids")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
+    subparsers = parser.add_subparsers(help="CuBIDS commands")
+
+    for command, parser_func, run_func in COMMANDS:
+        subparser = parser_func()
+        subparser.set_defaults(func=run_func)
+        subparsers.add_parser(
+            command,
+            parents=[subparser],
+            help=subparser.description,
+            add_help=False,
+        )
+
+    return parser
+
+
+def _main(argv=None):
+    """Set entrypoint for "cubids" CLI."""
+    options = _get_parser().parse_args(argv)
+    args = vars(options).copy()
+    args.pop("func")
+    options.func(**args)
