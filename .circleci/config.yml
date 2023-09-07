@@ -367,19 +367,9 @@ workflows:
             tags:
               only: /.*/
 
-      - setup_conda:
-          filters:
-            branches:
-              ignore:
-                - /tests?\/.*/
-                - /docker\/.*/
-            tags:
-              only: /.*/
-
       - install_and_test:
           requires:
             - build
-            - setup_conda
           filters:
             branches:
               ignore:
@@ -402,7 +392,6 @@ workflows:
       - install_and_test_singularity:
           requires:
             - build
-            - setup_conda
             - get_singularity
           filters:
             branches:
