@@ -17,7 +17,7 @@ jobs:
             apt-get install -y --no-install-recommends docker git pigz python3 python3-pip tar
       - restore_cache:
           keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
+            - docker-v2-{{ .Branch }}-{{ .Revision }}
       - setup_remote_docker:
           version: 19.03.13
       - run:
@@ -69,7 +69,7 @@ jobs:
             | pigz -3 > /tmp/cache/docker.tar.gz
 
       - save_cache:
-         key: docker-v1-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
+         key: docker-v2-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
          paths:
            - /tmp/cache/docker.tar.gz
 
@@ -156,7 +156,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
+            - docker-v2-{{ .Branch }}-{{ .Revision }}
 
       - restore_cache:
           keys:
@@ -287,7 +287,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
+            - docker-v2-{{ .Branch }}-{{ .Revision }}
 
       - run:
           name: Load cached Docker image
@@ -401,7 +401,7 @@ jobs:
             fi
       - restore_cache:
           keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
+            - docker-v2-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Load Docker image layer cache
           no_output_timeout: 30m
