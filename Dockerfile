@@ -1,6 +1,6 @@
-FROM ubuntu:bionic-20200921 
+FROM ubuntu:bionic-20220301
 
-# setup installation 
+# setup installation
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl ca-certificates && \
@@ -16,14 +16,16 @@ RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
 # get dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    datalad nodejs python3 python3-pip python3-setuptools && \
+    datalad nodejs python3 python3-pip && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# get the validator 
+# get the validator
 RUN npm install -g yarn && \
     npm install -g bids-validator
 
 COPY . /src/CuBIDS
-RUN pip3 install --no-cache-dir "/src/CuBIDS"
+RUN python --version && \
+    pip3 --version && \
+    pip3 install --no-cache-dir "/src/CuBIDS"
 
 ENTRYPOINT [ "/bin/bash"]
