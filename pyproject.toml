@@ -1,2 +1,183 @@
 [build-system]
-requires = ["setuptools >= 40.8.0", "wheel"]
+requires = ["hatchling", "hatch-vcs", "nipreps-versions"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cubids"
+description = "Curation of BIDS (CuBIDS): A sanity-preserving software package for processing BIDS datasets."
+authors = [{name = "Neuroinformatics Team of PennLINC"}]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+license = {file = "LICENSE"}
+requires-python = ">=3.7"
+dependencies = [
+    "pyyaml",
+    "pybids",
+    "pandas",
+    "tqdm",
+    "numpy",
+    "scikit-learn",
+    "datalad>=0.13.5",
+    "wrapt<2,>=1.10",
+    "Sphinx",
+    "jinja2 < 3.1",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/PennLINC/cubids"
+Documentation = "https://www.cubids.readthedocs.io"
+Paper = "https://doi.org/10.1016/j.neuroimage.2022.119609"
+"Docker Images" = "https://hub.docker.com/r/pennlinc/cubids/tags/"
+
+[project.optional-dependencies]
+doc = [
+    "nbsphinx",
+    "packaging",
+    "sphinx >= 2.2",
+    "sphinx-argparse",
+    "sphinx_rtd_theme",
+    "sphinx_markdown_tables",
+    "recommonmark",
+]
+tests = [
+    "codespell",
+    "coverage",
+    "flake8",
+    "flake8-absolute-import",
+    "flake8-black",
+    "flake8-docstrings",
+    "flake8-isort",
+    "flake8-pyproject",
+    "flake8-unused-arguments",
+    "flake8-use-fstring",
+    "flake8-warnings",
+    "pep8-naming",
+    "pytest",
+    "pytest-cov",
+    "tomli",
+]
+maint = [
+    "fuzzywuzzy",
+    "python-Levenshtein",
+]
+
+# Aliases
+all = ["cubids[doc,maint,tests]"]
+
+[project.scripts]
+cubids-group = "cubids.cli:cubids_group"
+cubids-apply = "cubids.cli:cubids_apply"
+cubids-purge = "cubids.cli:cubids_purge"
+cubids-add-nifti-info = "cubids.cli:cubids_add_nifti_info"
+cubids-copy-exemplars = "cubids.cli:cubids_copy_exemplars"
+cubids-undo = "cubids.cli:cubids_undo"
+bids-sidecar-merge = "cubids.cli:bids_sidecar_merge"
+cubids-validate = "cubids.cli:cubids_validate"
+cubids-datalad-save = "cubids.cli:cubids_datalad_save"
+cubids-print-metadata-fields = "cubids.cli:cubids_print_metadata_fields"
+cubids-remove-metadata-fields = "cubids.cli:cubids_remove_metadata_fields"
+
+#
+# Hatch configurations
+#
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+exclude = [".git_archival.txt"]  # No longer needed in sdist
+
+[tool.hatch.build.targets.wheel]
+packages = ["cubids"]
+exclude = [
+    "cubids/tests/data",  # Large test data directory
+]
+
+##  The following two sections configure setuptools_scm in the hatch way
+
+[tool.hatch.version]
+source = "vcs"
+# raw-options = { version_scheme = "nipreps-calver" }
+
+[tool.hatch.build.hooks.vcs]
+version-file = "cubids/_version.py"
+
+#
+# Developer tool configurations
+#
+
+[tool.black]
+line-length = 99
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.github
+    | \.hg
+    | \.pytest_cache
+    | _build
+    | build
+    | dist
+  )/
+  | versioneer.py
+  | cubids/_version.py
+)
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+src_paths = ["isort", "test"]
+known_local_folder = ["cubids"]
+
+[tool.flake8]
+max-line-length = "99"
+doctests = "False"
+exclude = [
+    "*build/",
+    "cubids/_version.py",
+    "cubids/_warnings.py",
+    "cubids/config.py",
+    "cubids/data/",
+    "cubids/tests/",
+    "cubids/utils/sentry.py",
+]
+ignore = ["D107", "E203", "E402", "E722", "W503", "N803", "N806", "N815"]
+per-file-ignores = [
+    "**/__init__.py : F401",
+    "docs/conf.py : E265",
+]
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__init__.py",
+    "*/conftest.py",
+    "cubids/_version.py"
+]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    'raise NotImplementedError',
+    'warnings\.warn',
+]
+
+[tool.codespell]
+skip = "_version.py,*.pem,*.json"
