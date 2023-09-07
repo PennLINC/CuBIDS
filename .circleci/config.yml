@@ -6,14 +6,14 @@ jobs:
       TZ: "/usr/share/zoneinfo/America/New_York"
       SCRATCH: "/scratch"
     docker:
-      - image: docker:18.06.1-ce-git
+      - image: ubuntu:bionic-20220531
     working_directory: /tmp/src/CuBIDS
     steps:
       - checkout
       - run:
           name: Install parallel gzip and python3
           command: |
-            apk add --no-cache pigz python3.9 py3-pip tar
+            apk add --no-cache pigz python3 py3-pip tar git
       - restore_cache:
           keys:
             - docker-v1-{{ .Branch }}-{{ .Revision }}
