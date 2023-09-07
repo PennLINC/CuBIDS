@@ -422,7 +422,6 @@ jobs:
             fi
 
   deploy_pypi:
-    <<: *dockersetup
     working_directory: /tmp/src/CuBIDS
     steps:
       - checkout
