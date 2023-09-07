@@ -39,8 +39,6 @@ jobs:
             # Build docker image
             e=1 && for i in {1..5}; do
               docker build \
-                --cache-from=pennlinc/bond \
-                --rm=false \
                 -t pennlinc/bond:latest \
                 --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
                 --build-arg VCS_REF=`git rev-parse --short HEAD` . \
