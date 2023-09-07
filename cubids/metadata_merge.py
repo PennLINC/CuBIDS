@@ -1,4 +1,4 @@
-"""Main module."""
+"""Tools for merging metadata."""
 import json
 from collections import defaultdict
 from copy import deepcopy
@@ -7,13 +7,13 @@ from math import isnan, nan
 import numpy as np
 import pandas as pd
 
-from .constants import IMAGING_PARAMS
+from cubids.constants import IMAGING_PARAMS
 
 DIRECT_IMAGING_PARAMS = IMAGING_PARAMS - set(["NSliceTimes"])
 
 
 def check_merging_operations(action_tsv, raise_on_error=False):
-    """Checks that the merges in an action tsv are possible.
+    """Check that the merges in an action tsv are possible.
 
     To be mergable the
     """
@@ -94,7 +94,7 @@ def check_merging_operations(action_tsv, raise_on_error=False):
 
 
 def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
-    """Performs a safe metadata copy.
+    """Perform a safe metadata copy.
 
     Here, "safe" means that no non-NaN values in `dest_meta` are
     overwritten by the merge. If any overwrites occur an empty
@@ -124,33 +124,39 @@ def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
             if not is_nan(dest_value) and source_value != dest_value:
                 if raise_on_error:
                     raise Exception(
-                        "Value for %s is %s in destination "
-                        "but %s in source" % (parameter, str(dest_value), str(source_value))
+                        f"Value for {parameter} is {dest_value} in destination "
+                        f"but {source_value} in source"
                     )
+
                 return {}
+
         dest_meta[parameter] = source_value
     return dest_meta
 
 
 def is_nan(val):
-    """Returns True if val is nan"""
+    """Return True if val is NaN."""
     if not isinstance(val, float):
         return False
+
     return isnan(val)
 
 
 def print_merges(merge_list):
-    """Print formatted text of merges"""
-    return "\n\t" + "\n\t".join(
-        [
-            "%s \n\t\t-> %s" % ("%s:%d" % src_id[::-1], "%s:%d" % dest_id[::-1])
-            for src_id, dest_id in merge_list
-        ]
-    )
+    """Print formatted text of merges."""
+    merge_strings = []
+    for src_id, dest_id in merge_list:
+        src_id_str = f"{src_id[-1]}:{src_id[0]}"
+        dest_id_str = f"{dest_id[-1]}:{dest_id[0]}"
+        merge_str = f"{src_id_str} \n\t\t-> {dest_id_str}"
+        merge_strings.append(merge_str)
+
+    return "\n\t" + "\n\t".join(merge_strings)
 
 
 def merge_json_into_json(from_file, to_file, raise_on_error=False):
-    print("Merging imaging metadata from %s to %s" % (from_file, to_file))
+    """Merge imaging metadata into JSON."""
+    print(f"Merging imaging metadata from {from_file} to {to_file}")
     with open(from_file, "r") as fromf:
         source_metadata = json.load(fromf)
 
@@ -174,20 +180,18 @@ def merge_json_into_json(from_file, to_file, raise_on_error=False):
     return 0
 
 
-def get_acq_dictionary(df):
-    """Creates a BIDS data dictionary from dataframe columns
+def get_acq_dictionary():
+    """Create a BIDS data dictionary from dataframe columns.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
+    df: Pandas DataFrame
+        Pre export TSV that will be converted to a json dictionary
 
-        df: Pandas DataFrame
-            Pre export TSV that will be converted to a json dictionary
-
-    Returns:
-    -----------
-
-        acq_dict: dictionary
-            Python dictionary in BIDS data dictionary format
+    Returns
+    -------
+    acq_dict: dictionary
+        Python dictionary in BIDS data dictionary format
     """
     acq_dict = {}
     acq_dict["subject"] = {"Description": "Participant ID"}
@@ -200,7 +204,7 @@ def get_acq_dictionary(df):
 
 
 def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
-    """Finds unique sets of Key/Param groups across subjects."""
+    """Find unique sets of Key/Param groups across subjects."""
     from bids import config
     from bids.layout import parse_file_entities
 
@@ -250,7 +254,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t", index=False)
 
     # Create data dictionary for acq group tsv
-    acq_dict = get_acq_dictionary(acq_group_df)
+    acq_dict = get_acq_dictionary()
     with open(output_prefix + "_AcqGrouping.json", "w") as outfile:
         json.dump(acq_dict, outfile, indent=4)
 
