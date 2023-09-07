@@ -17,13 +17,10 @@ jobs:
       - restore_cache:
           keys:
             - docker-v1-{{ .Branch }}-{{ .Revision }}
-            - docker-v1-{{ .Branch }}-
-            - docker-v1-main-
-            - docker-v1-
       - setup_remote_docker:
           version: 19.03.13
       - run:
-          name: Load Docker image layer cache
+          name: Load cached Docker image
           no_output_timeout: 30m
           command: |
             docker info
@@ -32,6 +29,17 @@ jobs:
               pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
               docker images
             fi
+      - run:
+          name: Install CuBIDS
+          command: |
+            VERSION=0+build
+            if [[ -n "$CIRCLE_TAG" ]]; then
+              VERSION="$CIRCLE_TAG"
+            fi
+            git checkout $CIRCLE_BRANCH
+            echo "${VERSION}" > /src/CuBIDS/cubids/VERSION
+            echo "include cubids/VERSION" >> /src/CuBIDS/MANIFEST.in
+            pip install . --progress-bar off
       - run:
           name: Build Docker image
           no_output_timeout: 3h
@@ -101,9 +109,6 @@ jobs:
       - restore_cache:
           keys:
             - singularity-v3-{{ .Branch }}-{{ .Revision }}
-            - singularity-v3-{{ .Branch }}-
-            - singularity-v3-main-
-            - singularity-v3-
 
       - run:
           name: Download Singularity
@@ -155,9 +160,6 @@ jobs:
       - restore_cache:
           keys:
             - singularity-v3-{{ .Branch }}-{{ .Revision }}
-            - singularity-v3-{{ .Branch }}-
-            - singularity-v3-main-
-            - singularity-v3-
       - run:
           name: Load Docker image layer cache
           no_output_timeout: 30m
@@ -287,7 +289,7 @@ jobs:
             - docker-v1-{{ .Branch }}-{{ .Revision }}
 
       - run:
-          name: Load Docker image layer cache
+          name: Load cached Docker image
           no_output_timeout: 30m
           command: |
             docker info
