@@ -422,9 +422,12 @@ jobs:
             fi
 
   deploy_pypi:
+    machine:
+      image: circleci/classic:201711-01
     working_directory: /tmp/src/CuBIDS
     steps:
-      - checkout
+      - checkout:
+          path: /home/circleci/src/CuBIDS
       - run:
           name: Generate distribution archives
           command: |
