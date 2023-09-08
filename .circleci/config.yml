@@ -21,11 +21,6 @@ jobs:
             source activate cubids
             conda install -c conda-forge -y datalad
 
-            # Install CuBIDS
-            pwd
-            ls -ltra .
-            pip install .[tests]
-
             # Add nodejs and the validator
             conda install nodejs
             npm install -g yarn && \
@@ -52,6 +47,9 @@ jobs:
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate cubids
+
+            # Install CuBIDS
+            pip install -e .[tests]
 
             # Reinstall bids-validator
             sudo apt update
