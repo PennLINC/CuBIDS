@@ -5,6 +5,8 @@ jobs:
       image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
     steps:
+      - checkout:
+          path: /home/circleci/src/CuBIDS
       - run:
           name: install miniconda
           command: |
