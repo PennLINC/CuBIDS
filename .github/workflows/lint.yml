@@ -24,4 +24,4 @@ jobs:
         ls .
     - name: Run spell check
       run: |
-        codespell cubids/
+        codespell

@@ -178,4 +178,4 @@ exclude_lines = [
 ]
 
 [tool.codespell]
-skip = "_version.py,*.pem,*.json"
+skip = "CuBIDS_Toy_Dataset_Curation,notebooks,BIDS_Dataset,_version.py,*.pem,*.json,*.js,*.html,*.css,*.svg"
