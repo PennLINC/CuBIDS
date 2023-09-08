@@ -20,6 +20,7 @@ jobs:
             conda install -c conda-forge -y datalad
 
             # Install CuBIDS
+            ls -la .
             pip install .[tests]
 
             # Add nodejs and the validator
