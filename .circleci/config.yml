@@ -93,7 +93,6 @@ workflows:
 
       - run_pytests:
           requires:
-            - build
             - set_up_conda
           filters:
             tags:
