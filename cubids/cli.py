@@ -293,8 +293,10 @@ def cubids_validate(opts):
         ]
         if opts.ignore_nifti_headers:
             cmd.append("--ignore_nifti_headers")
+
         if opts.ignore_subject_consistency:
             cmd.append("--ignore_subject_consistency")
+
     elif container_type == "singularity":
         cmd = [
             "singularity",
@@ -313,8 +315,10 @@ def cubids_validate(opts):
         ]
         if opts.ignore_nifti_headers:
             cmd.append("--ignore_nifti_headers")
+
         if opts.ignore_subject_consistency:
             cmd.append("--ignore_subject_consistency")
+
         if opts.sequential:
             cmd.append("--sequential")
 
@@ -392,8 +396,9 @@ def _parse_group():
     parser.add_argument(
         "--acq-group-level",
         default="subject",
+        choices=["subject", "session"],
         action="store",
-        help=("Level at which acquisition groups are created " 'options: "subject" or "session"'),
+        help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
     )
     parser.add_argument(
         "--config", action="store", type=Path, help="path to a config file for grouping"
@@ -551,8 +556,9 @@ def _parse_apply():
     parser.add_argument(
         "--acq-group-level",
         default="subject",
+        choices=["subject", "session"],
         action="store",
-        help=("Level at which acquisition groups are created " 'options: "subject" or "session"'),
+        help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
     )
     parser.add_argument(
         "--config", action="store", type=Path, help="path to a config file for grouping"
