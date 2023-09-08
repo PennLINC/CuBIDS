@@ -27,7 +27,7 @@ dependencies = [
     "tqdm",
     "numpy",
     "scikit-learn",
-    "datalad>=0.13.5",
+    "datalad>=0.13.5,!=0.17.3",
     "wrapt<2,>=1.10",
     "Sphinx",
     "jinja2 < 3.1",
