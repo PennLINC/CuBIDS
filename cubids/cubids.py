@@ -211,7 +211,7 @@ class CuBIDS(object):
         and generates the new tsv files.
 
         This function looks at the RenameKeyGroup and MergeInto
-        columns and modifies the bids datset according to the
+        columns and modifies the bids dataset according to the
         specified changs.
 
         Parameters:
@@ -547,12 +547,12 @@ class CuBIDS(object):
         -----------
             exemplars_dir: str
                 path to the directory that will contain one subject
-                from each Acqusition Gorup (*_AcqGrouping.tsv)
+                from each Acquisition Group (*_AcqGrouping.tsv)
                 example path: /Users/Covitz/tsvs/CCNP_Acq_Groups/
 
             exemplars_tsv: str
                 path to the .tsv file that lists one subject
-                from each Acqusition Group (*_AcqGrouping.tsv
+                from each Acquisition Group (*_AcqGrouping.tsv
                 from the cubids-group output)
                 example path: /Users/Covitz/tsvs/CCNP_Acq_Grouping.tsv
         """
@@ -602,7 +602,7 @@ class CuBIDS(object):
             scans_txt: str
                 path to the .txt file that lists the scans
                 you want to be deleted from the dataset, along
-                with thier associations.
+                with their associations.
                 example path: /Users/Covitz/CCNP/scans_to_delete.txt
         """
 
@@ -735,7 +735,7 @@ class CuBIDS(object):
             print("Not running any association removals")
 
     def get_nifti_associations(self, nifti):
-        # get all assocation files of a nifti image
+        # get all association files of a nifti image
         no_ext_file = str(nifti).split('/')[-1].split('.')[0]
         associations = []
         for path in Path(self.path).rglob("sub-*/**/*.*"):
@@ -836,7 +836,7 @@ class CuBIDS(object):
         if ret == "erroneous sidecar found":
             return "erroneous sidecar found"
 
-        # add modality to the retun tuple
+        # add modality to the return tuple
         l_ret = list(ret)
         l_ret.append(modality)
         tup_ret = tuple(l_ret)

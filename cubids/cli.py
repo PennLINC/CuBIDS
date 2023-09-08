@@ -372,7 +372,7 @@ def cubids_group():
 
 
 def cubids_apply():
-    ''' Command Line Interface funciton for applying the tsv changes.'''
+    ''' Command Line Interface function for applying the tsv changes.'''
 
     parser = argparse.ArgumentParser(
         description="cubids-apply: apply the changes specified in a tsv "
@@ -508,7 +508,7 @@ def cubids_apply():
 
 
 def cubids_datalad_save():
-    ''' Command Line Interfcae function for performing datalad save.'''
+    ''' Command Line Interface function for performing datalad save.'''
 
     parser = argparse.ArgumentParser(
         description="cubids-datalad-save: perform a DataLad save on a BIDS "
@@ -614,7 +614,7 @@ def cubids_copy_exemplars():
                         type=Path,
                         action='store',
                         help='absolute path to the .tsv file that lists one '
-                        'subject from each Acqusition Group '
+                        'subject from each Acquisition Group '
                         '(*_AcqGrouping.tsv from the cubids-group output)')
     parser.add_argument('--use-datalad',
                         action='store_true',
