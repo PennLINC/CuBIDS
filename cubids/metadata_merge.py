@@ -1,16 +1,19 @@
-"""Main module."""
+"""Tools for merging metadata."""
 import json
 from collections import defaultdict
+from copy import deepcopy
+from math import isnan, nan
+
 import numpy as np
 import pandas as pd
-from copy import deepcopy
-from math import nan, isnan
-from .constants import IMAGING_PARAMS
+
+from cubids.constants import IMAGING_PARAMS
+
 DIRECT_IMAGING_PARAMS = IMAGING_PARAMS - set(["NSliceTimes"])
 
 
 def check_merging_operations(action_tsv, raise_on_error=False):
-    """Checks that the merges in an action tsv are possible.
+    """Check that the merges in an action tsv are possible.
 
     To be mergable the
     """
@@ -20,21 +23,23 @@ def check_merging_operations(action_tsv, raise_on_error=False):
     overwrite_merges = []
     sdc_incompatible = []
 
-    sdc_cols = set([col for col in actions.columns if
-                    col.startswith("IntendedForKey") or
-                    col.startswith("FieldmapKey")])
+    sdc_cols = set(
+        [
+            col
+            for col in actions.columns
+            if col.startswith("IntendedForKey") or col.startswith("FieldmapKey")
+        ]
+    )
 
     def _check_sdc_cols(meta1, meta2):
-        return {key: meta1[key] for key in sdc_cols} == \
-               {key: meta2[key] for key in sdc_cols}
+        return {key: meta1[key] for key in sdc_cols} == {key: meta2[key] for key in sdc_cols}
 
-    needs_merge = actions[np.isfinite(actions['MergeInto'])]
+    needs_merge = actions[np.isfinite(actions["MergeInto"])]
     for _, row_needs_merge in needs_merge.iterrows():
         source_param_key = tuple(row_needs_merge[["MergeInto", "KeyGroup"]])
         dest_param_key = tuple(row_needs_merge[["ParamGroup", "KeyGroup"]])
         dest_metadata = row_needs_merge.to_dict()
-        source_row = actions.loc[
-            (actions[["ParamGroup", "KeyGroup"]] == source_param_key).all(1)]
+        source_row = actions.loc[(actions[["ParamGroup", "KeyGroup"]] == source_param_key).all(1)]
 
         if source_param_key[0] == 0:
             print("going to delete ", dest_param_key)
@@ -49,29 +54,36 @@ def check_merging_operations(action_tsv, raise_on_error=False):
             sdc_incompatible.append(merge_id)
             continue
 
-        if not merge_without_overwrite(source_metadata, dest_metadata,
-                                       raise_on_error=raise_on_error):
+        if not merge_without_overwrite(
+            source_metadata, dest_metadata, raise_on_error=raise_on_error
+        ):
             overwrite_merges.append(merge_id)
             continue
         # add to the list of ok merges if there are no conflicts
         ok_merges.append(merge_id)
 
-    error_message = "\n\nProblems were found in the requested merge.\n" \
-                    "===========================================\n\n"
+    error_message = (
+        "\n\nProblems were found in the requested merge.\n"
+        "===========================================\n\n"
+    )
     if sdc_incompatible:
-        error_message += "Some merges are incompatible due to differing " \
-                         "distortion correction strategies. Check that " \
-                         "fieldmaps exist and have the correct " \
-                         "\"IntendedFor\" in their sidecars. These merges " \
-                         "could not be completed:\n"
+        error_message += (
+            "Some merges are incompatible due to differing "
+            "distortion correction strategies. Check that "
+            "fieldmaps exist and have the correct "
+            '"IntendedFor" in their sidecars. These merges '
+            "could not be completed:\n"
+        )
         error_message += print_merges(sdc_incompatible) + "\n\n"
 
     if overwrite_merges:
-        error_message += "Some merges are incompatible because the metadata " \
-                         "in the destination json conflicts with the values " \
-                         "in the source json. Merging should only be used " \
-                         "to fill in missing metadata. The following " \
-                         "merges could not be completed:\n\n"
+        error_message += (
+            "Some merges are incompatible because the metadata "
+            "in the destination json conflicts with the values "
+            "in the source json. Merging should only be used "
+            "to fill in missing metadata. The following "
+            "merges could not be completed:\n\n"
+        )
         error_message += print_merges(overwrite_merges)
 
     if overwrite_merges or sdc_incompatible:
@@ -82,7 +94,7 @@ def check_merging_operations(action_tsv, raise_on_error=False):
 
 
 def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
-    """Performs a safe metadata copy.
+    """Perform a safe metadata copy.
 
     Here, "safe" means that no non-NaN values in `dest_meta` are
     overwritten by the merge. If any overwrites occur an empty
@@ -93,10 +105,11 @@ def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
 
     if not source_meta.get("NSliceTimes") == dest_meta.get("NSliceTimes"):
         if raise_on_error:
-            raise Exception("Value for NSliceTimes is %d in destination "
-                            "but %d in source"
-                            % (source_meta.get("NSliceTimes"),
-                               source_meta.get("NSliceTimes")))
+            raise Exception(
+                "Value for NSliceTimes is %d in destination "
+                "but %d in source"
+                % (source_meta.get("NSliceTimes"), source_meta.get("NSliceTimes"))
+            )
         return {}
     for parameter in DIRECT_IMAGING_PARAMS:
         source_value = source_meta.get(parameter, nan)
@@ -110,34 +123,40 @@ def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
             # need to figure out if we can merge
             if not is_nan(dest_value) and source_value != dest_value:
                 if raise_on_error:
-                    raise Exception("Value for %s is %s in destination "
-                                    "but %s in source"
-                                    % (parameter, str(dest_value),
-                                       str(source_value)))
+                    raise Exception(
+                        f"Value for {parameter} is {dest_value} in destination "
+                        f"but {source_value} in source"
+                    )
+
                 return {}
+
         dest_meta[parameter] = source_value
     return dest_meta
 
 
 def is_nan(val):
-    '''Returns True if val is nan'''
+    """Return True if val is NaN."""
     if not isinstance(val, float):
         return False
+
     return isnan(val)
 
 
 def print_merges(merge_list):
-    """Print formatted text of merges"""
-    return "\n\t" + "\n\t".join(
-        ["%s \n\t\t-> %s" % ("%s:%d" % src_id[::-1],
-         "%s:%d" % dest_id[::-1]) for
-         src_id, dest_id in merge_list])
+    """Print formatted text of merges."""
+    merge_strings = []
+    for src_id, dest_id in merge_list:
+        src_id_str = f"{src_id[-1]}:{src_id[0]}"
+        dest_id_str = f"{dest_id[-1]}:{dest_id[0]}"
+        merge_str = f"{src_id_str} \n\t\t-> {dest_id_str}"
+        merge_strings.append(merge_str)
+
+    return "\n\t" + "\n\t".join(merge_strings)
 
 
-def merge_json_into_json(from_file, to_file,
-                         raise_on_error=False):
-    print("Merging imaging metadata from %s to %s"
-          % (from_file, to_file))
+def merge_json_into_json(from_file, to_file, raise_on_error=False):
+    """Merge imaging metadata into JSON."""
+    print(f"Merging imaging metadata from {from_file} to {to_file}")
     with open(from_file, "r") as fromf:
         source_metadata = json.load(fromf)
 
@@ -146,7 +165,8 @@ def merge_json_into_json(from_file, to_file,
     orig_dest_metadata = deepcopy(dest_metadata)
 
     merged_metadata = merge_without_overwrite(
-        source_metadata, dest_metadata, raise_on_error=raise_on_error)
+        source_metadata, dest_metadata, raise_on_error=raise_on_error
+    )
 
     if not merged_metadata:
         return 255
@@ -160,20 +180,18 @@ def merge_json_into_json(from_file, to_file,
     return 0
 
 
-def get_acq_dictionary(df):
-    """Creates a BIDS data dictionary from dataframe columns
+def get_acq_dictionary():
+    """Create a BIDS data dictionary from dataframe columns.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
+    df: Pandas DataFrame
+        Pre export TSV that will be converted to a json dictionary
 
-        df: Pandas DataFrame
-            Pre export TSV that will be converted to a json dictionary
-
-    Returns:
-    -----------
-
-        acq_dict: dictionary
-            Python dictionary in BIDS data dictionary format
+    Returns
+    -------
+    acq_dict: dictionary
+        Python dictionary in BIDS data dictionary format
     """
     acq_dict = {}
     acq_dict["subject"] = {"Description": "Participant ID"}
@@ -186,25 +204,25 @@ def get_acq_dictionary(df):
 
 
 def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
-    '''Finds unique sets of Key/Param groups across subjects.
-    '''
-    from bids.layout import parse_file_entities
+    """Find unique sets of Key/Param groups across subjects."""
     from bids import config
-    config.set_option('extension_initial_dot', True)
+    from bids.layout import parse_file_entities
 
-    files_df = pd.read_table(files_tsv, )
+    config.set_option("extension_initial_dot", True)
+
+    files_df = pd.read_table(
+        files_tsv,
+    )
     acq_groups = defaultdict(list)
     for _, row in files_df.iterrows():
         file_entities = parse_file_entities(row.FilePath)
 
-        if acq_group_level == 'subject':
-            acq_id = (file_entities.get("subject"),
-                      file_entities.get("session"))
+        if acq_group_level == "subject":
+            acq_id = (file_entities.get("subject"), file_entities.get("session"))
             acq_groups[acq_id].append((row.KeyGroup, row.ParamGroup))
         else:
             acq_id = (file_entities.get("subject"), None)
-            acq_groups[acq_id].append((row.KeyGroup, row.ParamGroup,
-                                       file_entities.get("session")))
+            acq_groups[acq_id].append((row.KeyGroup, row.ParamGroup, file_entities.get("session")))
 
     # Map the contents to a list of subjects/sessions
     contents_to_subjects = defaultdict(list)
@@ -225,38 +243,34 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     acq_group_info = []
     for groupnum, content_id_row in enumerate(descending_order, start=1):
         content_id = content_ids[content_id_row]
-        acq_group_info.append(
-            (groupnum, content_id_counts[content_id_row]) + content_id)
+        acq_group_info.append((groupnum, content_id_counts[content_id_row]) + content_id)
         for subject, session in contents_to_subjects[content_id]:
             grouped_sub_sess.append(
-                {"subject": 'sub-' + subject,
-                 "session": session,
-                 "AcqGroup": groupnum})
+                {"subject": "sub-" + subject, "session": session, "AcqGroup": groupnum}
+            )
 
     # Write the mapping of subject/session to
     acq_group_df = pd.DataFrame(grouped_sub_sess)
-    acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t",
-                        index=False)
+    acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t", index=False)
 
     # Create data dictionary for acq group tsv
-    acq_dict = get_acq_dictionary(acq_group_df)
+    acq_dict = get_acq_dictionary()
     with open(output_prefix + "_AcqGrouping.json", "w") as outfile:
         json.dump(acq_dict, outfile, indent=4)
 
     # Write the summary of acq groups to a text file
     with open(output_prefix + "_AcqGroupInfo.txt", "w") as infotxt:
-        infotxt.write(
-            "\n".join([" ".join(map(str, line)) for line in acq_group_info]))
+        infotxt.write("\n".join([" ".join(map(str, line)) for line in acq_group_info]))
 
     # Create and save AcqGroupInfo data dictionary
     header_dict = {}
-    header_dict['Long Description'] = 'Acquisition Group Info'
-    description = 'https://cubids.readthedocs.io/en/latest/usage.html'
-    header_dict['Description'] = description
-    header_dict['Version'] = 'CuBIDS v1.0.5'
+    header_dict["Long Description"] = "Acquisition Group Info"
+    description = "https://cubids.readthedocs.io/en/latest/usage.html"
+    header_dict["Description"] = description
+    header_dict["Version"] = "CuBIDS v1.0.5"
 
     acq_info_dict = {}
-    acq_info_dict['AcqGroupInfo.txt Data Dictionary'] = header_dict
+    acq_info_dict["AcqGroupInfo.txt Data Dictionary"] = header_dict
 
     with open(output_prefix + "_AcqGroupInfo.json", "w") as outfile:
         json.dump(acq_info_dict, outfile, indent=4)

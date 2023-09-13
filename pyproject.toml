@@ -1,2 +1,51 @@
 [build-system]
 requires = ["setuptools >= 40.8.0", "wheel"]
+
+#
+# Developer tool configurations
+#
+
+[tool.black]
+line-length = 99
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.github
+    | \.hg
+    | \.pytest_cache
+    | _build
+    | build
+    | dist
+  )/
+  | versioneer.py
+  | cubids/_version.py
+)
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+src_paths = ["isort", "test"]
+known_local_folder = ["cubids"]
+
+[tool.flake8]
+max-line-length = "99"
+doctests = "False"
+exclude = [
+    "*build/",
+    "cubids/_version.py",
+    "cubids/_warnings.py",
+    "cubids/config.py",
+    "cubids/data/",
+    "cubids/tests/",
+    "cubids/utils/sentry.py",
+]
+ignore = ["D107", "E203", "E402", "E722", "W503", "N803", "N806", "N815"]
+per-file-ignores = [
+    "**/__init__.py : F401",
+    "docs/conf.py : E265",
+]
