@@ -106,7 +106,7 @@ def test_copy_exemplars(tmp_path):
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "complete", use_datalad=True)
     tsv_prefix = str(tmp_path / "tsvs")
-    bod.get_TSVs(tsv_prefix)
+    bod.get_tsvs(tsv_prefix)
     acq_group_tsv = tsv_prefix + "_AcqGrouping.tsv"
     print("ACQ GROUP PATH: ", acq_group_tsv)
     exemplars_dir = str(tmp_path / "exemplars")
@@ -282,7 +282,7 @@ def test_add_nifti_info_datalad(tmp_path):
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "complete", use_datalad=True, force_unlock=True)
     tsv_prefix = str(tmp_path / "tsvs")
-    bod.get_TSVs(tsv_prefix)
+    bod.get_tsvs(tsv_prefix)
     summary_tsv = tsv_prefix + "_summary.tsv"
     summary_df = pd.read_table(summary_tsv)
     l_cols = summary_df.columns.tolist()
@@ -303,7 +303,7 @@ def test_add_nifti_info_datalad(tmp_path):
     assert "ImageOrientation" in found_fields
 
     # nifti_tsv_prefix = str(tmp_path / "nifti_tsvs")
-    # bod.get_TSVs(nifti_tsv_prefix)
+    # bod.get_tsvs(nifti_tsv_prefix)
     # nifti_summary_tsv = nifti_tsv_prefix + "_summary.tsv"
     # nifti_summary_df = pd.read_table(nifti_summary_tsv)
     # nifti_l_cols = nifti_summary_df.columns.tolist()
@@ -329,7 +329,7 @@ def test_add_nifti_info_no_datalad(tmp_path):
     assert "ImageOrientation" in found_fields
 
     # tsv_prefix = str(tmp_path / "tsvs")
-    # bod.get_TSVs(tsv_prefix)
+    # bod.get_tsvs(tsv_prefix)
     # summary_tsv = tsv_prefix + "_summary.tsv"
     # summary_df = pd.read_table(summary_tsv)
     # l_cols = summary_df.columns.tolist()
@@ -347,7 +347,7 @@ def test_tsv_merge_no_datalad(tmp_path):
 
     # Get an initial grouping summary and files list
     tsv_prefix = str(tmp_path / "originals")
-    bod.get_TSVs(tsv_prefix)
+    bod.get_tsvs(tsv_prefix)
     original_summary_tsv = tsv_prefix + "_summary.tsv"
     original_files_tsv = tsv_prefix + "_files.tsv"
 
@@ -410,7 +410,7 @@ def test_tsv_merge_changes(tmp_path):
 
     # Get an initial grouping summary and files list
     tsv_prefix = str(tmp_path / "originals")
-    bod.get_TSVs(tsv_prefix)
+    bod.get_tsvs(tsv_prefix)
     original_summary_tsv = tsv_prefix + "_summary.tsv"
     original_files_tsv = tsv_prefix + "_files.tsv"
 
@@ -723,7 +723,7 @@ def test_apply_tsv_changes(tmp_path):
     complete_cubids = CuBIDS(data_root / "complete", use_datalad=True)
     complete_cubids.datalad_save()
 
-    complete_cubids.get_TSVs(str(tmp_path / "originals"))
+    complete_cubids.get_tsvs(str(tmp_path / "originals"))
 
     # give tsv with no changes (make sure it does nothing)
     complete_cubids.apply_tsv_changes(
@@ -836,7 +836,7 @@ def test_session_apply(tmp_path):
 
     ses_cubids = CuBIDS(data_root / "inconsistent", acq_group_level="session", use_datalad=True)
 
-    ses_cubids.get_TSVs(str(tmp_path / "originals"))
+    ses_cubids.get_tsvs(str(tmp_path / "originals"))
 
     # give tsv and make sure 'session' is in summary both pre and post apply
     ses_cubids.apply_tsv_changes(
