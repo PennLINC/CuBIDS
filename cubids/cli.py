@@ -350,32 +350,26 @@ def _parse_copy_exemplars():
         "bids_dir",
         type=Path,
         action="store",
-        help=(
-            "path to the root of a BIDS dataset. "
-            "It should contain sub-X directories and "
-            "dataset_description.json."
-        ),
+        help="path to the root of a BIDS dataset. "
+        "It should contain sub-X directories and "
+        "dataset_description.json.",
     )
     parser.add_argument(
         "exemplars_dir",
         type=Path,
         action="store",
-        help=(
-            "absolute path to the root of a BIDS dataset "
-            "containing one subject from each Acquisition Group. "
-            "It should contain sub-X directories and "
-            "dataset_description.json."
-        ),
+        help="absolute path to the root of a BIDS dataset "
+        "containing one subject from each Acquisition Group. "
+        "It should contain sub-X directories and "
+        "dataset_description.json.",
     )
     parser.add_argument(
         "exemplars_tsv",
         type=Path,
         action="store",
-        help=(
-            "absolute path to the .tsv file that lists one "
-            "subject from each Acqusition Group "
-            "(*_AcqGrouping.tsv from the cubids-group output)"
-        ),
+        help="absolute path to the .tsv file that lists one "
+        "subject from each Acquisition Group "
+        "(*_AcqGrouping.tsv from the cubids-group output)",
     )
     parser.add_argument(
         "--use-datalad", action="store_true", help="check exemplar dataset into DataLad"
@@ -384,11 +378,9 @@ def _parse_copy_exemplars():
         "--min-group-size",
         action="store",
         default=1,
-        help=(
-            "minimum number of subjects an Acquisition Group "
-            "must have in order to be included in the exemplar "
-            "dataset "
-        ),
+        help="minimum number of subjects an Acquisition Group "
+        "must have in order to be included in the exemplar "
+        "dataset ",
         required=False,
     )
     # parser.add_argument('--include-groups',

@@ -12,6 +12,6 @@ Contributors
 
 * Tinashe Tapera <tinashe.tapera at pennmedicine dot upenn .edu>
 
-Principle Investigator 
------------------------
+Principal Investigator
+----------------------
 * Theodore Satterthwaite <theodore.satterthwaite at pennmedicine dot upenn .edu>
