@@ -219,7 +219,7 @@ class CuBIDS(object):
         """Apply changes documented in the edited summary tsv and generate the new tsv files.
 
         This function looks at the RenameKeyGroup and MergeInto
-        columns and modifies the bids datset according to the
+        columns and modifies the bids dataset according to the
         specified changs.
 
         Parameters
@@ -825,7 +825,7 @@ class CuBIDS(object):
         if ret == "erroneous sidecar found":
             return "erroneous sidecar found"
 
-        # add modality to the retun tuple
+        # add modality to the return tuple
         l_ret = list(ret)
         l_ret.append(modality)
         tup_ret = tuple(l_ret)

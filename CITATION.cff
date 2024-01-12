@@ -1,0 +1,107 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  Curation of BIDS (CuBIDS)
+message: If you use this software, please cite it using the metadata from this file, as well as the NeuroImage paper (doi:10.1016/j.neuroimage.2022.119609).
+type: software
+authors:
+  - given-names: Sydney
+    family-names: Covitz
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0002-7430-4125'
+  - given-names: Tinashe M.
+    family-names: Tapera
+  - given-names: Azeez
+    family-names: Adebimpe
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-9049-0135'
+  - given-names: Aaron F.
+    family-names: Alexander-Bloch
+    affiliation: University of Pennsylvania
+  - given-names: Maxwell
+    family-names: Bertolero
+    orcid: 'https://orcid.org/0000-0002-2691-3698'
+    affiliation: University of Pennsylvania
+  - given-names: Eric
+    family-names: Feczko
+  - given-names: Alexandre R.
+    family-names: Franco
+  - given-names: Raquel E.
+    family-names: Gur
+  - given-names: Ruben C.
+    family-names: Gur
+  - given-names: Timothy
+    family-names: Hendrickson
+  - given-names: Audrey
+    family-names: Houghton
+  - given-names: Kahini
+    family-names: Mehta
+  - given-names: Kristin
+    family-names: Murtha
+    affiliation: University of Pennsylvania
+  - given-names: Anders J.
+    family-names: Perrone
+  - given-names: Tim
+    family-names: Robert-Fitzgerald
+  - given-names: Jenna M.
+    family-names: Schabdach
+  - given-names: Russell T.
+    family-names: Shinohara
+  - given-names: Jacob W.
+    family-names: Vogel
+  - given-names: Chenying
+    family-names: Zhao
+  - given-names: Damien A.
+    family-names: Fair
+  - given-names: Michael
+    family-names: Milham
+  - given-names: Matthew
+    family-names: Cieslak
+    email: matthew.cieslak@pennmedicine.upenn.edu
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0002-1931-4734'
+  - given-names: Taylor
+    family-names: Salo
+    email: salot@pennmedicine.upenn.edu
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-9813-3167'
+  - given-names: Theodore
+    family-names: Satterthwaite
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-7072-9399'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.6514881
+    description: The Zenodo DOI
+  - type: doi
+    value: 10.1016/j.neuroimage.2022.119609
+    description: The NeuroImage journal article
+repository-code: 'https://github.com/PennLINC/CuBIDS'
+url: 'https://cubids.readthedocs.io'
+abstract: >-
+  The Brain Imaging Data Structure (BIDS) is a specification accompanied by a software
+  ecosystem that was designed to create reproducible and automated workflows for processing
+  neuroimaging data.
+  BIDS Apps flexibly build workflows based on the metadata detected in a dataset.
+  However, even BIDS valid metadata can include incorrect values or omissions that result in
+  inconsistent processing across sessions.
+  Additionally, in large-scale, heterogeneous neuroimaging datasets,
+  hidden variability in metadata is difficult to detect and classify.
+  To address these challenges, we created a Python-based software package titled
+  “Curation of BIDS” (CuBIDS), which provides an intuitive workflow that helps users validate
+  and manage the curation of their neuroimaging datasets.
+  CuBIDS includes a robust implementation of BIDS validation that scales to large samples and
+  incorporates DataLad- a version control software package for data- as an optional dependency
+  to ensure reproducibility and provenance tracking throughout the entire curation process.
+  CuBIDS provides tools to help users perform quality control on their images' metadata and
+  identify unique combinations of imaging parameters.
+  Users can then execute BIDS Apps on a subset of participants that represent the full range of
+  acquisition parameters that are present, accelerating pipeline testing on large datasets.
+keywords:
+  - BIDS
+  - Neuroimaging
+license: MIT
+version: 1.0.2
+date-released: '2023-09-07'

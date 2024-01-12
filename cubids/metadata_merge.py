@@ -15,7 +15,7 @@ DIRECT_IMAGING_PARAMS = IMAGING_PARAMS - set(["NSliceTimes"])
 def check_merging_operations(action_tsv, raise_on_error=False):
     """Check that the merges in an action tsv are possible.
 
-    To be mergable the
+    To be mergeable the
     """
     actions = pd.read_table(action_tsv)
     ok_merges = []

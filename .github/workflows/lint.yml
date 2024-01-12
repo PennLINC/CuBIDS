@@ -7,7 +7,6 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-
     steps:
     - name: Set up environment
       uses: actions/checkout@v3
@@ -16,11 +15,12 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.7'
+        python-version: '3.9'
     - name: Install dependencies
       run: |
         pip install flake8 flake8-absolute-import flake8-black flake8-docstrings \
         flake8-isort flake8-pyproject flake8-unused-arguments \
-        flake8-use-fstring pep8-naming
+        flake8-use-fstring pep8-naming \
+        codespell tomli
     - name: Run linters
       run: python -m flake8 cubids
