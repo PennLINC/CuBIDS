@@ -17,6 +17,13 @@ jobs:
           name: Generate environment
           command:  |
             conda create -n py38_env python=3.8 pip -yq
+            conda install -c conda-forge -y datalad
+
+            # Add nodejs and the validator
+            conda install nodejs
+            npm install -g yarn && \
+            npm install -g bids-validator
+
             source activate py38_env
             pip install -e .[tests]
       - run:
@@ -37,6 +44,13 @@ jobs:
           name: Generate environment
           command:  |
             conda create -n py39_env python=3.9 pip -yq
+            conda install -c conda-forge -y datalad
+
+            # Add nodejs and the validator
+            conda install nodejs
+            npm install -g yarn && \
+            npm install -g bids-validator
+
             source activate py39_env
             pip install -e .[tests]
       - run:
@@ -57,6 +71,13 @@ jobs:
           name: Generate environment
           command:  |
             conda create -n py310_env python=3.10 pip -yq
+            conda install -c conda-forge -y datalad
+
+            # Add nodejs and the validator
+            conda install nodejs
+            npm install -g yarn && \
+            npm install -g bids-validator
+
             source activate py310_env
             pip install -e .[tests]
       - run:
@@ -77,6 +98,13 @@ jobs:
           name: Generate environment
           command:  |
             conda create -n py311_env python=3.11 pip -yq
+            conda install -c conda-forge -y datalad
+
+            # Add nodejs and the validator
+            conda install nodejs
+            npm install -g yarn && \
+            npm install -g bids-validator
+
             source activate py311_env
             pip install -e .[tests]
       - run:
