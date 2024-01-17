@@ -38,7 +38,7 @@ def build_subject_paths(bids_dir):
     subjects = glob.glob(bids_dir)
 
     if len(subjects) < 1:
-        raise ValueError("Couldn't find any subjects " "in the specified directory:\n" + bids_dir)
+        raise ValueError("Couldn't find any subjects in the specified directory:\n" + bids_dir)
 
     subjects_dict = {}
 
@@ -93,7 +93,7 @@ def parse_validator_output(output):
         return_dict["files"] = [
             get_nested(x, "file", "relativePath") for x in issue_dict.get("files", "")
         ]
-        return_dict["type"] = issue_dict.get("key" "")
+        return_dict["type"] = issue_dict.get("key", "")
         return_dict["severity"] = issue_dict.get("severity", "")
         return_dict["description"] = issue_dict.get("reason", "")
         return_dict["code"] = issue_dict.get("code", "")
