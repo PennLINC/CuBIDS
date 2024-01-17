@@ -14,13 +14,11 @@ logger = logging.getLogger("cubids-cli")
 def build_validator_call(path, ignore_headers=False):
     """Build a subprocess command to the bids validator."""
     # build docker call
-    command = ["bids-validator", "--verbose", "--json"]
+    # CuBIDS automatically ignores subject consistency.
+    command = ["bids-validator", "--verbose", "--json", "--ignoreSubjectConsistency"]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
-
-    # CuBIDS automatically ignores subject consistency.
-    command.append("--ignoreSubjectConsistency")
 
     command.append(path)
 
