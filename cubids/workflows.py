@@ -37,7 +37,6 @@ def validate(
     sequential,
     sequential_subjects,
     ignore_nifti_headers,
-    ignore_subject_consistency,
 ):
     """Run the bids validator.
 
@@ -49,7 +48,6 @@ def validate(
     sequential
     sequential_subjects
     ignore_nifti_headers
-    ignore_subject_consistency
     """
     # check status of output_prefix, absolute or relative?
     abs_path_output = True
@@ -69,7 +67,6 @@ def validate(
             call = build_validator_call(
                 str(bids_dir),
                 ignore_nifti_headers,
-                ignore_subject_consistency,
             )
             ret = run_validator(call)
 
@@ -148,8 +145,7 @@ def validate(
 
                     # run the validator
                     nifti_head = ignore_nifti_headers
-                    subj_consist = ignore_subject_consistency
-                    call = build_validator_call(tmpdirname, nifti_head, subj_consist)
+                    call = build_validator_call(tmpdirname, nifti_head)
                     ret = run_validator(call)
                     # parse output
                     if ret.returncode != 0:
@@ -228,9 +224,6 @@ def validate(
         if ignore_nifti_headers:
             cmd.append("--ignore_nifti_headers")
 
-        if ignore_subject_consistency:
-            cmd.append("--ignore_subject_consistency")
-
     elif container_type == "singularity":
         cmd = [
             "singularity",
@@ -249,9 +242,6 @@ def validate(
         ]
         if ignore_nifti_headers:
             cmd.append("--ignore_nifti_headers")
-
-        if ignore_subject_consistency:
-            cmd.append("--ignore_subject_consistency")
 
         if sequential:
             cmd.append("--sequential")

@@ -62,16 +62,6 @@ def _parse_validate():
         required=False,
     )
     parser.add_argument(
-        "--ignore_subject_consistency",
-        action="store_true",
-        default=True,
-        help=(
-            "Skip checking that any given file for one "
-            "subject is present for all other subjects"
-        ),
-        required=False,
-    )
-    parser.add_argument(
         "--sequential-subjects",
         action="store",
         default=None,
