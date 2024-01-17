@@ -1,119 +1,125 @@
+# Python CircleCI 2.1 configuration file
+#
+# Check https://circleci.com/docs/2.1/language-python/ for more details
+#
 version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.5
 jobs:
-  set_up_conda:
-    machine:
-      image: ubuntu-2004:202201-02
+
+  test_py38:
     working_directory: /home/circleci/src/CuBIDS
+    docker:
+      - image: continuumio/miniconda3
     steps:
-      - checkout:
-          path: /home/circleci/src/CuBIDS
+      - checkout
       - run:
-          name: install miniconda
-          command: |
-            export MINICONDA=/tmp/miniconda
-            export PATH="$MINICONDA/bin:$PATH"
-            wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh
-            bash /tmp/miniconda.sh -b -f -p $MINICONDA
-            conda config --set always_yes yes
-            conda update conda
-            conda info -a
-            conda create -n cubids python=3.9 pip
-            source activate cubids
-            conda install -c conda-forge -y datalad
+          name: Generate environment
+          command:  |
+            conda create -n py38_env python=3.8 pip -yq
+            source activate py38_env
+            pip install -e .[tests]
+      - run:
+          name: Run tests
+          command:  |
+            source activate py38_env
+            py.test --cov-append --cov-report=xml --cov=cubids cubids
+            mkdir /tmp/src/coverage
+            mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py38
 
-            # Add nodejs and the validator
-            conda install nodejs
-            npm install -g yarn && \
-            npm install -g bids-validator
-
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - miniconda
-
-  run_pytests:
-    machine:
-      image: ubuntu-2004:202201-02
+  test_py39:
     working_directory: /home/circleci/src/CuBIDS
+    docker:
+      - image: continuumio/miniconda3
     steps:
-      - checkout:
-          path: /home/circleci/src/CuBIDS
+      - checkout
+      - run:
+          name: Generate environment
+          command:  |
+            conda create -n py39_env python=3.9 pip -yq
+            source activate py39_env
+            pip install -e .[tests]
+      - run:
+          name: Run tests
+          command:  |
+            source activate py39_env
+            py.test --cov-append --cov-report=xml --cov=cubids cubids
+            mkdir /tmp/src/coverage
+            mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py39
 
+  test_py310:
+    working_directory: /home/circleci/src/CuBIDS
+    docker:
+      - image: continuumio/miniconda3
+    steps:
+      - checkout
+      - run:
+          name: Generate environment
+          command:  |
+            conda create -n py310_env python=3.10 pip -yq
+            source activate py310_env
+            pip install -e .[tests]
+      - run:
+          name: Run tests
+          command:  |
+            source activate py310_env
+            py.test --cov-append --cov-report=xml --cov=cubids cubids
+            mkdir /tmp/src/coverage
+            mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py310
+
+  test_py311:
+    working_directory: /home/circleci/src/CuBIDS
+    docker:
+      - image: continuumio/miniconda3
+    steps:
+      - checkout
+      - run:
+          name: Generate environment
+          command:  |
+            conda create -n py311_env python=3.11 pip -yq
+            source activate py311_env
+            pip install -e .[tests]
+      - run:
+          name: Run tests
+          command:  |
+            source activate py311_env
+            py.test --cov-append --cov-report=xml --cov=cubids cubids
+            mkdir /tmp/src/coverage
+            mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py311
+
+  merge_coverage:
+    working_directory: /home/circleci/src/CuBIDS
+    docker:
+      - image: continuumio/miniconda3
+    steps:
       - attach_workspace:
           at: /tmp
-
+      - checkout
       - run:
-          name: Test CuBIDS
+          name: Merge coverage files
           command: |
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-
-            # Install CuBIDS
-            pip install -e .[tests]
-
-            # Reinstall bids-validator
-            sudo apt update
-            sudo apt install nodejs npm
-            npm install -g yarn && \
-            npm install -g bids-validator
-
-            # Run tests
-            pytest cubids
-
-  deployable:
-    docker:
-      - image: busybox:latest
-    steps:
-      - run: echo Deploying!
-
-  deploy_pypi:
-    machine:
-      image: ubuntu-2004:202201-02
-    working_directory: /tmp/src/CuBIDS
-    steps:
-      - checkout:
-          path: /home/circleci/src/CuBIDS
-      - run:
-          name: Generate distribution archives
-          command: |
-            python3 -m pip install --upgrade build
-            python3 -m build
-      - run:
-          name: Upload packages to PyPI
-          command: |
-            python3 -m pip install --upgrade twine
-            python3 -m twine upload dist/*
+            apt-get update
+            apt-get install -yqq curl
+            source activate py37_env
+            cd /tmp/src/coverage/
+            coverage combine
+            coverage xml
+      - store_artifacts:
+          path: /tmp/src/coverage
+      - codecov/upload:
+          file: /tmp/src/coverage/coverage.xml
 
 workflows:
-  version: 2
-  build_test_deploy:
+  version: 2.1
+  run_tests:
     jobs:
-      - set_up_conda:
-          filters:
-            tags:
-              only: /.*/
-
-      - run_pytests:
+      - test_py38
+      - test_py39
+      - test_py310
+      - test_py311
+      - merge_coverage:
           requires:
-            - set_up_conda
-          filters:
-            tags:
-              only: /.*/
-
-      - deployable:
-          requires:
-            - run_pytests
-          filters:
-            branches:
-              only: main
-            tags:
-              only: /.*/
-
-      - deploy_pypi:
-          requires:
-            - deployable
-          filters:
-            branches:
-              only: main
-            tags:
-              only: /.*/
+            - test_py38
+            - test_py39
+            - test_py310
+            - test_py311
