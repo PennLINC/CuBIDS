@@ -13,6 +13,6 @@ Contents
    installation
    example
    examples
-   contributing
-   authors
-   history
+   ../CONTRIBUTING
+   ../AUTHORS
+   ../HISTORY
