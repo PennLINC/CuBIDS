@@ -12,6 +12,7 @@ Contents
    usage
    installation
    example
+   examples
    contributing
    authors
    history
