@@ -76,17 +76,18 @@ maint = [
 all = ["cubids[doc,maint,tests]"]
 
 [project.scripts]
-cubids-group = "cubids.cli:cubids_group"
-cubids-apply = "cubids.cli:cubids_apply"
-cubids-purge = "cubids.cli:cubids_purge"
-cubids-add-nifti-info = "cubids.cli:cubids_add_nifti_info"
-cubids-copy-exemplars = "cubids.cli:cubids_copy_exemplars"
-cubids-undo = "cubids.cli:cubids_undo"
-bids-sidecar-merge = "cubids.cli:bids_sidecar_merge"
-cubids-validate = "cubids.cli:cubids_validate"
-cubids-datalad-save = "cubids.cli:cubids_datalad_save"
-cubids-print-metadata-fields = "cubids.cli:cubids_print_metadata_fields"
-cubids-remove-metadata-fields = "cubids.cli:cubids_remove_metadata_fields"
+cubids = "cubids.cli:_main"
+cubids-group = "cubids.cli:_enter_group"
+cubids-apply = "cubids.cli:_enter_apply"
+cubids-purge = "cubids.cli:_enter_purge"
+cubids-add-nifti-info = "cubids.cli:_enter_add_nifti_info"
+cubids-copy-exemplars = "cubids.cli:_enter_copy_exemplars"
+cubids-undo = "cubids.cli:_enter_undo"
+bids-sidecar-merge = "cubids.cli:_enter_bids_sidecar_merge"
+cubids-validate = "cubids.cli:_enter_validate"
+cubids-datalad-save = "cubids.cli:_enter_datalad_save"
+cubids-print-metadata-fields = "cubids.cli:_enter_print_metadata_fields"
+cubids-remove-metadata-fields = "cubids.cli:_enter_remove_metadata_fields"
 
 #
 # Hatch configurations
