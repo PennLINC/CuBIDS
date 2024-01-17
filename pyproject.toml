@@ -44,11 +44,12 @@ Paper = "https://doi.org/10.1016/j.neuroimage.2022.119609"
 doc = [
     "nbsphinx",
     "packaging",
+    "recommonmark",
     "sphinx >= 2.2",
     "sphinx-argparse",
-    "sphinx_rtd_theme",
+    "sphinx_gallery",
     "sphinx_markdown_tables",
-    "recommonmark",
+    "sphinx_rtd_theme",
 ]
 tests = [
     "codespell",
