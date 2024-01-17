@@ -30,7 +30,7 @@ jobs:
           name: Run tests
           command:  |
             source activate py38_env
-            py.test --cov-append --cov-report=xml --cov=cubids cubids
+            py.test --cov-append --cov-config=cubids/tests/coverage.cfg --cov-report=xml --cov=cubids cubids
             mkdir /tmp/src/coverage
             mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py38
 
@@ -57,7 +57,7 @@ jobs:
           name: Run tests
           command:  |
             source activate py39_env
-            py.test --cov-append --cov-report=xml --cov=cubids cubids
+            py.test --cov-append --cov-config=cubids/tests/coverage.cfg --cov-report=xml --cov=cubids cubids
             mkdir /tmp/src/coverage
             mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py39
 
@@ -84,7 +84,7 @@ jobs:
           name: Run tests
           command:  |
             source activate py310_env
-            py.test --cov-append --cov-report=xml --cov=cubids cubids
+            py.test --cov-append --cov-config=cubids/tests/coverage.cfg --cov-report=xml --cov=cubids cubids
             mkdir /tmp/src/coverage
             mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py310
 
@@ -111,7 +111,7 @@ jobs:
           name: Run tests
           command:  |
             source activate py311_env
-            py.test --cov-append --cov-report=xml --cov=cubids cubids
+            py.test --cov-append --cov-config=cubids/tests/coverage.cfg --cov-report=xml --cov=cubids cubids
             mkdir /tmp/src/coverage
             mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py311
 
