@@ -150,7 +150,7 @@ class CuBIDS(object):
         Uses git reset --hard to revert to the previous commit.
         """
         if not self.is_datalad_clean():
-            raise Exception("Untracked changes present. " "Run clear_untracked_changes first")
+            raise Exception("Untracked changes present. Run clear_untracked_changes first")
         reset_proc = subprocess.run(["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 

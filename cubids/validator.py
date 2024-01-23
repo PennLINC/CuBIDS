@@ -11,15 +11,14 @@ import pandas as pd
 logger = logging.getLogger("cubids-cli")
 
 
-def build_validator_call(path, ignore_headers=False, ignore_subject=True):
+def build_validator_call(path, ignore_headers=False):
     """Build a subprocess command to the bids validator."""
     # build docker call
-    command = ["bids-validator", "--verbose", "--json"]
+    # CuBIDS automatically ignores subject consistency.
+    command = ["bids-validator", "--verbose", "--json", "--ignoreSubjectConsistency"]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
-    if ignore_subject:
-        command.append("--ignoreSubjectConsistency")
 
     command.append(path)
 
@@ -39,7 +38,7 @@ def build_subject_paths(bids_dir):
     subjects = glob.glob(bids_dir)
 
     if len(subjects) < 1:
-        raise ValueError("Couldn't find any subjects " "in the specified directory:\n" + bids_dir)
+        raise ValueError("Couldn't find any subjects in the specified directory:\n" + bids_dir)
 
     subjects_dict = {}
 
@@ -94,7 +93,7 @@ def parse_validator_output(output):
         return_dict["files"] = [
             get_nested(x, "file", "relativePath") for x in issue_dict.get("files", "")
         ]
-        return_dict["type"] = issue_dict.get("key" "")
+        return_dict["type"] = issue_dict.get("key", "")
         return_dict["severity"] = issue_dict.get("severity", "")
         return_dict["description"] = issue_dict.get("reason", "")
         return_dict["code"] = issue_dict.get("code", "")
