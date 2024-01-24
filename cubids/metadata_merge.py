@@ -273,6 +273,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
       acquisition group.
     - <output_prefix>_AcqGrouping.json: A data dictionary for the AcqGrouping.tsv.
     - <output_prefix>_AcqGroupInfo.txt: A text file with the summary of acquisition.
+    - <output_prefix>_AcqGroupInfo.json: A data dictionary for the AcqGroupInfo.txt.
 
     Parameters
     ----------
