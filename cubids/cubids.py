@@ -157,6 +157,11 @@ class CuBIDS(object):
 
         This creates the CuBIDS code directory at self.path/code/CuBIDS.
 
+        Returns
+        -------
+        :obj:`str`
+            Path to the CuBIDS code directory.
+
         Notes
         -----
         Why not use ``os.makedirs``?

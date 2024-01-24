@@ -426,7 +426,6 @@ def _parse_copy_exemplars():
     parser.add_argument(
         "--use-datalad",
         action="store_true",
-        type=bool,
         default=False,
         help="check exemplar dataset into DataLad",
     )
