@@ -485,6 +485,7 @@ class CuBIDS(object):
         sub_ses = sub + "_" + ses
 
         if "run" in list(entities.keys()) and "run-0" in filepath:
+            # XXX: This adds an extra leading zero to run.
             entities["run"] = "0" + str(entities["run"])
 
         filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
@@ -496,29 +497,32 @@ class CuBIDS(object):
         if len(filename) > 0:
             filename = sub_ses + "_" + filename + "_" + suffix + old_ext
         else:
+            # XXX: Why is filename here if it's an empty string?
             filename = sub_ses + filename + "_" + suffix + old_ext
 
         # CHECK TO SEE IF DATATYPE CHANGED
+        # XXX: Why/how would datatype change?
         dtypes = ["anat", "func", "perf", "fmap", "dwi"]
-        old = ""
+        dtype_orig = ""
         for dtype in dtypes:
             if dtype in filepath:
-                old = dtype
+                dtype_orig = dtype
 
         if "datatype" in entities.keys():
-            dtype = entities["datatype"]
-            if entities["datatype"] != old:
+            dtype_new = entities["datatype"]
+            if entities["datatype"] != dtype_orig:
                 print("WARNING: DATATYPE CHANGE DETECETD")
         else:
-            dtype = old
+            dtype_new = dtype_orig
 
-        new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype + "/" + filename
+        # Construct the new filename
+        new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
 
-        # add the scan path + new path to the lists of old, new filenames
+        # Add the scan path + new path to the lists of old, new filenames
         self.old_filenames.append(filepath)
         self.new_filenames.append(new_path)
 
-        # NOW NEED TO RENAME ASSOCIATIONS
+        # NOW NEED TO RENAME ASSOCIATED FILES
         # bids_file = self.layout.get_file(filepath)
         bids_file = filepath
         # associations = bids_file.get_associations()
@@ -535,34 +539,35 @@ class CuBIDS(object):
                     self.new_filenames.append(new_ext_path)
 
         # MAKE SURE THESE AREN'T COVERED BY get_associations!!!
+        # Update DWI-specific files
         if "/dwi/" in filepath:
             # add the bval and bvec if there
-            if (
-                Path(img_to_new_ext(filepath, ".bval")).exists()
-                and img_to_new_ext(filepath, ".bval") not in self.old_filenames
-            ):
-                self.old_filenames.append(img_to_new_ext(filepath, ".bval"))
-                self.new_filenames.append(img_to_new_ext(new_path, ".bval"))
+            bval_old = img_to_new_ext(filepath, ".bval")
+            bval_new = img_to_new_ext(new_path, ".bval")
+            if Path(bval_old).exists() and bval_old not in self.old_filenames:
+                self.old_filenames.append(bval_old)
+                self.new_filenames.append(bval_new)
 
-            if (
-                Path(img_to_new_ext(filepath, ".bvec")).exists()
-                and img_to_new_ext(filepath, ".bvec") not in self.old_filenames
-            ):
-                self.old_filenames.append(img_to_new_ext(filepath, ".bvec"))
-                self.new_filenames.append(img_to_new_ext(new_path, ".bvec"))
+            bvec_old = img_to_new_ext(filepath, ".bvec")
+            bvec_new = img_to_new_ext(new_path, ".bvec")
+            if Path(bvec_old).exists() and bvec_old not in self.old_filenames:
+                self.old_filenames.append(bvec_old)
+                self.new_filenames.append(bvec_new)
 
+        # Update func-specific files
         # now rename _events and _physio files!
         old_suffix = parse_file_entities(filepath)["suffix"]
         scan_end = "_" + old_suffix + old_ext
 
         if "_task-" in filepath:
             old_events = filepath.replace(scan_end, "_events.tsv")
-            old_ejson = filepath.replace(scan_end, "_events.json")
             if Path(old_events).exists():
                 self.old_filenames.append(old_events)
                 new_scan_end = "_" + suffix + old_ext
                 new_events = new_path.replace(new_scan_end, "_events.tsv")
                 self.new_filenames.append(new_events)
+
+            old_ejson = filepath.replace(scan_end, "_events.json")
             if Path(old_ejson).exists():
                 self.old_filenames.append(old_ejson)
                 new_scan_end = "_" + suffix + old_ext
@@ -576,37 +581,63 @@ class CuBIDS(object):
             new_physio = new_path.replace(new_scan_end, "_physio.tsv.gz")
             self.new_filenames.append(new_physio)
 
+        # Update ASL-specific files
+        if "/perf/" in filepath:
+            old_context = filepath.replace(scan_end, "_aslcontext.tsv")
+            if Path(old_context).exists():
+                self.old_filenames.append(old_context)
+                new_scan_end = "_" + suffix + old_ext
+                new_context = new_path.replace(new_scan_end, "_aslcontext.tsv")
+                self.new_filenames.append(new_context)
+
+            old_m0scan = filepath.replace(scan_end, "_m0scan.nii.gz")
+            if Path(old_m0scan).exists():
+                self.old_filenames.append(old_m0scan)
+                new_scan_end = "_" + suffix + old_ext
+                new_m0scan = new_path.replace(new_scan_end, "_m0scan.nii.gz")
+                self.new_filenames.append(new_m0scan)
+
+            old_mjson = filepath.replace(scan_end, "_m0scan.json")
+            if Path(old_mjson).exists():
+                self.old_filenames.append(old_mjson)
+                new_scan_end = "_" + suffix + old_ext
+                new_mjson = new_path.replace(new_scan_end, "_m0scan.json")
+                self.new_filenames.append(new_mjson)
+
+            old_labeling = filepath.replace(scan_end, "_asllabeling.jpg")
+            if Path(old_labeling).exists():
+                self.old_filenames.append(old_labeling)
+                new_scan_end = "_" + suffix + old_ext
+                new_labeling = new_path.replace(new_scan_end, "_asllabeling.jpg")
+                self.new_filenames.append(new_labeling)
+
         # RENAME INTENDED FORS!
         ses_path = self.path + "/" + sub + "/" + ses
-        for path in Path(ses_path).rglob("fmap/*.json"):
-            self.IF_rename_paths.append(str(path))
-            # json_file = self.layout.get_file(str(path))
+        files_with_if = []
+        files_with_if += Path(ses_path).rglob("fmap/*.json")
+        files_with_if += Path(ses_path).rglob("perf/*_m0scan.json")
+        for path_with_if in files_with_if:
+            filename_with_if = str(path_with_if)
+            self.IF_rename_paths.append(filename_with_if)
+            # json_file = self.layout.get_file(filename_with_if)
             # data = json_file.get_dict()
-            data = get_sidecar_metadata(str(path))
+            data = get_sidecar_metadata(filename_with_if)
             if data == "Erroneous sidecar":
-                print("Error parsing sidecar: ", str(path))
+                print("Error parsing sidecar: ", filename_with_if)
                 continue
 
             if "IntendedFor" in data.keys():
-                # check if IntendedFor field is a str or list
-                if isinstance(data["IntendedFor"], str):
-                    if data["IntendedFor"] == _get_intended_for_reference(filepath):
-                        # replace old filename with new one (overwrite string)
-                        data["IntendedFor"] = _get_intended_for_reference(new_path)
+                # Coerce IntendedFor to a list.
+                data["IntendedFor"] = listify(data["IntendedFor"])
+                for item in data["IntendedFor"]:
+                    if item in _get_intended_for_reference(filepath):
+                        # remove old filename
+                        data["IntendedFor"].remove(item)
+                        # add new filename
+                        data["IntendedFor"].append(_get_intended_for_reference(new_path))
 
-                        # update the json with the new data dictionary
-                        _update_json(str(path), data)
-
-                if isinstance(data["IntendedFor"], list):
-                    for item in data["IntendedFor"]:
-                        if item in _get_intended_for_reference(filepath):
-                            # remove old filename
-                            data["IntendedFor"].remove(item)
-                            # add new filename
-                            data["IntendedFor"].append(_get_intended_for_reference(new_path))
-
-                        # update the json with the new data dictionary
-                        _update_json(str(path), data)
+                # update the json with the new data dictionary
+                _update_json(filename_with_if, data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -625,11 +656,11 @@ class CuBIDS(object):
 
         Parameters
         ----------
-        exemplars_dir : str
+        exemplars_dir : :obj:`str`
             path to the directory that will contain one subject
             from each Acqusition Group (*_AcqGrouping.tsv)
             example path: /Users/Covitz/tsvs/CCNP_Acq_Groups/
-        exemplars_tsv : str
+        exemplars_tsv : :obj:`str`
             path to the .tsv file that lists one subject
             from each Acqusition Group (*_AcqGrouping.tsv
             from the cubids-group output)
@@ -710,7 +741,13 @@ class CuBIDS(object):
         self._purge_associations(scans)
 
     def _purge_associations(self, scans):
-        """Purge field map JSONs' IntendedFor references."""
+        """Purge field map JSONs' IntendedFor references.
+
+        Parameters
+        ----------
+        scans : :obj:`list` of :obj:`str`
+            List of file paths to remove from field map JSONs.
+        """
         # truncate all paths to intendedfor reference format
         # sub, ses, modality only (no self.path)
         if_scans = []
@@ -727,20 +764,14 @@ class CuBIDS(object):
 
             # remove scan references in the IntendedFor
             if "IntendedFor" in data.keys():
-                # check if IntendedFor field value is a list or a string
-                if isinstance(data["IntendedFor"], str):
-                    if data["IntendedFor"] in if_scans:
-                        data["IntendedFor"] = []
-                        # update the json with the new data dictionary
-                        _update_json(str(path), data)
+                data["IntendedFor"] = listify(data["IntendedFor"])
 
-                if isinstance(data["IntendedFor"], list):
-                    for item in data["IntendedFor"]:
-                        if item in if_scans:
-                            data["IntendedFor"].remove(item)
+                for item in data["IntendedFor"]:
+                    if item in if_scans:
+                        data["IntendedFor"].remove(item)
 
-                            # update the json with the new data dictionary
-                            _update_json(str(path), data)
+                # update the json with the new data dictionary
+                _update_json(str(path), data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -838,6 +869,7 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             if no_ext_file in str(path) and ".nii.gz" not in str(path):
                 associations.append(str(path))
+
         return associations
 
     def _cache_fieldmaps(self):
