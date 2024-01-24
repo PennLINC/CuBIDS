@@ -42,12 +42,18 @@ def validate(
 
     Parameters
     ----------
-    bids_dir
-    output_prefix
-    container
-    sequential
-    sequential_subjects
-    ignore_nifti_headers
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    output_prefix : :obj:`pathlib.Path`
+        Output filename prefix.
+    container : :obj:`str`
+        Container in which to run the workflow.
+    sequential : :obj:`bool`
+        Run the validator sequentially.
+    sequential_subjects : :obj:`list` of :obj:`str`
+        Filter the sequential run to only include the listed subjects.
+    ignore_nifti_headers : :obj:`bool`
+        Ignore NIfTI headers when validating.
     """
     # check status of output_prefix, absolute or relative?
     abs_path_output = True
@@ -55,10 +61,10 @@ def validate(
         # not an absolute path --> put in code/CuBIDS dir
         abs_path_output = False
         # check if code/CuBIDS dir exists
-        if not Path(str(bids_dir) + "/code/CuBIDS").is_dir():
+        if not (bids_dir / "code" / "CuBIDS").is_dir():
             # if not, create it
-            subprocess.run(["mkdir", str(bids_dir) + "/code"])
-            subprocess.run(["mkdir", str(bids_dir) + "/code/CuBIDS/"])
+            subprocess.run(["mkdir", str(bids_dir / "code")])
+            subprocess.run(["mkdir", str(bids_dir / "code" / "CuBIDS")])
 
     # Run directly from python using subprocess
     if container is None:
@@ -262,11 +268,16 @@ def group(bids_dir, container, acq_group_level, config, output_prefix):
 
     Parameters
     ----------
-    bids_dir
-    container
-    acq_group_level
-    config
-    output_prefix
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    container : :obj:`str`
+        Container in which to run the workflow.
+    acq_group_level : {"subject", "session"}
+        Level at which acquisition groups are created.
+    config : :obj:`pathlib.Path`
+        Path to the grouping config file.
+    output_prefix : :obj:`pathlib.Path`
+        Output filename prefix.
     """
     # Run directly from python using
     if container is None:
@@ -357,16 +368,26 @@ def apply(
 
     Parameters
     ----------
-    bids_dir
-    use_datalad
-    acq_group_level
-    config
-    edited_summary_tsv
-    edited_tsv_prefix
-    files_tsv
-    new_tsv_prefix
-    output_prefix
-    container
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    use_datalad : :obj:`bool`
+        Use datalad to track changes.
+    acq_group_level : {"subject", "session"}
+        Level at which acquisition groups are created.
+    config : :obj:`pathlib.Path`
+        Path to the grouping config file.
+    edited_summary_tsv : :obj:`pathlib.Path`
+        Path to the edited summary tsv.
+    edited_tsv_prefix : :obj:`pathlib.Path`
+        Path to the edited tsv prefix.
+    files_tsv : :obj:`pathlib.Path`
+        Path to the files tsv.
+    new_tsv_prefix : :obj:`pathlib.Path`
+        Path to the new tsv prefix.
+    output_prefix : :obj:`pathlib.Path`
+        Output filename prefix.
+    container : :obj:`str`
+        Container in which to run the workflow.
     """
     # Run directly from python using
     if container is None:
@@ -471,18 +492,17 @@ def apply(
     sys.exit(proc.returncode)
 
 
-def datalad_save(
-    bids_dir,
-    container,
-    m,
-):
+def datalad_save(bids_dir, container, m):
     """Perform datalad save.
 
     Parameters
     ----------
-    bids_dir
-    container
-    m
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    container : :obj:`str`
+        Container in which to run the workflow.
+    m : :obj:`str`
+        Commit message.
     """
     # Run directly from python using
     if container is None:
@@ -532,8 +552,10 @@ def undo(bids_dir, container):
 
     Parameters
     ----------
-    bids_dir
-    container
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    container : :obj:`str`
+        Container in which to run the workflow.
     """
     # Run directly from python using
     if container is None:
@@ -587,13 +609,20 @@ def copy_exemplars(
 
     Parameters
     ----------
-    bids_dir
-    container
-    use_datalad
-    exemplars_dir
-    exemplars_tsv
-    min_group_size
-    force_unlock
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    container : :obj:`str`
+        Container in which to run the workflow.
+    use_datalad : :obj:`bool`
+        Use datalad to track changes.
+    exemplars_dir : :obj:`pathlib.Path`
+        Path to the directory where the exemplars will be saved.
+    exemplars_tsv : :obj:`pathlib.Path`
+        Path to the tsv file with the exemplars.
+    min_group_size : :obj:`int`
+        Minimum number of subjects in a group to be considered for exemplar.
+    force_unlock : :obj:`bool`
+        Force unlock the dataset.
     """
     # Run directly from python using
     if container is None:
@@ -640,8 +669,10 @@ def copy_exemplars(
 
         if force_unlock:
             cmd.append("--force-unlock")
+
         if min_group_size:
             cmd.append("--min-group-size")
+
     elif container_type == "singularity":
         cmd = [
             "singularity",
@@ -675,10 +706,14 @@ def add_nifti_info(bids_dir, container, use_datalad, force_unlock):
 
     Parameters
     ----------
-    bids_dir
-    container
-    use_datalad
-    force_unlock
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    container : :obj:`str`
+        Container in which to run the workflow.
+    use_datalad : :obj:`bool`
+        Use datalad to track changes.
+    force_unlock : :obj:`bool`
+        Force unlock the dataset.
     """
     # Run directly from python using
     if container is None:
@@ -739,10 +774,14 @@ def purge(bids_dir, container, use_datalad, scans):
 
     Parameters
     ----------
-    bids_dir
-    container
-    use_datalad
-    scans
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    container : :obj:`str`
+        Container in which to run the workflow.
+    use_datalad : :obj:`bool`
+        Use datalad to track changes.
+    scans : :obj:`pathlib.Path`
+        Path to the scans tsv.
     """
     # Run directly from python using
     if container is None:
@@ -801,9 +840,12 @@ def remove_metadata_fields(bids_dir, container, fields):
 
     Parameters
     ----------
-    bids_dir
-    container
-    fields
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    container : :obj:`str`
+        Container in which to run the workflow.
+    fields : :obj:`list` of :obj:`str`
+        List of fields to remove.
     """
     # Run directly from python
     if container is None:
@@ -849,8 +891,10 @@ def print_metadata_fields(bids_dir, container):
 
     Parameters
     ----------
-    bids_dir
-    container
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    container : :obj:`str`
+        Container in which to run the workflow.
     """
     # Run directly from python
     if container is None:

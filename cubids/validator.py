@@ -54,7 +54,18 @@ def build_subject_paths(bids_dir):
 
 
 def run_validator(call):
-    """Run the validator with subprocess."""
+    """Run the validator with subprocess.
+
+    Parameters
+    ----------
+    call : :obj:`list`
+        List of strings to pass to subprocess.run().
+
+    Returns
+    -------
+    :obj:`subprocess.CompletedProcess`
+        The result of the subprocess call.
+    """
     # if verbose:
     #     logger.info("Running the validator with call:")
     #     logger.info('\"' + ' '.join(call) + '\"')
@@ -68,15 +79,30 @@ def parse_validator_output(output):
 
     Parameters
     ----------
-    path : string
+    output : :obj:`str`
         Path to JSON file of BIDS validator output
 
     Returns
     -------
-        Pandas DataFrame
+    df : :obj:`pandas.DataFrame`
+        Dataframe of validator output.
     """
 
     def get_nested(dct, *keys):
+        """Get a nested value from a dictionary.
+
+        Parameters
+        ----------
+        dct : :obj:`dict`
+            Dictionary to get value from.
+        keys : :obj:`list`
+            List of keys to get value from.
+
+        Returns
+        -------
+        :obj:`dict`
+            The nested value.
+        """
         for key in keys:
             try:
                 dct = dct[key]
@@ -89,6 +115,18 @@ def parse_validator_output(output):
     issues = data["issues"]
 
     def parse_issue(issue_dict):
+        """Parse a single issue from the validator output.
+
+        Parameters
+        ----------
+        issue_dict : :obj:`dict`
+            Dictionary of issue.
+
+        Returns
+        -------
+        return_dict : :obj:`dict`
+            Dictionary of parsed issue.
+        """
         return_dict = {}
         return_dict["files"] = [
             get_nested(x, "file", "relativePath") for x in issue_dict.get("files", "")
@@ -117,7 +155,13 @@ def parse_validator_output(output):
 
 
 def get_val_dictionary():
-    """Get value dictionary."""
+    """Get value dictionary.
+
+    Returns
+    -------
+    val_dict : dict
+        Dictionary of values.
+    """
     val_dict = {}
     val_dict["files"] = {"Description": "File with warning orerror"}
     val_dict["type"] = {"Description": "BIDS validation warning or error"}

@@ -93,12 +93,17 @@ def _parse_bids_sidecar_merge():
         description=("bids-sidecar-merge: merge critical keys from one sidecar to another"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("from_json", type=Path, action="store", help="Source json file.")
+    parser.add_argument(
+        "from_json",
+        type=Path,
+        action="store",
+        help="Source json file.",
+    )
     parser.add_argument(
         "to_json",
         type=Path,
         action="store",
-        help=("destination json. This file will have data from `from_json` copied into it."),
+        help="destination json. This file will have data from `from_json` copied into it.",
     )
     return parser
 
@@ -156,7 +161,10 @@ def _parse_group():
         help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
     )
     parser.add_argument(
-        "--config", action="store", type=Path, help="path to a config file for grouping"
+        "--config",
+        action="store",
+        type=Path,
+        help="path to a config file for grouping",
     )
     return parser
 
@@ -226,6 +234,7 @@ def _parse_apply():
     parser.add_argument(
         "--use-datalad",
         action="store_true",
+        default=False,
         help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
@@ -241,7 +250,10 @@ def _parse_apply():
         help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
     )
     parser.add_argument(
-        "--config", action="store", type=Path, help="path to a config file for grouping"
+        "--config",
+        action="store",
+        type=Path,
+        help="path to a config file for grouping",
     )
 
     return parser
@@ -272,7 +284,11 @@ def _parse_datalad_save():
             "sub-X directories and dataset_description.json"
         ),
     )
-    parser.add_argument("-m", action="store", help="message for this commit")
+    parser.add_argument(
+        "-m",
+        action="store",
+        help="message for this commit",
+    )
     parser.add_argument(
         "--container",
         action="store",
@@ -340,37 +356,50 @@ def _parse_copy_exemplars():
         "bids_dir",
         type=Path,
         action="store",
-        help="path to the root of a BIDS dataset. "
-        "It should contain sub-X directories and "
-        "dataset_description.json.",
+        help=(
+            "path to the root of a BIDS dataset. "
+            "It should contain sub-X directories and "
+            "dataset_description.json."
+        ),
     )
     parser.add_argument(
         "exemplars_dir",
         type=Path,
         action="store",
-        help="absolute path to the root of a BIDS dataset "
-        "containing one subject from each Acquisition Group. "
-        "It should contain sub-X directories and "
-        "dataset_description.json.",
+        help=(
+            "absolute path to the root of a BIDS dataset "
+            "containing one subject from each Acquisition Group. "
+            "It should contain sub-X directories and "
+            "dataset_description.json."
+        ),
     )
     parser.add_argument(
         "exemplars_tsv",
         type=Path,
         action="store",
-        help="absolute path to the .tsv file that lists one "
-        "subject from each Acquisition Group "
-        "(*_AcqGrouping.tsv from the cubids-group output)",
+        help=(
+            "absolute path to the .tsv file that lists one "
+            "subject from each Acquisition Group "
+            "(*_AcqGrouping.tsv from the cubids-group output)"
+        ),
     )
     parser.add_argument(
-        "--use-datalad", action="store_true", help="check exemplar dataset into DataLad"
+        "--use-datalad",
+        action="store_true",
+        type=bool,
+        default=False,
+        help="check exemplar dataset into DataLad",
     )
     parser.add_argument(
         "--min-group-size",
         action="store",
         default=1,
-        help="minimum number of subjects an Acquisition Group "
-        "must have in order to be included in the exemplar "
-        "dataset ",
+        type=int,
+        help=(
+            "minimum number of subjects an Acquisition Group "
+            "must have in order to be included in the exemplar "
+            "dataset "
+        ),
         required=False,
     )
     # parser.add_argument('--include-groups',
@@ -421,11 +450,13 @@ def _parse_add_nifti_info():
     parser.add_argument(
         "--use-datalad",
         action="store_true",
+        default=False,
         help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
         "--force-unlock",
         action="store_true",
+        default=False,
         help="unlock dataset before adding nifti info ",
     )
     parser.add_argument(
@@ -472,6 +503,7 @@ def _parse_purge():
     parser.add_argument(
         "--use-datalad",
         action="store_true",
+        default=False,
         help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
@@ -524,6 +556,7 @@ def _parse_remove_metadata_fields():
 
 
 def _enter_remove_metadata_fields(argv=None):
+    """Set entrypoint for "cubids-remove-metadata-fields" CLI."""
     warnings.warn(
         "cubids-remove-metadata-fields is deprecated and will be removed in the future. "
         "Please use cubids remove-metadata-fields.",
@@ -536,6 +569,7 @@ def _enter_remove_metadata_fields(argv=None):
 
 
 def _parse_print_metadata_fields():
+    """Create the parser for the "cubids print-metadata-fields" command."""
     parser = argparse.ArgumentParser(
         description="cubids-print-metadata-fields: print all unique metadata fields",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

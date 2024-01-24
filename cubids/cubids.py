@@ -31,7 +31,58 @@ bids.config.set_option("extension_initial_dot", True)
 class CuBIDS(object):
     """The main CuBIDS class.
 
-    TODO: Complete docstring.
+    Parameters
+    ----------
+    data_root : :obj:`str`
+        Path to the root of the BIDS dataset.
+    use_datalad : :obj:`bool`, optional
+        If True, use datalad to track changes to the BIDS dataset.
+        Default is False.
+    acq_group_level : :obj:`str`, optional
+        The level at which to group scans. Default is "subject".
+    grouping_config : :obj:`str`, optional
+        Path to the grouping config file.
+        Default is None, in which case the default config in CuBIDS is used.
+    force_unlock : :obj:`bool`, optional
+        If True, force unlock all files in the BIDS dataset.
+        Default is False.
+
+    Attributes
+    ----------
+    path : :obj:`str`
+        Path to the root of the BIDS dataset.
+    _layout : :obj:`bids.layout.BIDSLayout`
+        The BIDSLayout object.
+    keys_files : :obj:`dict`
+        A dictionary of key groups and the files that belong to them.
+    fieldmaps_cached : :obj:`bool`
+        If True, the fieldmaps have been cached.
+    datalad_ready : :obj:`bool`
+        If True, the datalad dataset has been initialized.
+    datalad_handle : :obj:`datalad.api.Dataset`
+        The datalad dataset handle.
+    old_filenames : :obj:`list`
+        A list of old filenames.
+    new_filenames : :obj:`list`
+        A list of new filenames.
+    IF_rename_paths : :obj:`list`
+        A list of IntendedFor paths that have been renamed.
+    grouping_config : :obj:`dict`
+        The grouping config dictionary.
+    acq_group_level : :obj:`str`
+        The level at which to group scans.
+    scans_txt : :obj:`str`
+        Path to the .txt file that lists the scans
+        you want to be deleted from the dataset, along
+        with their associations.
+    force_unlock : :obj:`bool`
+        If True, force unlock all files in the BIDS dataset.
+    cubids_code_dir : :obj:`bool`
+        If True, the CuBIDS code directory exists.
+    data_dict : :obj:`dict`
+        A data dictionary for TSV outputs.
+    use_datalad : :obj:`bool`
+        If True, use datalad to track changes to the BIDS dataset.
     """
 
     def __init__(
@@ -68,7 +119,7 @@ class CuBIDS(object):
     def layout(self):
         """Return the BIDSLayout object.
 
-        TODO: Complete docstring.
+        If the BIDSLayout object has not been created, create it.
         """
         if self._layout is None:
             # print("SETTING LAYOUT OBJECT")
@@ -79,7 +130,12 @@ class CuBIDS(object):
     def reset_bids_layout(self, validate=False):
         """Reset the BIDS layout.
 
-        TODO: Complete docstring.
+        This sets the ``_layout`` attribute to a new :obj:`bids.layout.BIDSLayout` object.
+
+        Parameters
+        ----------
+        validate : :obj:`bool`, optional
+            If True, validate the BIDS dataset. Default is False.
         """
         # create BIDS Layout Indexer class
 
@@ -99,7 +155,11 @@ class CuBIDS(object):
     def create_cubids_code_dir(self):
         """Create CuBIDS code directory.
 
-        TODO: Complete docstring.
+        This creates the CuBIDS code directory at self.path/code/CuBIDS.
+
+        Notes
+        -----
+        Why not use ``os.makedirs``?
         """
         # check if BIDS_ROOT/code/CuBIDS exists
         if not self.cubids_code_dir:
@@ -109,7 +169,12 @@ class CuBIDS(object):
         return self.cubids_code_dir
 
     def init_datalad(self):
-        """Initialize a datalad Dataset at self.path."""
+        """Initialize a datalad Dataset at self.path.
+
+        This creates a datalad dataset at self.path and sets the
+        ``datalad_ready`` attribute to True.
+        It also sets the ``datalad_handle`` attribute to the datalad.Dataset object.
+        """
         self.datalad_ready = True
 
         self.datalad_handle = dlapi.Dataset(self.path)
@@ -138,7 +203,18 @@ class CuBIDS(object):
             raise Exception("Failed to save in DataLad")
 
     def is_datalad_clean(self):
-        """If True, no changes are detected in the datalad dataset."""
+        """If True, no changes are detected in the datalad dataset.
+
+        Returns
+        -------
+        :obj:`bool`
+            True if the datalad dataset is clean, False otherwise.
+
+        Raises
+        ------
+        Exception
+            If datalad has not been initialized.
+        """
         if not self.datalad_ready:
             raise Exception("Datalad not initialized, can't determine status")
         statuses = set([status["state"] for status in self.datalad_handle.status()])
@@ -148,6 +224,11 @@ class CuBIDS(object):
         """Revert the most recent commit, remove it from history.
 
         Uses git reset --hard to revert to the previous commit.
+
+        Raises
+        ------
+        Exception
+            If there are untracked changes in the datalad dataset.
         """
         if not self.is_datalad_clean():
             raise Exception("Untracked changes present. Run clear_untracked_changes first")
@@ -166,12 +247,14 @@ class CuBIDS(object):
             # ignore all dot directories
             if "/." in str(path):
                 continue
+
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 try:
                     img = nb.load(str(path))
                 except Exception:
                     print("Empty Nifti File: ", str(path))
                     continue
+
                 # get important info from niftis
                 obliquity = np.any(nb.affines.obliquity(img.affine) > 1e-4)
                 voxel_sizes = img.header.get_zooms()
@@ -208,11 +291,13 @@ class CuBIDS(object):
                         orient = nb.orientations.aff2axcodes(img.affine)
                         joined = "".join(orient) + "+"
                         data["ImageOrientation"] = joined
+
                     with open(sidecar, "w") as file:
                         json.dump(data, file, indent=4)
 
         if self.use_datalad:
             self.datalad_save(message="Added nifti info to sidecars")
+
         self.reset_bids_layout()
 
     def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True):
@@ -224,10 +309,14 @@ class CuBIDS(object):
 
         Parameters
         ----------
-        summary_tsv
-        files_tsv
-        new_prefix
+        summary_tsv : :obj:`str`
+            Path to the edited summary tsv file.
+        files_tsv : :obj:`str`
+            Path to the edited files tsv file.
+        new_prefix : :obj:`str`
+            Path prefix to the new tsv files.
         raise_on_error : :obj:`bool`
+            If True, raise an error if the MergeInto column contains invalid merges.
         """
         # reset lists of old and new filenames
         self.old_filenames = []
@@ -371,6 +460,10 @@ class CuBIDS(object):
         entities : dictionary
             A pybids dictionary of entities parsed from the new key
             group name.
+
+        Notes
+        -----
+        This is the function I need to spend the most time on, since it has entities hardcoded.
         """
         exts = Path(filepath).suffixes
         old_ext = ""
@@ -538,7 +631,9 @@ class CuBIDS(object):
             from each Acqusition Group (*_AcqGrouping.tsv
             from the cubids-group output)
             example path: /Users/Covitz/tsvs/CCNP_Acq_Grouping.tsv
-        min_group_size
+        min_group_size : :obj:`int`
+            Minimum number of subjects in an acq group for it to be included
+            in the exemplar dataset.
         """
         # create the exemplar ds
         if self.use_datalad:
@@ -558,11 +653,11 @@ class CuBIDS(object):
         subs = pd.read_table(exemplars_tsv)
 
         # if min group size flag set, drop acq groups with less than min
-        if int(min_group_size) > 1:
+        if min_group_size > 1:
             for row in range(len(subs)):
                 acq_group = subs.loc[row, "AcqGroup"]
                 size = int(subs["AcqGroup"].value_counts()[acq_group])
-                if size < int(min_group_size):
+                if size < min_group_size:
                     subs = subs.drop([row])
 
         # get one sub from each acq group
@@ -1294,21 +1389,21 @@ def _get_param_groups(
 
     Parameters
     ----------
-    files : list
+    files : :obj:`list` of :obj:`str`
         List of file names
-    fieldmap_lookup : defaultdict
+    fieldmap_lookup : :obj:`dict`
         mapping of filename strings relative to the bids root
         (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
-    grouping_config : dict
+    grouping_config : :obj:`dict`
         configuration for defining parameter groups
 
     Returns
     -------
-    labeled_files : pd.DataFrame
+    labeled_files : :obj:`pandas.DataFrame`
         A data frame with one row per file where the ParamGroup column
         indicates which group each scan is a part of.
-    param_groups_with_counts : pd.DataFrame
-        A data frame with param group summaries
+    param_groups_with_counts : :obj:`pandas.DataFrame`
+        A data frame with param group summaries.
     """
     if not files:
         print("WARNING: no files for", key_group_name)
@@ -1446,7 +1541,7 @@ def _get_param_groups(
 
 
 def round_params(param_group_df, config, modality):
-    """Round parameters."""
+    """Round columns' values in DataFrame according to requested precision."""
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
 
@@ -1465,7 +1560,7 @@ def round_params(param_group_df, config, modality):
 def get_sidecar_metadata(json_file):
     """Get all metadata values in a file's sidecar.
 
-    Transform json dictionary to python dictionary.
+    Transform json dictionary to Python dictionary.
     """
     try:
         with open(json_file) as json_file:
@@ -1477,13 +1572,51 @@ def get_sidecar_metadata(json_file):
 
 
 def format_params(param_group_df, config, modality):
-    """Run AgglomerativeClustering on param groups and add columns to dataframe."""
+    """Run AgglomerativeClustering on param groups and add columns to dataframe.
+
+    Parameters
+    ----------
+    param_group_df : :obj:`pandas.DataFrame`
+        A data frame with one row per file where the ParamGroup column
+        indicates which group each scan is a part of.
+    config : :obj:`dict`
+        Configuration for defining parameter groups.
+        This dictionary has two keys: ``'sidecar_params'`` and ``'derived_params'``.
+    modality : :obj:`str`
+        Modality of the scan.
+        This is used to select the correct configuration from the config dict.
+
+    Returns
+    -------
+    param_group_df : :obj:`pandas.DataFrame`
+        An updated version of the input data frame,
+        with a new column added for each element in the modality's
+        ``'sidecar_params'`` and ``'derived_params'`` dictionaries.
+        The new columns will have the name ``'Cluster_' + column_name``,
+        and will contain the cluster labels for each parameter group.
+
+    Notes
+    -----
+    ``'sidecar_params'`` is a dictionary of dictionaries, where keys are modalities.
+    The modality-wise dictionary's keys are names of BIDS fields to directly include
+    in the Parameter Groupings,
+    and the values describe the parameters by which those BIDS' fields are compared.
+    For example,
+    {"RepetitionTime": {"tolerance": 0.000001, "precision": 6, "suggest_variant_rename": True}
+    means that the RepetitionTime field should be compared across files and flagged as a
+    variant if it differs from others by 0.000001 or more.
+
+    ``'derived_params'`` is a dictionary of dictionaries, where keys are modalities.
+    The modality-wise dictionary's keys are names of BIDS fields to derive from the
+    NIfTI header and include in the Parameter Groupings.
+    """
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
 
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
             continue
+
         if "tolerance" in column_fmt and len(param_group_df) > 1:
             array = param_group_df[column_name].to_numpy().reshape(-1, 1)
 
@@ -1495,6 +1628,7 @@ def format_params(param_group_df, config, modality):
             clustering = AgglomerativeClustering(
                 n_clusters=None, distance_threshold=tolerance, linkage="complete"
             ).fit(array)
+
             for i in range(len(array)):
                 if array[i, 0] == -999:
                     array[i, 0] = np.nan
@@ -1510,6 +1644,12 @@ def _order_columns(df):
 
     This ensures that KeyGroup and ParamGroup are the first two columns,
     FilePath is the last, and the others are sorted alphabetically.
+
+    Notes
+    -----
+    This is the only place where the constant ID_VARS is used,
+    and the strings in that constant are hardcoded here,
+    so we might not need that constant at all.
     """
     cols = set(df.columns.to_list())
     non_id_cols = cols - ID_VARS
@@ -1523,12 +1663,18 @@ def _order_columns(df):
 
 
 def img_to_new_ext(img_path, new_ext):
-    """Convert img to new extension."""
+    """Convert img to new extension.
+
+    Notes
+    -----
+    The hardcoded suffix associated with each extension may not be comprehensive.
+    BIDS has been extended a lot in recent years.
+    """
     # handle .tsv edge case
     if new_ext == ".tsv":
         # take out suffix
         return img_path.rpartition("_")[0] + "_events" + new_ext
-    if new_ext == ".tsv.gz":
+    elif new_ext == ".tsv.gz":
         return img_path.rpartition("_")[0] + "_physio" + new_ext
     else:
         return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
