@@ -21,16 +21,15 @@ classifiers = [
 license = {file = "LICENSE"}
 requires-python = ">=3.8"
 dependencies = [
-    "pyyaml",
-    "pybids",
-    "pandas",
-    "tqdm",
-    "numpy",
-    "scikit-learn",
     "datalad>=0.13.5,!=0.17.3,!=0.17.0,!=0.16.1",
-    "wrapt<2,>=1.10",
-    "Sphinx",
     "jinja2 < 3.1",
+    "numpy",
+    "pandas",
+    "pybids",
+    "pyyaml",
+    "scikit-learn",
+    "tqdm",
+    "wrapt<2,>=1.10",
 ]
 dynamic = ["version"]
 
@@ -44,11 +43,11 @@ Paper = "https://doi.org/10.1016/j.neuroimage.2022.119609"
 doc = [
     "nbsphinx",
     "packaging",
+    "recommonmark",
     "sphinx >= 2.2",
     "sphinx-argparse",
-    "sphinx_rtd_theme",
     "sphinx_markdown_tables",
-    "recommonmark",
+    "sphinx_rtd_theme",
 ]
 tests = [
     "codespell",

@@ -460,20 +460,17 @@ class CuBIDS(object):
 
         Parameters
         ----------
-        filepath : str
-            Path prefix to a file in the affected key group change
-        entities : dictionary
-            A pybids dictionary of entities parsed from the new key
-            group name.
+        filepath : :obj:`str`
+            Path prefix to a file in the affected key group change.
+        entities : :obj:`dict`
+            A pybids dictionary of entities parsed from the new key group name.
 
         Notes
         -----
         This is the function I need to spend the most time on, since it has entities hardcoded.
         """
         exts = Path(filepath).suffixes
-        old_ext = ""
-        for ext in exts:
-            old_ext += ext
+        old_ext = "".join(exts)
 
         suffix = entities["suffix"]
         entity_file_keys = []
@@ -514,6 +511,7 @@ class CuBIDS(object):
                 print("WARNING: DATATYPE CHANGE DETECETD")
         else:
             dtype = old
+
         new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype + "/" + filename
 
         # add the scan path + new path to the lists of old, new filenames
@@ -825,7 +823,15 @@ class CuBIDS(object):
             print("Not running any association removals")
 
     def get_nifti_associations(self, nifti):
-        """Get nifti associations."""
+        """Get nifti associations.
+
+        This uses globbing to find files with the same path and entities as the NIfTI,
+        but with a different extension and a suffix that at least starts with the same
+        suffix as the NIfTI.
+
+        For example, for *_asl.nii.gz, this will grab *_asl.json, *_aslcontext.tsv,
+        and *_asllabeling.jpg.
+        """
         # get all assocation files of a nifti image
         no_ext_file = str(nifti).split("/")[-1].split(".")[0]
         associations = []
