@@ -856,18 +856,14 @@ class CuBIDS(object):
     def get_nifti_associations(self, nifti):
         """Get nifti associations.
 
-        This uses globbing to find files with the same path and entities as the NIfTI,
-        but with a different extension and a suffix that at least starts with the same
-        suffix as the NIfTI.
-
-        For example, for *_asl.nii.gz, this will grab *_asl.json, *_aslcontext.tsv,
-        and *_asllabeling.jpg.
+        This uses globbing to find files with the same path, entities, and suffix as the NIfTI,
+        but with a different extension.
         """
         # get all assocation files of a nifti image
         no_ext_file = str(nifti).split("/")[-1].split(".")[0]
         associations = []
-        for path in Path(self.path).rglob("sub-*/**/*.*"):
-            if no_ext_file in str(path) and ".nii.gz" not in str(path):
+        for path in Path(self.path).rglob(f"sub-*/**/{no_ext_file}.*"):
+            if ".nii.gz" not in str(path):
                 associations.append(str(path))
 
         return associations
