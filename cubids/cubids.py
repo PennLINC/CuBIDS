@@ -943,6 +943,7 @@ class CuBIDS(object):
         for mod in modalities:
             if mod in filepath:
                 modality = mod.replace("/", "").replace("/", "")
+
         if modality == "":
             print("Unusual Modality Detected")
             modality = "other"
