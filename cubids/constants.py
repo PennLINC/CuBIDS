@@ -6,7 +6,7 @@
 ID_VARS = set(["KeyGroup", "ParamGroup", "FilePath"])
 # Entities that should not be used to group parameter sets
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
-# Multi-dimensional keys SliceTiming
+# Multi-dimensional keys SliceTiming  XXX: what is this line about?
 # List of metadata fields and parameters (calculated by CuBIDS)
 # Not sure what this specific list is used for.
 IMAGING_PARAMS = set(

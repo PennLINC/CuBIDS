@@ -805,6 +805,7 @@ class CuBIDS(object):
                         to_remove.append(img_to_new_ext(str(path), ".bval"))
                     if Path(img_to_new_ext(str(path), ".bvec")).exists():
                         to_remove.append(img_to_new_ext(str(path), ".bvec"))
+
                 if "/func/" in str(path):
                     # add tsvs
                     tsv = img_to_new_ext(str(path), ".tsv").replace("_bold", "_events")
@@ -813,6 +814,7 @@ class CuBIDS(object):
                     # add tsv json (if exists)
                     if Path(tsv.replace(".tsv", ".json")).exists():
                         to_remove.append(tsv.replace(".tsv", ".json"))
+
         to_remove += scans
 
         # create rm commands for all files that need to be purged
@@ -1261,20 +1263,20 @@ class CuBIDS(object):
         summary_dict = self.get_data_dictionary(summary)
 
         # Save data dictionaires as JSONs
-        with open(path_prefix + "_files.json", "w") as outfile:
+        with open(f"{path_prefix}_files.json", "w") as outfile:
             json.dump(files_dict, outfile, indent=4)
 
-        with open(path_prefix + "_summary.json", "w") as outfile:
+        with open(f"{path_prefix}_summary.json", "w") as outfile:
             json.dump(summary_dict, outfile, indent=4)
 
-        big_df.to_csv(path_prefix + "_files.tsv", sep="\t", index=False)
+        big_df.to_csv(f"{path_prefix}_files.tsv", sep="\t", index=False)
 
-        summary.to_csv(path_prefix + "_summary.tsv", sep="\t", index=False)
+        summary.to_csv(f"{path_prefix}_summary.tsv", sep="\t", index=False)
 
         # Calculate the acq groups
-        group_by_acquisition_sets(path_prefix + "_files.tsv", path_prefix, self.acq_group_level)
+        group_by_acquisition_sets(f"{path_prefix}_files.tsv", path_prefix, self.acq_group_level)
 
-        print("CuBIDS detected " + str(len(summary)) + " Parameter Groups.")
+        print(f"CuBIDS detected {len(summary)} Parameter Groups.")
 
     def get_key_groups(self):
         """Identify the key groups for the bids dataset."""
@@ -1351,6 +1353,7 @@ class CuBIDS(object):
             if ".git" not in str(json_file):
                 with open(json_file, "r") as jsonr:
                     metadata = json.load(jsonr)
+
                 offending_keys = remove_fields.intersection(metadata.keys())
                 # Quit if there are none in there
                 if not offending_keys:
@@ -1529,7 +1532,7 @@ def _get_param_groups(
     # get the subset of columns to drop duplicates by
     check_cols = []
     for col in list(df.columns):
-        if "Cluster_" + col not in list(df.columns) and col != "FilePath":
+        if f"Cluster_{col}" not in list(df.columns) and col != "FilePath":
             check_cols.append(col)
 
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"\
@@ -1589,6 +1592,7 @@ def round_params(param_group_df, config, modality):
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
             continue
+
         if "precision" in column_fmt:
             if isinstance(param_group_df[column_name], float):
                 param_group_df[column_name] = param_group_df[column_name].round(
@@ -1675,7 +1679,7 @@ def format_params(param_group_df, config, modality):
                     array[i, 0] = np.nan
 
             # now add clustering_labels as a column
-            param_group_df["Cluster_" + column_name] = clustering.labels_
+            param_group_df[f"Cluster_{column_name}"] = clustering.labels_
 
     return param_group_df
 
