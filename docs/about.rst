@@ -1,5 +1,5 @@
 ===================
-Background 
+Background
 ===================
 
 Motivation
@@ -19,7 +19,7 @@ their computational time and resources** effectively.
 
 ``CuBIDS`` is designed to facilitate the curation of large, neuroimaging data so
 that users can infer useful information from descriptive and accurate BIDS labels
-before running pipelines *en masse*. ``CuBIDS`` accomplishes this by summarizing 
+before running pipelines *en masse*. ``CuBIDS`` accomplishes this by summarizing
 BIDS data using :ref:`keygroup`, :ref:`paramgroup`, and :ref:`acquisitiongroup` categorizations in your data (we'll explain what these
 are in more detail in the next section).
 
@@ -40,7 +40,7 @@ Definitions
 
     * A set of scans whose filenames share all `BIDS filename key-value pairs <https://bids-specification.readthedocs.io/en/stable/02-common-principles.html#file-name-structure>`_, excluding subject and session
     * Derived from the BIDS Filename
-    * Example structure: ``acquisition-*_datatype-*_run-*_task-*_suffix`` 
+    * Example structure: ``acquisition-*_datatype-*_run-*_task-*_suffix``
 
 .. topic:: Parameter (Param) Group
 
@@ -53,15 +53,15 @@ Definitions
     * The Param Group that contains the most scans in its Key Group
 
 .. topic:: Variant Group
-    
+
     * Any Param Group that is non-dominant
 
 .. topic:: Rename Key Group
 
-    * Auto-generated, recommended new Key Group name for Variant Groups 
-    * Based on the metadata parameters that cause scans in Variant Groups to vary from those in their respective Dominant Groups 
+    * Auto-generated, recommended new Key Group name for Variant Groups
+    * Based on the metadata parameters that cause scans in Variant Groups to vary from those in their respective Dominant Groups
 
-.. topic:: Acquisition Group 
+.. topic:: Acquisition Group
 
     * A collection of sessions across participants that contains the exact same set of Key and Param Groups
 

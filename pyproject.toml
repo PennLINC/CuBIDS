@@ -46,6 +46,7 @@ doc = [
     "recommonmark",
     "sphinx >= 2.2",
     "sphinx-argparse",
+    "sphinx_gallery",
     "sphinx_markdown_tables",
     "sphinx_rtd_theme",
 ]
