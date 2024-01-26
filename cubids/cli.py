@@ -1,4 +1,5 @@
 """Console script for cubids."""
+
 import argparse
 import logging
 import os

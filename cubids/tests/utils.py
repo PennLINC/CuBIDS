@@ -1,4 +1,5 @@
 """Utility functions for CuBIDS' tests."""
+
 import hashlib
 import json
 import os

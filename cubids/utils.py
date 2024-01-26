@@ -1,4 +1,5 @@
 """Miscellaneous utility functions for CuBIDS."""
+
 import re
 from pathlib import Path
 
