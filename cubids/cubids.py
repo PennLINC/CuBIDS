@@ -472,6 +472,8 @@ class CuBIDS(object):
 
         suffix = entities["suffix"]
         entity_file_keys = []
+
+        # Entities that may be in the filename?
         file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
 
         for key in file_keys:
