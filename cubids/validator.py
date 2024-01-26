@@ -1,4 +1,5 @@
 """Methods for validating BIDS datasets."""
+
 import glob
 import json
 import logging

@@ -1,4 +1,5 @@
 """Constants for CuBIDS."""
+
 # Names of identifier variables.
 # Used to place KeyGroup and ParamGroup at the beginning of a dataframe,
 # but both are hardcoded in the relevant function.

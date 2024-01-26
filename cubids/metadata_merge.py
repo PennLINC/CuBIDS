@@ -1,4 +1,5 @@
 """Tools for merging metadata."""
+
 import json
 from collections import defaultdict
 from copy import deepcopy
