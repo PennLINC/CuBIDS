@@ -414,15 +414,12 @@ class CuBIDS(object):
 
         full_cmd = "\n".join(merge_commands + move_ops)
         if full_cmd:
-            # write full_cmd to a .sh file
-            # Open file for writing
-            fileObject = open(new_prefix + "_full_cmd.sh", "w")
-            fileObject.write("#!/bin/bash\n")
-            fileObject.write(full_cmd)
-            # Close the file
-            fileObject.close()
-
             renames = new_prefix + "_full_cmd.sh"
+
+            # write full_cmd to a .sh file
+            with open(renames, "w") as fo:
+                fo.write("#!/bin/bash\n")
+                fo.write(full_cmd)
 
             if self.use_datalad:
                 # first check if IntendedFor renames need to be saved
@@ -831,11 +828,10 @@ class CuBIDS(object):
 
             path_prefix = str(Path(self.path).parent)
 
-            fileObject = open(path_prefix + "/" + "_full_cmd.sh", "w")
-            fileObject.write("#!/bin/bash\n")
-            fileObject.write(full_cmd)
-            # Close the file
-            fileObject.close()
+            with open(path_prefix + "/" + "_full_cmd.sh", "w") as fo:
+                fo.write("#!/bin/bash\n")
+                fo.write(full_cmd)
+
             if self.scans_txt:
                 cmt = f"Purged scans listed in {self.scans_txt} from dataset"
             else:
