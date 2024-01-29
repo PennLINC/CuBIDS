@@ -497,11 +497,10 @@ class CuBIDS(object):
         if len(filename) > 0:
             filename = sub_ses + "_" + filename + "_" + suffix + old_ext
         else:
-            # XXX: Why is filename here if it's an empty string?
-            filename = sub_ses + filename + "_" + suffix + old_ext
+            raise ValueError(f"Could not construct new filename for {filepath}")
 
         # CHECK TO SEE IF DATATYPE CHANGED
-        # XXX: Why/how would datatype change?
+        # datatype may be overridden/changed if the original file is located in the wrong folder.
         dtypes = ["anat", "func", "perf", "fmap", "dwi"]
         dtype_orig = ""
         for dtype in dtypes:
