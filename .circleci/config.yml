@@ -69,7 +69,7 @@ jobs:
   deploy_pypi:
     machine:
       image: ubuntu-2004:202201-02
-    working_directory: /tmp/src/CuBIDS
+    working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
           path: /home/circleci/src/CuBIDS
