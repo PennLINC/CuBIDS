@@ -113,6 +113,6 @@ workflows:
             - deployable
           filters:
             branches:
-              only: main
+              ignore: /.*/
             tags:
               only: /.*/
