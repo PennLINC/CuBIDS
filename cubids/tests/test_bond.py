@@ -1028,31 +1028,6 @@ def test_validator(tmp_path):
     assert isinstance(parsed, pd.DataFrame)
 
 
-def test_docker():
-    """Verify that docker is installed and the user has permission to run docker images.
-
-    Returns
-    -------
-    -1  Docker can't be found
-     0  Docker found, but user can't connect to daemon
-     1  Test run OK
-    """
-    try:
-        return_status = 1
-        ret = subprocess.run(["docker", "version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError as e:
-        from errno import ENOENT
-
-        if e.errno == ENOENT:
-            print("Cannot find Docker engine!")
-            return_status = 0
-        raise e
-    if ret.stderr.startswith(b"Cannot connect to the Docker daemon."):
-        print("Cannot connect to Docker daemon!")
-        return_status = 0
-    assert return_status
-
-
 # def test_image(image='pennlinc/bond:latest'):
 #     """Check whether image is present on local system."""
 #     ret = subprocess.run(['docker', 'images', '-q', image],
