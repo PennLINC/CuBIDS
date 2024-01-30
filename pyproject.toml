@@ -37,7 +37,6 @@ dynamic = ["version"]
 Homepage = "https://github.com/PennLINC/cubids"
 Documentation = "https://www.cubids.readthedocs.io"
 Paper = "https://doi.org/10.1016/j.neuroimage.2022.119609"
-"Docker Images" = "https://hub.docker.com/r/pennlinc/cubids/tags/"
 
 [project.optional-dependencies]
 doc = [
