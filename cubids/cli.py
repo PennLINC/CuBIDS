@@ -1,8 +1,10 @@
 """Console script for cubids."""
+
 import argparse
 import logging
 import os
 import warnings
+from functools import partial
 from pathlib import Path
 
 from cubids import workflows
@@ -14,14 +16,31 @@ GIT_CONFIG = os.path.join(os.path.expanduser("~"), ".gitconfig")
 logging.getLogger("datalad").setLevel(logging.ERROR)
 
 
+def _path_exists(path, parser):
+    """Ensure a given path exists."""
+    if path is None or not Path(path).exists():
+        raise parser.error(f"Path does not exist: <{path}>.")
+    return Path(path).absolute()
+
+
+def _is_file(path, parser):
+    """Ensure a given path exists and it is a file."""
+    path = _path_exists(path, parser)
+    if not path.is_file():
+        raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
+    return path
+
+
 def _parse_validate():
     parser = argparse.ArgumentParser(
         description="cubids-validate: Wrapper around the official BIDS Validator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
         help=(
             "the root of a BIDS dataset. It should contain "
@@ -93,12 +112,19 @@ def _parse_bids_sidecar_merge():
         description=("bids-sidecar-merge: merge critical keys from one sidecar to another"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("from_json", type=Path, action="store", help="Source json file.")
+    IsFile = partial(_is_file, parser=parser)
+
+    parser.add_argument(
+        "from_json",
+        type=IsFile,
+        action="store",
+        help="Source json file.",
+    )
     parser.add_argument(
         "to_json",
-        type=Path,
+        type=IsFile,
         action="store",
-        help=("destination json. This file will have data from `from_json` copied into it."),
+        help="destination json. This file will have data from `from_json` copied into it.",
     )
     return parser
 
@@ -120,9 +146,11 @@ def _parse_group():
         description="cubids-group: find key and parameter groups in BIDS",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
         help=(
             "the root of a BIDS dataset. It should contain "
@@ -156,7 +184,14 @@ def _parse_group():
         help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
     )
     parser.add_argument(
-        "--config", action="store", type=Path, help="path to a config file for grouping"
+        "--config",
+        action="store",
+        type=PathExists,
+        default=None,
+        help=(
+            "Path to a config file for grouping. "
+            "If not provided, then the default config file from CuBIDS will be used."
+        ),
     )
     return parser
 
@@ -177,9 +212,12 @@ def _parse_apply():
         description=("cubids-apply: apply the changes specified in a tsv to a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+    IsFile = partial(_is_file, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
         help=(
             "the root of a BIDS dataset. It should contain "
@@ -188,7 +226,7 @@ def _parse_apply():
     )
     parser.add_argument(
         "edited_summary_tsv",
-        type=Path,
+        type=IsFile,
         action="store",
         help=(
             "path to the _summary.tsv that has been edited "
@@ -200,7 +238,7 @@ def _parse_apply():
     )
     parser.add_argument(
         "files_tsv",
-        type=Path,
+        type=IsFile,
         action="store",
         help=(
             "path to the _files.tsv that has been edited "
@@ -226,6 +264,7 @@ def _parse_apply():
     parser.add_argument(
         "--use-datalad",
         action="store_true",
+        default=False,
         help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
@@ -241,7 +280,14 @@ def _parse_apply():
         help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
     )
     parser.add_argument(
-        "--config", action="store", type=Path, help="path to a config file for grouping"
+        "--config",
+        action="store",
+        type=IsFile,
+        default=None,
+        help=(
+            "Path to a config file for grouping. "
+            "If not provided, then the default config file from CuBIDS will be used."
+        ),
     )
 
     return parser
@@ -263,16 +309,22 @@ def _parse_datalad_save():
         description=("cubids-datalad-save: perform a DataLad save on a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
         help=(
             "the root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
-    parser.add_argument("-m", action="store", help="message for this commit")
+    parser.add_argument(
+        "-m",
+        action="store",
+        help="message for this commit",
+    )
     parser.add_argument(
         "--container",
         action="store",
@@ -299,9 +351,11 @@ def _parse_undo():
         description="cubids-undo: revert most recent commit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
         help=(
             "the root of a BIDS dataset. It should contain "
@@ -336,41 +390,56 @@ def _parse_copy_exemplars():
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+    IsFile = partial(_is_file, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
-        help="path to the root of a BIDS dataset. "
-        "It should contain sub-X directories and "
-        "dataset_description.json.",
+        help=(
+            "path to the root of a BIDS dataset. "
+            "It should contain sub-X directories and "
+            "dataset_description.json."
+        ),
     )
     parser.add_argument(
         "exemplars_dir",
-        type=Path,
+        type=PathExists,
         action="store",
-        help="absolute path to the root of a BIDS dataset "
-        "containing one subject from each Acquisition Group. "
-        "It should contain sub-X directories and "
-        "dataset_description.json.",
+        help=(
+            "absolute path to the root of a BIDS dataset "
+            "containing one subject from each Acquisition Group. "
+            "It should contain sub-X directories and "
+            "dataset_description.json."
+        ),
     )
     parser.add_argument(
         "exemplars_tsv",
-        type=Path,
+        type=IsFile,
         action="store",
-        help="absolute path to the .tsv file that lists one "
-        "subject from each Acquisition Group "
-        "(*_AcqGrouping.tsv from the cubids-group output)",
+        help=(
+            "absolute path to the .tsv file that lists one "
+            "subject from each Acquisition Group "
+            "(*_AcqGrouping.tsv from the cubids-group output)"
+        ),
     )
     parser.add_argument(
-        "--use-datalad", action="store_true", help="check exemplar dataset into DataLad"
+        "--use-datalad",
+        action="store_true",
+        default=False,
+        help="check exemplar dataset into DataLad",
     )
     parser.add_argument(
         "--min-group-size",
         action="store",
         default=1,
-        help="minimum number of subjects an Acquisition Group "
-        "must have in order to be included in the exemplar "
-        "dataset ",
+        type=int,
+        help=(
+            "minimum number of subjects an Acquisition Group "
+            "must have in order to be included in the exemplar "
+            "dataset "
+        ),
         required=False,
     )
     # parser.add_argument('--include-groups',
@@ -408,9 +477,11 @@ def _parse_add_nifti_info():
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
         help=(
             "absolute path to the root of a BIDS dataset. "
@@ -421,11 +492,13 @@ def _parse_add_nifti_info():
     parser.add_argument(
         "--use-datalad",
         action="store_true",
+        default=False,
         help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
         "--force-unlock",
         action="store_true",
+        default=False,
         help="unlock dataset before adding nifti info ",
     )
     parser.add_argument(
@@ -453,9 +526,12 @@ def _parse_purge():
         description="cubids-purge: purge associations from the dataset",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+    IsFile = partial(_is_file, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
         help=(
             "path to the root of a BIDS dataset. "
@@ -465,13 +541,14 @@ def _parse_purge():
     )
     parser.add_argument(
         "scans",
-        type=Path,
+        type=IsFile,
         action="store",
         help="path to the txt file of scans whose associations should be purged.",
     )
     parser.add_argument(
         "--use-datalad",
         action="store_true",
+        default=False,
         help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
@@ -498,9 +575,11 @@ def _parse_remove_metadata_fields():
         description="cubids-remove-metadata-fields: delete fields from metadata",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
         help=(
             "the root of a BIDS dataset. It should contain "
@@ -524,6 +603,7 @@ def _parse_remove_metadata_fields():
 
 
 def _enter_remove_metadata_fields(argv=None):
+    """Set entrypoint for "cubids-remove-metadata-fields" CLI."""
     warnings.warn(
         "cubids-remove-metadata-fields is deprecated and will be removed in the future. "
         "Please use cubids remove-metadata-fields.",
@@ -536,13 +616,16 @@ def _enter_remove_metadata_fields(argv=None):
 
 
 def _parse_print_metadata_fields():
+    """Create the parser for the "cubids print-metadata-fields" command."""
     parser = argparse.ArgumentParser(
         description="cubids-print-metadata-fields: print all unique metadata fields",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    PathExists = partial(_path_exists, parser=parser)
+
     parser.add_argument(
         "bids_dir",
-        type=Path,
+        type=PathExists,
         action="store",
         help=(
             "the root of a BIDS dataset. It should contain "

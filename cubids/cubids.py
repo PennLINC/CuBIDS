@@ -1,4 +1,5 @@
 """Main module."""
+
 import csv
 import json
 import os
@@ -31,7 +32,58 @@ bids.config.set_option("extension_initial_dot", True)
 class CuBIDS(object):
     """The main CuBIDS class.
 
-    TODO: Complete docstring.
+    Parameters
+    ----------
+    data_root : :obj:`str`
+        Path to the root of the BIDS dataset.
+    use_datalad : :obj:`bool`, optional
+        If True, use datalad to track changes to the BIDS dataset.
+        Default is False.
+    acq_group_level : :obj:`str`, optional
+        The level at which to group scans. Default is "subject".
+    grouping_config : :obj:`str`, optional
+        Path to the grouping config file.
+        Default is None, in which case the default config in CuBIDS is used.
+    force_unlock : :obj:`bool`, optional
+        If True, force unlock all files in the BIDS dataset.
+        Default is False.
+
+    Attributes
+    ----------
+    path : :obj:`str`
+        Path to the root of the BIDS dataset.
+    _layout : :obj:`bids.layout.BIDSLayout`
+        The BIDSLayout object.
+    keys_files : :obj:`dict`
+        A dictionary of key groups and the files that belong to them.
+    fieldmaps_cached : :obj:`bool`
+        If True, the fieldmaps have been cached.
+    datalad_ready : :obj:`bool`
+        If True, the datalad dataset has been initialized.
+    datalad_handle : :obj:`datalad.api.Dataset`
+        The datalad dataset handle.
+    old_filenames : :obj:`list`
+        A list of old filenames.
+    new_filenames : :obj:`list`
+        A list of new filenames.
+    IF_rename_paths : :obj:`list`
+        A list of IntendedFor paths that have been renamed.
+    grouping_config : :obj:`dict`
+        The grouping config dictionary.
+    acq_group_level : :obj:`str`
+        The level at which to group scans.
+    scans_txt : :obj:`str`
+        Path to the .txt file that lists the scans
+        you want to be deleted from the dataset, along
+        with their associations.
+    force_unlock : :obj:`bool`
+        If True, force unlock all files in the BIDS dataset.
+    cubids_code_dir : :obj:`bool`
+        If True, the CuBIDS code directory exists.
+    data_dict : :obj:`dict`
+        A data dictionary for TSV outputs.
+    use_datalad : :obj:`bool`
+        If True, use datalad to track changes to the BIDS dataset.
     """
 
     def __init__(
@@ -68,7 +120,7 @@ class CuBIDS(object):
     def layout(self):
         """Return the BIDSLayout object.
 
-        TODO: Complete docstring.
+        If the BIDSLayout object has not been created, create it.
         """
         if self._layout is None:
             # print("SETTING LAYOUT OBJECT")
@@ -79,7 +131,12 @@ class CuBIDS(object):
     def reset_bids_layout(self, validate=False):
         """Reset the BIDS layout.
 
-        TODO: Complete docstring.
+        This sets the ``_layout`` attribute to a new :obj:`bids.layout.BIDSLayout` object.
+
+        Parameters
+        ----------
+        validate : :obj:`bool`, optional
+            If True, validate the BIDS dataset. Default is False.
         """
         # create BIDS Layout Indexer class
 
@@ -99,7 +156,16 @@ class CuBIDS(object):
     def create_cubids_code_dir(self):
         """Create CuBIDS code directory.
 
-        TODO: Complete docstring.
+        This creates the CuBIDS code directory at self.path/code/CuBIDS.
+
+        Returns
+        -------
+        :obj:`str`
+            Path to the CuBIDS code directory.
+
+        Notes
+        -----
+        Why not use ``os.makedirs``?
         """
         # check if BIDS_ROOT/code/CuBIDS exists
         if not self.cubids_code_dir:
@@ -109,7 +175,12 @@ class CuBIDS(object):
         return self.cubids_code_dir
 
     def init_datalad(self):
-        """Initialize a datalad Dataset at self.path."""
+        """Initialize a datalad Dataset at self.path.
+
+        This creates a datalad dataset at self.path and sets the
+        ``datalad_ready`` attribute to True.
+        It also sets the ``datalad_handle`` attribute to the datalad.Dataset object.
+        """
         self.datalad_ready = True
 
         self.datalad_handle = dlapi.Dataset(self.path)
@@ -138,7 +209,18 @@ class CuBIDS(object):
             raise Exception("Failed to save in DataLad")
 
     def is_datalad_clean(self):
-        """If True, no changes are detected in the datalad dataset."""
+        """If True, no changes are detected in the datalad dataset.
+
+        Returns
+        -------
+        :obj:`bool`
+            True if the datalad dataset is clean, False otherwise.
+
+        Raises
+        ------
+        Exception
+            If datalad has not been initialized.
+        """
         if not self.datalad_ready:
             raise Exception("Datalad not initialized, can't determine status")
         statuses = set([status["state"] for status in self.datalad_handle.status()])
@@ -148,6 +230,11 @@ class CuBIDS(object):
         """Revert the most recent commit, remove it from history.
 
         Uses git reset --hard to revert to the previous commit.
+
+        Raises
+        ------
+        Exception
+            If there are untracked changes in the datalad dataset.
         """
         if not self.is_datalad_clean():
             raise Exception("Untracked changes present. Run clear_untracked_changes first")
@@ -166,12 +253,14 @@ class CuBIDS(object):
             # ignore all dot directories
             if "/." in str(path):
                 continue
+
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
                 try:
                     img = nb.load(str(path))
                 except Exception:
                     print("Empty Nifti File: ", str(path))
                     continue
+
                 # get important info from niftis
                 obliquity = np.any(nb.affines.obliquity(img.affine) > 1e-4)
                 voxel_sizes = img.header.get_zooms()
@@ -208,11 +297,13 @@ class CuBIDS(object):
                         orient = nb.orientations.aff2axcodes(img.affine)
                         joined = "".join(orient) + "+"
                         data["ImageOrientation"] = joined
+
                     with open(sidecar, "w") as file:
                         json.dump(data, file, indent=4)
 
         if self.use_datalad:
             self.datalad_save(message="Added nifti info to sidecars")
+
         self.reset_bids_layout()
 
     def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True):
@@ -224,10 +315,14 @@ class CuBIDS(object):
 
         Parameters
         ----------
-        summary_tsv
-        files_tsv
-        new_prefix
+        summary_tsv : :obj:`str`
+            Path to the edited summary tsv file.
+        files_tsv : :obj:`str`
+            Path to the edited files tsv file.
+        new_prefix : :obj:`str`
+            Path prefix to the new tsv files.
         raise_on_error : :obj:`bool`
+            If True, raise an error if the MergeInto column contains invalid merges.
         """
         # reset lists of old and new filenames
         self.old_filenames = []
@@ -319,15 +414,12 @@ class CuBIDS(object):
 
         full_cmd = "\n".join(merge_commands + move_ops)
         if full_cmd:
-            # write full_cmd to a .sh file
-            # Open file for writing
-            fileObject = open(new_prefix + "_full_cmd.sh", "w")
-            fileObject.write("#!/bin/bash\n")
-            fileObject.write(full_cmd)
-            # Close the file
-            fileObject.close()
-
             renames = new_prefix + "_full_cmd.sh"
+
+            # write full_cmd to a .sh file
+            with open(renames, "w") as fo:
+                fo.write("#!/bin/bash\n")
+                fo.write(full_cmd)
 
             if self.use_datalad:
                 # first check if IntendedFor renames need to be saved
@@ -366,19 +458,22 @@ class CuBIDS(object):
 
         Parameters
         ----------
-        filepath : str
-            Path prefix to a file in the affected key group change
-        entities : dictionary
-            A pybids dictionary of entities parsed from the new key
-            group name.
+        filepath : :obj:`str`
+            Path prefix to a file in the affected key group change.
+        entities : :obj:`dict`
+            A pybids dictionary of entities parsed from the new key group name.
+
+        Notes
+        -----
+        This is the function I need to spend the most time on, since it has entities hardcoded.
         """
         exts = Path(filepath).suffixes
-        old_ext = ""
-        for ext in exts:
-            old_ext += ext
+        old_ext = "".join(exts)
 
         suffix = entities["suffix"]
         entity_file_keys = []
+
+        # Entities that may be in the filename?
         file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
 
         for key in file_keys:
@@ -390,6 +485,7 @@ class CuBIDS(object):
         sub_ses = sub + "_" + ses
 
         if "run" in list(entities.keys()) and "run-0" in filepath:
+            # XXX: This adds an extra leading zero to run.
             entities["run"] = "0" + str(entities["run"])
 
         filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
@@ -401,28 +497,31 @@ class CuBIDS(object):
         if len(filename) > 0:
             filename = sub_ses + "_" + filename + "_" + suffix + old_ext
         else:
-            filename = sub_ses + filename + "_" + suffix + old_ext
+            raise ValueError(f"Could not construct new filename for {filepath}")
 
         # CHECK TO SEE IF DATATYPE CHANGED
+        # datatype may be overridden/changed if the original file is located in the wrong folder.
         dtypes = ["anat", "func", "perf", "fmap", "dwi"]
-        old = ""
+        dtype_orig = ""
         for dtype in dtypes:
             if dtype in filepath:
-                old = dtype
+                dtype_orig = dtype
 
         if "datatype" in entities.keys():
-            dtype = entities["datatype"]
-            if entities["datatype"] != old:
+            dtype_new = entities["datatype"]
+            if entities["datatype"] != dtype_orig:
                 print("WARNING: DATATYPE CHANGE DETECETD")
         else:
-            dtype = old
-        new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype + "/" + filename
+            dtype_new = dtype_orig
 
-        # add the scan path + new path to the lists of old, new filenames
+        # Construct the new filename
+        new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
+
+        # Add the scan path + new path to the lists of old, new filenames
         self.old_filenames.append(filepath)
         self.new_filenames.append(new_path)
 
-        # NOW NEED TO RENAME ASSOCIATIONS
+        # NOW NEED TO RENAME ASSOCIATED FILES
         # bids_file = self.layout.get_file(filepath)
         bids_file = filepath
         # associations = bids_file.get_associations()
@@ -439,34 +538,35 @@ class CuBIDS(object):
                     self.new_filenames.append(new_ext_path)
 
         # MAKE SURE THESE AREN'T COVERED BY get_associations!!!
+        # Update DWI-specific files
         if "/dwi/" in filepath:
             # add the bval and bvec if there
-            if (
-                Path(img_to_new_ext(filepath, ".bval")).exists()
-                and img_to_new_ext(filepath, ".bval") not in self.old_filenames
-            ):
-                self.old_filenames.append(img_to_new_ext(filepath, ".bval"))
-                self.new_filenames.append(img_to_new_ext(new_path, ".bval"))
+            bval_old = img_to_new_ext(filepath, ".bval")
+            bval_new = img_to_new_ext(new_path, ".bval")
+            if Path(bval_old).exists() and bval_old not in self.old_filenames:
+                self.old_filenames.append(bval_old)
+                self.new_filenames.append(bval_new)
 
-            if (
-                Path(img_to_new_ext(filepath, ".bvec")).exists()
-                and img_to_new_ext(filepath, ".bvec") not in self.old_filenames
-            ):
-                self.old_filenames.append(img_to_new_ext(filepath, ".bvec"))
-                self.new_filenames.append(img_to_new_ext(new_path, ".bvec"))
+            bvec_old = img_to_new_ext(filepath, ".bvec")
+            bvec_new = img_to_new_ext(new_path, ".bvec")
+            if Path(bvec_old).exists() and bvec_old not in self.old_filenames:
+                self.old_filenames.append(bvec_old)
+                self.new_filenames.append(bvec_new)
 
+        # Update func-specific files
         # now rename _events and _physio files!
         old_suffix = parse_file_entities(filepath)["suffix"]
         scan_end = "_" + old_suffix + old_ext
 
         if "_task-" in filepath:
             old_events = filepath.replace(scan_end, "_events.tsv")
-            old_ejson = filepath.replace(scan_end, "_events.json")
             if Path(old_events).exists():
                 self.old_filenames.append(old_events)
                 new_scan_end = "_" + suffix + old_ext
                 new_events = new_path.replace(new_scan_end, "_events.tsv")
                 self.new_filenames.append(new_events)
+
+            old_ejson = filepath.replace(scan_end, "_events.json")
             if Path(old_ejson).exists():
                 self.old_filenames.append(old_ejson)
                 new_scan_end = "_" + suffix + old_ext
@@ -480,37 +580,63 @@ class CuBIDS(object):
             new_physio = new_path.replace(new_scan_end, "_physio.tsv.gz")
             self.new_filenames.append(new_physio)
 
+        # Update ASL-specific files
+        if "/perf/" in filepath:
+            old_context = filepath.replace(scan_end, "_aslcontext.tsv")
+            if Path(old_context).exists():
+                self.old_filenames.append(old_context)
+                new_scan_end = "_" + suffix + old_ext
+                new_context = new_path.replace(new_scan_end, "_aslcontext.tsv")
+                self.new_filenames.append(new_context)
+
+            old_m0scan = filepath.replace(scan_end, "_m0scan.nii.gz")
+            if Path(old_m0scan).exists():
+                self.old_filenames.append(old_m0scan)
+                new_scan_end = "_" + suffix + old_ext
+                new_m0scan = new_path.replace(new_scan_end, "_m0scan.nii.gz")
+                self.new_filenames.append(new_m0scan)
+
+            old_mjson = filepath.replace(scan_end, "_m0scan.json")
+            if Path(old_mjson).exists():
+                self.old_filenames.append(old_mjson)
+                new_scan_end = "_" + suffix + old_ext
+                new_mjson = new_path.replace(new_scan_end, "_m0scan.json")
+                self.new_filenames.append(new_mjson)
+
+            old_labeling = filepath.replace(scan_end, "_asllabeling.jpg")
+            if Path(old_labeling).exists():
+                self.old_filenames.append(old_labeling)
+                new_scan_end = "_" + suffix + old_ext
+                new_labeling = new_path.replace(new_scan_end, "_asllabeling.jpg")
+                self.new_filenames.append(new_labeling)
+
         # RENAME INTENDED FORS!
         ses_path = self.path + "/" + sub + "/" + ses
-        for path in Path(ses_path).rglob("fmap/*.json"):
-            self.IF_rename_paths.append(str(path))
-            # json_file = self.layout.get_file(str(path))
+        files_with_if = []
+        files_with_if += Path(ses_path).rglob("fmap/*.json")
+        files_with_if += Path(ses_path).rglob("perf/*_m0scan.json")
+        for path_with_if in files_with_if:
+            filename_with_if = str(path_with_if)
+            self.IF_rename_paths.append(filename_with_if)
+            # json_file = self.layout.get_file(filename_with_if)
             # data = json_file.get_dict()
-            data = get_sidecar_metadata(str(path))
+            data = get_sidecar_metadata(filename_with_if)
             if data == "Erroneous sidecar":
-                print("Error parsing sidecar: ", str(path))
+                print("Error parsing sidecar: ", filename_with_if)
                 continue
 
             if "IntendedFor" in data.keys():
-                # check if IntendedFor field is a str or list
-                if isinstance(data["IntendedFor"], str):
-                    if data["IntendedFor"] == _get_intended_for_reference(filepath):
-                        # replace old filename with new one (overwrite string)
-                        data["IntendedFor"] = _get_intended_for_reference(new_path)
+                # Coerce IntendedFor to a list.
+                data["IntendedFor"] = listify(data["IntendedFor"])
+                for item in data["IntendedFor"]:
+                    if item in _get_intended_for_reference(filepath):
+                        # remove old filename
+                        data["IntendedFor"].remove(item)
+                        # add new filename
+                        data["IntendedFor"].append(_get_intended_for_reference(new_path))
 
-                        # update the json with the new data dictionary
-                        _update_json(str(path), data)
-
-                if isinstance(data["IntendedFor"], list):
-                    for item in data["IntendedFor"]:
-                        if item in _get_intended_for_reference(filepath):
-                            # remove old filename
-                            data["IntendedFor"].remove(item)
-                            # add new filename
-                            data["IntendedFor"].append(_get_intended_for_reference(new_path))
-
-                        # update the json with the new data dictionary
-                        _update_json(str(path), data)
+                # update the json with the new data dictionary
+                _update_json(filename_with_if, data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -529,16 +655,18 @@ class CuBIDS(object):
 
         Parameters
         ----------
-        exemplars_dir : str
+        exemplars_dir : :obj:`str`
             path to the directory that will contain one subject
             from each Acqusition Group (*_AcqGrouping.tsv)
             example path: /Users/Covitz/tsvs/CCNP_Acq_Groups/
-        exemplars_tsv : str
+        exemplars_tsv : :obj:`str`
             path to the .tsv file that lists one subject
             from each Acqusition Group (*_AcqGrouping.tsv
             from the cubids-group output)
             example path: /Users/Covitz/tsvs/CCNP_Acq_Grouping.tsv
-        min_group_size
+        min_group_size : :obj:`int`
+            Minimum number of subjects in an acq group for it to be included
+            in the exemplar dataset.
         """
         # create the exemplar ds
         if self.use_datalad:
@@ -558,11 +686,11 @@ class CuBIDS(object):
         subs = pd.read_table(exemplars_tsv)
 
         # if min group size flag set, drop acq groups with less than min
-        if int(min_group_size) > 1:
+        if min_group_size > 1:
             for row in range(len(subs)):
                 acq_group = subs.loc[row, "AcqGroup"]
                 size = int(subs["AcqGroup"].value_counts()[acq_group])
-                if size < int(min_group_size):
+                if size < min_group_size:
                     subs = subs.drop([row])
 
         # get one sub from each acq group
@@ -612,7 +740,13 @@ class CuBIDS(object):
         self._purge_associations(scans)
 
     def _purge_associations(self, scans):
-        """Purge field map JSONs' IntendedFor references."""
+        """Purge field map JSONs' IntendedFor references.
+
+        Parameters
+        ----------
+        scans : :obj:`list` of :obj:`str`
+            List of file paths to remove from field map JSONs.
+        """
         # truncate all paths to intendedfor reference format
         # sub, ses, modality only (no self.path)
         if_scans = []
@@ -629,20 +763,14 @@ class CuBIDS(object):
 
             # remove scan references in the IntendedFor
             if "IntendedFor" in data.keys():
-                # check if IntendedFor field value is a list or a string
-                if isinstance(data["IntendedFor"], str):
-                    if data["IntendedFor"] in if_scans:
-                        data["IntendedFor"] = []
-                        # update the json with the new data dictionary
-                        _update_json(str(path), data)
+                data["IntendedFor"] = listify(data["IntendedFor"])
 
-                if isinstance(data["IntendedFor"], list):
-                    for item in data["IntendedFor"]:
-                        if item in if_scans:
-                            data["IntendedFor"].remove(item)
+                for item in data["IntendedFor"]:
+                    if item in if_scans:
+                        data["IntendedFor"].remove(item)
 
-                            # update the json with the new data dictionary
-                            _update_json(str(path), data)
+                # update the json with the new data dictionary
+                _update_json(str(path), data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -675,6 +803,7 @@ class CuBIDS(object):
                         to_remove.append(img_to_new_ext(str(path), ".bval"))
                     if Path(img_to_new_ext(str(path), ".bvec")).exists():
                         to_remove.append(img_to_new_ext(str(path), ".bvec"))
+
                 if "/func/" in str(path):
                     # add tsvs
                     tsv = img_to_new_ext(str(path), ".tsv").replace("_bold", "_events")
@@ -683,6 +812,7 @@ class CuBIDS(object):
                     # add tsv json (if exists)
                     if Path(tsv.replace(".tsv", ".json")).exists():
                         to_remove.append(tsv.replace(".tsv", ".json"))
+
         to_remove += scans
 
         # create rm commands for all files that need to be purged
@@ -699,11 +829,10 @@ class CuBIDS(object):
 
             path_prefix = str(Path(self.path).parent)
 
-            fileObject = open(path_prefix + "/" + "_full_cmd.sh", "w")
-            fileObject.write("#!/bin/bash\n")
-            fileObject.write(full_cmd)
-            # Close the file
-            fileObject.close()
+            with open(path_prefix + "/" + "_full_cmd.sh", "w") as fo:
+                fo.write("#!/bin/bash\n")
+                fo.write(full_cmd)
+
             if self.scans_txt:
                 cmt = f"Purged scans listed in {self.scans_txt} from dataset"
             else:
@@ -725,13 +854,18 @@ class CuBIDS(object):
             print("Not running any association removals")
 
     def get_nifti_associations(self, nifti):
-        """Get nifti associations."""
+        """Get nifti associations.
+
+        This uses globbing to find files with the same path, entities, and suffix as the NIfTI,
+        but with a different extension.
+        """
         # get all assocation files of a nifti image
         no_ext_file = str(nifti).split("/")[-1].split(".")[0]
         associations = []
-        for path in Path(self.path).rglob("sub-*/**/*.*"):
-            if no_ext_file in str(path) and ".nii.gz" not in str(path):
+        for path in Path(self.path).rglob(f"sub-*/**/{no_ext_file}.*"):
+            if ".nii.gz" not in str(path):
                 associations.append(str(path))
+
         return associations
 
     def _cache_fieldmaps(self):
@@ -809,6 +943,7 @@ class CuBIDS(object):
         for mod in modalities:
             if mod in filepath:
                 modality = mod.replace("/", "").replace("/", "")
+
         if modality == "":
             print("Unusual Modality Detected")
             modality = "other"
@@ -1125,20 +1260,20 @@ class CuBIDS(object):
         summary_dict = self.get_data_dictionary(summary)
 
         # Save data dictionaires as JSONs
-        with open(path_prefix + "_files.json", "w") as outfile:
+        with open(f"{path_prefix}_files.json", "w") as outfile:
             json.dump(files_dict, outfile, indent=4)
 
-        with open(path_prefix + "_summary.json", "w") as outfile:
+        with open(f"{path_prefix}_summary.json", "w") as outfile:
             json.dump(summary_dict, outfile, indent=4)
 
-        big_df.to_csv(path_prefix + "_files.tsv", sep="\t", index=False)
+        big_df.to_csv(f"{path_prefix}_files.tsv", sep="\t", index=False)
 
-        summary.to_csv(path_prefix + "_summary.tsv", sep="\t", index=False)
+        summary.to_csv(f"{path_prefix}_summary.tsv", sep="\t", index=False)
 
         # Calculate the acq groups
-        group_by_acquisition_sets(path_prefix + "_files.tsv", path_prefix, self.acq_group_level)
+        group_by_acquisition_sets(f"{path_prefix}_files.tsv", path_prefix, self.acq_group_level)
 
-        print("CuBIDS detected " + str(len(summary)) + " Parameter Groups.")
+        print(f"CuBIDS detected {len(summary)} Parameter Groups.")
 
     def get_key_groups(self):
         """Identify the key groups for the bids dataset."""
@@ -1215,6 +1350,7 @@ class CuBIDS(object):
             if ".git" not in str(json_file):
                 with open(json_file, "r") as jsonr:
                     metadata = json.load(jsonr)
+
                 offending_keys = remove_fields.intersection(metadata.keys())
                 # Quit if there are none in there
                 if not offending_keys:
@@ -1294,21 +1430,21 @@ def _get_param_groups(
 
     Parameters
     ----------
-    files : list
+    files : :obj:`list` of :obj:`str`
         List of file names
-    fieldmap_lookup : defaultdict
+    fieldmap_lookup : :obj:`dict`
         mapping of filename strings relative to the bids root
         (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
-    grouping_config : dict
+    grouping_config : :obj:`dict`
         configuration for defining parameter groups
 
     Returns
     -------
-    labeled_files : pd.DataFrame
+    labeled_files : :obj:`pandas.DataFrame`
         A data frame with one row per file where the ParamGroup column
         indicates which group each scan is a part of.
-    param_groups_with_counts : pd.DataFrame
-        A data frame with param group summaries
+    param_groups_with_counts : :obj:`pandas.DataFrame`
+        A data frame with param group summaries.
     """
     if not files:
         print("WARNING: no files for", key_group_name)
@@ -1393,7 +1529,7 @@ def _get_param_groups(
     # get the subset of columns to drop duplicates by
     check_cols = []
     for col in list(df.columns):
-        if "Cluster_" + col not in list(df.columns) and col != "FilePath":
+        if f"Cluster_{col}" not in list(df.columns) and col != "FilePath":
             check_cols.append(col)
 
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"\
@@ -1446,13 +1582,14 @@ def _get_param_groups(
 
 
 def round_params(param_group_df, config, modality):
-    """Round parameters."""
+    """Round columns' values in DataFrame according to requested precision."""
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
 
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
             continue
+
         if "precision" in column_fmt:
             if isinstance(param_group_df[column_name], float):
                 param_group_df[column_name] = param_group_df[column_name].round(
@@ -1465,7 +1602,7 @@ def round_params(param_group_df, config, modality):
 def get_sidecar_metadata(json_file):
     """Get all metadata values in a file's sidecar.
 
-    Transform json dictionary to python dictionary.
+    Transform json dictionary to Python dictionary.
     """
     try:
         with open(json_file) as json_file:
@@ -1477,13 +1614,51 @@ def get_sidecar_metadata(json_file):
 
 
 def format_params(param_group_df, config, modality):
-    """Run AgglomerativeClustering on param groups and add columns to dataframe."""
+    """Run AgglomerativeClustering on param groups and add columns to dataframe.
+
+    Parameters
+    ----------
+    param_group_df : :obj:`pandas.DataFrame`
+        A data frame with one row per file where the ParamGroup column
+        indicates which group each scan is a part of.
+    config : :obj:`dict`
+        Configuration for defining parameter groups.
+        This dictionary has two keys: ``'sidecar_params'`` and ``'derived_params'``.
+    modality : :obj:`str`
+        Modality of the scan.
+        This is used to select the correct configuration from the config dict.
+
+    Returns
+    -------
+    param_group_df : :obj:`pandas.DataFrame`
+        An updated version of the input data frame,
+        with a new column added for each element in the modality's
+        ``'sidecar_params'`` and ``'derived_params'`` dictionaries.
+        The new columns will have the name ``'Cluster_' + column_name``,
+        and will contain the cluster labels for each parameter group.
+
+    Notes
+    -----
+    ``'sidecar_params'`` is a dictionary of dictionaries, where keys are modalities.
+    The modality-wise dictionary's keys are names of BIDS fields to directly include
+    in the Parameter Groupings,
+    and the values describe the parameters by which those BIDS' fields are compared.
+    For example,
+    {"RepetitionTime": {"tolerance": 0.000001, "precision": 6, "suggest_variant_rename": True}
+    means that the RepetitionTime field should be compared across files and flagged as a
+    variant if it differs from others by 0.000001 or more.
+
+    ``'derived_params'`` is a dictionary of dictionaries, where keys are modalities.
+    The modality-wise dictionary's keys are names of BIDS fields to derive from the
+    NIfTI header and include in the Parameter Groupings.
+    """
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
 
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
             continue
+
         if "tolerance" in column_fmt and len(param_group_df) > 1:
             array = param_group_df[column_name].to_numpy().reshape(-1, 1)
 
@@ -1495,12 +1670,13 @@ def format_params(param_group_df, config, modality):
             clustering = AgglomerativeClustering(
                 n_clusters=None, distance_threshold=tolerance, linkage="complete"
             ).fit(array)
+
             for i in range(len(array)):
                 if array[i, 0] == -999:
                     array[i, 0] = np.nan
 
             # now add clustering_labels as a column
-            param_group_df["Cluster_" + column_name] = clustering.labels_
+            param_group_df[f"Cluster_{column_name}"] = clustering.labels_
 
     return param_group_df
 
@@ -1510,6 +1686,12 @@ def _order_columns(df):
 
     This ensures that KeyGroup and ParamGroup are the first two columns,
     FilePath is the last, and the others are sorted alphabetically.
+
+    Notes
+    -----
+    This is the only place where the constant ID_VARS is used,
+    and the strings in that constant are hardcoded here,
+    so we might not need that constant at all.
     """
     cols = set(df.columns.to_list())
     non_id_cols = cols - ID_VARS
@@ -1523,12 +1705,18 @@ def _order_columns(df):
 
 
 def img_to_new_ext(img_path, new_ext):
-    """Convert img to new extension."""
+    """Convert img to new extension.
+
+    Notes
+    -----
+    The hardcoded suffix associated with each extension may not be comprehensive.
+    BIDS has been extended a lot in recent years.
+    """
     # handle .tsv edge case
     if new_ext == ".tsv":
         # take out suffix
         return img_path.rpartition("_")[0] + "_events" + new_ext
-    if new_ext == ".tsv.gz":
+    elif new_ext == ".tsv.gz":
         return img_path.rpartition("_")[0] + "_physio" + new_ext
     else:
         return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
