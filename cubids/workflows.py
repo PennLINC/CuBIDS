@@ -229,10 +229,8 @@ def apply(
     acq_group_level,
     config,
     edited_summary_tsv,
-    edited_tsv_prefix,
     files_tsv,
     new_tsv_prefix,
-    output_prefix,
 ):
     """Apply the tsv changes.
 
@@ -248,14 +246,10 @@ def apply(
         Path to the grouping config file.
     edited_summary_tsv : :obj:`pathlib.Path`
         Path to the edited summary tsv.
-    edited_tsv_prefix : :obj:`pathlib.Path`
-        Path to the edited tsv prefix.
     files_tsv : :obj:`pathlib.Path`
         Path to the files tsv.
     new_tsv_prefix : :obj:`pathlib.Path`
         Path to the new tsv prefix.
-    output_prefix : :obj:`pathlib.Path`
-        Output filename prefix.
     """
     # Run directly from python using
     bod = CuBIDS(
@@ -312,7 +306,6 @@ def copy_exemplars(
     exemplars_dir,
     exemplars_tsv,
     min_group_size,
-    force_unlock,
 ):
     """Create and save a directory with one subject from each acquisition group.
 
@@ -328,8 +321,6 @@ def copy_exemplars(
         Path to the tsv file with the exemplars.
     min_group_size : :obj:`int`
         Minimum number of subjects in a group to be considered for exemplar.
-    force_unlock : :obj:`bool`
-        Force unlock the dataset.
     """
     # Run directly from python using
     bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad)
