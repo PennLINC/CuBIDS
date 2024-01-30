@@ -21,16 +21,15 @@ classifiers = [
 license = {file = "LICENSE"}
 requires-python = ">=3.8"
 dependencies = [
-    "pyyaml",
-    "pybids",
-    "pandas",
-    "tqdm",
-    "numpy",
-    "scikit-learn",
     "datalad>=0.13.5,!=0.17.3,!=0.17.0,!=0.16.1",
-    "wrapt<2,>=1.10",
-    "Sphinx",
     "jinja2 < 3.1",
+    "numpy",
+    "pandas",
+    "pybids",
+    "pyyaml",
+    "scikit-learn",
+    "tqdm",
+    "wrapt<2,>=1.10",
 ]
 dynamic = ["version"]
 

@@ -1,28 +1,38 @@
 # These are non-BIDS fields that can be added by CuBIDS
 derived_params:
   anat:
+    # Number of voxels in first dimension
     Dim1Size:
       suggest_variant_rename: yes
+    # Number of voxels in second dimension
     Dim2Size:
       suggest_variant_rename: yes
+    # Number of voxels in third dimension
     Dim3Size:
       suggest_variant_rename: yes
+    # Number of slice time values
     NSliceTimes:
       suggest_variant_rename: yes
+    # Number of volumes
     NumVolumes:
       suggest_variant_rename: yes
+    # Boolean indicating oblique acquisition
     Obliquity:
       suggest_variant_rename: yes
+    # String describing image orientation (e.g., LAS+)
     ImageOrientation:
       suggest_variant_rename: yes
+    # Size of voxels in first dimension, in mm
     VoxelSizeDim1:
       tolerance: 0.001
       precision: 3
       suggest_variant_rename: yes
+    # Size of voxels in second dimension, in mm
     VoxelSizeDim2:
       tolerance: 0.001
       precision: 3
       suggest_variant_rename: yes
+    # Size of voxels in third dimension, in mm
     VoxelSizeDim3:
       tolerance: 0.001
       precision: 3
@@ -333,6 +343,18 @@ sidecar_params:
       precision: 6
       suggest_variant_rename: yes
   perf:
+    ArterialSpinLabelingType:
+      suggest_variant_rename: yes
+    BackgroundSuppression:
+      suggest_variant_rename: yes
+    BackgroundSuppressionNumberPulses:
+      suggest_variant_rename: yes
+    BolusCutOffFlag:
+      suggest_variant_rename: yes
+    BolusCutOffTechnique:
+      suggest_variant_rename: yes
+    CASLType:
+      suggest_variant_rename: yes
     EchoTime:
       tolerance: 0.001
       precision: 3
@@ -342,6 +364,17 @@ sidecar_params:
       precision: 5
       suggest_variant_rename: yes
     FlipAngle:
+      suggest_variant_rename: yes
+    LabelingDistance:
+      tolerance: 0.1
+      suggest_variant_rename: yes
+    LabelingEfficiency:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    LookLocker:
+      suggest_variant_rename: yes
+    M0Type:
       suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
@@ -355,6 +388,10 @@ sidecar_params:
       suggest_variant_rename: yes
     PartialFourier:
       suggest_variant_rename: yes
+    PASLType:
+      suggest_variant_rename: yes
+    PCASLType:
+      suggest_variant_rename: yes
     PhaseEncodingDirection:
       suggest_variant_rename: yes
     RepetitionTime:
@@ -366,6 +403,8 @@ sidecar_params:
     TotalReadoutTime:
       tolerance: 0.001
       precision: 3
+      suggest_variant_rename: yes
+    VascularCrushing:
       suggest_variant_rename: yes
     VolumeTiming:
       tolerance: 0.000001
