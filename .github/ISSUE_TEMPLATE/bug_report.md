@@ -12,8 +12,6 @@ assignees: ''
 ## Additional details
 <!--Please fill in the following details-->
 - CuBIDS version:
-- Docker version:
-- Singularity version:
 - Datalad version:
 
 ### What were you trying to do?
