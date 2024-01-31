@@ -42,13 +42,16 @@ extensions = [
     "hoverxref.extension",
     "nbsphinx",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",  # standard
     "sphinx.ext.doctest",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.coverage",
-    "sphinx.ext.mathjax",
-    "sphinxarg.ext",  # argparse extension
-    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",  # links code to other packages
+    "sphinx.ext.linkcode",  # links to code from api
+    "sphinx.ext.mathjax",  # include formulae in html
+    "sphinx.ext.napoleon",  # alternative to numpydoc
+    "sphinx_copybutton",  # for copying code snippets
     "sphinx_gallery.load_style",
+    "sphinxarg.ext",  # argparse extension
+    "sphinxcontrib.bibtex",  # bibtex-based bibliographies
 ]
 
 # Mock modules in autodoc:
@@ -97,14 +100,34 @@ language = "en"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "sphinx"
+pygments_style = "default"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+# -----------------------------------------------------------------------------
+# Napoleon settings
+# -----------------------------------------------------------------------------
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
+napoleon_custom_sections = ["License"]
+napoleon_include_init_with_doc = True
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = False
+napoleon_use_admonition_for_examples = True
+napoleon_use_admonition_for_notes = True
+napoleon_use_admonition_for_references = True
+napoleon_use_ivar = True
+napoleon_use_param = True
+napoleon_use_keyword = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = False
+napoleon_type_aliases = None
+napoleon_attr_annotations = True
 
-# -- Options for HTML output -------------------------------------------
-
+# -----------------------------------------------------------------------------
+# HTML output
+# -----------------------------------------------------------------------------
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
@@ -124,15 +147,43 @@ html_theme_path = [
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-
-# -- Options for HTMLHelp output ---------------------------------------
-
+# -----------------------------------------------------------------------------
+# HTMLHelp output
+# -----------------------------------------------------------------------------
 # Output file base name for HTML help builder.
 htmlhelp_basename = "cubidsdoc"
 
+# -----------------------------------------------------------------------------
+# intersphinx
+# -----------------------------------------------------------------------------
+_python_version_str = f"{sys.version_info.major}.{sys.version_info.minor}"
+_python_doc_base = "https://docs.python.org/" + _python_version_str
+intersphinx_mapping = {
+    "python": (_python_doc_base, None),
+    "numpy": ("https://numpy.org/doc/stable/", (None, "./_intersphinx/numpy-objects.inv")),
+    "scipy": (
+        "https://docs.scipy.org/doc/scipy/reference",
+        (None, "./_intersphinx/scipy-objects.inv"),
+    ),
+    "sklearn": ("https://scikit-learn.org/stable", (None, "./_intersphinx/sklearn-objects.inv")),
+    "matplotlib": ("https://matplotlib.org/", (None, "https://matplotlib.org/objects.inv")),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "pybids": ("https://bids-standard.github.io/pybids/", None),
+    "nibabel": ("https://nipy.org/nibabel/", None),
+    "nilearn": ("http://nilearn.github.io/stable/", None),
+}
 
-# -- Options for LaTeX output ------------------------------------------
+# -----------------------------------------------------------------------------
+# sphinxcontrib-bibtex
+# -----------------------------------------------------------------------------
+bibtex_bibfiles = ["../cubids/data/references.bib"]
+bibtex_style = "unsrt"
+bibtex_reference_style = "author_year"
+bibtex_footbibliography_header = ""
 
+# -----------------------------------------------------------------------------
+# Options for LaTeX output
+# -----------------------------------------------------------------------------
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
@@ -155,16 +206,16 @@ latex_documents = [
     (master_doc, "cubids.tex", "CuBIDS Documentation", "PennLINC", "manual"),
 ]
 
-
-# -- Options for manual page output ------------------------------------
-
+# -----------------------------------------------------------------------------
+# Options for manual page output
+# -----------------------------------------------------------------------------
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [(master_doc, "cubids", "CuBIDS Documentation", [author], 1)]
 
-
-# -- Options for Texinfo output ----------------------------------------
-
+# -----------------------------------------------------------------------------
+# Options for Texinfo output
+# -----------------------------------------------------------------------------
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
@@ -180,12 +231,14 @@ texinfo_documents = [
     ),
 ]
 
-# -- Fix automodule config
+# -----------------------------------------------------------------------------
+# Automodule
+# -----------------------------------------------------------------------------
 add_module_names = False
 
-# --
-# hoverxref
-# --
+# -----------------------------------------------------------------------------
+# Hoverxref
+# -----------------------------------------------------------------------------
 hoverxref_auto_ref = True
 hoverxref_mathjax = True
 hoverxref_roles = [

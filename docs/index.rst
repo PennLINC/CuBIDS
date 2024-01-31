@@ -16,3 +16,4 @@ Contents
    ../CONTRIBUTING
    ../AUTHORS
    ../HISTORY
+   glossary

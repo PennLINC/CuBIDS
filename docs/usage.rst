@@ -15,7 +15,7 @@ More definitions
 Key Group
 ~~~~~~~~~
 
-A :term:`Key Group`` is a unique set of BIDS key-value pairs,
+A :term:`Key Group` is a unique set of BIDS key-value pairs,
 excluding identifiers such as subject and session.
 For example, the files::
 
