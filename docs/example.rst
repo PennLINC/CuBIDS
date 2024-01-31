@@ -1,3 +1,5 @@
+.. include:: links.rst
+
 ===================
 Example Walkthrough
 ===================
@@ -177,7 +179,7 @@ BIDS validation
 ---------------
 
 The next step in the ``CuBIDS`` workflow is to run BIDS validation
-to detect potential curation errors using ``cubids validate``.
+to detect potential curation errors using `cubids validate`_.
 
 .. code-block:: console
 
