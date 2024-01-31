@@ -13,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 import tqdm
 
-from cubids import CuBIDS
+from cubids.cubids import CuBIDS
 from cubids.metadata_merge import merge_json_into_json
 from cubids.utils import _get_container_type
 from cubids.validator import (

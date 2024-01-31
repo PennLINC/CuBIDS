@@ -11,14 +11,12 @@ from cubids import (
     workflows,
 )
 from cubids.__about__ import __copyright__, __credits__, __packagename__, __version__
-from cubids.cubids import CuBIDS
 
 __all__ = [
     "__copyright__",
     "__credits__",
     "__packagename__",
     "__version__",
-    "CuBIDS",
     "cli",
     "config",
     "constants",
