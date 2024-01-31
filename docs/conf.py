@@ -39,6 +39,7 @@ needs_sphinx = "1.5.3"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "hoverxref.extension",
     "nbsphinx",
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
@@ -181,3 +182,16 @@ texinfo_documents = [
 
 # -- Fix automodule config
 add_module_names = False
+
+# --
+# hoverxref
+# --
+hoverxref_auto_ref = True
+hoverxref_mathjax = True
+hoverxref_roles = [
+    "numref",
+    "confval",
+    "setting",
+    "term",
+    "footcite",
+]

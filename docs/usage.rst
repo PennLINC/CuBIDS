@@ -15,8 +15,8 @@ More definitions
 Key Group
 ~~~~~~~~~
 
-A *Key Group* is a unique set of BIDS key-value pairs, excluding identifiers such as
-subject and session.
+A :term:`Key Group`` is a unique set of BIDS key-value pairs,
+excluding identifiers such as subject and session.
 For example, the files::
 
     bids-root/sub-1/ses-1/func/sub-1_ses-1_acq-mb_dir-PA_task-rest_bold.nii.gz
@@ -42,6 +42,9 @@ The subsets of consistent acquisition parameter sets within a Key Group are call
 Parameter Group
 ~~~~~~~~~~~~~~~
 
+A :term:`Parameter Group` is a subset of a Key Group that contains images with the same
+acquisition parameters.
+
 Even though two images may belong to the same Key Group and are valid BIDS,
 they may have images with different acquisition parameters.
 There is nothing fundamentally wrong with this —
@@ -57,8 +60,8 @@ same preprocessing pipelines to configure differently to images of the same Key 
 Acquisition Group
 ~~~~~~~~~~~~~~~~~
 
-We define an “Acquisition Group” as a collection of sessions across participants that contain the exact
-same set of Key and Parameter Groups.
+We define an :term:`Acquisition Group` as a collection of sessions across participants that
+contain the exact same set of Key and Parameter Groups.
 Since Key Groups are based on the BIDS filenames—
 and therefore both MRI image type and acquisition specific—
 each BIDS session directory contains images that belong to a set of Parameter Groups.
@@ -170,10 +173,11 @@ pass that edited tsv as an argument to ``cubids apply``.
 Detecting Variant Groups
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Additionally, ``cubids apply`` can automatically rename files in ``Variant Groups``
-based on their scanning parameters that vary from those in their Key Groups' Dominant Parameter Groups.
+Additionally, ``cubids apply`` can automatically rename files in :term:`Variant Groups <Variant Group>`
+based on their scanning parameters that vary from those in their Key Groups'
+:term:`Dominant Parameter Groups <Dominant Group>`.
 Renaming is automatically suggested when the summary.tsv is generated from a ``cubids group`` run,
-with the suggested new name listed in the tsv's “Rename Key Group” column.
+with the suggested new name listed in the tsv's :term:`Rename Key Group` column.
 CuBIDS populates this column for all Variant Groups
 (e.g., every Parameter Group except the Dominant one).
 Specifically, CuBIDS will suggest renaming all non-dominant Parameter Group to include ``VARIANT*``
