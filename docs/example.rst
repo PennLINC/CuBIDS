@@ -179,7 +179,7 @@ BIDS validation
 ---------------
 
 The next step in the ``CuBIDS`` workflow is to run BIDS validation
-to detect potential curation errors using `cubids validate`_.
+to detect potential curation errors using ``cubids validate``.
 
 .. code-block:: console
 
