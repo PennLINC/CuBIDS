@@ -33,8 +33,6 @@ We create a ``CuBIDS_Test`` directory to function as our working directory and n
     $ mkdir $PWD/CuBIDS_Test
     $ cd CuBIDS_Test
     $ conda activate cubids
-    $ mkdir -p $PWD/CuBIDS_Test
-    $ cd CuBIDS_Test
 
 Now, download and unzip the example data (you can also do this in your Finder window):
 
