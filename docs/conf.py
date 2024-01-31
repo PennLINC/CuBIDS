@@ -23,6 +23,10 @@ sys.path.insert(0, os.path.abspath(".."))
 
 import cubids
 
+sys.path.insert(0, os.path.abspath("sphinxext"))
+
+from github_link import make_linkcode_resolve
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -152,6 +156,12 @@ html_static_path = ["_static"]
 # -----------------------------------------------------------------------------
 # Output file base name for HTML help builder.
 htmlhelp_basename = "cubidsdoc"
+
+# The following is used by sphinx.ext.linkcode to provide links to github
+linkcode_resolve = make_linkcode_resolve(
+    "cubids",
+    "https://github.com/PennLINC/cubids/blob/{revision}/{package}/{path}#L{lineno}",
+)
 
 # -----------------------------------------------------------------------------
 # intersphinx

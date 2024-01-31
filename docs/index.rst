@@ -17,3 +17,4 @@ Contents
    ../AUTHORS
    ../HISTORY
    glossary
+   api
