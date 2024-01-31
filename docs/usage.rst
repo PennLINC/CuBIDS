@@ -1,6 +1,6 @@
-==================
-Commands & Actions
-==================
+========================
+General Usage Guidelines
+========================
 
 Before we implement a ``CuBIDS`` workflow, let's define the terminology
 and take a look at some of the commands available in the software.
@@ -226,25 +226,9 @@ Applying these changes we would see:
     :header-rows: 1
 
 
-Command line tools
-------------------
-
-With that brief introduction done, we can introduce the full gamut of ``CuBIDS`` command line tools:
-
-.. code-block:: bash
-
-	cubids --help
-
-This will print the instructions for using the command line interface in your command line.
-
-.. argparse::
-   :ref: cubids.cli._get_parser
-   :prog: cubids
-   :func: _get_parser
-
-
 Customizable configuration
----------------------------
+--------------------------
+
 ``CuBIDS`` also features an optional, customizable, MRI image type-specific configuration file.
 This file can be passed as an argument to ``cubids group`` and ``cubids apply``
 using the ``--config`` flag and allows users to customize grouping settings based on

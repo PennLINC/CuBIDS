@@ -9,8 +9,9 @@ Contents
    :maxdepth: 2
 
    about
-   usage
    installation
+   usage
+   cli
    example
    examples
    ../CONTRIBUTING

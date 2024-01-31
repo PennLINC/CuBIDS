@@ -1,5 +1,8 @@
 .. include:: links.rst
 
+Glossary
+========
+
 .. glossary::
 
     Key Group
@@ -32,6 +35,6 @@
 
 
 References
-==========
+----------
 
 .. footbibliography::
