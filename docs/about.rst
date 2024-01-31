@@ -44,6 +44,11 @@ For that, we recommend using `conversion tools <https://bids.neuroimaging.io/ben
 ``CuBIDS`` then takes over once you have a valid BIDS dataset,
 prior to running any preprocessing or analysis pipelines, or to sharing the dataset.
 
+.. note::
+
+    CuBIDS _should_ work on BIDS-ish (not quite BIDS compliant, but in a similar format) datasets,
+    but this is by no means guaranteed.
+
 
 Examples
 """"""""
@@ -61,7 +66,7 @@ Variant Group resting state BOLD (all scans in this Param Group are missing a fi
     *   Param Group: ``2`` (Variant Group)
     *   Rename Key Group: ``acquisition-singlebandVARIANTNoFmap_datatype-func_suffix-bold_task-rest``
 
-In the next section, we'll discuss these definitions in more detail and demonstrate ``CuBIDS`` usage.
+These definitions are described in more detail in :doc:`glossary` and :doc:`usage`.
 
 .. rubric:: Footnotes
 
