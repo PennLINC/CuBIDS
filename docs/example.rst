@@ -172,8 +172,8 @@ which reveals that new NIfTI header information has been successfully included i
 Since we ran ``cubids add-nifti-info`` with the ``--use-datalad`` flag set,
 ``CuBIDS`` automatically saves the changes made to the dataset to the git log as follows:
 
-
 .. image:: _static/screenshot_4.png
+
 
 BIDS validation
 ---------------
