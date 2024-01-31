@@ -67,8 +67,8 @@ API
    :toctree: generated/
    :template: function.rst
 
-   cubids.validate.build_validator_call
-   cubids.validate.build_subject_paths
-   cubids.validate.run_validator
-   cubids.validate.parse_validator_output
-   cubids.validate.get_val_dictionary
+   cubids.validator.build_validator_call
+   cubids.validator.build_subject_paths
+   cubids.validator.run_validator
+   cubids.validator.parse_validator_output
+   cubids.validator.get_val_dictionary
