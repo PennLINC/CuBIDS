@@ -17,7 +17,7 @@ Key Group
 
 A *Key Group* is a unique set of BIDS key-value pairs, excluding identifiers such as
 subject and session.
-For example the files::
+For example, the files::
 
     bids-root/sub-1/ses-1/func/sub-1_ses-1_acq-mb_dir-PA_task-rest_bold.nii.gz
     bids-root/sub-1/ses-2/func/sub-1_ses-2_acq-mb_dir_PA_task-rest_bold.nii.gz
@@ -30,7 +30,7 @@ this naming convention would suffice.
 
 However, in large multi-scanner, multi-site,
 or longitudinal studies where acquisition parameters change over time,
-it's possible that the same Key Group could comprise scans that differ in important ways.
+it's possible that the same Key Group could contain scans that differ in important ways.
 
 ``CuBIDS`` examines all acquisitions within a Key Group to see if there are any images
 that differ in a set of important acquisition parameters.
@@ -52,15 +52,6 @@ there can be detrimental consequences downstream if the different parameters cau
 same preprocessing pipelines to configure differently to images of the same Key Group.
 
 
-Acquisition Group
-~~~~~~~~~~~~~~~~~
-
-Acquisition Groups are sets of subjects whose images belong to all the same Key and Parameter Groups.
-The Acquisition Groups that subjects belong to are listed in ``_AcqGrouping.csv``,
-while the Key Groups and Parameter Groups that define each Acquisition Group are noted in
-``_AcqGroupingInfo.txt``.
-
-
 .. _acquisitiongroup:
 
 Acquisition Group
@@ -79,6 +70,10 @@ as they identify homogeneous sets of sessions (not individual scans) in a large 
 They are also useful for expediting the testing of pipelines;
 if a BIDS App runs successfully on a single subject from each Acquisition Group,
 one can be confident that it will handle all combinations of scanning parameters in the entire dataset.
+
+The Acquisition Groups that subjects belong to are listed in ``_AcqGrouping.csv``,
+while the Key Groups and Parameter Groups that define each Acquisition Group are noted in
+``_AcqGroupingInfo.txt``.
 
 
 .. _summaryfile:

@@ -16,7 +16,7 @@ initialize a new conda environment (for example, named ``cubids``) as follows:
 
 .. code-block:: console
 
-    $ conda create -n cubids python=3.8
+    $ conda create -n cubids python=3.8 pip
     $ conda activate cubids
 
 You are now ready to install CuBIDS.
@@ -43,7 +43,6 @@ Once you have a copy of the source, you can install it with:
     $ cd CuBIDS
     $ pip install -e .
 
-
 We will now need to install some dependencies of ``CuBIDS``.
 To do this, we first must install nodejs.
 We can accomplish this using the following command:
@@ -52,7 +51,7 @@ We can accomplish this using the following command:
 
     $ conda install nodejs
 
-Now that we have npm installed, we can install the ``bids-validator`` using the following command:
+Now that we have npm installed, we can install ``bids-validator`` using the following command:
 
 .. code-block:: console
 
