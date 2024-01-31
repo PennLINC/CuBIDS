@@ -181,6 +181,7 @@ intersphinx_mapping = {
     "pybids": ("https://bids-standard.github.io/pybids/", None),
     "nibabel": ("https://nipy.org/nibabel/", None),
     "nilearn": ("http://nilearn.github.io/stable/", None),
+    "datalad": ("https://docs.datalad.org/en/stable/", None),
 }
 
 # -----------------------------------------------------------------------------
