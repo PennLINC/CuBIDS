@@ -2,17 +2,13 @@ version: 2.1
 
 jobs:
   run_pytests:
+    parameters:
+      python_version:
+        type: string
+        default: "3.8"
     machine:
       image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
-    # Define the matrix for Python versions
-    matrix:
-      parameters:
-        python_version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
     steps:
       - checkout:
           path: /home/circleci/src/CuBIDS
@@ -29,7 +25,7 @@ jobs:
             conda info -a
 
             export PATH=/tmp/miniconda/bin:$PATH
-            conda create -n cubids python=<< parameters.python_version >> pip
+            conda create -n cubids python=<< matrix.python_version >> pip
             source activate cubids
             conda install -c conda-forge -y datalad
 
@@ -71,6 +67,14 @@ workflows:
   build_test_deploy:
     jobs:
       - run_pytests:
+          # Define the matrix for Python versions
+          matrix:
+            parameters:
+              python_version:
+                - "3.8"
+                - "3.9"
+                - "3.10"
+                - "3.11"
           filters:
             tags:
               only: /.*/
