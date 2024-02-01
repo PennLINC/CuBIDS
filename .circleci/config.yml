@@ -108,7 +108,7 @@ workflows:
             tags:
               only: /.*/
 
-      - merge_coverage
+      - merge_coverage:
           requires:
             - run_pytests
           filters:
