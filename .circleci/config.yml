@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.5
 
 jobs:
   run_pytests:
@@ -39,6 +41,33 @@ jobs:
 
             # Run tests
             pytest cubids
+            pytest --cov-append --cov-report term-missing --cov=cubids cubids
+            mkdir /home/circleci/src/coverage
+            mv /home/circleci/src/CuBIDS/.coverage /home/circleci/src/coverage/.coverage.<< parameters.python_version >>
+      - persist_to_workspace:
+          root: /home/circleci/src/coverage
+          paths:
+              - .coverage.<< parameters.python_version >>
+
+  merge_coverage:
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /home/circleci/src/coverage
+      - run:
+          name: Merge coverage files
+          command: |
+            cd /home/circleci/src/coverage/
+            conda create -n cubids python=3.9 pip
+            source activate cubids
+
+            # Install CuBIDS
+            pip install -e .[tests]
+
+            coverage combine --data-file=/home/circleci/src/coverage/.coverage
+            coverage xml --data-file /home/circleci/src/coverage/.coverage -o /home/circleci/src/coverage/coverage.xml
+      - codecov/upload:
+          file: /home/circleci/src/coverage/coverage.xml
 
   deployable:
     docker:
@@ -78,6 +107,13 @@ workflows:
           filters:
             tags:
               only: /.*/
+
+      - merge_coverage
+          requires:
+            - run_pytests
+          filters:
+            tags:
+              ignore: /.*/
 
       - deployable:
           requires:
