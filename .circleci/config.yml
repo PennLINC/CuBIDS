@@ -50,6 +50,8 @@ jobs:
               - .coverage.<< parameters.python_version >>
 
   merge_coverage:
+    docker:
+        - image: continuumio/miniconda3
     steps:
       - checkout
       - attach_workspace:
