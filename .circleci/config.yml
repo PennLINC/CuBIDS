@@ -53,7 +53,8 @@ jobs:
     docker:
         - image: continuumio/miniconda3
     steps:
-      - checkout
+      - checkout:
+          path: /home/circleci/src/CuBIDS
       - attach_workspace:
           at: /home/circleci/src/coverage
       - run:
