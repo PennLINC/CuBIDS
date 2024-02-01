@@ -161,7 +161,6 @@ per-file-ignores = [
 ]
 
 [tool.coverage.run]
-branch = true
 parallel = true
 omit = [
     "*/tests/*",
