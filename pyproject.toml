@@ -44,9 +44,12 @@ doc = [
     "recommonmark",
     "sphinx >= 2.2",
     "sphinx-argparse",
+    "sphinx-copybutton",
     "sphinx_gallery",
+    "sphinx-hoverxref",
     "sphinx_markdown_tables",
     "sphinx_rtd_theme",
+    "sphinxcontrib-bibtex",
 ]
 tests = [
     "codespell",
