@@ -21,7 +21,7 @@ jobs:
             conda info -a
 
             export PATH=/tmp/miniconda/bin:$PATH
-            conda create -n cubids python=<< parameters.python_version >> pip
+            conda create -n cubids python=<< matrix.python_version >> pip
             source activate cubids
             conda install -c conda-forge -y datalad
 
@@ -65,12 +65,11 @@ workflows:
       - run_pytests:
           # Define the matrix for Python versions
           matrix:
-            parameters:
-              python_version:
-                - "3.8"
-                - "3.9"
-                - "3.10"
-                - "3.11"
+            python_version:
+              - "3.8"
+              - "3.9"
+              - "3.10"
+              - "3.11"
           filters:
             tags:
               only: /.*/
