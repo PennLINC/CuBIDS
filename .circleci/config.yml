@@ -36,10 +36,10 @@ jobs:
           at: /tmp
 
       - run:
-          name: Test CuBIDS (Python = ${{ matrix.python_version }})
+          name: Test CuBIDS (Python = << matrix.python_version >>)
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
-            conda create -n cubids python=${{ matrix.python_version }} pip
+            conda create -n cubids python=<< matrix.python_version >> pip
             source activate cubids
             conda install -c conda-forge -y datalad
 
