@@ -1,4 +1,5 @@
 """Tests for `cubids` package."""
+
 import json
 import os
 import subprocess

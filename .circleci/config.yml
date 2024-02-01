@@ -1,153 +1,119 @@
-# Python CircleCI 2.1 configuration file
-#
-# Check https://circleci.com/docs/2.1/language-python/ for more details
-#
 version: 2.1
-orbs:
-  codecov: codecov/codecov@1.0.5
+
 jobs:
-
-  test_py38:
+  set_up_conda:
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
-    docker:
-      - image: continuumio/miniconda3
     steps:
-      - checkout
+      - checkout:
+          path: /home/circleci/src/CuBIDS
       - run:
-          name: Generate environment
-          command:  |
-            conda create -n py38_env python=3.8 pip -yq
-            conda install -c conda-forge -y datalad
+          name: install miniconda
+          command: |
+            export MINICONDA=/tmp/miniconda
+            export PATH="$MINICONDA/bin:$PATH"
+            wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh
+            bash /tmp/miniconda.sh -b -f -p $MINICONDA
+            conda config --set always_yes yes
+            conda update conda
+            conda info -a
 
-            # Add nodejs and the validator
-            conda install nodejs
-            npm install -g yarn && \
-            npm install -g bids-validator
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - miniconda
 
-            source activate py38_env
-            pip install -e .[tests]
-      - run:
-          name: Run tests
-          command:  |
-            source activate py38_env
-            py.test --cov-append --cov-config=cubids/tests/coverage.cfg --cov-report=xml --cov=cubids cubids
-            mkdir /tmp/src/coverage
-            mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py38
-
-  test_py39:
+  run_pytests:
+    machine:
+      image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
-    docker:
-      - image: continuumio/miniconda3
     steps:
-      - checkout
-      - run:
-          name: Generate environment
-          command:  |
-            conda create -n py39_env python=3.9 pip -yq
-            conda install -c conda-forge -y datalad
+      - checkout:
+          path: /home/circleci/src/CuBIDS
 
-            # Add nodejs and the validator
-            conda install nodejs
-            npm install -g yarn && \
-            npm install -g bids-validator
-
-            source activate py39_env
-            pip install -e .[tests]
-      - run:
-          name: Run tests
-          command:  |
-            source activate py39_env
-            py.test --cov-append --cov-config=cubids/tests/coverage.cfg --cov-report=xml --cov=cubids cubids
-            mkdir /tmp/src/coverage
-            mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py39
-
-  test_py310:
-    working_directory: /home/circleci/src/CuBIDS
-    docker:
-      - image: continuumio/miniconda3
-    steps:
-      - checkout
-      - run:
-          name: Generate environment
-          command:  |
-            conda create -n py310_env python=3.10 pip -yq
-            conda install -c conda-forge -y datalad
-
-            # Add nodejs and the validator
-            conda install nodejs
-            npm install -g yarn && \
-            npm install -g bids-validator
-
-            source activate py310_env
-            pip install -e .[tests]
-      - run:
-          name: Run tests
-          command:  |
-            source activate py310_env
-            py.test --cov-append --cov-config=cubids/tests/coverage.cfg --cov-report=xml --cov=cubids cubids
-            mkdir /tmp/src/coverage
-            mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py310
-
-  test_py311:
-    working_directory: /home/circleci/src/CuBIDS
-    docker:
-      - image: continuumio/miniconda3
-    steps:
-      - checkout
-      - run:
-          name: Generate environment
-          command:  |
-            conda create -n py311_env python=3.11 pip -yq
-            conda install -c conda-forge -y datalad
-
-            # Add nodejs and the validator
-            conda install nodejs
-            npm install -g yarn && \
-            npm install -g bids-validator
-
-            source activate py311_env
-            pip install -e .[tests]
-      - run:
-          name: Run tests
-          command:  |
-            source activate py311_env
-            py.test --cov-append --cov-config=cubids/tests/coverage.cfg --cov-report=xml --cov=cubids cubids
-            mkdir /tmp/src/coverage
-            mv /home/circleci/src/CuBIDS/.coverage /tmp/src/coverage/.coverage.py311
-
-  merge_coverage:
-    working_directory: /home/circleci/src/CuBIDS
-    docker:
-      - image: continuumio/miniconda3
-    steps:
       - attach_workspace:
           at: /tmp
-      - checkout
+
       - run:
-          name: Merge coverage files
+          name: Test CuBIDS (Python = ${{ matrix.python_version }})
           command: |
-            apt-get update
-            apt-get install -yqq curl
-            source activate py37_env
-            cd /tmp/src/coverage/
-            coverage combine
-            coverage xml
-      - store_artifacts:
-          path: /tmp/src/coverage
-      - codecov/upload:
-          file: /tmp/src/coverage/coverage.xml
+            export PATH=/tmp/miniconda/bin:$PATH
+            conda create -n cubids python=${{ matrix.python_version }} pip
+            source activate cubids
+            conda install -c conda-forge -y datalad
+
+            # Add nodejs and the validator
+            conda install nodejs
+            npm install -g yarn && \
+            npm install -g bids-validator
+
+            # Install CuBIDS
+            pip install -e .[tests]
+
+            # Run tests
+            pytest cubids
+
+  deployable:
+    docker:
+      - image: busybox:latest
+    steps:
+      - run: echo Deploying!
+
+  deploy_pypi:
+    machine:
+      image: ubuntu-2004:202201-02
+    working_directory: /home/circleci/src/CuBIDS
+    steps:
+      - checkout:
+          path: /home/circleci/src/CuBIDS
+      - run:
+          name: Update build tools
+          command: pip install --upgrade build twine
+      - run:
+          name: Build CuBIDS
+          command: python -m build
+      - run:
+          name: Upload package to PyPI
+          command: python -m twine upload -u __token__ -p ${PYPI_TOKEN} dist/cubids*
 
 workflows:
-  version: 2.1
-  run_tests:
+  version: 2
+  build_test_deploy:
     jobs:
-      - test_py38
-      - test_py39
-      - test_py310
-      - test_py311
-      - merge_coverage:
+      - set_up_conda:
+          filters:
+            tags:
+              only: /.*/
+
+      - run_pytests:
+          # Define the matrix for Python versions
+          matrix:
+            python_version:
+              - "3.8"
+              - "3.9"
+              - "3.10"
+              - "3.11"
           requires:
-            - test_py38
-            - test_py39
-            - test_py310
-            - test_py311
+            - set_up_conda
+          filters:
+            tags:
+              only: /.*/
+
+      - deployable:
+          requires:
+            - run_pytests
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /.*/
+
+      - deploy_pypi:
+          requires:
+            - deployable
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/

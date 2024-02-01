@@ -12,6 +12,7 @@ Contents
    usage
    installation
    example
-   contributing
-   authors
-   history
+   examples
+   ../CONTRIBUTING
+   ../AUTHORS
+   ../HISTORY

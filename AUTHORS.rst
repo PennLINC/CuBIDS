@@ -4,14 +4,18 @@ Credits
 
 Development Lead
 ----------------
-* Sydney Covitz <sydney.covitz at pennmedicine dot upenn .edu>
+* Taylor Salo <taylor dot salo at pennmedicine dot upenn dot edu>
 
 Contributors
 ------------
-* Matt Cieslak <matthew.cieslak at pennmedicine dot upenn .edu>
-
-* Tinashe Tapera <tinashe.tapera at pennmedicine dot upenn .edu>
+* Matt Cieslak <matthew dot cieslak at pennmedicine dot upenn dot edu>
 
 Principal Investigator
 ----------------------
-* Theodore Satterthwaite <theodore.satterthwaite at pennmedicine dot upenn .edu>
+* Theodore Satterthwaite <theodore dot satterthwaite at pennmedicine dot upenn dot edu>
+
+Previous Contributors
+---------------------
+* Sydney Covitz <sydney dot covitz at pennmedicine dot upenn dot edu> (previous development lead)
+
+* Tinashe Tapera <tinashe dot tapera at pennmedicine dot upenn dot edu>

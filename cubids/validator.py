@@ -1,4 +1,5 @@
 """Methods for validating BIDS datasets."""
+
 import glob
 import json
 import logging
@@ -11,15 +12,14 @@ import pandas as pd
 logger = logging.getLogger("cubids-cli")
 
 
-def build_validator_call(path, ignore_headers=False, ignore_subject=True):
+def build_validator_call(path, ignore_headers=False):
     """Build a subprocess command to the bids validator."""
     # build docker call
-    command = ["bids-validator", "--verbose", "--json"]
+    # CuBIDS automatically ignores subject consistency.
+    command = ["bids-validator", "--verbose", "--json", "--ignoreSubjectConsistency"]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
-    if ignore_subject:
-        command.append("--ignoreSubjectConsistency")
 
     command.append(path)
 
@@ -39,7 +39,7 @@ def build_subject_paths(bids_dir):
     subjects = glob.glob(bids_dir)
 
     if len(subjects) < 1:
-        raise ValueError("Couldn't find any subjects " "in the specified directory:\n" + bids_dir)
+        raise ValueError("Couldn't find any subjects in the specified directory:\n" + bids_dir)
 
     subjects_dict = {}
 
@@ -55,7 +55,18 @@ def build_subject_paths(bids_dir):
 
 
 def run_validator(call):
-    """Run the validator with subprocess."""
+    """Run the validator with subprocess.
+
+    Parameters
+    ----------
+    call : :obj:`list`
+        List of strings to pass to subprocess.run().
+
+    Returns
+    -------
+    :obj:`subprocess.CompletedProcess`
+        The result of the subprocess call.
+    """
     # if verbose:
     #     logger.info("Running the validator with call:")
     #     logger.info('\"' + ' '.join(call) + '\"')
@@ -69,15 +80,30 @@ def parse_validator_output(output):
 
     Parameters
     ----------
-    path : string
+    output : :obj:`str`
         Path to JSON file of BIDS validator output
 
     Returns
     -------
-        Pandas DataFrame
+    df : :obj:`pandas.DataFrame`
+        Dataframe of validator output.
     """
 
     def get_nested(dct, *keys):
+        """Get a nested value from a dictionary.
+
+        Parameters
+        ----------
+        dct : :obj:`dict`
+            Dictionary to get value from.
+        keys : :obj:`list`
+            List of keys to get value from.
+
+        Returns
+        -------
+        :obj:`dict`
+            The nested value.
+        """
         for key in keys:
             try:
                 dct = dct[key]
@@ -90,11 +116,23 @@ def parse_validator_output(output):
     issues = data["issues"]
 
     def parse_issue(issue_dict):
+        """Parse a single issue from the validator output.
+
+        Parameters
+        ----------
+        issue_dict : :obj:`dict`
+            Dictionary of issue.
+
+        Returns
+        -------
+        return_dict : :obj:`dict`
+            Dictionary of parsed issue.
+        """
         return_dict = {}
         return_dict["files"] = [
             get_nested(x, "file", "relativePath") for x in issue_dict.get("files", "")
         ]
-        return_dict["type"] = issue_dict.get("key" "")
+        return_dict["type"] = issue_dict.get("key", "")
         return_dict["severity"] = issue_dict.get("severity", "")
         return_dict["description"] = issue_dict.get("reason", "")
         return_dict["code"] = issue_dict.get("code", "")
@@ -118,7 +156,13 @@ def parse_validator_output(output):
 
 
 def get_val_dictionary():
-    """Get value dictionary."""
+    """Get value dictionary.
+
+    Returns
+    -------
+    val_dict : dict
+        Dictionary of values.
+    """
     val_dict = {}
     val_dict["files"] = {"Description": "File with warning orerror"}
     val_dict["type"] = {"Description": "BIDS validation warning or error"}

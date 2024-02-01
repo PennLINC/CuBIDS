@@ -1,4 +1,5 @@
 """Tools for merging metadata."""
+
 import json
 from collections import defaultdict
 from copy import deepcopy
@@ -15,7 +16,24 @@ DIRECT_IMAGING_PARAMS = IMAGING_PARAMS - set(["NSliceTimes"])
 def check_merging_operations(action_tsv, raise_on_error=False):
     """Check that the merges in an action tsv are possible.
 
-    To be mergeable the
+    Parameters
+    ----------
+    action_tsv : :obj:`str`
+        Path to the action tsv file.
+    raise_on_error : :obj:`bool`, optional
+        Whether to raise an exception if there are errors.
+
+    Returns
+    -------
+    ok_merges : :obj:`list`
+        List of tuples of ok merges.
+    deletions : :obj:`list`
+        List of tuples of deletions.
+
+    Raises
+    ------
+    :obj:`Exception`
+        If there are errors and ``raise_on_error`` is ``True``.
     """
     actions = pd.read_table(action_tsv)
     ok_merges = []
@@ -45,8 +63,10 @@ def check_merging_operations(action_tsv, raise_on_error=False):
             print("going to delete ", dest_param_key)
             deletions.append(dest_param_key)
             continue
+
         if not source_row.shape[0] == 1:
             raise Exception("Could not identify a unique source group")
+
         source_metadata = source_row.iloc[0].to_dict()
         merge_id = (source_param_key, dest_param_key)
         # Check for compatible fieldmaps
@@ -59,6 +79,7 @@ def check_merging_operations(action_tsv, raise_on_error=False):
         ):
             overwrite_merges.append(merge_id)
             continue
+
         # add to the list of ok merges if there are no conflicts
         ok_merges.append(merge_id)
 
@@ -89,7 +110,9 @@ def check_merging_operations(action_tsv, raise_on_error=False):
     if overwrite_merges or sdc_incompatible:
         if raise_on_error:
             raise Exception(error_message)
+
         print(error_message)
+
     return ok_merges, deletions
 
 
@@ -99,6 +122,25 @@ def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
     Here, "safe" means that no non-NaN values in `dest_meta` are
     overwritten by the merge. If any overwrites occur an empty
     dictionary is returned.
+
+    Parameters
+    ----------
+    source_meta : :obj:`dict`
+        The metadata to merge from.
+    dest_meta_orig : :obj:`dict`
+        The metadata to merge into.
+    raise_on_error : :obj:`bool`, optional
+        Whether to raise an exception if there are errors.
+
+    Returns
+    -------
+    :obj:`dict`
+        The merged metadata.
+
+    Raises
+    ------
+    :obj:`Exception`
+        If there are errors and ``raise_on_error`` is ``True``.
     """
     # copy the original json params
     dest_meta = deepcopy(dest_meta_orig)
@@ -111,6 +153,7 @@ def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
                 % (source_meta.get("NSliceTimes"), source_meta.get("NSliceTimes"))
             )
         return {}
+
     for parameter in DIRECT_IMAGING_PARAMS:
         source_value = source_meta.get(parameter, nan)
         dest_value = dest_meta.get(parameter, nan)
@@ -131,6 +174,7 @@ def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
                 return {}
 
         dest_meta[parameter] = source_value
+
     return dest_meta
 
 
@@ -155,7 +199,24 @@ def print_merges(merge_list):
 
 
 def merge_json_into_json(from_file, to_file, raise_on_error=False):
-    """Merge imaging metadata into JSON."""
+    """Merge imaging metadata into JSON.
+
+    Parameters
+    ----------
+    from_file : :obj:`str`
+        Path to the JSON file to merge from.
+    to_file : :obj:`str`
+        Path to the JSON file to merge into.
+    raise_on_error : :obj:`bool`, optional
+        Whether to raise an exception if there are errors.
+        Defaults to ``False``.
+
+    Returns
+    -------
+    :obj:`int`
+        Exit code.
+        Either 255 if there was an error or 0 if there was not.
+    """
     print(f"Merging imaging metadata from {from_file} to {to_file}")
     with open(from_file, "r") as fromf:
         source_metadata = json.load(fromf)
@@ -165,7 +226,9 @@ def merge_json_into_json(from_file, to_file, raise_on_error=False):
     orig_dest_metadata = deepcopy(dest_metadata)
 
     merged_metadata = merge_without_overwrite(
-        source_metadata, dest_metadata, raise_on_error=raise_on_error
+        source_metadata,
+        dest_metadata,
+        raise_on_error=raise_on_error,
     )
 
     if not merged_metadata:
@@ -185,12 +248,12 @@ def get_acq_dictionary():
 
     Parameters
     ----------
-    df: Pandas DataFrame
-        Pre export TSV that will be converted to a json dictionary
+    df : :obj:`pandas.DataFrame`
+        Pre export TSV that will be converted to a json dictionary.
 
     Returns
     -------
-    acq_dict: dictionary
+    acq_dict : :obj:`dict`
         Python dictionary in BIDS data dictionary format
     """
     acq_dict = {}
@@ -204,7 +267,24 @@ def get_acq_dictionary():
 
 
 def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
-    """Find unique sets of Key/Param groups across subjects."""
+    """Find unique sets of Key/Param groups across subjects.
+
+    This writes out the following files:
+    - <output_prefix>_AcqGrouping.tsv: A tsv with the mapping of subject/session to
+      acquisition group.
+    - <output_prefix>_AcqGrouping.json: A data dictionary for the AcqGrouping.tsv.
+    - <output_prefix>_AcqGroupInfo.txt: A text file with the summary of acquisition.
+    - <output_prefix>_AcqGroupInfo.json: A data dictionary for the AcqGroupInfo.txt.
+
+    Parameters
+    ----------
+    files_tsv : :obj:`str`
+        Path to the files tsv.
+    output_prefix : :obj:`str`
+        Prefix for output files.
+    acq_group_level : {"subject", "session"}
+        Level at which to group acquisitions.
+    """
     from bids import config
     from bids.layout import parse_file_entities
 
