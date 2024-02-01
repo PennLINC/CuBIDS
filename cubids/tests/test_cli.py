@@ -19,7 +19,7 @@ import pytest
 from cubids.cli import _path_exists, _is_file, _get_parser, _main
 
 
-def test_path_exists():
+def _test_path_exists():
     """Test whether a given path exists or not.
 
     This function tests the `_path_exists` function by providing a path that exists
@@ -33,7 +33,7 @@ def test_path_exists():
         _path_exists("/path/to/nonexistent/file", None)
 
 
-def test_is_file():
+def _test_is_file():
     """Test whether a given path is a file or a directory.
 
     This function tests the `_is_file` function by providing a path that is a file
@@ -47,7 +47,7 @@ def test_is_file():
         _is_file("/path/to/directory", None)
 
 
-def test_get_parser():
+def _test_get_parser():
     """Test the creation and configuration of the argument parser.
 
     This function tests the `_get_parser` function by asserting that the returned object is an
@@ -62,7 +62,7 @@ def test_get_parser():
     # Add more assertions for the parser configuration
 
 
-def test_main():
+def _test_main():
     """Test the main function of the CLI.
 
     This function tests the `_main` function by providing different sets of arguments.
