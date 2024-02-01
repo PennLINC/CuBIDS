@@ -1,15 +1,16 @@
 version: 2.1
 
 jobs:
-  set_up_conda:
+  run_pytests:
     machine:
       image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
           path: /home/circleci/src/CuBIDS
+
       - run:
-          name: install miniconda
+          name: Test CuBIDS (Python = << matrix.python_version >>)
           command: |
             export MINICONDA=/tmp/miniconda
             export PATH="$MINICONDA/bin:$PATH"
@@ -19,25 +20,6 @@ jobs:
             conda update conda
             conda info -a
 
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - miniconda
-
-  run_pytests:
-    machine:
-      image: ubuntu-2004:202201-02
-    working_directory: /home/circleci/src/CuBIDS
-    steps:
-      - checkout:
-          path: /home/circleci/src/CuBIDS
-
-      - attach_workspace:
-          at: /tmp
-
-      - run:
-          name: Test CuBIDS (Python = << matrix.python_version >>)
-          command: |
             export PATH=/tmp/miniconda/bin:$PATH
             conda create -n cubids python=<< matrix.python_version >> pip
             source activate cubids
@@ -81,11 +63,6 @@ workflows:
   version: 2
   build_test_deploy:
     jobs:
-      - set_up_conda:
-          filters:
-            tags:
-              only: /.*/
-
       - run_pytests:
           # Define the matrix for Python versions
           matrix:
@@ -94,8 +71,6 @@ workflows:
               - "3.9"
               - "3.10"
               - "3.11"
-          requires:
-            - set_up_conda
           filters:
             tags:
               only: /.*/
