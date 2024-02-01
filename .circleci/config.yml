@@ -62,6 +62,10 @@ jobs:
             conda create -n cov python=3.9 pip coverage
             source activate cov
 
+            # We need curl for the codecov upload
+            apt-get update
+            apt-get install -yqq curl
+
             cd /home/circleci/src/coverage/
             echo "Merge coverage files"
             coverage combine --data-file=/home/circleci/src/coverage/.coverage
