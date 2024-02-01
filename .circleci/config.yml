@@ -59,13 +59,13 @@ jobs:
       - run:
           name: Merge coverage files
           command: |
-            cd /home/circleci/src/coverage/
             conda create -n cubids python=3.9 pip
             source activate cubids
 
             # Install CuBIDS
             pip install -e .[tests]
 
+            cd /home/circleci/src/coverage/
             coverage combine --data-file=/home/circleci/src/coverage/.coverage
             coverage xml --data-file /home/circleci/src/coverage/.coverage -o /home/circleci/src/coverage/coverage.xml
       - codecov/upload:
