@@ -40,7 +40,6 @@ jobs:
             pip install -e .[tests]
 
             # Run tests
-            pytest cubids
             pytest --cov-append --cov-report term-missing --cov=cubids cubids
             mkdir /home/circleci/src/coverage
             mv /home/circleci/src/CuBIDS/.coverage /home/circleci/src/coverage/.coverage.<< parameters.python_version >>
