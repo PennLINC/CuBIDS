@@ -10,7 +10,7 @@ jobs:
           path: /home/circleci/src/CuBIDS
 
       - run:
-          name: Test CuBIDS (Python = << matrix.python_version >>)
+          name: Test CuBIDS
           command: |
             export MINICONDA=/tmp/miniconda
             export PATH="$MINICONDA/bin:$PATH"
@@ -60,7 +60,6 @@ jobs:
           command: python -m twine upload -u __token__ -p ${PYPI_TOKEN} dist/cubids*
 
 workflows:
-  version: 2
   build_test_deploy:
     jobs:
       - run_pytests:
