@@ -1,14 +1,22 @@
 version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.5
+
 jobs:
-  set_up_conda:
+  run_pytests:
+    parameters:
+      python_version:
+        type: string
+        default: "3.8"
     machine:
       image: ubuntu-2004:202201-02
     working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
           path: /home/circleci/src/CuBIDS
+
       - run:
-          name: install miniconda
+          name: Test CuBIDS
           command: |
             export MINICONDA=/tmp/miniconda
             export PATH="$MINICONDA/bin:$PATH"
@@ -17,7 +25,9 @@ jobs:
             conda config --set always_yes yes
             conda update conda
             conda info -a
-            conda create -n cubids python=3.9 pip
+
+            export PATH=/tmp/miniconda/bin:$PATH
+            conda create -n cubids python=<< parameters.python_version >> pip
             source activate cubids
             conda install -c conda-forge -y datalad
 
@@ -26,39 +36,40 @@ jobs:
             npm install -g yarn && \
             npm install -g bids-validator
 
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - miniconda
-
-  run_pytests:
-    machine:
-      image: ubuntu-2004:202201-02
-    working_directory: /home/circleci/src/CuBIDS
-    steps:
-      - checkout:
-          path: /home/circleci/src/CuBIDS
-
-      - attach_workspace:
-          at: /tmp
-
-      - run:
-          name: Test CuBIDS
-          command: |
-            export PATH=/tmp/miniconda/bin:$PATH
-            source activate cubids
-
             # Install CuBIDS
             pip install -e .[tests]
 
-            # Reinstall bids-validator
-            sudo apt update
-            sudo apt install nodejs npm
-            npm install -g yarn && \
-            npm install -g bids-validator
-
             # Run tests
-            pytest cubids
+            pytest --cov-append --cov-report term-missing --cov=cubids cubids
+            mkdir /home/circleci/src/coverage
+            mv /home/circleci/src/CuBIDS/.coverage /home/circleci/src/coverage/.coverage.<< parameters.python_version >>
+      - persist_to_workspace:
+          root: /home/circleci/src/coverage
+          paths:
+              - .coverage.<< parameters.python_version >>
+
+  merge_coverage:
+    docker:
+        - image: continuumio/miniconda3
+    steps:
+      - checkout:
+          path: /home/circleci/src/CuBIDS
+      - attach_workspace:
+          at: /home/circleci/src/coverage
+      - run:
+          name: Merge coverage files
+          command: |
+            conda create -n cov python=3.9 pip coverage
+            source activate cov
+
+            cd /home/circleci/src/coverage/
+            echo "Merge coverage files"
+            coverage combine --data-file=/home/circleci/src/coverage/.coverage
+            echo "Generate XML report"
+            coverage xml --data-file /home/circleci/src/coverage/.coverage -o /home/circleci/src/coverage/coverage.xml
+            echo "Upload to Codecov"
+      - codecov/upload:
+          file: /home/circleci/src/coverage/coverage.xml
 
   deployable:
     docker:
@@ -84,20 +95,27 @@ jobs:
           command: python -m twine upload -u __token__ -p ${PYPI_TOKEN} dist/cubids*
 
 workflows:
-  version: 2
   build_test_deploy:
     jobs:
-      - set_up_conda:
+      - run_pytests:
+          # Define the matrix for Python versions
+          matrix:
+            parameters:
+              python_version:
+                - "3.8"
+                - "3.9"
+                - "3.10"
+                - "3.11"
           filters:
             tags:
               only: /.*/
 
-      - run_pytests:
+      - merge_coverage:
           requires:
-            - set_up_conda
+            - run_pytests
           filters:
             tags:
-              only: /.*/
+              ignore: /.*/
 
       - deployable:
           requires:
