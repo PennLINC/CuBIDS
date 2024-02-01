@@ -63,11 +63,15 @@ jobs:
             source activate cubids
 
             # Install CuBIDS
+            echo "Install CuBIDS"
             pip install -e .[tests]
 
             cd /home/circleci/src/coverage/
+            echo "Merge coverage files"
             coverage combine --data-file=/home/circleci/src/coverage/.coverage
+            echo "Generate XML report"
             coverage xml --data-file /home/circleci/src/coverage/.coverage -o /home/circleci/src/coverage/coverage.xml
+            echo "Upload to Codecov"
       - codecov/upload:
           file: /home/circleci/src/coverage/coverage.xml
 
