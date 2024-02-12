@@ -259,9 +259,12 @@ def get_acq_dictionary():
     acq_dict = {}
     acq_dict["subject"] = {"Description": "Participant ID"}
     acq_dict["session"] = {"Description": "Session ID"}
-    docs = " https://cubids.readthedocs.io/en/latest/about.html#definitions"
-    desc = "Acquisition Group. See Read the Docs for more information"
-    acq_dict["AcqGroup"] = {"Description": desc + docs}
+    acq_dict["AcqGroup"] = {
+        "Description": (
+            "Acquisition Group. See Read the Docs for more information "
+            "https://cubids.readthedocs.io/en/latest/about.html#definitions"
+        )
+    }
 
     return acq_dict
 
@@ -290,9 +293,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
 
     config.set_option("extension_initial_dot", True)
 
-    files_df = pd.read_table(
-        files_tsv,
-    )
+    files_df = pd.read_table(files_tsv)
     acq_groups = defaultdict(list)
     for _, row in files_df.iterrows():
         file_entities = parse_file_entities(row.FilePath)

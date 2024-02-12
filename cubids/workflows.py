@@ -287,9 +287,7 @@ def group(bids_dir, container, acq_group_level, config, output_prefix):
             acq_group_level=acq_group_level,
             grouping_config=config,
         )
-        bod.get_tsvs(
-            str(output_prefix),
-        )
+        bod.get_tsvs(str(output_prefix))
         sys.exit(0)
 
     # Run it through a container

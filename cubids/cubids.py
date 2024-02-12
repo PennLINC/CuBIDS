@@ -11,12 +11,11 @@ from pathlib import Path
 from shutil import copyfile, copytree
 
 import bids
-import bids.layout
 import datalad.api as dlapi
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from bids.layout import parse_file_entities
+from bids.layout import BIDSLayout, BIDSLayoutIndexer, parse_file_entities
 from bids.utils import listify
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -24,6 +23,7 @@ from tqdm import tqdm
 from cubids.config import load_config
 from cubids.constants import ID_VARS, NON_KEY_ENTITIES
 from cubids.metadata_merge import check_merging_operations, group_by_acquisition_sets
+from cubids.utils import resolve_bids_uri
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
@@ -138,20 +138,22 @@ class CuBIDS(object):
         validate : :obj:`bool`, optional
             If True, validate the BIDS dataset. Default is False.
         """
-        # create BIDS Layout Indexer class
 
+        # create BIDS Layout Indexer class
         ignores = [
             "code",
             "stimuli",
             "sourcedata",
             "models",
+            "derivatives",
+            # Ignore all dot directories
             re.compile(r"^\."),
             re.compile(r"/\."),
         ]
 
-        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=False)
+        indexer = BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=True)
 
-        self._layout = bids.BIDSLayout(self.path, validate=validate, indexer=indexer)
+        self._layout = BIDSLayout(self.path, validate=validate, indexer=indexer)
 
     def create_cubids_code_dir(self):
         """Create CuBIDS code directory.
@@ -473,13 +475,17 @@ class CuBIDS(object):
         suffix = entities["suffix"]
         entity_file_keys = []
 
-        # Entities that may be in the filename?
+        # Entities can be used to distinguish files.
+        # Think of these as non-file collection entities, or acquisition-distinguishing entities.
         file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
 
+        # Find distinguishing entities from the file name.
         for key in file_keys:
             if key in list(entities.keys()):
                 entity_file_keys.append(key)
 
+        # Subject is always present, and session is often present.
+        # XXX: Does this enforce a longitudinal dataset design?
         sub = get_key_name(filepath, "sub")
         ses = get_key_name(filepath, "ses")
         sub_ses = sub + "_" + ses
@@ -488,6 +494,9 @@ class CuBIDS(object):
             # XXX: This adds an extra leading zero to run.
             entities["run"] = "0" + str(entities["run"])
 
+        # Construct a version of the filename that only includes distinguishing entities.
+        # XXX: This is not a good thing. The output filename should retain the original
+        # filename's file-collection entities (e.g., echo).
         filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
         filename = (
             filename.replace("acquisition", "acq")
@@ -501,6 +510,8 @@ class CuBIDS(object):
 
         # CHECK TO SEE IF DATATYPE CHANGED
         # datatype may be overridden/changed if the original file is located in the wrong folder.
+        # XXX: In order for this to happen, the datatype in filepath must be different from the
+        # datatype in entities.
         dtypes = ["anat", "func", "perf", "fmap", "dwi"]
         dtype_orig = ""
         for dtype in dtypes:
@@ -510,11 +521,12 @@ class CuBIDS(object):
         if "datatype" in entities.keys():
             dtype_new = entities["datatype"]
             if entities["datatype"] != dtype_orig:
-                print("WARNING: DATATYPE CHANGE DETECETD")
+                print("WARNING: DATATYPE CHANGE DETECTED")
         else:
             dtype_new = dtype_orig
 
         # Construct the new filename
+        # XXX: This enforces a longitudinal dataset design.
         new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
 
         # Add the scan path + new path to the lists of old, new filenames
@@ -636,7 +648,7 @@ class CuBIDS(object):
                         data["IntendedFor"].append(_get_intended_for_reference(new_path))
 
                 # update the json with the new data dictionary
-                _update_json(filename_with_if, data)
+                # _update_json(filename_with_if, data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -870,32 +882,43 @@ class CuBIDS(object):
 
     def _cache_fieldmaps(self):
         """Search all fieldmaps and create a lookup for each file."""
-        suffix = "(phase1|phasediff|epi|fieldmap)"
+        root = Path(self.layout.root)
+        fmap_suffixes = ["phase1", "phasediff", "epi", "fieldmap"]
         fmap_files = self.layout.get(
-            suffix=suffix, regex_search=True, extension=[".nii.gz", ".nii"]
+            datatype="fmap",
+            suffix=fmap_suffixes,
+            extension=[".nii.gz", ".nii"],
         )
 
         misfits = []
         files_to_fmaps = defaultdict(list)
         for fmap_file in tqdm(fmap_files):
-            # intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
-            fmap_json = img_to_new_ext(fmap_file.path, ".json")
-            metadata = get_sidecar_metadata(fmap_json)
-            if metadata == "Erroneous sidecar":
-                print("Error parsing sidecar: ", str(fmap_json))
+            full_path = fmap_file.path
+            fmap_metadata = fmap_file.get_metadata()
+            if "IntendedFor" not in fmap_metadata:
+                # fmap file detected, no intended for found (e.g., B0FieldIdentifier)
+                if "B0FieldIdentifier" not in fmap_metadata:
+                    misfits.append(fmap_file)
+
                 continue
-            if_list = metadata.get("IntendedFor")
-            intentions = listify(if_list)
-            subject_prefix = f"sub-{fmap_file.entities['subject']}"
 
-            if intentions is not None:
-                for intended_for in intentions:
-                    full_path = Path(self.path) / subject_prefix / intended_for
-                    files_to_fmaps[str(full_path)].append(fmap_file)
+            intended_fors = listify(fmap_file.get_metadata()["IntendedFor"])
+            for intended_for in intended_fors:
+                if intended_for.startswith("bids:"):
+                    resolved_intended_for = (
+                        resolve_bids_uri(
+                            intended_for,
+                            root,
+                            dataset_links=self.layout.get_dataset_description().get(
+                                "DatasetLinks", {}
+                            ),
+                        ),
+                    )
+                else:
+                    subject = f"sub-{fmap_file.entities['subject']}"
+                    resolved_intended_for = root / subject / intended_for
 
-            # fmap file detected, no intended for found
-            else:
-                misfits.append(fmap_file)
+                files_to_fmaps[str(full_path)].append(resolved_intended_for)
 
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
@@ -925,7 +948,10 @@ class CuBIDS(object):
         key_entities["extension"] = ".nii[.gz]*"
 
         matching_files = self.layout.get(
-            return_type="file", scope="self", regex_search=True, **key_entities
+            return_type="file",
+            scope="self",
+            regex_search=True,
+            **key_entities,
         )
 
         # ensure files who's entities contain key_entities but include other
@@ -955,10 +981,8 @@ class CuBIDS(object):
             self.grouping_config,
             modality,
             self.keys_files,
+            layout=self.layout,
         )
-
-        if ret == "erroneous sidecar found":
-            return "erroneous sidecar found"
 
         # add modality to the return tuple
         l_ret = list(ret)
@@ -1276,27 +1300,29 @@ class CuBIDS(object):
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
 
     def get_key_groups(self):
-        """Identify the key groups for the bids dataset."""
+        """Identify the key groups for the BIDS dataset."""
         # reset self.keys_files
         self.keys_files = {}
 
         key_groups = set()
 
-        for path in Path(self.path).rglob("sub-*/**/*.*"):
+        # Find all files in the BIDS directory
+        for path in self.layout.get(extension=["nii", "nii.gz"]):
+            path = path.path
             # ignore all dot directories
             if "/." in str(path):
                 continue
 
-            if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
-                key_groups.update((_file_to_key_group(path),))
+            # Identify data files (limited to NIfTIs at the moment)
+            key_groups.update((_file_to_key_group(path),))
 
-                # Fill the dictionary of key group, list of filenames pairrs
-                ret = _file_to_key_group(path)
+            # Fill the dictionary of key group, list of filenames pairrs
+            ret = _file_to_key_group(path)
 
-                if ret not in self.keys_files.keys():
-                    self.keys_files[ret] = []
+            if ret not in self.keys_files.keys():
+                self.keys_files[ret] = []
 
-                self.keys_files[ret].append(path)
+            self.keys_files[ret].append(path)
 
         return sorted(key_groups)
 
@@ -1422,6 +1448,7 @@ def _get_param_groups(
     grouping_config,
     modality,
     keys_files,
+    layout,
 ):
     """Find a list of *parameter groups* from a list of files.
 
@@ -1465,57 +1492,54 @@ def _get_param_groups(
     # path needs to be relative to the root with no leading prefix
 
     for path in files:
-        # metadata = layout.get_metadata(path)
-        metadata = get_sidecar_metadata(img_to_new_ext(path, ".json"))
-        if metadata == "Erroneous sidecar":
-            print("Error parsing sidecar: ", img_to_new_ext(path, ".json"))
-        else:
-            intentions = metadata.get("IntendedFor", [])
-            slice_times = metadata.get("SliceTiming", [])
+        metadata = layout.get_metadata(path)
 
-            wanted_keys = metadata.keys() & imaging_params
-            example_data = {key: metadata[key] for key in wanted_keys}
-            example_data["KeyGroup"] = key_group_name
+        intentions = metadata.get("IntendedFor", [])
+        slice_times = metadata.get("SliceTiming", [])
 
-            # Get the fieldmaps out and add their types
-            if "FieldmapKey" in relational_params:
-                fieldmap_types = sorted(
-                    [_file_to_key_group(fmap.path) for fmap in fieldmap_lookup[path]]
-                )
+        wanted_keys = metadata.keys() & imaging_params
+        example_data = {key: metadata[key] for key in wanted_keys}
+        example_data["KeyGroup"] = key_group_name
 
-                # check if config says columns or bool
-                if relational_params["FieldmapKey"]["display_mode"] == "bool":
-                    if len(fieldmap_types) > 0:
-                        example_data["HasFieldmap"] = True
-                    else:
-                        example_data["HasFieldmap"] = False
+        # Get the fieldmaps out and add their types
+        if "FieldmapKey" in relational_params:
+            fieldmap_types = sorted(
+                [_file_to_key_group(fmap.path) for fmap in fieldmap_lookup[path]]
+            )
+
+            # check if config says columns or bool
+            if relational_params["FieldmapKey"]["display_mode"] == "bool":
+                if len(fieldmap_types) > 0:
+                    example_data["HasFieldmap"] = True
                 else:
-                    for fmap_num, fmap_type in enumerate(fieldmap_types):
-                        example_data[f"FieldmapKey{fmap_num:02d}"] = fmap_type
+                    example_data["HasFieldmap"] = False
+            else:
+                for fmap_num, fmap_type in enumerate(fieldmap_types):
+                    example_data[f"FieldmapKey{fmap_num:02d}"] = fmap_type
 
-            # Add the number of slice times specified
-            if "NSliceTimes" in derived_params:
-                example_data["NSliceTimes"] = len(slice_times)
+        # Add the number of slice times specified
+        if "NSliceTimes" in derived_params:
+            example_data["NSliceTimes"] = len(slice_times)
 
-            example_data["FilePath"] = path
+        example_data["FilePath"] = path
 
-            # If it's a fieldmap, see what key group it's intended to correct
-            if "IntendedForKey" in relational_params:
-                intended_key_groups = sorted(
-                    [_file_to_key_group(intention) for intention in intentions]
-                )
+        # If it's a fieldmap, see what key group it's intended to correct
+        if "IntendedForKey" in relational_params:
+            intended_key_groups = sorted(
+                [_file_to_key_group(intention) for intention in intentions]
+            )
 
-                # check if config says columns or bool
-                if relational_params["IntendedForKey"]["display_mode"] == "bool":
-                    if len(intended_key_groups) > 0:
-                        example_data["UsedAsFieldmap"] = True
-                    else:
-                        example_data["UsedAsFieldmap"] = False
+            # check if config says columns or bool
+            if relational_params["IntendedForKey"]["display_mode"] == "bool":
+                if len(intended_key_groups) > 0:
+                    example_data["UsedAsFieldmap"] = True
                 else:
-                    for intention_num, intention_key_group in enumerate(intended_key_groups):
-                        example_data[f"IntendedForKey{intention_num:02d}"] = intention_key_group
+                    example_data["UsedAsFieldmap"] = False
+            else:
+                for intention_num, intention_key_group in enumerate(intended_key_groups):
+                    example_data[f"IntendedForKey{intention_num:02d}"] = intention_key_group
 
-            dfs.append(example_data)
+        dfs.append(example_data)
 
     # Assign each file to a ParamGroup
 
