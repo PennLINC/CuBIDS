@@ -456,8 +456,8 @@ class CuBIDS(object):
         -----
         This is the function I need to spend the most time on, since it has entities hardcoded.
         """
-        exts = Path(filepath).suffixes
-        old_ext = "".join(exts)
+        bids_file = self.layout.get_file(filepath)
+        old_ext = bids_file.entities["extension"]  # assume it starts with .
 
         suffix = entities["suffix"]
         entity_file_keys = []
@@ -506,23 +506,19 @@ class CuBIDS(object):
                 dtype_orig = dtype
 
         if "datatype" in entities.keys():
-            dtype_new = entities["datatype"]
             if entities["datatype"] != dtype_orig:
                 print("WARNING: DATATYPE CHANGE DETECTED")
-        else:
-            dtype_new = dtype_orig
 
         # Construct the new filename
-        # XXX: This enforces a longitudinal dataset design.
-        new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
+        new_path = self.layout.build_path(entities)
 
         # Add the scan path + new path to the lists of old, new filenames
         self.old_filenames.append(filepath)
         self.new_filenames.append(new_path)
 
         # NOW NEED TO RENAME ASSOCIATED FILES
-        # bids_file = self.layout.get_file(filepath)
-        bids_file = filepath
+        # XXX: What do we count as associated files?
+        bids_file = self.layout.get_file(filepath)
         # associations = bids_file.get_associations()
         associations = self.get_nifti_associations(str(bids_file))
         for assoc_path in associations:
@@ -741,6 +737,8 @@ class CuBIDS(object):
     def _purge_associations(self, scans):
         """Purge field map JSONs' IntendedFor references.
 
+        XXX: Why purge associations instead of replacing them with new associations?
+
         Parameters
         ----------
         scans : :obj:`list` of :obj:`str`
@@ -752,6 +750,7 @@ class CuBIDS(object):
         for scan in scans:
             if_scans.append(_get_intended_for_reference(self.path + scan))
 
+        # XXX: Session folders are not guaranteed to exist.
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
             # json_file = self.layout.get_file(str(path))
             # data = json_file.get_dict()
@@ -857,6 +856,7 @@ class CuBIDS(object):
 
         This uses globbing to find files with the same path, entities, and suffix as the NIfTI,
         but with a different extension.
+        This does not account for inheritance.
         """
         # get all assocation files of a nifti image
         no_ext_file = str(nifti).split("/")[-1].split(".")[0]
@@ -883,6 +883,7 @@ class CuBIDS(object):
             full_path = fmap_file.path
             fmap_metadata = fmap_file.get_metadata()
             if "IntendedFor" not in fmap_metadata:
+                print(f"{full_path} does not have IntendedFor")
                 # fmap file detected, no intended for found (e.g., B0FieldIdentifier)
                 if "B0FieldIdentifier" not in fmap_metadata:
                     misfits.append(fmap_file)
@@ -905,7 +906,7 @@ class CuBIDS(object):
                     subject = f"sub-{fmap_file.entities['subject']}"
                     resolved_intended_for = root / subject / intended_for
 
-                files_to_fmaps[str(full_path)].append(resolved_intended_for)
+                files_to_fmaps[str(full_path)].append(str(resolved_intended_for))
 
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
@@ -931,17 +932,19 @@ class CuBIDS(object):
         """
         if not self.fieldmaps_cached:
             raise Exception("Fieldmaps must be cached to find parameter groups.")
+
         key_entities = _key_group_to_entities(key_group)
-        key_entities["extension"] = ".nii[.gz]*"
+        print(key_group)
+        print(key_entities)
+        key_entities["extension"] = ["nii", "nii.gz"]
 
         matching_files = self.layout.get(
             return_type="file",
             scope="self",
-            regex_search=True,
             **key_entities,
         )
 
-        # ensure files who's entities contain key_entities but include other
+        # ensure files whose entities contain key_entities but include other
         # entities do not also get added to matching_files
         to_include = []
         for filepath in matching_files:
@@ -1294,22 +1297,22 @@ class CuBIDS(object):
         key_groups = set()
 
         # Find all files in the BIDS directory
-        for path in self.layout.get(extension=["nii", "nii.gz"]):
-            path = path.path
+        for bids_file in self.layout.get(extension=["nii", "nii.gz"]):
+            file_path = bids_file.path
             # ignore all dot directories
-            if "/." in str(path):
+            if "/." in str(file_path):
                 continue
 
             # Identify data files (limited to NIfTIs at the moment)
-            key_groups.update((_file_to_key_group(path),))
+            key_groups.update((_file_to_key_group(file_path),))
 
             # Fill the dictionary of key group, list of filenames pairrs
-            ret = _file_to_key_group(path)
+            ret = _file_to_key_group(file_path)
 
             if ret not in self.keys_files.keys():
                 self.keys_files[ret] = []
 
-            self.keys_files[ret].append(path)
+            self.keys_files[ret].append(file_path)
 
         return sorted(key_groups)
 
@@ -1503,6 +1506,13 @@ def _get_param_groups(
             fieldmap_types = sorted(
                 [_file_to_key_group(fmap.path) for fmap in fieldmap_lookup[path]]
             )
+            print()
+            print("TESTING")
+            print(path)
+            print(fieldmap_lookup[path])
+            print(fieldmap_types)
+            print("END TESTING")
+            print()
 
             # check if config says columns or bool
             if relational_params["FieldmapKey"]["display_mode"] == "bool":
