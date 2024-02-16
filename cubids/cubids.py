@@ -745,7 +745,7 @@ class CuBIDS(object):
             List of file paths to remove from field map JSONs.
         """
         # truncate all paths to intendedfor reference format
-        # sub, ses, modality only (no self.path)
+        # sub, ses, datatype only (no self.path)
         if_scans = []
         for scan in scans:
             if_scans.append(_get_intended_for_reference(self.path + scan))
@@ -937,7 +937,7 @@ class CuBIDS(object):
         key_entities["extension"] = ["nii", "nii.gz"]
 
         matching_files = self.layout.get(
-            return_type="file",
+            return_type="object",
             scope="self",
             **key_entities,
         )
@@ -946,35 +946,30 @@ class CuBIDS(object):
         # entities do not also get added to matching_files
         to_include = []
         for filepath in matching_files:
-            f_key_group = _file_to_key_group(filepath)
+            f_key_group = _file_to_key_group(filepath.path)
 
             if f_key_group == key_group:
-                to_include.append(filepath)
+                to_include.append(filepath.path)
 
-        # get the modality associated with the key group
-        modalities = ["/dwi/", "/anat/", "/func/", "/perf/", "/fmap/"]
-        modality = ""
-        for mod in modalities:
-            if mod in filepath:
-                modality = mod.replace("/", "").replace("/", "")
+        # get the datatype associated with the key group
+        datatype = filepath.get_entities()["datatype"]
 
-        if modality == "":
-            print("Unusual Modality Detected")
-            modality = "other"
+        if datatype not in ("anat", "func", "dwi", "fmap", "perf"):
+            print(f"Unusual Datatype Detected: '{datatype}'")
 
         ret = _get_param_groups(
-            to_include,
-            self.fieldmap_lookup,
-            key_group,
-            self.grouping_config,
-            modality,
-            self.keys_files,
+            files=to_include,
+            fieldmap_lookup=self.fieldmap_lookup,
+            key_group_name=key_group,
+            grouping_config=self.grouping_config,
+            datatype=datatype,
+            keys_files=self.keys_files,
             layout=self.layout,
         )
 
-        # add modality to the return tuple
+        # add datatype to the return tuple
         l_ret = list(ret)
-        l_ret.append(modality)
+        l_ret.append(datatype)
         tup_ret = tuple(l_ret)
         return tup_ret
 
@@ -983,16 +978,18 @@ class CuBIDS(object):
 
         This function creates a data dictionary from the grouping config file.
 
-        XXX: Why would it include parameters from all modalities,
+        XXX: Why would it include parameters from all datatypes,
         instead of just the ones in the dataset?
+        XXX: Why only keep the first datatype's parameters?
+        What if parameter settings (e.g., tolerance) are different for different datatypes?
         """
         # Add sidecar_params to data_dict.
         # If there are distinct definitions for each datatype,
         # it only adds the first one.
         sidecar_params = self.grouping_config.get("sidecar_params")
-        for mod in sidecar_params.keys():
-            mod_dict = sidecar_params[mod]
-            for s_param in mod_dict.keys():
+        for datatype in sidecar_params.keys():
+            datatype_dict = sidecar_params[datatype]
+            for s_param in datatype_dict.keys():
                 if s_param not in self.data_dict.keys():
                     self.data_dict[s_param] = {"Description": "Scanning Parameter"}
 
@@ -1008,59 +1005,58 @@ class CuBIDS(object):
         # If there are distinct definitions for each datatype,
         # it only adds the first one.
         derived_params = self.grouping_config.get("derived_params")
-        for mod in derived_params.keys():
-            mod_dict = derived_params[mod]
-            for d_param in mod_dict.keys():
+        for datatype in derived_params.keys():
+            datatype_dict = derived_params[datatype]
+            for d_param in datatype_dict.keys():
                 if d_param not in self.data_dict.keys():
                     self.data_dict[d_param] = {"Description": "NIfTI Header Parameter"}
 
-        # Manually add non-sidecar columns/descriptions to data_dict
-        self.data_dict["ManualCheck"] = {
-            "Description": "Column where users mark groups to manually check",
+        # Manually add non-sidecar column descriptions to data_dict
+        manual_dict = {
+            "KeyGroup": {
+                "Description": (
+                    "A set of scans whose filenames share all BIDS filename key-value pairs, "
+                    "excluding subject and session"
+                ),
+            },
+            "KeyGroupCount": {"Description": "Number of participants in a Key Group"},
+            "ParamGroup": {
+                "Description": (
+                    "The set of scans with identical metadata parameters in their sidecars "
+                    "(defined within a Key Group and denoted numerically)"
+                ),
+            },
+            "KeyParamGroup": {
+                "Description": (
+                    "Key Group name and Param Group number separated by a double underscore"
+                ),
+            },
+            "FilePath": {"Description": "Location of file"},
+            "Counts": {"Description": "Number of Files in the Parameter Group"},
+            "Datatype": {"Description": "MRI image type"},
+            "MergeInto": {"Description": "Column to mark groups to merge into another group"},
+            "RenameKeyGroup": {
+                "Description": (
+                    "Auto-generated suggested rename of Non-Dominant Groups based on variant "
+                    "scanning parameters"
+                ),
+            },
+            "Notes": {"Description": "Column to mark notes about the param group"},
+            "ManualCheck": {"Description": "Column where users mark groups to manually check"},
         }
-        self.data_dict["Notes"] = {"Description": "Column to mark notes about the param group"}
-        self.data_dict["RenameKeyGroup"] = {
-            "Description": (
-                "Auto-generated suggested rename of Non-Domiannt Groups based on variant "
-                "scanning parameters"
-            ),
-        }
-        self.data_dict["Counts"] = {"Description": "Number of Files in the Parameter Group"}
-        self.data_dict["Modality"] = {"Description": "MRI image type"}
-        self.data_dict["MergeInto"] = {
-            "Description": "Column to mark groups to merge into another group",
-        }
-        self.data_dict["FilePath"] = {"Description": "Location of file"}
-        self.data_dict["KeyGroupCount"] = {"Description": "Number of participants in a Key Group"}
-        self.data_dict["KeyGroup"] = {
-            "Description": (
-                "A set of scans whose filenames share all BIDS filename key-value pairs, "
-                "excluding subject and session"
-            ),
-        }
-        self.data_dict["ParamGroup"] = {
-            "Description": (
-                "The set of scans with identical metadata parameters in their sidecars "
-                "(defined within a Key Group and denoted numerically)"
-            ),
-        }
-        self.data_dict["KeyParamGroup"] = {
-            "Description": (
-                "Key Group name and Param Group number separated by a double underscore"
-            ),
-        }
+        self.data_dict.update(manual_dict)
 
     def get_data_dictionary(self, df):
-        """Create a BIDS data dictionary from dataframe columns.
+        """Extract the column descriptions for a DataFrame.
 
         Parameters
         ----------
-        df : Pandas DataFrame
+        df : :obj:`pandas.DataFrame`
             Pre export TSV that will be converted to a json dictionary
 
         Returns
         -------
-        data_dict : dictionary
+        data_dict : :obj:`dict`
             Python dictionary in BIDS data dictionary format
         """
         json_dict = {}
@@ -1074,21 +1070,6 @@ class CuBIDS(object):
             if col in col_list:
                 json_dict[col] = self.data_dict[col]
 
-        # for col in range(len(col_list)):
-        #     col_dict[col + 1] = col_list[col]
-
-        # header_dict = {}
-        # # build header dictionary
-        # header_dict['Long Description'] = name
-        # description = 'https://cubids.readthedocs.io/en/latest/usage.html'
-        # header_dict['Description'] = description
-        # header_dict['Version'] = 'CuBIDS v1.0.5'
-        # header_dict['Levels'] = col_dict
-
-        # # Build top level dictionary
-        # data_dict = {}
-        # data_dict[name] = header_dict
-
         return json_dict
 
     def get_param_groups_dataframes(self):
@@ -1101,7 +1082,7 @@ class CuBIDS(object):
             (
                 labeled_file_params,
                 param_summary,
-                modality,
+                datatype,
             ) = self.get_param_groups_from_key_group(key_group)
 
             if labeled_file_params is None:
@@ -1140,9 +1121,8 @@ class CuBIDS(object):
 
         # Now automate suggested rename based on variant params
         # loop though imaging and derived param keys
-
         sidecar = self.grouping_config.get("sidecar_params")
-        sidecar = sidecar[modality]
+        sidecar = sidecar[datatype]
 
         relational = self.grouping_config.get("relational_params")
 
@@ -1276,8 +1256,8 @@ class CuBIDS(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        summary = summary.sort_values(by=["Modality", "KeyGroupCount"], ascending=[True, False])
-        big_df = big_df.sort_values(by=["Modality", "KeyGroupCount"], ascending=[True, False])
+        summary = summary.sort_values(by=["Datatype", "KeyGroupCount"], ascending=[True, False])
+        big_df = big_df.sort_values(by=["Datatype", "KeyGroupCount"], ascending=[True, False])
 
         # Create json dictionaries for summary and files tsvs
         self.create_data_dictionary()
@@ -1443,11 +1423,12 @@ def _get_intended_for_reference(scan):
 
 
 def _get_param_groups(
+    *,
     files,
     fieldmap_lookup,
     key_group_name,
     grouping_config,
-    modality,
+    datatype,
     keys_files,
     layout,
 ):
@@ -1480,9 +1461,9 @@ def _get_param_groups(
 
     # Split the config into separate parts
     # First we have BIDS metadata fields from the imaging files' sidecars.
-    # The config has tolerances for different fields and modalities.
+    # The config has tolerances for different fields and datatypes.
     imaging_params = grouping_config.get("sidecar_params", {})
-    imaging_params = imaging_params[modality]
+    imaging_params = imaging_params[datatype]
 
     # Now we have relational parameters, which are fields that link
     # between files in the dataset. For example, a fieldmap file is related to
@@ -1492,7 +1473,7 @@ def _get_param_groups(
     # Finally, we have derived parameters, which are fields that are calculated
     # by CuBIDS, rather than drawn from the sidecar files directly.
     derived_params = grouping_config.get("derived_params")
-    derived_params = derived_params[modality]
+    derived_params = derived_params[datatype]
 
     imaging_params.update(derived_params)
 
@@ -1544,11 +1525,11 @@ def _get_param_groups(
 
     # Assign each file to a ParamGroup
     # Round parameter groups based on precision in config
-    df = round_params(pd.DataFrame(dfs), grouping_config, modality)
+    df = round_params(pd.DataFrame(dfs), grouping_config, datatype)
     print(df.shape)
 
     # Cluster param groups based on tolerance
-    df = format_params(df, grouping_config, modality)
+    df = format_params(df, grouping_config, datatype)
     print(df.shape)
     # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
@@ -1568,8 +1549,8 @@ def _get_param_groups(
     deduped = deduped.drop_duplicates(subset=check_cols, ignore_index=True)
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
 
-    # add the modality as a column
-    deduped["Modality"] = modality
+    # add the datatype as a column
+    deduped["Datatype"] = datatype
 
     # add key group count column (will delete later)
     deduped["KeyGroupCount"] = len(keys_files[key_group_name])
@@ -1612,10 +1593,10 @@ def _get_param_groups(
     return ordered_labeled_files, param_groups_with_counts
 
 
-def round_params(param_group_df, config, modality):
+def round_params(param_group_df, config, datatype):
     """Round columns' values in DataFrame according to requested precision."""
-    to_format = config["sidecar_params"][modality]
-    to_format.update(config["derived_params"][modality])
+    to_format = config["sidecar_params"][datatype]
+    to_format.update(config["derived_params"][datatype])
 
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
@@ -1644,7 +1625,7 @@ def get_sidecar_metadata(json_file):
         return "Erroneous sidecar"
 
 
-def format_params(param_group_df, config, modality):
+def format_params(param_group_df, config, datatype):
     """Run AgglomerativeClustering on param groups and add columns to dataframe.
 
     Parameters
@@ -1655,23 +1636,23 @@ def format_params(param_group_df, config, modality):
     config : :obj:`dict`
         Configuration for defining parameter groups.
         This dictionary has two keys: ``'sidecar_params'`` and ``'derived_params'``.
-    modality : :obj:`str`
-        Modality of the scan.
+    datatype : :obj:`str`
+        Datatype of the scan.
         This is used to select the correct configuration from the config dict.
 
     Returns
     -------
     param_group_df : :obj:`pandas.DataFrame`
         An updated version of the input data frame,
-        with a new column added for each element in the modality's
+        with a new column added for each element in the datatype's
         ``'sidecar_params'`` and ``'derived_params'`` dictionaries.
         The new columns will have the name ``'Cluster_' + column_name``,
         and will contain the cluster labels for each parameter group.
 
     Notes
     -----
-    ``'sidecar_params'`` is a dictionary of dictionaries, where keys are modalities.
-    The modality-wise dictionary's keys are names of BIDS fields to directly include
+    ``'sidecar_params'`` is a dictionary of dictionaries, where keys are datatypes.
+    The datatype-wise dictionary's keys are names of BIDS fields to directly include
     in the Parameter Groupings,
     and the values describe the parameters by which those BIDS' fields are compared.
     For example,
@@ -1679,12 +1660,12 @@ def format_params(param_group_df, config, modality):
     means that the RepetitionTime field should be compared across files and flagged as a
     variant if it differs from others by 0.000001 or more.
 
-    ``'derived_params'`` is a dictionary of dictionaries, where keys are modalities.
-    The modality-wise dictionary's keys are names of BIDS fields to derive from the
+    ``'derived_params'`` is a dictionary of dictionaries, where keys are datatypes.
+    The datatype-wise dictionary's keys are names of BIDS fields to derive from the
     NIfTI header and include in the Parameter Groupings.
     """
-    to_format = config["sidecar_params"][modality]
-    to_format.update(config["derived_params"][modality])
+    to_format = config["sidecar_params"][datatype]
+    to_format.update(config["derived_params"][datatype])
 
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:

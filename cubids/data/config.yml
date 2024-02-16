@@ -172,7 +172,7 @@ derived_params:
     ImageOrientation:
       suggest_variant_rename: yes
 # These fields reflect relationships between images.
-# Not modality specific
+# Not datatype-specific
 relational_params:
   FieldmapKey:
     # can be
