@@ -272,11 +272,11 @@ class CuBIDS(object):
                 "ImageOrientation": "".join(nb.orientations.aff2axcodes(img.affine)) + "+",
             }
 
-            # Replace the last occurrence of .nii[.gz] with .json to find
-            # the no-inheritance sidecar
-            sidecar = ".json".join(nifti_file.path.rsplit(nifti_file.entities["extension"], 1))
-            # add nifti info to corresponding sidecars​
-            if not Path(sidecar).exists():
+            # Find the no-inheritance sidecar, if available
+            file_entities = nifti_file.get_entities()
+            file_entities["extension"] = "json"
+            sidecar = self.layout.build_path(file_entities)
+            if Path(sidecar).exists():
                 print(f"No sidecar found for {nifti_file.path}. Creating one.")
                 sidecar_metadata = {}
             else:
@@ -296,9 +296,8 @@ class CuBIDS(object):
     def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True):
         """Apply changes documented in the edited summary tsv and generate the new tsv files.
 
-        This function looks at the RenameKeyGroup and MergeInto
-        columns and modifies the bids dataset according to the
-        specified changs.
+        This function looks at the RenameKeyGroup and MergeInto columns and modifies the BIDS
+        dataset according to the specified changs.
 
         Parameters
         ----------
@@ -340,6 +339,7 @@ class CuBIDS(object):
 
             # Get a source json file
             img_full_path = self.path + source_files.iloc[0].FilePath
+
             source_json = img_to_new_ext(img_full_path, ".json")
             for dest_nii in dest_files.FilePath:
                 dest_json = img_to_new_ext(self.path + dest_nii, ".json")
@@ -458,6 +458,7 @@ class CuBIDS(object):
         """
         bids_file = self.layout.get_file(filepath)
         old_ext = bids_file.entities["extension"]  # assume it starts with .
+        old_ext = old_ext if old_ext.startswith(".") else f".{old_ext}"
 
         suffix = entities["suffix"]
         entity_file_keys = []
@@ -499,15 +500,10 @@ class CuBIDS(object):
         # datatype may be overridden/changed if the original file is located in the wrong folder.
         # XXX: In order for this to happen, the datatype in filepath must be different from the
         # datatype in entities.
-        dtypes = ["anat", "func", "perf", "fmap", "dwi"]
-        dtype_orig = ""
-        for dtype in dtypes:
-            if dtype in filepath:
-                dtype_orig = dtype
+        dtype_orig = self.layout.get_file(filepath).get_entities()["datatype"]
 
-        if "datatype" in entities.keys():
-            if entities["datatype"] != dtype_orig:
-                print("WARNING: DATATYPE CHANGE DETECTED")
+        if ("datatype" in entities.keys()) and (entities["datatype"] != dtype_orig):
+            print(f"WARNING: DATATYPE ({dtype_orig}) CHANGED TO {entities['datatype']}")
 
         # Construct the new filename
         new_path = self.layout.build_path(entities)
