@@ -1,5 +1,6 @@
 """Main module."""
 
+import copy
 import csv
 import json
 import os
@@ -463,56 +464,10 @@ class CuBIDS(object):
         This is the function I need to spend the most time on, since it has entities hardcoded.
         """
         bids_file = self.layout.get_file(filepath)
-        old_ext = bids_file.entities["extension"]  # assume it starts with .
-        old_ext = old_ext if old_ext.startswith(".") else f".{old_ext}"
-
-        suffix = entities["suffix"]
-        entity_file_keys = []
-
-        # Entities can be used to distinguish files.
-        # Think of these as non-file collection entities, or acquisition-distinguishing entities.
-        file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
-
-        # Find distinguishing entities from the file name.
-        for key in file_keys:
-            if key in list(entities.keys()):
-                entity_file_keys.append(key)
-
-        # Subject is always present, and session is often present.
-        # XXX: Does this enforce a longitudinal dataset design?
-        sub = get_key_name(filepath, "sub")
-        ses = get_key_name(filepath, "ses")
-        sub_ses = sub + "_" + ses
-
-        if "run" in list(entities.keys()) and "run-0" in filepath:
-            # XXX: This adds an extra leading zero to run.
-            entities["run"] = "0" + str(entities["run"])
-
-        # Construct a version of the filename that only includes distinguishing entities.
-        # XXX: This is not a good thing. The output filename should retain the original
-        # filename's file-collection entities (e.g., echo).
-        filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
-        filename = (
-            filename.replace("acquisition", "acq")
-            .replace("direction", "dir")
-            .replace("reconstruction", "rec")
-        )
-        if len(filename) > 0:
-            filename = sub_ses + "_" + filename + "_" + suffix + old_ext
-        else:
-            raise ValueError(f"Could not construct new filename for {filepath}")
-
-        # CHECK TO SEE IF DATATYPE CHANGED
-        # datatype may be overridden/changed if the original file is located in the wrong folder.
-        # XXX: In order for this to happen, the datatype in filepath must be different from the
-        # datatype in entities.
-        dtype_orig = self.layout.get_file(filepath).get_entities()["datatype"]
-
-        if ("datatype" in entities.keys()) and (entities["datatype"] != dtype_orig):
-            print(f"WARNING: DATATYPE ({dtype_orig}) CHANGED TO {entities['datatype']}")
-
-        # Construct the new filename
-        new_path = self.layout.build_path(entities)
+        orig_entities = bids_file.get_entities()
+        updated_entities = copy.deepcopy(orig_entities)
+        updated_entities.update(entities)
+        new_path = self.layout.build_path(updated_entities)
 
         # Add the scan path + new path to the lists of old, new filenames
         self.old_filenames.append(filepath)
@@ -520,7 +475,6 @@ class CuBIDS(object):
 
         # NOW NEED TO RENAME ASSOCIATED FILES
         # XXX: What do we count as associated files?
-        bids_file = self.layout.get_file(filepath)
         # associations = bids_file.get_associations()
         associations = self.get_nifti_associations(str(bids_file))
         for assoc_path in associations:
@@ -552,29 +506,25 @@ class CuBIDS(object):
 
         # Update func-specific files
         # now rename _events and _physio files!
-        old_suffix = parse_file_entities(filepath)["suffix"]
-        scan_end = "_" + old_suffix + old_ext
+        scan_end = f"_{orig_entities['suffix']}{orig_entities['extension']}"
 
         if "_task-" in filepath:
             old_events = filepath.replace(scan_end, "_events.tsv")
             if Path(old_events).exists():
                 self.old_filenames.append(old_events)
-                new_scan_end = "_" + suffix + old_ext
-                new_events = new_path.replace(new_scan_end, "_events.tsv")
+                new_events = new_path.replace(scan_end, "_events.tsv")
                 self.new_filenames.append(new_events)
 
             old_ejson = filepath.replace(scan_end, "_events.json")
             if Path(old_ejson).exists():
                 self.old_filenames.append(old_ejson)
-                new_scan_end = "_" + suffix + old_ext
-                new_ejson = new_path.replace(new_scan_end, "_events.json")
+                new_ejson = new_path.replace(scan_end, "_events.json")
                 self.new_filenames.append(new_ejson)
 
         old_physio = filepath.replace(scan_end, "_physio.tsv.gz")
         if Path(old_physio).exists():
             self.old_filenames.append(old_physio)
-            new_scan_end = "_" + suffix + old_ext
-            new_physio = new_path.replace(new_scan_end, "_physio.tsv.gz")
+            new_physio = new_path.replace(scan_end, "_physio.tsv.gz")
             self.new_filenames.append(new_physio)
 
         # Update ASL-specific files
@@ -582,36 +532,44 @@ class CuBIDS(object):
             old_context = filepath.replace(scan_end, "_aslcontext.tsv")
             if Path(old_context).exists():
                 self.old_filenames.append(old_context)
-                new_scan_end = "_" + suffix + old_ext
-                new_context = new_path.replace(new_scan_end, "_aslcontext.tsv")
+                new_context = new_path.replace(scan_end, "_aslcontext.tsv")
                 self.new_filenames.append(new_context)
 
             old_m0scan = filepath.replace(scan_end, "_m0scan.nii.gz")
             if Path(old_m0scan).exists():
                 self.old_filenames.append(old_m0scan)
-                new_scan_end = "_" + suffix + old_ext
-                new_m0scan = new_path.replace(new_scan_end, "_m0scan.nii.gz")
+                new_m0scan = new_path.replace(scan_end, "_m0scan.nii.gz")
                 self.new_filenames.append(new_m0scan)
 
             old_mjson = filepath.replace(scan_end, "_m0scan.json")
             if Path(old_mjson).exists():
                 self.old_filenames.append(old_mjson)
-                new_scan_end = "_" + suffix + old_ext
-                new_mjson = new_path.replace(new_scan_end, "_m0scan.json")
+                new_mjson = new_path.replace(scan_end, "_m0scan.json")
                 self.new_filenames.append(new_mjson)
 
             old_labeling = filepath.replace(scan_end, "_asllabeling.jpg")
             if Path(old_labeling).exists():
                 self.old_filenames.append(old_labeling)
-                new_scan_end = "_" + suffix + old_ext
-                new_labeling = new_path.replace(new_scan_end, "_asllabeling.jpg")
+                new_labeling = new_path.replace(scan_end, "_asllabeling.jpg")
                 self.new_filenames.append(new_labeling)
 
         # RENAME INTENDED FORS!
-        ses_path = self.path + "/" + sub + "/" + ses
         files_with_if = []
-        files_with_if += Path(ses_path).rglob("fmap/*.json")
-        files_with_if += Path(ses_path).rglob("perf/*_m0scan.json")
+        files_with_if += self.layout.get(
+            return_type="file",
+            datatype="fmap",
+            extension="json",
+            subject=orig_entities["subject"],
+            session=orig_entities.get("session", Query.NONE),
+        )
+        files_with_if += self.layout.get(
+            return_type="file",
+            datatype="perf",
+            suffix="m0scan",
+            extension="json",
+            subject=orig_entities["subject"],
+            session=orig_entities.get("session", Query.NONE),
+        )
         for path_with_if in files_with_if:
             filename_with_if = str(path_with_if)
             self.IF_rename_paths.append(filename_with_if)
@@ -1560,6 +1518,8 @@ def _get_param_groups(
 
         dfs.append(selected_metadata)
 
+    print(files[0])
+
     # Assign each file to a ParamGroup
     # Round parameter groups based on precision in config
     df = round_params(pd.DataFrame(dfs), grouping_config, datatype)
@@ -1571,16 +1531,15 @@ def _get_param_groups(
     # Get the subset of columns by which to drop duplicates
     check_cols = []
     for col in list(df.columns):
-        if f"Cluster_{col}" not in list(df.columns) and col != "FilePath":
+        if (
+            (f"Cluster_{col}" not in df.columns)
+            and (f"{col}__collection" not in df.columns)
+            and (col != "FilePath")
+        ):
             check_cols.append(col)
 
     # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
-    try:
-        deduped = df.drop("FilePath", axis=1)
-    except Exception:
-        # XXX: When would this be reached?
-        return "erroneous sidecar found"
-
+    deduped = df.drop("FilePath", axis=1)
     deduped = deduped.drop_duplicates(subset=check_cols, ignore_index=True)
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
 
@@ -1699,7 +1658,7 @@ def format_params(param_group_df, config, datatype):
     The datatype-wise dictionary's keys are names of BIDS fields to derive from the
     NIfTI header and include in the Parameter Groupings.
     """
-    to_format = config["sidecar_params"][datatype]
+    to_format = copy.deepcopy(config["sidecar_params"][datatype])
     to_format.update(config["derived_params"][datatype])
 
     for fc_fields in file_collection_metadata.values():
@@ -1803,9 +1762,12 @@ def check_for_file_collection_conflicts(layout):
     """
     errors = []
     files = layout.get(return_type="object", extension=[".nii", ".nii.gz"])
+    valid_entities = layout.get_entities(metadata=False)
     for file_ in files:
         entities = file_.get_entities()
-        entities_to_check = entities.copy()
+        valid_entities = {k: Query.NONE for k in valid_entities.keys()}
+        valid_entities.update(entities)
+        entities_to_check = valid_entities.copy()
         for ent in file_collection_metadata.keys():
             if ent in entities.keys():
                 entities_to_check[ent] = [entities_to_check[ent], Query.NONE]

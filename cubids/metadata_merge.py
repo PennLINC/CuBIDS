@@ -238,7 +238,7 @@ def merge_json_into_json(from_file, to_file, raise_on_error=False):
     if not merged_metadata == orig_dest_metadata:
         print("OVERWRITING", to_file)
         with open(to_file, "w") as tofw:
-            json.dump(merged_metadata, tofw, indent=4)
+            json.dump(merged_metadata, tofw, indent=4, sort_keys=True)
 
     return 0
 
