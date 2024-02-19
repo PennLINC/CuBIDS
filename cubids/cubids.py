@@ -145,7 +145,6 @@ class CuBIDS(object):
         validate : :obj:`bool`, optional
             If True, validate the BIDS dataset. Default is False.
         """
-
         # create BIDS Layout Indexer class
         ignores = [
             "code",
