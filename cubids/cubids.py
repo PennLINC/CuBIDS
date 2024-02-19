@@ -1518,8 +1518,6 @@ def _get_param_groups(
 
         dfs.append(selected_metadata)
 
-    print(files[0])
-
     # Assign each file to a ParamGroup
     # Round parameter groups based on precision in config
     df = round_params(pd.DataFrame(dfs), grouping_config, datatype)
