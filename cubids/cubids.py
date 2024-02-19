@@ -15,7 +15,7 @@ import datalad.api as dlapi
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from bids.layout import BIDSLayout, BIDSLayoutIndexer, parse_file_entities
+from bids.layout import BIDSLayout, BIDSLayoutIndexer, Query, parse_file_entities
 from bids.utils import listify
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -27,6 +27,13 @@ from cubids.utils import resolve_bids_uri
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
+
+file_collection_metadata = {
+    "echo": ["EchoTime"],
+    "mt": ["MTState"],
+    "flip": ["FlipAngle"],
+    "inv": ["InversionTime"],
+}
 
 
 class CuBIDS(object):
@@ -914,6 +921,9 @@ class CuBIDS(object):
     def get_param_groups_from_key_group(self, key_group):
         """Split a single key group into potentially multiple param groups based on json metadata.
 
+        Divide a single key group (unique entity values in filenames) into parameter groups
+        (unique metadata values in sidecar jsons).
+
         Parameters
         ----------
         key_group : str
@@ -932,6 +942,7 @@ class CuBIDS(object):
         key_entities = _key_group_to_entities(key_group)
         key_entities["extension"] = ["nii", "nii.gz"]
 
+        # Get all data files that match the key group
         matching_files = self.layout.get(
             return_type="object",
             scope="self",
@@ -1240,6 +1251,8 @@ class CuBIDS(object):
         """
         self._cache_fieldmaps()
 
+        check_for_file_collection_conflicts(self.layout)
+
         # check if path_prefix is absolute or relative
         # if relative, put output in BIDS_ROOT/code/CuBIDS/ dir
         if "/" not in path_prefix:
@@ -1277,20 +1290,19 @@ class CuBIDS(object):
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
 
     def get_key_groups(self):
-        """Identify the key groups for the BIDS dataset."""
+        """Identify the entity-based groups for the BIDS dataset."""
         # reset self.keys_files
         self.keys_files = {}
 
         key_groups = set()
 
-        # Find all files in the BIDS directory
+        # Find all data files in the BIDS directory
         for bids_file in self.layout.get(extension=["nii", "nii.gz"]):
             file_path = bids_file.path
             # ignore all dot directories
             if "/." in str(file_path):
                 continue
 
-            # Identify data files (limited to NIfTIs at the moment)
             key_groups.update((_file_to_key_group(file_path),))
 
             # Fill the dictionary of key group, list of filenames pairrs
@@ -1433,15 +1445,26 @@ def _get_param_groups(
     For each file in `files`, find critical parameters for metadata.
     Then find unique sets of these critical parameters.
 
+    XXX: ``files`` appears redundant with ``keys_files[key_group_name]``.
+
     Parameters
     ----------
     files : :obj:`list` of :obj:`str`
         List of file names
-    fieldmap_lookup : :obj:`dict`
-        Mapping of filename strings relative to the bids root
-        (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
+    fieldmap_lookup : :obj:`collections.defaultdict`
+        Mapping of imaging files to lists of associated fieldmap files.
+        The imaging files are full paths, while the field map files are
+        :obj:`~bids.layout.BIDSImageFile` objects.
+    key_group_name : :obj:`str`
+        Name of the key group to which the files belong.
     grouping_config : :obj:`dict`
-        Configuration for defining parameter groups
+        Configuration for defining parameter groups.
+    datatype : :obj:`str`
+        Type of the data in the files.
+    keys_files : :obj:`dict`
+        Dictionary of key group names and lists of files.
+    layout : :obj:`~bids.layout.BIDSLayout`
+        BIDSLayout object for the dataset.
 
     Returns
     -------
@@ -1451,6 +1474,12 @@ def _get_param_groups(
     param_groups_with_counts : :obj:`pandas.DataFrame`
         A data frame with param group summaries.
     """
+    # These variables seem to have redundant information
+    files2 = sorted(files)
+    files3 = sorted(keys_files[key_group_name])
+    if files2 != files3:
+        raise Exception(f"{files2}\n\n{files3}")
+
     if not files:
         print("WARNING: no files for", key_group_name)
         return None, None
@@ -1483,6 +1512,19 @@ def _get_param_groups(
         selected_metadata = {key: metadata[key] for key in wanted_keys}
         selected_metadata["FilePath"] = path
         selected_metadata["KeyGroup"] = key_group_name
+
+        # Add file collection entity metadata
+        file_entities = layout.get_file(path).get_entities()
+        for ent, metadata_fields in file_collection_metadata.items():
+            if ent in file_entities.keys():
+                collection_entities = {k: v for k, v in file_entities.items() if k != ent}
+                collection_entities[ent] = Query.ANY
+                for metadata_field in metadata_fields:
+                    if metadata_field in layout.get_entities():
+                        meth = f"get_{metadata_field}"
+                        values = getattr(layout, meth)(**collection_entities)
+                        values = [f"{v:.5f}" if isinstance(v, float) else v for v in values]
+                        selected_metadata[f"{metadata_field}__collection"] = str(values)
 
         # Add the number of slice times specified
         if "NSliceTimes" in derived_params:
@@ -1522,11 +1564,9 @@ def _get_param_groups(
     # Assign each file to a ParamGroup
     # Round parameter groups based on precision in config
     df = round_params(pd.DataFrame(dfs), grouping_config, datatype)
-    print(df.shape)
 
     # Cluster param groups based on tolerance
     df = format_params(df, grouping_config, datatype)
-    print(df.shape)
     # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
     # Get the subset of columns by which to drop duplicates
@@ -1663,6 +1703,13 @@ def format_params(param_group_df, config, datatype):
     to_format = config["sidecar_params"][datatype]
     to_format.update(config["derived_params"][datatype])
 
+    for fc_fields in file_collection_metadata.values():
+        for field in fc_fields:
+            field_col = f"{field}__collection"
+            if field_col in param_group_df:
+                to_format.pop(field)
+                to_format[field_col] = {"suggest_variant_rename": True}
+
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
             continue
@@ -1736,3 +1783,38 @@ def get_key_name(path, key):
     for part in parts:
         if part.startswith(key + "-"):
             return part
+
+
+def check_for_file_collection_conflicts(layout):
+    """Check for any files with problematic file collection entities.
+
+    If a dataset contains a data file with one or more file collection entities (e.g., echo),
+    as well as a data file that matches on everything except the file collection entities,
+    then the dataset may be BIDS compliant, but CuBIDS won't be able to deal with ambiguity
+    regarding associated files and/or metadata.
+
+    For example, the following set of files, it would be unclear which data file the physio.tsv.gz
+    applies to.
+
+    ```
+    sub-01_task-rest_echo-1_bold.nii.gz
+    sub-01_task-rest_bold.nii.gz
+    sub-01_task-rest_physio.tsv.gz
+    ```
+    """
+    errors = []
+    files = layout.get(return_type="object", extension=[".nii", ".nii.gz"])
+    for file_ in files:
+        entities = file_.get_entities()
+        entities_to_check = entities.copy()
+        for ent in file_collection_metadata.keys():
+            if ent in entities.keys():
+                entities_to_check[ent] = [entities_to_check[ent], Query.NONE]
+                matching_files = layout.get(**entities_to_check)
+                bad_files = [f.relpath for f in matching_files if f.path != file_.path]
+                for bad_file in bad_files:
+                    errors.append(f"{file_.relpath} --> {bad_file}")
+
+    if errors:
+        error_str = "\n\t" + "\n\t".join(errors)
+        raise RuntimeError(f"File collection conflicts detected:{error_str}")
