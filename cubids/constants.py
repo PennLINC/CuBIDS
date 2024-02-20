@@ -5,9 +5,8 @@
 # but both are hardcoded in the relevant function.
 ID_VARS = set(["KeyGroup", "ParamGroup", "FilePath"])
 # Entities that should not be used to group parameter sets
-NON_KEY_ENTITIES = set(
-    ["subject", "session", "echo", "part", "flip", "mt", "inv", "run", "extension"]
-)
+FILE_COLLECTION_ENTITIES = set(["echo", "part", "flip", "mt", "inv"])
+NON_KEY_ENTITIES = set(["subject", "session", "run", "extension"]).union(FILE_COLLECTION_ENTITIES)
 # Multi-dimensional keys SliceTiming  XXX: what is this line about?
 # List of metadata fields and parameters (calculated by CuBIDS)
 # Not sure what this specific list is used for.

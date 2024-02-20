@@ -24,7 +24,7 @@ from tqdm import tqdm
 from cubids.config import load_config
 from cubids.constants import ID_VARS, NON_KEY_ENTITIES
 from cubids.metadata_merge import check_merging_operations, group_by_acquisition_sets
-from cubids.utils import resolve_bids_uri
+from cubids.utils import find_file, patch_collection_entities, resolve_bids_uri
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
@@ -399,6 +399,16 @@ class CuBIDS(object):
                         # generate new filenames according to new key group
                         self.change_filename(file_path, new_entities)
 
+            renaming_df = pd.DataFrame(
+                columns=["original", "renamed"],
+                data=list(map(list, zip(*[self.old_filenames, self.new_filenames]))),
+            )
+            renaming_df.to_csv(
+                os.path.join(self.path, f"code/CuBIDS/{new_prefix}_renaming.tsv"),
+                index=False,
+                sep="\t",
+            )
+
             # create string of mv command ; mv command for dlapi.run
             for from_file, to_file in zip(self.old_filenames, self.new_filenames):
                 if Path(from_file).exists():
@@ -711,12 +721,17 @@ class CuBIDS(object):
             if_scans.append(_get_intended_for_reference(self.path + scan))
 
         # XXX: Session folders are not guaranteed to exist.
-        for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
-            # json_file = self.layout.get_file(str(path))
+        fmap_files = self.layout.get(
+            return_type="file",
+            datatype="fmap",
+            extension=[".json"],
+        )
+        for fmap_file in fmap_files:
+            # json_file = self.layout.get_file(fmap_file)
             # data = json_file.get_dict()
-            data = get_sidecar_metadata(str(path))
+            data = get_sidecar_metadata(fmap_file)
             if data == "Erroneous sidecar":
-                print("Error parsing sidecar: ", str(path))
+                print(f"Error parsing sidecar: {fmap_file}")
                 continue
 
             # remove scan references in the IntendedFor
@@ -728,7 +743,7 @@ class CuBIDS(object):
                         data["IntendedFor"].remove(item)
 
                 # update the json with the new data dictionary
-                _update_json(str(path), data)
+                _update_json(fmap_file, data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -741,35 +756,44 @@ class CuBIDS(object):
                 self.reset_bids_layout()
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
-
         to_remove = []
-
-        for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
-            if str(path) in scans:
-                # bids_file = self.layout.get_file(str(path))
+        nifti_files = self.layout.get(return_type="file", extension=["nii", "nii.gz"])
+        for nifti_file in nifti_files:
+            nifti_entities = self.layout.get_file(nifti_file).entities
+            if nifti_file in scans:
+                # bids_file = self.layout.get_file(nifti_file)
                 # associations = bids_file.get_associations()
-                associations = self.get_nifti_associations(str(path))
+                associations = self.get_nifti_associations(nifti_file)
                 for assoc in associations:
                     to_remove.append(assoc)
                     # filepath = assoc.path
 
             # ensure association is not an IntendedFor reference!
-            if ".nii" not in str(path):
-                if "/dwi/" in str(path):
-                    # add the bval and bvec if there
-                    if Path(img_to_new_ext(str(path), ".bval")).exists():
-                        to_remove.append(img_to_new_ext(str(path), ".bval"))
-                    if Path(img_to_new_ext(str(path), ".bvec")).exists():
-                        to_remove.append(img_to_new_ext(str(path), ".bvec"))
+            if nifti_entities["datatype"] == "dwi":
+                # add the bval and bvec if there
+                temp_entities = patch_collection_entities(nifti_entities)
+                temp_entities["extension"] = "bval"
+                bval_file = find_file(temp_entities, self.layout)
+                if bval_file:
+                    to_remove.append(bval_file)
 
-                if "/func/" in str(path):
-                    # add tsvs
-                    tsv = img_to_new_ext(str(path), ".tsv").replace("_bold", "_events")
-                    if Path(tsv).exists():
-                        to_remove.append(tsv)
-                    # add tsv json (if exists)
-                    if Path(tsv.replace(".tsv", ".json")).exists():
-                        to_remove.append(tsv.replace(".tsv", ".json"))
+                temp_entities["extension"] = "bvec"
+                bvec_file = find_file(temp_entities, self.layout)
+                if bvec_file:
+                    to_remove.append(bvec_file)
+
+            if nifti_entities["datatype"] == "func":
+                temp_entities = patch_collection_entities(nifti_entities)
+                temp_entities["suffix"] = "events"
+                temp_entities["extension"] = "tsv"
+                events_tsv = find_file(temp_entities, self.layout)
+                if events_tsv:
+                    to_remove.append(events_tsv)
+
+                temp_entities["extension"] = "json"
+                events_json = find_file(temp_entities, self.layout)
+                if events_json:
+                    to_remove.append(events_json)
 
         to_remove += scans
 
