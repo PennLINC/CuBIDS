@@ -1,6 +1,6 @@
 .. CuBIDS documentation master file
 
-.. include:: README.rst
+.. include:: ../README.rst
 
 Contents
 --------
@@ -9,10 +9,13 @@ Contents
    :maxdepth: 2
 
    about
-   usage
    installation
+   usage
+   cli
    example
    examples
    ../CONTRIBUTING
    ../AUTHORS
    ../HISTORY
+   glossary
+   api

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cubids import CuBIDS
+from cubids.cubids import CuBIDS
 from cubids.metadata_merge import merge_json_into_json, merge_without_overwrite
 from cubids.tests.utils import (
     _add_deletion,

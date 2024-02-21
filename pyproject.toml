@@ -22,14 +22,12 @@ license = {file = "LICENSE"}
 requires-python = ">=3.8"
 dependencies = [
     "datalad>=0.13.5,!=0.17.3,!=0.17.0,!=0.16.1",
-    "jinja2 < 3.1",
-    "numpy",
-    "pandas",
-    "pybids",
+    "numpy<=1.26.4",
+    "pandas<=2.2.0",
+    "pybids<=0.16.4",
     "pyyaml",
-    "scikit-learn",
+    "scikit-learn<=1.4.1.post1",
     "tqdm",
-    "wrapt<2,>=1.10",
 ]
 dynamic = ["version"]
 
@@ -45,9 +43,12 @@ doc = [
     "recommonmark",
     "sphinx >= 2.2",
     "sphinx-argparse",
+    "sphinx-copybutton",
     "sphinx_gallery",
+    "sphinx-hoverxref",
     "sphinx_markdown_tables",
     "sphinx_rtd_theme",
+    "sphinxcontrib-bibtex",
 ]
 tests = [
     "codespell",
@@ -162,7 +163,7 @@ per-file-ignores = [
 ]
 
 [tool.coverage.run]
-branch = true
+parallel = true
 omit = [
     "*/tests/*",
     "*/__init__.py",
