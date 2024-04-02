@@ -2,6 +2,38 @@
 History
 =======
 
+1.1.0 (2024-04-02)
+------------------
+
+🎉 Exciting New Features
+````````````````````````
+
+* Make CLI commands available as `cubids <command>` by @tsalo in https://github.com/PennLINC/CuBIDS/pull/268
+* Add ASL fields to config by @tsalo in https://github.com/PennLINC/CuBIDS/pull/282
+
+🐛 Bug Fixes
+````````````
+
+* Remove `--ignore_subject_consistency` param from `cubids validate` by @tsalo in https://github.com/PennLINC/CuBIDS/pull/276
+
+Other Changes
+`````````````
+
+* Use black and isort to autoformat the main package by @tsalo in https://github.com/PennLINC/CuBIDS/pull/266
+* Reorganize packaging and hopefully fix tests by @tsalo in https://github.com/PennLINC/CuBIDS/pull/267
+* Move notebooks into example gallery by @tsalo in https://github.com/PennLINC/CuBIDS/pull/278
+* Drop jinja and wrapt from dependencies and pin other requirements by @tsalo in https://github.com/PennLINC/CuBIDS/pull/295
+* Run Pytests across all supported Python versions by @tsalo in https://github.com/PennLINC/CuBIDS/pull/279
+* Improve documentation by @tsalo in https://github.com/PennLINC/CuBIDS/pull/290
+
+New Contributors
+````````````````
+
+* @tsalo made their first contribution in https://github.com/PennLINC/CuBIDS/pull/266
+* @dependabot made their first contribution in https://github.com/PennLINC/CuBIDS/pull/293
+
+**Full Changelog**: https://github.com/PennLINC/CuBIDS/compare/1.0.2...1.0.3
+
 1.0.2 (2023-09-07)
 ------------------
 
