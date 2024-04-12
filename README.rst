@@ -35,3 +35,17 @@ in the process of preparing BIDS data for successful preprocessing and analysis 
 
 For full documentation, please visit our
 `ReadTheDocs <https://cubids.readthedocs.io/en/latest/?badge=latest>`_.
+
+
+Citing CuBIDS
+-------------
+
+If you use CuBIDS in your research, please cite the following paper:
+
+    Covitz, S., Tapera, T. M., Adebimpe, A., Alexander-Bloch, A. F., Bertolero, M. A., Feczko, E.,
+    ... & Satterthwaite, T. D. (2022).
+    Curation of BIDS (CuBIDS): A workflow and software package for streamlining reproducible curation of large BIDS datasets.
+    NeuroImage, 263, 119609.
+    doi:10.1016/j.neuroimage.2022.119609.
+
+Please also cite the Zenodo DOI for the version you used.
