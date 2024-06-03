@@ -359,10 +359,8 @@ def apply(
     acq_group_level,
     config,
     edited_summary_tsv,
-    edited_tsv_prefix,
     files_tsv,
     new_tsv_prefix,
-    output_prefix,
     container,
 ):
     """Apply the tsv changes.
@@ -379,14 +377,10 @@ def apply(
         Path to the grouping config file.
     edited_summary_tsv : :obj:`pathlib.Path`
         Path to the edited summary tsv.
-    edited_tsv_prefix : :obj:`pathlib.Path`
-        Path to the edited tsv prefix.
     files_tsv : :obj:`pathlib.Path`
         Path to the files tsv.
     new_tsv_prefix : :obj:`pathlib.Path`
         Path to the new tsv prefix.
-    output_prefix : :obj:`pathlib.Path`
-        Output filename prefix.
     container : :obj:`str`
         Container in which to run the workflow.
     """
@@ -412,8 +406,8 @@ def apply(
     # Run it through a container
     container_type = _get_container_type(container)
     bids_dir_link = str(bids_dir.absolute()) + ":/bids"
-    input_summary_tsv_dir_link = str(edited_tsv_prefix.parent.absolute()) + ":/in_summary_tsv:ro"
-    input_files_tsv_dir_link = str(edited_tsv_prefix.parent.absolute()) + ":/in_files_tsv:ro"
+    input_summary_tsv_dir_link = str(edited_summary_tsv.parent.absolute()) + ":/in_summary_tsv:ro"
+    input_files_tsv_dir_link = str(edited_summary_tsv.parent.absolute()) + ":/in_files_tsv:ro"
     output_tsv_dir_link = str(new_tsv_prefix.parent.absolute()) + ":/out_tsv:rw"
 
     # FROM BOND-GROUP
@@ -422,7 +416,7 @@ def apply(
         input_config_dir_link = str(config.parent.absolute()) + ":/in_config:ro"
         linked_input_config = "/in_config/" + config.name
 
-    linked_output_prefix = "/tsv/" + output_prefix.name
+    linked_output_prefix = "/tsv/" + new_tsv_prefix.name
 
     ####
     linked_input_summary_tsv = "/in_summary_tsv/" + edited_summary_tsv.name
