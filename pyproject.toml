@@ -22,7 +22,7 @@ license = {file = "LICENSE"}
 requires-python = ">=3.8"
 dependencies = [
     "datalad>=0.13.5,!=0.17.3,!=0.17.0,!=0.16.1",
-    "numpy<=1.26.4",
+    "numpy<=2.0.0",
     "pandas<=2.2.2",
     "pybids<=0.16.5",
     "pyyaml",
