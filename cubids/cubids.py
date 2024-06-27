@@ -1,5 +1,6 @@
 """Main module."""
 
+import copy
 import csv
 import json
 import os
@@ -11,12 +12,11 @@ from pathlib import Path
 from shutil import copyfile, copytree
 
 import bids
-import bids.layout
 import datalad.api as dlapi
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from bids.layout import parse_file_entities
+from bids.layout import BIDSLayout, BIDSLayoutIndexer, Query, parse_file_entities
 from bids.utils import listify
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
@@ -24,9 +24,17 @@ from tqdm import tqdm
 from cubids.config import load_config
 from cubids.constants import ID_VARS, NON_KEY_ENTITIES
 from cubids.metadata_merge import check_merging_operations, group_by_acquisition_sets
+from cubids.utils import find_file, patch_collection_entities, resolve_bids_uri
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
+
+file_collection_metadata = {
+    "echo": ["EchoTime"],
+    "mt": ["MTState"],
+    "flip": ["FlipAngle"],
+    "inv": ["InversionTime"],
+}
 
 
 class CuBIDS(object):
@@ -139,19 +147,20 @@ class CuBIDS(object):
             If True, validate the BIDS dataset. Default is False.
         """
         # create BIDS Layout Indexer class
-
         ignores = [
             "code",
             "stimuli",
             "sourcedata",
             "models",
+            "derivatives",
+            # Ignore all dot directories
             re.compile(r"^\."),
             re.compile(r"/\."),
         ]
 
-        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=False)
+        indexer = BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=True)
 
-        self._layout = bids.BIDSLayout(self.path, validate=validate, indexer=indexer)
+        self._layout = BIDSLayout(self.path, validate=validate, indexer=indexer)
 
     def create_cubids_code_dir(self):
         """Create CuBIDS code directory.
@@ -238,68 +247,53 @@ class CuBIDS(object):
         """
         if not self.is_datalad_clean():
             raise Exception("Untracked changes present. Run clear_untracked_changes first")
+
         reset_proc = subprocess.run(["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
     def add_nifti_info(self):
-        """Add info from nifti files to json sidecars."""
+        """Add info from NIfTI files to JSON sidecars."""
         # check if force_unlock is set
         if self.force_unlock:
             # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
             subprocess.run(["datalad", "unlock"], cwd=self.path)
 
         # loop through all niftis in the bids dir
-        for path in Path(self.path).rglob("sub-*/**/*.*"):
-            # ignore all dot directories
-            if "/." in str(path):
-                continue
+        nifti_files = self.layout.get(extension=["nii", "nii.gz"])
+        for nifti_file in nifti_files:
+            img = nifti_file.get_image()
 
-            if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
-                try:
-                    img = nb.load(str(path))
-                except Exception:
-                    print("Empty Nifti File: ", str(path))
-                    continue
+            # get important info from niftis
+            obliquity = np.any(nb.affines.obliquity(img.affine) > 1e-4)
+            voxel_sizes = img.header.get_zooms()
+            matrix_dims = img.shape
+            image_metadata = {
+                "Obliquity": str(obliquity),
+                "VoxelSizeDim1": float(voxel_sizes[0]),
+                "VoxelSizeDim2": float(voxel_sizes[1]),
+                "VoxelSizeDim3": float(voxel_sizes[2]),
+                "Dim1Size": matrix_dims[0],
+                "Dim2Size": matrix_dims[1],
+                "Dim3Size": matrix_dims[2],
+                "NumVolumes": matrix_dims[3] if img.ndim == 4 else 1,
+                "ImageOrientation": "".join(nb.orientations.aff2axcodes(img.affine)) + "+",
+            }
 
-                # get important info from niftis
-                obliquity = np.any(nb.affines.obliquity(img.affine) > 1e-4)
-                voxel_sizes = img.header.get_zooms()
-                matrix_dims = img.shape
-                # add nifti info to corresponding sidecars​
-                sidecar = img_to_new_ext(str(path), ".json")
-                if Path(sidecar).exists():
-                    try:
-                        with open(sidecar) as f:
-                            data = json.load(f)
-                    except Exception:
-                        print("Error parsing this sidecar: ", sidecar)
+            # Find the no-inheritance sidecar, if available
+            file_entities = nifti_file.get_entities()
+            file_entities["extension"] = "json"
+            sidecar = self.layout.build_path(file_entities)
+            if Path(sidecar).exists():
+                print(f"No sidecar found for {nifti_file.path}. Creating one.")
+                sidecar_metadata = {}
+            else:
+                with open(sidecar, "r") as fo:
+                    sidecar_metadata = json.load(fo)
 
-                    if "Obliquity" not in data.keys():
-                        data["Obliquity"] = str(obliquity)
-                    if "VoxelSizeDim1" not in data.keys():
-                        data["VoxelSizeDim1"] = float(voxel_sizes[0])
-                    if "VoxelSizeDim2" not in data.keys():
-                        data["VoxelSizeDim2"] = float(voxel_sizes[1])
-                    if "VoxelSizeDim3" not in data.keys():
-                        data["VoxelSizeDim3"] = float(voxel_sizes[2])
-                    if "Dim1Size" not in data.keys():
-                        data["Dim1Size"] = matrix_dims[0]
-                    if "Dim2Size" not in data.keys():
-                        data["Dim2Size"] = matrix_dims[1]
-                    if "Dim3Size" not in data.keys():
-                        data["Dim3Size"] = matrix_dims[2]
-                    if "NumVolumes" not in data.keys():
-                        if img.ndim == 4:
-                            data["NumVolumes"] = matrix_dims[3]
-                        elif img.ndim == 3:
-                            data["NumVolumes"] = 1
-                    if "ImageOrientation" not in data.keys():
-                        orient = nb.orientations.aff2axcodes(img.affine)
-                        joined = "".join(orient) + "+"
-                        data["ImageOrientation"] = joined
+            sidecar_metadata.update(image_metadata)
 
-                    with open(sidecar, "w") as file:
-                        json.dump(data, file, indent=4)
+            with open(sidecar, "w") as fo:
+                json.dump(sidecar_metadata, fo, sort_keys=True, indent=4)
 
         if self.use_datalad:
             self.datalad_save(message="Added nifti info to sidecars")
@@ -309,16 +303,17 @@ class CuBIDS(object):
     def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True):
         """Apply changes documented in the edited summary tsv and generate the new tsv files.
 
-        This function looks at the RenameKeyGroup and MergeInto
-        columns and modifies the bids dataset according to the
-        specified changs.
+        This function looks at the RenameKeyGroup and MergeInto columns and modifies the BIDS
+        dataset according to the specified changs.
 
         Parameters
         ----------
         summary_tsv : :obj:`str`
             Path to the edited summary tsv file.
+            This must have the columns "RenameKeyGroup", "KeyParamGroup".
         files_tsv : :obj:`str`
             Path to the edited files tsv file.
+            This must have the columns "ParamGroup", "KeyGroup", "FilePath".
         new_prefix : :obj:`str`
             Path prefix to the new tsv files.
         raise_on_error : :obj:`bool`
@@ -351,6 +346,7 @@ class CuBIDS(object):
 
             # Get a source json file
             img_full_path = self.path + source_files.iloc[0].FilePath
+
             source_json = img_to_new_ext(img_full_path, ".json")
             for dest_nii in dest_files.FilePath:
                 dest_json = img_to_new_ext(self.path + dest_nii, ".json")
@@ -403,6 +399,16 @@ class CuBIDS(object):
                         # generate new filenames according to new key group
                         self.change_filename(file_path, new_entities)
 
+            renaming_df = pd.DataFrame(
+                columns=["original", "renamed"],
+                data=list(map(list, zip(*[self.old_filenames, self.new_filenames]))),
+            )
+            renaming_df.to_csv(
+                os.path.join(self.path, f"code/CuBIDS/{new_prefix}_renaming.tsv"),
+                index=False,
+                sep="\t",
+            )
+
             # create string of mv command ; mv command for dlapi.run
             for from_file, to_file in zip(self.old_filenames, self.new_filenames):
                 if Path(from_file).exists():
@@ -447,8 +453,8 @@ class CuBIDS(object):
         self.reset_bids_layout()
         self.get_tsvs(new_prefix)
 
-        # remove renames file that gets created under the hood
-        subprocess.run(["rm", "-rf", "renames"])
+        # remove "renames" file that gets created under the hood
+        subprocess.run(["rm", "-f", "renames"])
 
     def change_filename(self, filepath, entities):
         """Apply changes to a filename based on the renamed key groups.
@@ -467,63 +473,18 @@ class CuBIDS(object):
         -----
         This is the function I need to spend the most time on, since it has entities hardcoded.
         """
-        exts = Path(filepath).suffixes
-        old_ext = "".join(exts)
-
-        suffix = entities["suffix"]
-        entity_file_keys = []
-
-        # Entities that may be in the filename?
-        file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
-
-        for key in file_keys:
-            if key in list(entities.keys()):
-                entity_file_keys.append(key)
-
-        sub = get_key_name(filepath, "sub")
-        ses = get_key_name(filepath, "ses")
-        sub_ses = sub + "_" + ses
-
-        if "run" in list(entities.keys()) and "run-0" in filepath:
-            # XXX: This adds an extra leading zero to run.
-            entities["run"] = "0" + str(entities["run"])
-
-        filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
-        filename = (
-            filename.replace("acquisition", "acq")
-            .replace("direction", "dir")
-            .replace("reconstruction", "rec")
-        )
-        if len(filename) > 0:
-            filename = sub_ses + "_" + filename + "_" + suffix + old_ext
-        else:
-            raise ValueError(f"Could not construct new filename for {filepath}")
-
-        # CHECK TO SEE IF DATATYPE CHANGED
-        # datatype may be overridden/changed if the original file is located in the wrong folder.
-        dtypes = ["anat", "func", "perf", "fmap", "dwi"]
-        dtype_orig = ""
-        for dtype in dtypes:
-            if dtype in filepath:
-                dtype_orig = dtype
-
-        if "datatype" in entities.keys():
-            dtype_new = entities["datatype"]
-            if entities["datatype"] != dtype_orig:
-                print("WARNING: DATATYPE CHANGE DETECETD")
-        else:
-            dtype_new = dtype_orig
-
-        # Construct the new filename
-        new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
+        bids_file = self.layout.get_file(filepath)
+        orig_entities = bids_file.get_entities()
+        updated_entities = copy.deepcopy(orig_entities)
+        updated_entities.update(entities)
+        new_path = self.layout.build_path(updated_entities)
 
         # Add the scan path + new path to the lists of old, new filenames
         self.old_filenames.append(filepath)
         self.new_filenames.append(new_path)
 
         # NOW NEED TO RENAME ASSOCIATED FILES
-        # bids_file = self.layout.get_file(filepath)
-        bids_file = filepath
+        # XXX: What do we count as associated files?
         # associations = bids_file.get_associations()
         associations = self.get_nifti_associations(str(bids_file))
         for assoc_path in associations:
@@ -555,29 +516,25 @@ class CuBIDS(object):
 
         # Update func-specific files
         # now rename _events and _physio files!
-        old_suffix = parse_file_entities(filepath)["suffix"]
-        scan_end = "_" + old_suffix + old_ext
+        scan_end = f"_{orig_entities['suffix']}{orig_entities['extension']}"
 
         if "_task-" in filepath:
             old_events = filepath.replace(scan_end, "_events.tsv")
             if Path(old_events).exists():
                 self.old_filenames.append(old_events)
-                new_scan_end = "_" + suffix + old_ext
-                new_events = new_path.replace(new_scan_end, "_events.tsv")
+                new_events = new_path.replace(scan_end, "_events.tsv")
                 self.new_filenames.append(new_events)
 
             old_ejson = filepath.replace(scan_end, "_events.json")
             if Path(old_ejson).exists():
                 self.old_filenames.append(old_ejson)
-                new_scan_end = "_" + suffix + old_ext
-                new_ejson = new_path.replace(new_scan_end, "_events.json")
+                new_ejson = new_path.replace(scan_end, "_events.json")
                 self.new_filenames.append(new_ejson)
 
         old_physio = filepath.replace(scan_end, "_physio.tsv.gz")
         if Path(old_physio).exists():
             self.old_filenames.append(old_physio)
-            new_scan_end = "_" + suffix + old_ext
-            new_physio = new_path.replace(new_scan_end, "_physio.tsv.gz")
+            new_physio = new_path.replace(scan_end, "_physio.tsv.gz")
             self.new_filenames.append(new_physio)
 
         # Update ASL-specific files
@@ -585,36 +542,44 @@ class CuBIDS(object):
             old_context = filepath.replace(scan_end, "_aslcontext.tsv")
             if Path(old_context).exists():
                 self.old_filenames.append(old_context)
-                new_scan_end = "_" + suffix + old_ext
-                new_context = new_path.replace(new_scan_end, "_aslcontext.tsv")
+                new_context = new_path.replace(scan_end, "_aslcontext.tsv")
                 self.new_filenames.append(new_context)
 
             old_m0scan = filepath.replace(scan_end, "_m0scan.nii.gz")
             if Path(old_m0scan).exists():
                 self.old_filenames.append(old_m0scan)
-                new_scan_end = "_" + suffix + old_ext
-                new_m0scan = new_path.replace(new_scan_end, "_m0scan.nii.gz")
+                new_m0scan = new_path.replace(scan_end, "_m0scan.nii.gz")
                 self.new_filenames.append(new_m0scan)
 
             old_mjson = filepath.replace(scan_end, "_m0scan.json")
             if Path(old_mjson).exists():
                 self.old_filenames.append(old_mjson)
-                new_scan_end = "_" + suffix + old_ext
-                new_mjson = new_path.replace(new_scan_end, "_m0scan.json")
+                new_mjson = new_path.replace(scan_end, "_m0scan.json")
                 self.new_filenames.append(new_mjson)
 
             old_labeling = filepath.replace(scan_end, "_asllabeling.jpg")
             if Path(old_labeling).exists():
                 self.old_filenames.append(old_labeling)
-                new_scan_end = "_" + suffix + old_ext
-                new_labeling = new_path.replace(new_scan_end, "_asllabeling.jpg")
+                new_labeling = new_path.replace(scan_end, "_asllabeling.jpg")
                 self.new_filenames.append(new_labeling)
 
         # RENAME INTENDED FORS!
-        ses_path = self.path + "/" + sub + "/" + ses
         files_with_if = []
-        files_with_if += Path(ses_path).rglob("fmap/*.json")
-        files_with_if += Path(ses_path).rglob("perf/*_m0scan.json")
+        files_with_if += self.layout.get(
+            return_type="file",
+            datatype="fmap",
+            extension="json",
+            subject=orig_entities["subject"],
+            session=orig_entities.get("session", Query.NONE),
+        )
+        files_with_if += self.layout.get(
+            return_type="file",
+            datatype="perf",
+            suffix="m0scan",
+            extension="json",
+            subject=orig_entities["subject"],
+            session=orig_entities.get("session", Query.NONE),
+        )
         for path_with_if in files_with_if:
             filename_with_if = str(path_with_if)
             self.IF_rename_paths.append(filename_with_if)
@@ -636,7 +601,7 @@ class CuBIDS(object):
                         data["IntendedFor"].append(_get_intended_for_reference(new_path))
 
                 # update the json with the new data dictionary
-                _update_json(filename_with_if, data)
+                # _update_json(filename_with_if, data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -724,7 +689,7 @@ class CuBIDS(object):
         scans_txt : str
             path to the .txt file that lists the scans
             you want to be deleted from the dataset, along
-            with thier associations.
+            with their associations.
             example path: /Users/Covitz/CCNP/scans_to_delete.txt
         """
         self.scans_txt = scans_txt
@@ -742,23 +707,31 @@ class CuBIDS(object):
     def _purge_associations(self, scans):
         """Purge field map JSONs' IntendedFor references.
 
+        XXX: Why purge associations instead of replacing them with new associations?
+
         Parameters
         ----------
         scans : :obj:`list` of :obj:`str`
             List of file paths to remove from field map JSONs.
         """
         # truncate all paths to intendedfor reference format
-        # sub, ses, modality only (no self.path)
+        # sub, ses, datatype only (no self.path)
         if_scans = []
         for scan in scans:
             if_scans.append(_get_intended_for_reference(self.path + scan))
 
-        for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
-            # json_file = self.layout.get_file(str(path))
+        # XXX: Session folders are not guaranteed to exist.
+        fmap_files = self.layout.get(
+            return_type="file",
+            datatype="fmap",
+            extension=[".json"],
+        )
+        for fmap_file in fmap_files:
+            # json_file = self.layout.get_file(fmap_file)
             # data = json_file.get_dict()
-            data = get_sidecar_metadata(str(path))
+            data = get_sidecar_metadata(fmap_file)
             if data == "Erroneous sidecar":
-                print("Error parsing sidecar: ", str(path))
+                print(f"Error parsing sidecar: {fmap_file}")
                 continue
 
             # remove scan references in the IntendedFor
@@ -770,7 +743,7 @@ class CuBIDS(object):
                         data["IntendedFor"].remove(item)
 
                 # update the json with the new data dictionary
-                _update_json(str(path), data)
+                _update_json(fmap_file, data)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -783,35 +756,44 @@ class CuBIDS(object):
                 self.reset_bids_layout()
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
-
         to_remove = []
-
-        for path in Path(self.path).rglob("sub-*/**/*.nii.gz"):
-            if str(path) in scans:
-                # bids_file = self.layout.get_file(str(path))
+        nifti_files = self.layout.get(return_type="file", extension=["nii", "nii.gz"])
+        for nifti_file in nifti_files:
+            nifti_entities = self.layout.get_file(nifti_file).entities
+            if nifti_file in scans:
+                # bids_file = self.layout.get_file(nifti_file)
                 # associations = bids_file.get_associations()
-                associations = self.get_nifti_associations(str(path))
+                associations = self.get_nifti_associations(nifti_file)
                 for assoc in associations:
                     to_remove.append(assoc)
                     # filepath = assoc.path
 
             # ensure association is not an IntendedFor reference!
-            if ".nii" not in str(path):
-                if "/dwi/" in str(path):
-                    # add the bval and bvec if there
-                    if Path(img_to_new_ext(str(path), ".bval")).exists():
-                        to_remove.append(img_to_new_ext(str(path), ".bval"))
-                    if Path(img_to_new_ext(str(path), ".bvec")).exists():
-                        to_remove.append(img_to_new_ext(str(path), ".bvec"))
+            if nifti_entities["datatype"] == "dwi":
+                # add the bval and bvec if there
+                temp_entities = patch_collection_entities(nifti_entities)
+                temp_entities["extension"] = "bval"
+                bval_file = find_file(temp_entities, self.layout)
+                if bval_file:
+                    to_remove.append(bval_file)
 
-                if "/func/" in str(path):
-                    # add tsvs
-                    tsv = img_to_new_ext(str(path), ".tsv").replace("_bold", "_events")
-                    if Path(tsv).exists():
-                        to_remove.append(tsv)
-                    # add tsv json (if exists)
-                    if Path(tsv.replace(".tsv", ".json")).exists():
-                        to_remove.append(tsv.replace(".tsv", ".json"))
+                temp_entities["extension"] = "bvec"
+                bvec_file = find_file(temp_entities, self.layout)
+                if bvec_file:
+                    to_remove.append(bvec_file)
+
+            if nifti_entities["datatype"] == "func":
+                temp_entities = patch_collection_entities(nifti_entities)
+                temp_entities["suffix"] = "events"
+                temp_entities["extension"] = "tsv"
+                events_tsv = find_file(temp_entities, self.layout)
+                if events_tsv:
+                    to_remove.append(events_tsv)
+
+                temp_entities["extension"] = "json"
+                events_json = find_file(temp_entities, self.layout)
+                if events_json:
+                    to_remove.append(events_json)
 
         to_remove += scans
 
@@ -858,6 +840,7 @@ class CuBIDS(object):
 
         This uses globbing to find files with the same path, entities, and suffix as the NIfTI,
         but with a different extension.
+        This does not account for inheritance.
         """
         # get all assocation files of a nifti image
         no_ext_file = str(nifti).split("/")[-1].split(".")[0]
@@ -870,32 +853,44 @@ class CuBIDS(object):
 
     def _cache_fieldmaps(self):
         """Search all fieldmaps and create a lookup for each file."""
-        suffix = "(phase1|phasediff|epi|fieldmap)"
+        root = Path(self.layout.root)
+        fmap_suffixes = ["phase1", "phasediff", "epi", "fieldmap"]
         fmap_files = self.layout.get(
-            suffix=suffix, regex_search=True, extension=[".nii.gz", ".nii"]
+            datatype="fmap",
+            suffix=fmap_suffixes,
+            extension=[".nii.gz", ".nii"],
         )
 
         misfits = []
         files_to_fmaps = defaultdict(list)
         for fmap_file in tqdm(fmap_files):
-            # intentions = listify(fmap_file.get_metadata().get("IntendedFor"))
-            fmap_json = img_to_new_ext(fmap_file.path, ".json")
-            metadata = get_sidecar_metadata(fmap_json)
-            if metadata == "Erroneous sidecar":
-                print("Error parsing sidecar: ", str(fmap_json))
+            fmap_path = fmap_file.path
+            fmap_metadata = fmap_file.get_metadata()
+            if "IntendedFor" not in fmap_metadata:
+                print(f"{fmap_path} does not have IntendedFor")
+                # fmap file detected, no intended for found (e.g., B0FieldIdentifier)
+                if "B0FieldIdentifier" not in fmap_metadata:
+                    misfits.append(fmap_file)
+
                 continue
-            if_list = metadata.get("IntendedFor")
-            intentions = listify(if_list)
-            subject_prefix = f"sub-{fmap_file.entities['subject']}"
 
-            if intentions is not None:
-                for intended_for in intentions:
-                    full_path = Path(self.path) / subject_prefix / intended_for
-                    files_to_fmaps[str(full_path)].append(fmap_file)
+            intended_fors = listify(fmap_file.get_metadata()["IntendedFor"])
+            for intended_for in intended_fors:
+                if intended_for.startswith("bids:"):
+                    resolved_intended_for = (
+                        resolve_bids_uri(
+                            intended_for,
+                            root,
+                            dataset_links=self.layout.get_dataset_description().get(
+                                "DatasetLinks", {}
+                            ),
+                        ),
+                    )
+                else:
+                    subject = f"sub-{fmap_file.entities['subject']}"
+                    resolved_intended_for = root / subject / intended_for
 
-            # fmap file detected, no intended for found
-            else:
-                misfits.append(fmap_file)
+                files_to_fmaps[str(resolved_intended_for)].append(fmap_file)
 
         self.fieldmap_lookup = files_to_fmaps
         self.fieldmaps_cached = True
@@ -905,7 +900,10 @@ class CuBIDS(object):
         return misfits
 
     def get_param_groups_from_key_group(self, key_group):
-        """Split key groups into param groups based on json metadata.
+        """Split a single key group into potentially multiple param groups based on json metadata.
+
+        Divide a single key group (unique entity values in filenames) into parameter groups
+        (unique metadata values in sidecar jsons).
 
         Parameters
         ----------
@@ -921,121 +919,132 @@ class CuBIDS(object):
         """
         if not self.fieldmaps_cached:
             raise Exception("Fieldmaps must be cached to find parameter groups.")
-        key_entities = _key_group_to_entities(key_group)
-        key_entities["extension"] = ".nii[.gz]*"
 
+        key_entities = _key_group_to_entities(key_group)
+        key_entities["extension"] = ["nii", "nii.gz"]
+
+        # Get all data files that match the key group
         matching_files = self.layout.get(
-            return_type="file", scope="self", regex_search=True, **key_entities
+            return_type="object",
+            scope="self",
+            **key_entities,
         )
 
-        # ensure files who's entities contain key_entities but include other
+        # ensure files whose entities contain key_entities but include other
         # entities do not also get added to matching_files
         to_include = []
         for filepath in matching_files:
-            f_key_group = _file_to_key_group(filepath)
+            f_key_group = _file_to_key_group(filepath.path)
 
             if f_key_group == key_group:
-                to_include.append(filepath)
+                to_include.append(filepath.path)
 
-        # get the modality associated with the key group
-        modalities = ["/dwi/", "/anat/", "/func/", "/perf/", "/fmap/"]
-        modality = ""
-        for mod in modalities:
-            if mod in filepath:
-                modality = mod.replace("/", "").replace("/", "")
+        # get the datatype associated with the key group
+        datatype = filepath.get_entities()["datatype"]
 
-        if modality == "":
-            print("Unusual Modality Detected")
-            modality = "other"
+        if datatype not in ("anat", "func", "dwi", "fmap", "perf"):
+            print(f"Unusual Datatype Detected: '{datatype}'")
 
         ret = _get_param_groups(
-            to_include,
-            self.fieldmap_lookup,
-            key_group,
-            self.grouping_config,
-            modality,
-            self.keys_files,
+            files=to_include,
+            fieldmap_lookup=self.fieldmap_lookup,
+            key_group_name=key_group,
+            grouping_config=self.grouping_config,
+            datatype=datatype,
+            keys_files=self.keys_files,
+            layout=self.layout,
         )
 
-        if ret == "erroneous sidecar found":
-            return "erroneous sidecar found"
-
-        # add modality to the return tuple
+        # add datatype to the return tuple
         l_ret = list(ret)
-        l_ret.append(modality)
+        l_ret.append(datatype)
         tup_ret = tuple(l_ret)
         return tup_ret
 
     def create_data_dictionary(self):
-        """Create a data dictionary."""
+        """Create a data dictionary.
+
+        This function creates a data dictionary from the grouping config file.
+
+        XXX: Why would it include parameters from all datatypes,
+        instead of just the ones in the dataset?
+        XXX: Why only keep the first datatype's parameters?
+        What if parameter settings (e.g., tolerance) are different for different datatypes?
+        """
+        # Add sidecar_params to data_dict.
+        # If there are distinct definitions for each datatype,
+        # it only adds the first one.
         sidecar_params = self.grouping_config.get("sidecar_params")
-        for mod in sidecar_params.keys():
-            mod_dict = sidecar_params[mod]
-            for s_param in mod_dict.keys():
+        for datatype in sidecar_params.keys():
+            datatype_dict = sidecar_params[datatype]
+            for s_param in datatype_dict.keys():
                 if s_param not in self.data_dict.keys():
                     self.data_dict[s_param] = {"Description": "Scanning Parameter"}
 
+        # Add relational_params to data_dict.
+        # These fields indicate relationships between images (e.g., IntendedFors).
         relational_params = self.grouping_config.get("relational_params")
         for r_param in relational_params.keys():
             if r_param not in self.data_dict.keys():
                 self.data_dict[r_param] = {"Description": "Scanning Parameter"}
 
+        # Add derived_params to data_dict.
+        # These fields are derived from the images' data.
+        # If there are distinct definitions for each datatype,
+        # it only adds the first one.
         derived_params = self.grouping_config.get("derived_params")
-        for mod in derived_params.keys():
-            mod_dict = derived_params[mod]
-            for d_param in mod_dict.keys():
+        for datatype in derived_params.keys():
+            datatype_dict = derived_params[datatype]
+            for d_param in datatype_dict.keys():
                 if d_param not in self.data_dict.keys():
                     self.data_dict[d_param] = {"Description": "NIfTI Header Parameter"}
 
-        # Manually add non-sidecar columns/descriptions to data_dict
-        desc1 = "Column where users mark groups to manually check"
-        self.data_dict["ManualCheck"] = {}
-        self.data_dict["ManualCheck"]["Description"] = desc1
-        desc2 = "Column to mark notes about the param group"
-        self.data_dict["Notes"] = {}
-        self.data_dict["Notes"]["Description"] = desc2
-        desc31 = "Auto-generated suggested rename of Non-Domiannt Groups"
-        desc32 = " based on variant scanning parameters"
-        self.data_dict["RenameKeyGroup"] = {}
-        self.data_dict["RenameKeyGroup"]["Description"] = desc31 + desc32
-        desc4 = "Number of Files in the Parameter Group"
-        self.data_dict["Counts"] = {}
-        self.data_dict["Counts"]["Description"] = desc4
-        self.data_dict["Modality"] = {}
-        self.data_dict["Modality"]["Description"] = "MRI image type"
-        desc5 = "Column to mark groups to remove with a '0'"
-        self.data_dict["MergeInto"] = {}
-        self.data_dict["MergeInto"]["Description"] = desc5
-        self.data_dict["FilePath"] = {}
-        self.data_dict["FilePath"]["Description"] = "Location of file"
-        desc6 = "Number of participants in a Key Group"
-        self.data_dict["KeyGroupCount"] = {}
-        self.data_dict["KeyGroupCount"]["Description"] = desc6
-        desc71 = "A set of scans whose filenames share all BIDS filename"
-        desc72 = " key-value pairs, excluding subject and session"
-        self.data_dict["KeyGroup"] = {}
-        self.data_dict["KeyGroup"]["Description"] = desc71 + desc72
-        desc81 = "The set of scans with identical metadata parameters in their"
-        desc82 = " sidecars (defined within a Key Group and denoted"
-        desc83 = " numerically)"
-        self.data_dict["ParamGroup"] = {}
-        self.data_dict["ParamGroup"]["Description"] = desc81 + desc82 + desc83
-        desc91 = "Key Group name and Param Group number separated by a double"
-        desc92 = " underscore"
-        self.data_dict["KeyParamGroup"] = {}
-        self.data_dict["KeyParamGroup"]["Description"] = desc91 + desc92
+        # Manually add non-sidecar column descriptions to data_dict
+        manual_dict = {
+            "KeyGroup": {
+                "Description": (
+                    "A set of scans whose filenames share all BIDS filename key-value pairs, "
+                    "excluding subject and session"
+                ),
+            },
+            "KeyGroupCount": {"Description": "Number of participants in a Key Group"},
+            "ParamGroup": {
+                "Description": (
+                    "The set of scans with identical metadata parameters in their sidecars "
+                    "(defined within a Key Group and denoted numerically)"
+                ),
+            },
+            "KeyParamGroup": {
+                "Description": (
+                    "Key Group name and Param Group number separated by a double underscore"
+                ),
+            },
+            "FilePath": {"Description": "Location of file"},
+            "Counts": {"Description": "Number of Files in the Parameter Group"},
+            "Datatype": {"Description": "MRI image type"},
+            "MergeInto": {"Description": "Column to mark groups to merge into another group"},
+            "RenameKeyGroup": {
+                "Description": (
+                    "Auto-generated suggested rename of Non-Dominant Groups based on variant "
+                    "scanning parameters"
+                ),
+            },
+            "Notes": {"Description": "Column to mark notes about the param group"},
+            "ManualCheck": {"Description": "Column where users mark groups to manually check"},
+        }
+        self.data_dict.update(manual_dict)
 
     def get_data_dictionary(self, df):
-        """Create a BIDS data dictionary from dataframe columns.
+        """Extract the column descriptions for a DataFrame.
 
         Parameters
         ----------
-        df : Pandas DataFrame
+        df : :obj:`pandas.DataFrame`
             Pre export TSV that will be converted to a json dictionary
 
         Returns
         -------
-        data_dict : dictionary
+        data_dict : :obj:`dict`
             Python dictionary in BIDS data dictionary format
         """
         json_dict = {}
@@ -1049,21 +1058,6 @@ class CuBIDS(object):
             if col in col_list:
                 json_dict[col] = self.data_dict[col]
 
-        # for col in range(len(col_list)):
-        #     col_dict[col + 1] = col_list[col]
-
-        # header_dict = {}
-        # # build header dictionary
-        # header_dict['Long Description'] = name
-        # description = 'https://cubids.readthedocs.io/en/latest/usage.html'
-        # header_dict['Description'] = description
-        # header_dict['Version'] = 'CuBIDS v1.0.5'
-        # header_dict['Levels'] = col_dict
-
-        # # Build top level dictionary
-        # data_dict = {}
-        # data_dict[name] = header_dict
-
         return json_dict
 
     def get_param_groups_dataframes(self):
@@ -1072,16 +1066,16 @@ class CuBIDS(object):
         labeled_files = []
         param_group_summaries = []
         for key_group in key_groups:
-            try:
-                (
-                    labeled_file_params,
-                    param_summary,
-                    modality,
-                ) = self.get_param_groups_from_key_group(key_group)
-            except Exception:
-                continue
+            # XXX: What conditions lead to failure here?
+            (
+                labeled_file_params,
+                param_summary,
+                datatype,
+            ) = self.get_param_groups_from_key_group(key_group)
+
             if labeled_file_params is None:
                 continue
+
             param_group_summaries.append(param_summary)
             labeled_files.append(labeled_file_params)
 
@@ -1115,9 +1109,8 @@ class CuBIDS(object):
 
         # Now automate suggested rename based on variant params
         # loop though imaging and derived param keys
-
         sidecar = self.grouping_config.get("sidecar_params")
-        sidecar = sidecar[modality]
+        sidecar = sidecar[datatype]
 
         relational = self.grouping_config.get("relational_params")
 
@@ -1239,6 +1232,8 @@ class CuBIDS(object):
         """
         self._cache_fieldmaps()
 
+        check_for_file_collection_conflicts(self.layout)
+
         # check if path_prefix is absolute or relative
         # if relative, put output in BIDS_ROOT/code/CuBIDS/ dir
         if "/" not in path_prefix:
@@ -1251,8 +1246,8 @@ class CuBIDS(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        summary = summary.sort_values(by=["Modality", "KeyGroupCount"], ascending=[True, False])
-        big_df = big_df.sort_values(by=["Modality", "KeyGroupCount"], ascending=[True, False])
+        summary = summary.sort_values(by=["Datatype", "KeyGroupCount"], ascending=[True, False])
+        big_df = big_df.sort_values(by=["Datatype", "KeyGroupCount"], ascending=[True, False])
 
         # Create json dictionaries for summary and files tsvs
         self.create_data_dictionary()
@@ -1276,27 +1271,28 @@ class CuBIDS(object):
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
 
     def get_key_groups(self):
-        """Identify the key groups for the bids dataset."""
+        """Identify the entity-based groups for the BIDS dataset."""
         # reset self.keys_files
         self.keys_files = {}
 
         key_groups = set()
 
-        for path in Path(self.path).rglob("sub-*/**/*.*"):
+        # Find all data files in the BIDS directory
+        for bids_file in self.layout.get(extension=["nii", "nii.gz"]):
+            file_path = bids_file.path
             # ignore all dot directories
-            if "/." in str(path):
+            if "/." in str(file_path):
                 continue
 
-            if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
-                key_groups.update((_file_to_key_group(path),))
+            key_groups.update((_file_to_key_group(file_path),))
 
-                # Fill the dictionary of key group, list of filenames pairrs
-                ret = _file_to_key_group(path)
+            # Fill the dictionary of key group, list of filenames pairrs
+            ret = _file_to_key_group(file_path)
 
-                if ret not in self.keys_files.keys():
-                    self.keys_files[ret] = []
+            if ret not in self.keys_files.keys():
+                self.keys_files[ret] = []
 
-                self.keys_files[ret].append(path)
+            self.keys_files[ret].append(file_path)
 
         return sorted(key_groups)
 
@@ -1416,27 +1412,40 @@ def _get_intended_for_reference(scan):
 
 
 def _get_param_groups(
+    *,
     files,
     fieldmap_lookup,
     key_group_name,
     grouping_config,
-    modality,
+    datatype,
     keys_files,
+    layout,
 ):
     """Find a list of *parameter groups* from a list of files.
 
-    For each file in `files`, find critical parameters for metadata. Then find
-    unique sets of these critical parameters.
+    For each file in `files`, find critical parameters for metadata.
+    Then find unique sets of these critical parameters.
+
+    XXX: ``files`` appears redundant with ``keys_files[key_group_name]``.
 
     Parameters
     ----------
     files : :obj:`list` of :obj:`str`
         List of file names
-    fieldmap_lookup : :obj:`dict`
-        mapping of filename strings relative to the bids root
-        (e.g. "sub-X/ses-Y/func/sub-X_ses-Y_task-rest_bold.nii.gz")
+    fieldmap_lookup : :obj:`collections.defaultdict`
+        Mapping of imaging files to lists of associated fieldmap files.
+        The imaging files are full paths, while the field map files are
+        :obj:`~bids.layout.BIDSImageFile` objects.
+    key_group_name : :obj:`str`
+        Name of the key group to which the files belong.
     grouping_config : :obj:`dict`
-        configuration for defining parameter groups
+        Configuration for defining parameter groups.
+    datatype : :obj:`str`
+        Type of the data in the files.
+    keys_files : :obj:`dict`
+        Dictionary of key group names and lists of files.
+    layout : :obj:`~bids.layout.BIDSLayout`
+        BIDSLayout object for the dataset.
 
     Returns
     -------
@@ -1446,103 +1455,118 @@ def _get_param_groups(
     param_groups_with_counts : :obj:`pandas.DataFrame`
         A data frame with param group summaries.
     """
+    # These variables seem to have redundant information
+    files2 = sorted(files)
+    files3 = sorted(keys_files[key_group_name])
+    if files2 != files3:
+        raise Exception(f"{files2}\n\n{files3}")
+
     if not files:
         print("WARNING: no files for", key_group_name)
         return None, None
 
     # Split the config into separate parts
+    # First we have BIDS metadata fields from the imaging files' sidecars.
+    # The config has tolerances for different fields and datatypes.
     imaging_params = grouping_config.get("sidecar_params", {})
-    imaging_params = imaging_params[modality]
+    imaging_params = imaging_params[datatype]
 
+    # Now we have relational parameters, which are fields that link
+    # between files in the dataset. For example, a fieldmap file is related to
+    # a functional file if it is intended to correct it.
     relational_params = grouping_config.get("relational_params", {})
 
+    # Finally, we have derived parameters, which are fields that are calculated
+    # by CuBIDS, rather than drawn from the sidecar files directly.
     derived_params = grouping_config.get("derived_params")
-    derived_params = derived_params[modality]
+    derived_params = derived_params[datatype]
 
     imaging_params.update(derived_params)
 
     dfs = []
     # path needs to be relative to the root with no leading prefix
-
     for path in files:
-        # metadata = layout.get_metadata(path)
-        metadata = get_sidecar_metadata(img_to_new_ext(path, ".json"))
-        if metadata == "Erroneous sidecar":
-            print("Error parsing sidecar: ", img_to_new_ext(path, ".json"))
-        else:
-            intentions = metadata.get("IntendedFor", [])
+        metadata = layout.get_metadata(path)
+
+        # Get the metadata fields that are in the config
+        wanted_keys = metadata.keys() & imaging_params
+        selected_metadata = {key: metadata[key] for key in wanted_keys}
+        selected_metadata["FilePath"] = path
+        selected_metadata["KeyGroup"] = key_group_name
+
+        # Add file collection entity metadata
+        file_entities = layout.get_file(path).get_entities()
+        for ent, metadata_fields in file_collection_metadata.items():
+            if ent in file_entities.keys():
+                collection_entities = {k: v for k, v in file_entities.items() if k != ent}
+                collection_entities[ent] = Query.ANY
+                for metadata_field in metadata_fields:
+                    if metadata_field in layout.get_entities():
+                        meth = f"get_{metadata_field}"
+                        values = getattr(layout, meth)(**collection_entities)
+                        values = [f"{v:.5f}" if isinstance(v, float) else v for v in values]
+                        selected_metadata[f"{metadata_field}__collection"] = str(values)
+
+        # Add the number of slice times specified
+        if "NSliceTimes" in derived_params:
             slice_times = metadata.get("SliceTiming", [])
+            selected_metadata["NSliceTimes"] = len(slice_times)
 
-            wanted_keys = metadata.keys() & imaging_params
-            example_data = {key: metadata[key] for key in wanted_keys}
-            example_data["KeyGroup"] = key_group_name
+        # Get the fieldmaps out and add their types
+        if "FieldmapKey" in relational_params:
+            associated_fieldmaps = fieldmap_lookup[path]
+            fieldmap_types = sorted(
+                [_file_to_key_group(fmap.path) for fmap in associated_fieldmaps]
+            )
 
-            # Get the fieldmaps out and add their types
-            if "FieldmapKey" in relational_params:
-                fieldmap_types = sorted(
-                    [_file_to_key_group(fmap.path) for fmap in fieldmap_lookup[path]]
-                )
+            # check if config says columns or bool
+            if relational_params["FieldmapKey"]["display_mode"] == "bool":
+                selected_metadata["HasFieldmap"] = len(fieldmap_types) > 0
+            else:
+                for fmap_num, fmap_type in enumerate(fieldmap_types):
+                    selected_metadata[f"FieldmapKey{fmap_num:02d}"] = fmap_type
 
-                # check if config says columns or bool
-                if relational_params["FieldmapKey"]["display_mode"] == "bool":
-                    if len(fieldmap_types) > 0:
-                        example_data["HasFieldmap"] = True
-                    else:
-                        example_data["HasFieldmap"] = False
-                else:
-                    for fmap_num, fmap_type in enumerate(fieldmap_types):
-                        example_data[f"FieldmapKey{fmap_num:02d}"] = fmap_type
+        # If it's a fieldmap, see what key group it's intended to correct
+        if "IntendedForKey" in relational_params:
+            intentions = metadata.get("IntendedFor", [])
+            intended_key_groups = sorted(
+                [_file_to_key_group(intention) for intention in intentions]
+            )
 
-            # Add the number of slice times specified
-            if "NSliceTimes" in derived_params:
-                example_data["NSliceTimes"] = len(slice_times)
+            # check if config says columns or bool
+            if relational_params["IntendedForKey"]["display_mode"] == "bool":
+                selected_metadata["UsedAsFieldmap"] = len(intended_key_groups) > 0
+            else:
+                for intention_num, intention_key_group in enumerate(intended_key_groups):
+                    selected_metadata[f"IntendedForKey{intention_num:02d}"] = intention_key_group
 
-            example_data["FilePath"] = path
-
-            # If it's a fieldmap, see what key group it's intended to correct
-            if "IntendedForKey" in relational_params:
-                intended_key_groups = sorted(
-                    [_file_to_key_group(intention) for intention in intentions]
-                )
-
-                # check if config says columns or bool
-                if relational_params["IntendedForKey"]["display_mode"] == "bool":
-                    if len(intended_key_groups) > 0:
-                        example_data["UsedAsFieldmap"] = True
-                    else:
-                        example_data["UsedAsFieldmap"] = False
-                else:
-                    for intention_num, intention_key_group in enumerate(intended_key_groups):
-                        example_data[f"IntendedForKey{intention_num:02d}"] = intention_key_group
-
-            dfs.append(example_data)
+        dfs.append(selected_metadata)
 
     # Assign each file to a ParamGroup
+    # Round parameter groups based on precision in config
+    df = round_params(pd.DataFrame(dfs), grouping_config, datatype)
 
-    # round param groups based on precision
-    df = round_params(pd.DataFrame(dfs), grouping_config, modality)
-
-    # cluster param groups based on tolerance
-    df = format_params(df, grouping_config, modality)
+    # Cluster param groups based on tolerance
+    df = format_params(df, grouping_config, datatype)
     # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
-    # get the subset of columns to drop duplicates by
+    # Get the subset of columns by which to drop duplicates
     check_cols = []
     for col in list(df.columns):
-        if f"Cluster_{col}" not in list(df.columns) and col != "FilePath":
+        if (
+            (f"Cluster_{col}" not in df.columns)
+            and (f"{col}__collection" not in df.columns)
+            and (col != "FilePath")
+        ):
             check_cols.append(col)
 
-    # Find the unique ParamGroups and assign ID numbers in "ParamGroup"\
-    try:
-        deduped = df.drop("FilePath", axis=1)
-    except Exception:
-        return "erroneous sidecar found"
-
+    # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
+    deduped = df.drop("FilePath", axis=1)
     deduped = deduped.drop_duplicates(subset=check_cols, ignore_index=True)
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
 
-    # add the modality as a column
-    deduped["Modality"] = modality
+    # add the datatype as a column
+    deduped["Datatype"] = datatype
 
     # add key group count column (will delete later)
     deduped["KeyGroupCount"] = len(keys_files[key_group_name])
@@ -1564,7 +1588,10 @@ def _get_param_groups(
 
     # Send the new, ordered param group ids to the files list
     ordered_labeled_files = pd.merge(
-        df, param_groups_with_counts, on=check_cols, suffixes=("_x", "")
+        df,
+        param_groups_with_counts,
+        on=check_cols,
+        suffixes=("_x", ""),
     )
 
     # sort ordered_labeled_files by param group
@@ -1575,16 +1602,17 @@ def _get_param_groups(
         if col.startswith("Cluster_"):
             ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
             param_groups_with_counts = param_groups_with_counts.drop(col, axis=1)
+
         if col.endswith("_x"):
             ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
 
     return ordered_labeled_files, param_groups_with_counts
 
 
-def round_params(param_group_df, config, modality):
+def round_params(param_group_df, config, datatype):
     """Round columns' values in DataFrame according to requested precision."""
-    to_format = config["sidecar_params"][modality]
-    to_format.update(config["derived_params"][modality])
+    to_format = config["sidecar_params"][datatype]
+    to_format.update(config["derived_params"][datatype])
 
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
@@ -1613,7 +1641,7 @@ def get_sidecar_metadata(json_file):
         return "Erroneous sidecar"
 
 
-def format_params(param_group_df, config, modality):
+def format_params(param_group_df, config, datatype):
     """Run AgglomerativeClustering on param groups and add columns to dataframe.
 
     Parameters
@@ -1624,23 +1652,23 @@ def format_params(param_group_df, config, modality):
     config : :obj:`dict`
         Configuration for defining parameter groups.
         This dictionary has two keys: ``'sidecar_params'`` and ``'derived_params'``.
-    modality : :obj:`str`
-        Modality of the scan.
+    datatype : :obj:`str`
+        Datatype of the scan.
         This is used to select the correct configuration from the config dict.
 
     Returns
     -------
     param_group_df : :obj:`pandas.DataFrame`
         An updated version of the input data frame,
-        with a new column added for each element in the modality's
+        with a new column added for each element in the datatype's
         ``'sidecar_params'`` and ``'derived_params'`` dictionaries.
         The new columns will have the name ``'Cluster_' + column_name``,
         and will contain the cluster labels for each parameter group.
 
     Notes
     -----
-    ``'sidecar_params'`` is a dictionary of dictionaries, where keys are modalities.
-    The modality-wise dictionary's keys are names of BIDS fields to directly include
+    ``'sidecar_params'`` is a dictionary of dictionaries, where keys are datatypes.
+    The datatype-wise dictionary's keys are names of BIDS fields to directly include
     in the Parameter Groupings,
     and the values describe the parameters by which those BIDS' fields are compared.
     For example,
@@ -1648,12 +1676,19 @@ def format_params(param_group_df, config, modality):
     means that the RepetitionTime field should be compared across files and flagged as a
     variant if it differs from others by 0.000001 or more.
 
-    ``'derived_params'`` is a dictionary of dictionaries, where keys are modalities.
-    The modality-wise dictionary's keys are names of BIDS fields to derive from the
+    ``'derived_params'`` is a dictionary of dictionaries, where keys are datatypes.
+    The datatype-wise dictionary's keys are names of BIDS fields to derive from the
     NIfTI header and include in the Parameter Groupings.
     """
-    to_format = config["sidecar_params"][modality]
-    to_format.update(config["derived_params"][modality])
+    to_format = copy.deepcopy(config["sidecar_params"][datatype])
+    to_format.update(config["derived_params"][datatype])
+
+    for fc_fields in file_collection_metadata.values():
+        for field in fc_fields:
+            field_col = f"{field}__collection"
+            if field_col in param_group_df:
+                to_format.pop(field)
+                to_format[field_col] = {"suggest_variant_rename": True}
 
     for column_name, column_fmt in to_format.items():
         if column_name not in param_group_df:
@@ -1728,3 +1763,41 @@ def get_key_name(path, key):
     for part in parts:
         if part.startswith(key + "-"):
             return part
+
+
+def check_for_file_collection_conflicts(layout):
+    """Check for any files with problematic file collection entities.
+
+    If a dataset contains a data file with one or more file collection entities (e.g., echo),
+    as well as a data file that matches on everything except the file collection entities,
+    then the dataset may be BIDS compliant, but CuBIDS won't be able to deal with ambiguity
+    regarding associated files and/or metadata.
+
+    For example, the following set of files, it would be unclear which data file the physio.tsv.gz
+    applies to.
+
+    ```
+    sub-01_task-rest_echo-1_bold.nii.gz
+    sub-01_task-rest_bold.nii.gz
+    sub-01_task-rest_physio.tsv.gz
+    ```
+    """
+    errors = []
+    files = layout.get(return_type="object", extension=[".nii", ".nii.gz"])
+    valid_entities = layout.get_entities(metadata=False)
+    for file_ in files:
+        entities = file_.get_entities()
+        valid_entities = {k: Query.NONE for k in valid_entities.keys()}
+        valid_entities.update(entities)
+        entities_to_check = valid_entities.copy()
+        for ent in file_collection_metadata.keys():
+            if ent in entities.keys():
+                entities_to_check[ent] = [entities_to_check[ent], Query.NONE]
+                matching_files = layout.get(**entities_to_check)
+                bad_files = [f.relpath for f in matching_files if f.path != file_.path]
+                for bad_file in bad_files:
+                    errors.append(f"{file_.relpath} --> {bad_file}")
+
+    if errors:
+        error_str = "\n\t" + "\n\t".join(errors)
+        raise RuntimeError(f"File collection conflicts detected:{error_str}")

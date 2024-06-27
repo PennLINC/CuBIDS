@@ -67,7 +67,7 @@ and therefore both MRI image type and acquisition specific—
 each BIDS session directory contains images that belong to a set of Parameter Groups.
 CuBIDS assigns each session, or set of Parameter Groups,
 to an Acquisition Group such that all sessions in an Acquisition Group possesses an identical set of
-scan acquisitions and metadata parameters across all image modalities present in the dataset.
+scan acquisitions and metadata parameters across all image datatypes present in the dataset.
 We find Acquisition Groups to be a particularly useful categorization of BIDS data,
 as they identify homogeneous sets of sessions (not individual scans) in a large dataset.
 They are also useful for expediting the testing of pipelines;
@@ -255,7 +255,7 @@ In addition to facilitating curation of large, heterogeneous BIDS datasets,
 ``CuBIDS`` also prepares datasets for testing BIDS Apps.
 This portion of the ``CuBIDS`` workflow relies on the concept of the Acquisition Group:
 a set of sessions that have identical scan types and metadata across all imaging
-modalities present in the session set.
+datatypes present in the session set.
 Specifically, ``cubids copy-exemplars`` copies one subject from each
 Acquisition Group into a separate directory,
 which we call an ``Exemplar Dataset``.
