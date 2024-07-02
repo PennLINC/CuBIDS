@@ -38,7 +38,7 @@ Now, download and unzip the example data (you can also do this in your Finder wi
 
 .. code-block:: console
 
-    $ curl -sSLO https://github.com/PennLINC/CuBIDS/raw/main/cubids/testdata/BIDS_Dataset.zip
+    $ curl -sSLO https://github.com/PennLINC/CuBIDS/raw/main/cubids/tests/data/BIDS_Dataset.zip
     $ unzip BIDS_Dataset.zip
     $ rm BIDS_Dataset.zip
 
