@@ -453,7 +453,7 @@ def test_tsv_merge_changes(tmp_path):
     renamed = True
     new_keys = applied["KeyGroup"].tolist()
     for row in range(len(orig)):
-        if orig.loc[row, "Modality"] != "fmap":
+        if orig.loc[row, "Datatype"] != "fmap":
             if (
                 str(orig.loc[row, "RenameKeyGroup"]) != "nan"
                 and str(orig.loc[row, "RenameKeyGroup"]) not in new_keys
