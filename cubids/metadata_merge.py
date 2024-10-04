@@ -302,7 +302,9 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
             acq_groups[acq_id].append((row.EntitySet, row.ParamGroup))
         else:
             acq_id = (file_entities.get("subject"), None)
-            acq_groups[acq_id].append((row.EntitySet, row.ParamGroup, file_entities.get("session")))
+            acq_groups[acq_id].append(
+                (row.EntitySet, row.ParamGroup, file_entities.get("session"))
+            )
 
     # Map the contents to a list of subjects/sessions
     contents_to_subjects = defaultdict(list)

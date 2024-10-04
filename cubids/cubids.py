@@ -347,7 +347,9 @@ class CuBIDS(object):
         merge_commands = []
         for source_id, dest_id in ok_merges:
             dest_files = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == dest_id).all(1)]
-            source_files = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == source_id).all(1)]
+            source_files = files_df.loc[
+                (files_df[["ParamGroup", "EntitySet"]] == source_id).all(1)
+            ]
 
             # Get a source json file
             img_full_path = self.path + source_files.iloc[0].FilePath
