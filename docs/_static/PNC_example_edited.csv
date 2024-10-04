@@ -1,4 +1,4 @@
-RenameKeyGroup,MergeInto,KeyGroup,ParamGroup,Counts,FieldmapKey00,NSliceTimes,RepetitionTime
+RenameEntitySet,MergeInto,EntitySet,ParamGroup,Counts,FieldmapKey00,NSliceTimes,RepetitionTime
 ,,datatype-dwi_run-1_suffix-dwi,1,1361,datatype-fmap_fmap-phase1_suffix-phase1,70,8.1
 acquisition-VariantTr_datatype-dwi_run-1_suffix-dwi,,datatype-dwi_run-1_suffix-dwi,2,1,datatype-fmap_fmap-phase1_suffix-phase1,70,8.4
 ,,datatype-dwi_run-1_suffix-dwi,3,15,datatype-fmap_fmap-phasediff_suffix-phasediff,70,8.1

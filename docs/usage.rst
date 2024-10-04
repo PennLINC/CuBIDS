@@ -10,12 +10,12 @@ More definitions
 ----------------
 
 
-.. _keygroup:
+.. _entityset:
 
-Key Group
+Entity Set
 ~~~~~~~~~
 
-A :term:`Key Group` is a unique set of BIDS key-value pairs,
+A :term:`Entity Set` is a unique set of BIDS key-value pairs,
 excluding identifiers such as subject and session.
 For example, the files::
 
@@ -23,18 +23,18 @@ For example, the files::
     bids-root/sub-1/ses-2/func/sub-1_ses-2_acq-mb_dir_PA_task-rest_bold.nii.gz
     bids-root/sub-2/ses-1/func/sub-2_ses-1_acq-mb_dir-PA_task-rest_bold.nii.gz
 
-Would all share the same Key Group.
+Would all share the same Entity Set.
 If these scans were all acquired as a part of the same study on the same scanner with
 exactly the same acquisition parameters,
 this naming convention would suffice.
 
 However, in large multi-scanner, multi-site,
 or longitudinal studies where acquisition parameters change over time,
-it's possible that the same Key Group could contain scans that differ in important ways.
+it's possible that the same Entity Set could contain scans that differ in important ways.
 
-``CuBIDS`` examines all acquisitions within a Key Group to see if there are any images
+``CuBIDS`` examines all acquisitions within a Entity Set to see if there are any images
 that differ in a set of important acquisition parameters.
-The subsets of consistent acquisition parameter sets within a Key Group are called a :ref:`paramgroup`.
+The subsets of consistent acquisition parameter sets within a Entity Set are called a :ref:`paramgroup`.
 
 
 .. _paramgroup:
@@ -42,17 +42,17 @@ The subsets of consistent acquisition parameter sets within a Key Group are call
 Parameter Group
 ~~~~~~~~~~~~~~~
 
-A :term:`Parameter Group` is a subset of a Key Group that contains images with the same
+A :term:`Parameter Group` is a subset of a Entity Set that contains images with the same
 acquisition parameters.
 
-Even though two images may belong to the same Key Group and are valid BIDS,
+Even though two images may belong to the same Entity Set and are valid BIDS,
 they may have images with different acquisition parameters.
 There is nothing fundamentally wrong with this —
 the ``bids-validator`` will often simply flag these differences with a ``Warning``,
 but not necessarily suggest changes.
 That being said,
 there can be detrimental consequences downstream if the different parameters cause the
-same preprocessing pipelines to configure differently to images of the same Key Group.
+same preprocessing pipelines to configure differently to images of the same Entity Set.
 
 
 .. _acquisitiongroup:
@@ -62,7 +62,7 @@ Acquisition Group
 
 We define an :term:`Acquisition Group` as a collection of sessions across participants that
 contain the exact same set of Key and Parameter Groups.
-Since Key Groups are based on the BIDS filenames—
+Since Entity Sets are based on the BIDS filenames—
 and therefore both MRI image type and acquisition specific—
 each BIDS session directory contains images that belong to a set of Parameter Groups.
 CuBIDS assigns each session, or set of Parameter Groups,
@@ -75,7 +75,7 @@ if a BIDS App runs successfully on a single subject from each Acquisition Group,
 one can be confident that it will handle all combinations of scanning parameters in the entire dataset.
 
 The Acquisition Groups that subjects belong to are listed in ``_AcqGrouping.csv``,
-while the Key Groups and Parameter Groups that define each Acquisition Group are noted in
+while the Entity Sets and Parameter Groups that define each Acquisition Group are noted in
 ``_AcqGroupingInfo.txt``.
 
 
@@ -84,10 +84,10 @@ while the Key Groups and Parameter Groups that define each Acquisition Group are
 The ``_summary.tsv`` File
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This file contains all the detected Key Groups and Parameter Groups.
+This file contains all the detected Entity Sets and Parameter Groups.
 It provides an opportunity to evaluate your data and decide how to handle heterogeneity.
 
-Below is an example ``_summary.tsv`` of the run-1 DWI Key Group in the PNC [#f1]_.
+Below is an example ``_summary.tsv`` of the run-1 DWI Entity Set in the PNC [#f1]_.
 This reflects the original data that has been converted to BIDS using a heuristic.
 It is similar to what you will see when you first use this functionality:
 
@@ -112,9 +112,9 @@ but it keeps track of every file's assignment to Key and Parameter Groups.
 Modifying Key and Parameter Group Assignments
 ---------------------------------------------
 
-Sometimes we see that there are important differences in acquisition parameters within a Key Group.
+Sometimes we see that there are important differences in acquisition parameters within a Entity Set.
 If these differences impact how a pipeline will process the data,
-it makes sense to assign the scans in that Parameter Group to a different Key Group
+it makes sense to assign the scans in that Parameter Group to a different Entity Set
 (i.e., assign them a different BIDS name).
 This can be accomplished by editing the empty columns in the `_summary.csv` file produced by
 ``cubids group``.
@@ -127,7 +127,7 @@ Once the columns have been edited you can apply the changes to BIDS data using
 
 The changes in ``keyparam_edited_summary.csv`` will be applied to the BIDS data in ``/bids/dir``
 and the new Key and Parameter groups will be saved to csv files starting with ``new_keyparam_prefix``.
-Note: fieldmaps keygroups with variant parameters will be identified but not renamed.
+Note: fieldmaps entitysets with variant parameters will be identified but not renamed.
 
 
 The ``_AcqGrouping.tsv`` file
@@ -142,14 +142,14 @@ Acquisition Group number.
 The ``_AcqGroupInfo.txt`` file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``_AcqGroupInfo.txt`` file lists all Key Groups that belong to a given Acquisition Group
+The ``_AcqGroupInfo.txt`` file lists all Entity Sets that belong to a given Acquisition Group
 along with the number of sessions each group possesses.
 
 
 Visualizing and summarizing metadata heterogeneity
 --------------------------------------------------
 
-Use ``cubids group`` to generate your dataset's Key Groups and Parameter Groups:
+Use ``cubids group`` to generate your dataset's Entity Sets and Parameter Groups:
 
 .. code-block:: console
 
@@ -174,10 +174,10 @@ Detecting Variant Groups
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Additionally, ``cubids apply`` can automatically rename files in :term:`Variant Groups <Variant Group>`
-based on their scanning parameters that vary from those in their Key Groups'
+based on their scanning parameters that vary from those in their Entity Sets'
 :term:`Dominant Parameter Groups <Dominant Group>`.
 Renaming is automatically suggested when the summary.tsv is generated from a ``cubids group`` run,
-with the suggested new name listed in the tsv's :term:`Rename Key Group` column.
+with the suggested new name listed in the tsv's :term:`Rename Entity Set` column.
 CuBIDS populates this column for all Variant Groups
 (e.g., every Parameter Group except the Dominant one).
 Specifically, CuBIDS will suggest renaming all non-dominant Parameter Group to include ``VARIANT*``
@@ -188,7 +188,7 @@ the one present in the Dominant Group,
 it will automatically suggest renaming all scans in that Variant Group to include
 ``acquisition-VARIANTRepetitionTime`` in their filenames.
 When the user runs ``cubids apply``,
-filenames will get renamed according to the auto-generated names in the “Rename Key Group” column
+filenames will get renamed according to the auto-generated names in the “Rename Entity Set” column
 in the summary.tsv
 
 
@@ -233,7 +233,7 @@ Customizable configuration
 This file can be passed as an argument to ``cubids group`` and ``cubids apply``
 using the ``--config`` flag and allows users to customize grouping settings based on
 MRI image type and parameter.
-Each ``Key Group`` is associated with one (and only one) MRI image type,
+Each ``Entity Set`` is associated with one (and only one) MRI image type,
 as BIDS filenames include MRI image type-specific values as their suffixes.
 
 This easy-to-modify configuration file provides several benefits to curation.

@@ -55,7 +55,7 @@ class CuBIDS(object):
     _layout : :obj:`bids.layout.BIDSLayout`
         The BIDSLayout object.
     keys_files : :obj:`dict`
-        A dictionary of key groups and the files that belong to them.
+        A dictionary of entity sets and the files that belong to them.
     fieldmaps_cached : :obj:`bool`
         If True, the fieldmaps have been cached.
     datalad_ready : :obj:`bool`
@@ -100,7 +100,7 @@ class CuBIDS(object):
         self.fieldmaps_cached = False
         self.datalad_ready = False
         self.datalad_handle = None
-        self.old_filenames = []  # files whose key groups changed
+        self.old_filenames = []  # files whose entity sets changed
         self.new_filenames = []  # new filenames for files to change
         self.IF_rename_paths = []  # fmap jsons with rename intended fors
         self.grouping_config = load_config(grouping_config)
@@ -309,7 +309,7 @@ class CuBIDS(object):
     def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True):
         """Apply changes documented in the edited summary tsv and generate the new tsv files.
 
-        This function looks at the RenameKeyGroup and MergeInto
+        This function looks at the RenameEntitySet and MergeInto
         columns and modifies the bids dataset according to the
         specified changs.
 
@@ -346,8 +346,8 @@ class CuBIDS(object):
 
         merge_commands = []
         for source_id, dest_id in ok_merges:
-            dest_files = files_df.loc[(files_df[["ParamGroup", "KeyGroup"]] == dest_id).all(1)]
-            source_files = files_df.loc[(files_df[["ParamGroup", "KeyGroup"]] == source_id).all(1)]
+            dest_files = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == dest_id).all(1)]
+            source_files = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == source_id).all(1)]
 
             # Get a source json file
             img_full_path = self.path + source_files.iloc[0].FilePath
@@ -361,7 +361,7 @@ class CuBIDS(object):
         # delete_commands = []
         to_remove = []
         for rm_id in deletions:
-            files_to_rm = files_df.loc[(files_df[["ParamGroup", "KeyGroup"]] == rm_id).all(1)]
+            files_to_rm = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)]
 
             for rm_me in files_to_rm.FilePath:
                 if Path(self.path + rm_me).exists():
@@ -372,21 +372,21 @@ class CuBIDS(object):
         self._purge_associations(to_remove)
 
         # Now do the file renaming
-        change_keys_df = summary_df[summary_df.RenameKeyGroup.notnull()]
+        change_keys_df = summary_df[summary_df.RenameEntitySet.notnull()]
         move_ops = []
         # return if nothing to change
         if len(change_keys_df) > 0:
-            key_groups = {}
+            entity_sets = {}
 
             for i in range(len(change_keys_df)):
-                new_key = change_keys_df.iloc[i]["RenameKeyGroup"]
+                new_key = change_keys_df.iloc[i]["RenameEntitySet"]
                 old_key_param = change_keys_df.iloc[i]["KeyParamGroup"]
 
                 # add to dictionary
-                key_groups[old_key_param] = new_key
+                entity_sets[old_key_param] = new_key
 
-            # orig key/param tuples that will have new key group
-            to_change = list(key_groups.keys())
+            # orig key/param tuples that will have new entity set
+            to_change = list(entity_sets.keys())
 
             for row in range(len(files_df)):
                 file_path = self.path + files_df.loc[row, "FilePath"]
@@ -396,11 +396,11 @@ class CuBIDS(object):
                     if key_param_group in to_change:
                         orig_key_param = files_df.loc[row, "KeyParamGroup"]
 
-                        new_key = key_groups[orig_key_param]
+                        new_key = entity_sets[orig_key_param]
 
-                        new_entities = _key_group_to_entities(new_key)
+                        new_entities = _entity_set_to_entities(new_key)
 
-                        # generate new filenames according to new key group
+                        # generate new filenames according to new entity set
                         self.change_filename(file_path, new_entities)
 
             # create string of mv command ; mv command for dlapi.run
@@ -451,17 +451,17 @@ class CuBIDS(object):
         subprocess.run(["rm", "-rf", "renames"])
 
     def change_filename(self, filepath, entities):
-        """Apply changes to a filename based on the renamed key groups.
+        """Apply changes to a filename based on the renamed entity sets.
 
-        This function takes into account the new key group names
-        and renames all files whose key group names changed.
+        This function takes into account the new entity set names
+        and renames all files whose entity set names changed.
 
         Parameters
         ----------
         filepath : :obj:`str`
-            Path prefix to a file in the affected key group change.
+            Path prefix to a file in the affected entity set change.
         entities : :obj:`dict`
-            A pybids dictionary of entities parsed from the new key group name.
+            A pybids dictionary of entities parsed from the new entity set name.
 
         Notes
         -----
@@ -904,13 +904,13 @@ class CuBIDS(object):
         # no intended for found
         return misfits
 
-    def get_param_groups_from_key_group(self, key_group):
-        """Split key groups into param groups based on json metadata.
+    def get_param_groups_from_entity_set(self, entity_set):
+        """Split entity sets into param groups based on json metadata.
 
         Parameters
         ----------
-        key_group : str
-            Key group name.
+        entity_set : str
+            Entity set name.
 
         Returns
         -------
@@ -921,7 +921,7 @@ class CuBIDS(object):
         """
         if not self.fieldmaps_cached:
             raise Exception("Fieldmaps must be cached to find parameter groups.")
-        key_entities = _key_group_to_entities(key_group)
+        key_entities = _entity_set_to_entities(entity_set)
         key_entities["extension"] = ".nii[.gz]*"
 
         matching_files = self.layout.get(
@@ -932,12 +932,12 @@ class CuBIDS(object):
         # entities do not also get added to matching_files
         to_include = []
         for filepath in matching_files:
-            f_key_group = _file_to_key_group(filepath)
+            f_entity_set = _file_to_entity_set(filepath)
 
-            if f_key_group == key_group:
+            if f_entity_set == entity_set:
                 to_include.append(filepath)
 
-        # get the modality associated with the key group
+        # get the modality associated with the entity set
         modalities = ["/dwi/", "/anat/", "/func/", "/perf/", "/fmap/"]
         modality = ""
         for mod in modalities:
@@ -951,7 +951,7 @@ class CuBIDS(object):
         ret = _get_param_groups(
             to_include,
             self.fieldmap_lookup,
-            key_group,
+            entity_set,
             self.grouping_config,
             modality,
             self.keys_files,
@@ -996,8 +996,8 @@ class CuBIDS(object):
         self.data_dict["Notes"]["Description"] = desc2
         desc31 = "Auto-generated suggested rename of Non-Domiannt Groups"
         desc32 = " based on variant scanning parameters"
-        self.data_dict["RenameKeyGroup"] = {}
-        self.data_dict["RenameKeyGroup"]["Description"] = desc31 + desc32
+        self.data_dict["RenameEntitySet"] = {}
+        self.data_dict["RenameEntitySet"]["Description"] = desc31 + desc32
         desc4 = "Number of Files in the Parameter Group"
         self.data_dict["Counts"] = {}
         self.data_dict["Counts"]["Description"] = desc4
@@ -1008,19 +1008,19 @@ class CuBIDS(object):
         self.data_dict["MergeInto"]["Description"] = desc5
         self.data_dict["FilePath"] = {}
         self.data_dict["FilePath"]["Description"] = "Location of file"
-        desc6 = "Number of participants in a Key Group"
-        self.data_dict["KeyGroupCount"] = {}
-        self.data_dict["KeyGroupCount"]["Description"] = desc6
+        desc6 = "Number of participants in a Entity Set"
+        self.data_dict["EntitySetCount"] = {}
+        self.data_dict["EntitySetCount"]["Description"] = desc6
         desc71 = "A set of scans whose filenames share all BIDS filename"
         desc72 = " key-value pairs, excluding subject and session"
-        self.data_dict["KeyGroup"] = {}
-        self.data_dict["KeyGroup"]["Description"] = desc71 + desc72
+        self.data_dict["EntitySet"] = {}
+        self.data_dict["EntitySet"]["Description"] = desc71 + desc72
         desc81 = "The set of scans with identical metadata parameters in their"
-        desc82 = " sidecars (defined within a Key Group and denoted"
+        desc82 = " sidecars (defined within a Entity Set and denoted"
         desc83 = " numerically)"
         self.data_dict["ParamGroup"] = {}
         self.data_dict["ParamGroup"]["Description"] = desc81 + desc82 + desc83
-        desc91 = "Key Group name and Param Group number separated by a double"
+        desc91 = "Entity Set name and Param Group number separated by a double"
         desc92 = " underscore"
         self.data_dict["KeyParamGroup"] = {}
         self.data_dict["KeyParamGroup"]["Description"] = desc91 + desc92
@@ -1068,16 +1068,16 @@ class CuBIDS(object):
 
     def get_param_groups_dataframes(self):
         """Create DataFrames of files x param groups and a summary."""
-        key_groups = self.get_key_groups()
+        entity_sets = self.get_entity_sets()
         labeled_files = []
         param_group_summaries = []
-        for key_group in key_groups:
+        for entity_set in entity_sets:
             try:
                 (
                     labeled_file_params,
                     param_summary,
                     modality,
-                ) = self.get_param_groups_from_key_group(key_group)
+                ) = self.get_param_groups_from_entity_set(entity_set)
             except Exception:
                 continue
             if labeled_file_params is None:
@@ -1095,20 +1095,20 @@ class CuBIDS(object):
         summary = _order_columns(pd.concat(param_group_summaries, ignore_index=True))
 
         # create new col that strings key and param group together
-        summary["KeyParamGroup"] = summary["KeyGroup"] + "__" + summary["ParamGroup"].map(str)
+        summary["KeyParamGroup"] = summary["EntitySet"] + "__" + summary["ParamGroup"].map(str)
 
         # move this column to the front of the dataframe
         key_param_col = summary.pop("KeyParamGroup")
         summary.insert(0, "KeyParamGroup", key_param_col)
 
         # do the same for the files df
-        big_df["KeyParamGroup"] = big_df["KeyGroup"] + "__" + big_df["ParamGroup"].map(str)
+        big_df["KeyParamGroup"] = big_df["EntitySet"] + "__" + big_df["ParamGroup"].map(str)
 
         # move this column to the front of the dataframe
         key_param_col = big_df.pop("KeyParamGroup")
         big_df.insert(0, "KeyParamGroup", key_param_col)
 
-        summary.insert(0, "RenameKeyGroup", np.nan)
+        summary.insert(0, "RenameEntitySet", np.nan)
         summary.insert(0, "MergeInto", np.nan)
         summary.insert(0, "ManualCheck", np.nan)
         summary.insert(0, "Notes", np.nan)
@@ -1122,7 +1122,7 @@ class CuBIDS(object):
         relational = self.grouping_config.get("relational_params")
 
         # list of columns names that we account for in suggested renaming
-        summary["RenameKeyGroup"] = summary["RenameKeyGroup"].apply(str)
+        summary["RenameEntitySet"] = summary["RenameEntitySet"].apply(str)
 
         rename_cols = []
         tolerance_cols = []
@@ -1160,7 +1160,7 @@ class CuBIDS(object):
             if str(summary.loc[row, "ParamGroup"]) == "1":
                 val = {}
                 # grab col, all vals send to dict
-                key = summary.loc[row, "KeyGroup"]
+                key = summary.loc[row, "EntitySet"]
                 for col in rename_cols:
                     summary[col] = summary[col].apply(str)
                     val[col] = summary.loc[row, col]
@@ -1170,8 +1170,8 @@ class CuBIDS(object):
         for row in range(len(summary)):
             # check to see if renaming has already happened
             renamed = False
-            entities = _key_group_to_entities(summary.loc[row, "KeyGroup"])
-            if "VARIANT" in summary.loc[row, "KeyGroup"]:
+            entities = _entity_set_to_entities(summary.loc[row, "EntitySet"])
+            if "VARIANT" in summary.loc[row, "EntitySet"]:
                 renamed = True
 
             # if NumVolumes is nan, set to 1.0
@@ -1183,7 +1183,7 @@ class CuBIDS(object):
                 acq_str = "VARIANT"
                 # now we know we have a deviant param group
                 # check if TR is same as param group 1
-                key = summary.loc[row, "KeyGroup"]
+                key = summary.loc[row, "EntitySet"]
                 for col in rename_cols:
                     summary[col] = summary[col].apply(str)
                     if summary.loc[row, col] != dom_dict[key][col]:
@@ -1206,20 +1206,20 @@ class CuBIDS(object):
                 if "acquisition" in entities.keys():
                     acq = f"acquisition-{entities['acquisition'] + acq_str}"
 
-                    new_name = summary.loc[row, "KeyGroup"].replace(
+                    new_name = summary.loc[row, "EntitySet"].replace(
                         f"acquisition-{entities['acquisition']}",
                         acq,
                     )
                 else:
                     acq = f"acquisition-{acq_str}"
-                    new_name = acq + "_" + summary.loc[row, "KeyGroup"]
+                    new_name = acq + "_" + summary.loc[row, "EntitySet"]
 
-                summary.at[row, "RenameKeyGroup"] = new_name
+                summary.at[row, "RenameEntitySet"] = new_name
 
             # convert all "nan" to empty str
             # so they don't show up in the summary tsv
-            if summary.loc[row, "RenameKeyGroup"] == "nan":
-                summary.at[row, "RenameKeyGroup"] = ""
+            if summary.loc[row, "RenameEntitySet"] == "nan":
+                summary.at[row, "RenameEntitySet"] = ""
 
             for col in rename_cols:
                 if summary.loc[row, col] == "nan":
@@ -1251,8 +1251,8 @@ class CuBIDS(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        summary = summary.sort_values(by=["Modality", "KeyGroupCount"], ascending=[True, False])
-        big_df = big_df.sort_values(by=["Modality", "KeyGroupCount"], ascending=[True, False])
+        summary = summary.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
+        big_df = big_df.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
 
         # Create json dictionaries for summary and files tsvs
         self.create_data_dictionary()
@@ -1275,12 +1275,12 @@ class CuBIDS(object):
 
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
 
-    def get_key_groups(self):
-        """Identify the key groups for the bids dataset."""
+    def get_entity_sets(self):
+        """Identify the entity sets for the bids dataset."""
         # reset self.keys_files
         self.keys_files = {}
 
-        key_groups = set()
+        entity_sets = set()
 
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
@@ -1288,17 +1288,17 @@ class CuBIDS(object):
                 continue
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
-                key_groups.update((_file_to_key_group(path),))
+                entity_sets.update((_file_to_entity_set(path),))
 
-                # Fill the dictionary of key group, list of filenames pairrs
-                ret = _file_to_key_group(path)
+                # Fill the dictionary of entity set, list of filenames pairrs
+                ret = _file_to_entity_set(path)
 
                 if ret not in self.keys_files.keys():
                     self.keys_files[ret] = []
 
                 self.keys_files[ret].append(path)
 
-        return sorted(key_groups)
+        return sorted(entity_sets)
 
     def change_metadata(self, filters, metadata):
         """Change metadata.
@@ -1394,21 +1394,21 @@ def _update_json(json_file, metadata):
         print("INVALID JSON DATA")
 
 
-def _key_group_to_entities(key_group):
-    """Split a key_group name into a pybids dictionary of entities."""
-    return dict([group.split("-") for group in key_group.split("_")])
+def _entity_set_to_entities(entity_set):
+    """Split a entity_set name into a pybids dictionary of entities."""
+    return dict([group.split("-") for group in entity_set.split("_")])
 
 
-def _entities_to_key_group(entities):
-    """Convert a pybids entities dictionary into a key group name."""
+def _entities_to_entity_set(entities):
+    """Convert a pybids entities dictionary into a entity set name."""
     group_keys = sorted(entities.keys() - NON_KEY_ENTITIES)
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
 
 
-def _file_to_key_group(filename):
-    """Identify and return the key group of a bids valid filename."""
+def _file_to_entity_set(filename):
+    """Identify and return the entity set of a bids valid filename."""
     entities = parse_file_entities(str(filename))
-    return _entities_to_key_group(entities)
+    return _entities_to_entity_set(entities)
 
 
 def _get_intended_for_reference(scan):
@@ -1418,7 +1418,7 @@ def _get_intended_for_reference(scan):
 def _get_param_groups(
     files,
     fieldmap_lookup,
-    key_group_name,
+    entity_set_name,
     grouping_config,
     modality,
     keys_files,
@@ -1447,7 +1447,7 @@ def _get_param_groups(
         A data frame with param group summaries.
     """
     if not files:
-        print("WARNING: no files for", key_group_name)
+        print("WARNING: no files for", entity_set_name)
         return None, None
 
     # Split the config into separate parts
@@ -1475,12 +1475,12 @@ def _get_param_groups(
 
             wanted_keys = metadata.keys() & imaging_params
             example_data = {key: metadata[key] for key in wanted_keys}
-            example_data["KeyGroup"] = key_group_name
+            example_data["EntitySet"] = entity_set_name
 
             # Get the fieldmaps out and add their types
             if "FieldmapKey" in relational_params:
                 fieldmap_types = sorted(
-                    [_file_to_key_group(fmap.path) for fmap in fieldmap_lookup[path]]
+                    [_file_to_entity_set(fmap.path) for fmap in fieldmap_lookup[path]]
                 )
 
                 # check if config says columns or bool
@@ -1499,21 +1499,21 @@ def _get_param_groups(
 
             example_data["FilePath"] = path
 
-            # If it's a fieldmap, see what key group it's intended to correct
+            # If it's a fieldmap, see what entity set it's intended to correct
             if "IntendedForKey" in relational_params:
-                intended_key_groups = sorted(
-                    [_file_to_key_group(intention) for intention in intentions]
+                intended_entity_sets = sorted(
+                    [_file_to_entity_set(intention) for intention in intentions]
                 )
 
                 # check if config says columns or bool
                 if relational_params["IntendedForKey"]["display_mode"] == "bool":
-                    if len(intended_key_groups) > 0:
+                    if len(intended_entity_sets) > 0:
                         example_data["UsedAsFieldmap"] = True
                     else:
                         example_data["UsedAsFieldmap"] = False
                 else:
-                    for intention_num, intention_key_group in enumerate(intended_key_groups):
-                        example_data[f"IntendedForKey{intention_num:02d}"] = intention_key_group
+                    for intention_num, intention_entity_set in enumerate(intended_entity_sets):
+                        example_data[f"IntendedForKey{intention_num:02d}"] = intention_entity_set
 
             dfs.append(example_data)
 
@@ -1544,8 +1544,8 @@ def _get_param_groups(
     # add the modality as a column
     deduped["Modality"] = modality
 
-    # add key group count column (will delete later)
-    deduped["KeyGroupCount"] = len(keys_files[key_group_name])
+    # add entity set count column (will delete later)
+    deduped["EntitySetCount"] = len(keys_files[entity_set_name])
 
     # Add the ParamGroup to the whole list of files
     labeled_files = pd.merge(df, deduped, on=check_cols)
@@ -1684,7 +1684,7 @@ def format_params(param_group_df, config, modality):
 def _order_columns(df):
     """Organize columns of the summary and files DataFrames.
 
-    This ensures that KeyGroup and ParamGroup are the first two columns,
+    This ensures that EntitySet and ParamGroup are the first two columns,
     FilePath is the last, and the others are sorted alphabetically.
 
     Notes
@@ -1695,7 +1695,7 @@ def _order_columns(df):
     """
     cols = set(df.columns.to_list())
     non_id_cols = cols - ID_VARS
-    new_columns = ["KeyGroup", "ParamGroup"] + sorted(non_id_cols)
+    new_columns = ["EntitySet", "ParamGroup"] + sorted(non_id_cols)
     if "FilePath" in cols:
         new_columns.append("FilePath")
 

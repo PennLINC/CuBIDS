@@ -230,7 +230,7 @@ def _parse_apply():
         action="store",
         help=(
             "path to the _summary.tsv that has been edited "
-            "in the MergeInto and RenameKeyGroup columns. If the "
+            "in the MergeInto and RenameEntitySet columns. If the "
             " summary table is located in the code/CuBIDS "
             "directory, then users can just pass the summary tsv "
             "filename instead of the full path to the tsv"
@@ -242,7 +242,7 @@ def _parse_apply():
         action="store",
         help=(
             "path to the _files.tsv that has been edited "
-            "in the MergeInto and RenameKeyGroup columns. If the "
+            "in the MergeInto and RenameEntitySet columns. If the "
             "files table is located in the code/CuBIDS "
             "directory, then users can just pass the files tsv "
             "filename instead of the full path to the tsv"

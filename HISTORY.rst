@@ -45,7 +45,7 @@ New Contributors
 * updated _update_json to no longer use pybids by @scovitz in https://github.com/PennLINC/CuBIDS/pull/232
 * Minor tune ups: codespell'ing (fixes + tox + CI (github actions)), remove of unintended to be committed 2 files by @yarikoptic in https://github.com/PennLINC/CuBIDS/pull/239
 * ENH: Make "NumVolumes" an integer for 3D images by @cookpa in https://github.com/PennLINC/CuBIDS/pull/211
-* adding note about fmap renamekeygroups by @megardn in https://github.com/PennLINC/CuBIDS/pull/140
+* adding note about fmap renameentitysets by @megardn in https://github.com/PennLINC/CuBIDS/pull/140
 * Update usage.rst by @megardn in https://github.com/PennLINC/CuBIDS/pull/138
 * printing erroneous jsons and only rounding float parameters by @scovitz in https://github.com/PennLINC/CuBIDS/pull/257
 
