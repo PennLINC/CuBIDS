@@ -18,7 +18,6 @@ def build_validator_call(path, ignore_headers=False):
     # CuBIDS automatically ignores subject consistency.
     command = ["bids-validator", path, "--verbose", "--json", "--ignoreSubjectConsistency"]
 
-
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
 
