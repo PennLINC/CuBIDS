@@ -21,8 +21,6 @@ def build_validator_call(path, ignore_headers=False):
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
 
-    command.append(path)
-
     return command
 
 
