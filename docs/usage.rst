@@ -13,7 +13,7 @@ More definitions
 .. _entityset:
 
 Entity Set
-~~~~~~~~~
+~~~~~~~~~~~
 
 A :term:`Entity Set` is a unique set of BIDS key-value pairs,
 excluding identifiers such as subject and session.
