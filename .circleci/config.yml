@@ -9,7 +9,7 @@ jobs:
         type: string
         default: "3.8"
     machine:
-      image: ubuntu-2004:202201-02
+      image: ubuntu-2404:2024.08.1
     working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
@@ -34,7 +34,7 @@ jobs:
             # Add nodejs and the validator
             conda install nodejs
             npm install -g yarn && \
-            npm install -g bids-validator
+            npm install -g bids-validator@1.14.14-dev.0
 
             # Install CuBIDS
             pip install -e .[tests]
@@ -83,7 +83,7 @@ jobs:
 
   deploy_pypi:
     machine:
-      image: ubuntu-2004:202201-02
+      image: ubuntu-2404:2024.08.1
     working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
