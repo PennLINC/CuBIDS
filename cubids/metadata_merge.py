@@ -54,10 +54,10 @@ def check_merging_operations(action_tsv, raise_on_error=False):
 
     needs_merge = actions[np.isfinite(actions["MergeInto"])]
     for _, row_needs_merge in needs_merge.iterrows():
-        source_param_key = tuple(row_needs_merge[["MergeInto", "KeyGroup"]])
-        dest_param_key = tuple(row_needs_merge[["ParamGroup", "KeyGroup"]])
+        source_param_key = tuple(row_needs_merge[["MergeInto", "EntitySet"]])
+        dest_param_key = tuple(row_needs_merge[["ParamGroup", "EntitySet"]])
         dest_metadata = row_needs_merge.to_dict()
-        source_row = actions.loc[(actions[["ParamGroup", "KeyGroup"]] == source_param_key).all(1)]
+        source_row = actions.loc[(actions[["ParamGroup", "EntitySet"]] == source_param_key).all(1)]
 
         if source_param_key[0] == 0:
             print("going to delete ", dest_param_key)
@@ -299,10 +299,12 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
 
         if acq_group_level == "subject":
             acq_id = (file_entities.get("subject"), file_entities.get("session"))
-            acq_groups[acq_id].append((row.KeyGroup, row.ParamGroup))
+            acq_groups[acq_id].append((row.EntitySet, row.ParamGroup))
         else:
             acq_id = (file_entities.get("subject"), None)
-            acq_groups[acq_id].append((row.KeyGroup, row.ParamGroup, file_entities.get("session")))
+            acq_groups[acq_id].append(
+                (row.EntitySet, row.ParamGroup, file_entities.get("session"))
+            )
 
     # Map the contents to a list of subjects/sessions
     contents_to_subjects = defaultdict(list)

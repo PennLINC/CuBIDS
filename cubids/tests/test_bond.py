@@ -97,12 +97,12 @@ def test_get_param_groups(tmp_path):
     """Test get_param_groups."""
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
-    key_groups = bod.get_key_groups()
+    entity_sets = bod.get_entity_sets()
     bod._cache_fieldmaps()
 
-    for key_group in key_groups:
-        ret = bod.get_param_groups_from_key_group(key_group)
-        assert sum(ret[1].Counts) == ret[1].loc[0, "KeyGroupCount"]
+    for entity_set in entity_sets:
+        ret = bod.get_param_groups_from_entity_set(entity_set)
+        assert sum(ret[1].Counts) == ret[1].loc[0, "EntitySetCount"]
 
 
 def test_copy_exemplars(tmp_path):
@@ -365,16 +365,16 @@ def test_tsv_merge_no_datalad(tmp_path):
     summary_df = pd.read_table(original_summary_tsv)
     (fa_nan_dwi_row,) = np.flatnonzero(
         np.isnan(summary_df.FlipAngle)
-        & summary_df.KeyGroup.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        & summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
     )
     # Find the dwi with and EchoTime ==
     (complete_dwi_row,) = np.flatnonzero(
-        summary_df.KeyGroup.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime > 0.05)
     )
     (cant_merge_echotime_dwi_row,) = np.flatnonzero(
-        summary_df.KeyGroup.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime < 0.05)
     )
@@ -421,10 +421,10 @@ def test_tsv_merge_changes(tmp_path):
     # give tsv with no changes (make sure it does nothing except rename)
     bod.apply_tsv_changes(original_summary_tsv, original_files_tsv, str(tmp_path / "unmodified"))
     orig = pd.read_table(original_summary_tsv)
-    # TEST RenameKeyGroup column got populated CORRECTLY
+    # TEST RenameEntitySet column got populated CORRECTLY
     for row in range(len(orig)):
         if orig.loc[row, "ParamGroup"] != 1:
-            assert str(orig.loc[row, "RenameKeyGroup"]) != "nan"
+            assert str(orig.loc[row, "RenameEntitySet"]) != "nan"
 
     # TESTING RENAMES GOT APPLIED
     applied = pd.read_table(str(tmp_path / "unmodified_summary.tsv"))
@@ -451,14 +451,14 @@ def test_tsv_merge_changes(tmp_path):
     assert len(orig) == len(applied)
 
     renamed = True
-    new_keys = applied["KeyGroup"].tolist()
+    new_keys = applied["EntitySet"].tolist()
     for row in range(len(orig)):
         if orig.loc[row, "Modality"] != "fmap":
             if (
-                str(orig.loc[row, "RenameKeyGroup"]) != "nan"
-                and str(orig.loc[row, "RenameKeyGroup"]) not in new_keys
+                str(orig.loc[row, "RenameEntitySet"]) != "nan"
+                and str(orig.loc[row, "RenameEntitySet"]) not in new_keys
             ):
-                print(orig.loc[row, "RenameKeyGroup"])
+                print(orig.loc[row, "RenameEntitySet"])
                 renamed = False
 
     assert renamed
@@ -470,16 +470,16 @@ def test_tsv_merge_changes(tmp_path):
     summary_df = pd.read_table(original_summary_tsv)
     (fa_nan_dwi_row,) = np.flatnonzero(
         np.isnan(summary_df.FlipAngle)
-        & summary_df.KeyGroup.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        & summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
     )
     # Find the dwi with and EchoTime ==
     (complete_dwi_row,) = np.flatnonzero(
-        summary_df.KeyGroup.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime > 0.05)
     )
     (cant_merge_echotime_dwi_row,) = np.flatnonzero(
-        summary_df.KeyGroup.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime < 0.05)
     )
@@ -539,9 +539,9 @@ def test_merge_without_overwrite():
     """Test merge_without_overwrite."""
     meta1 = {
         "ManualCheck": 1.0,
-        "RenameKeyGroup": np.nan,
+        "RenameEntitySet": np.nan,
         "MergeInto": 2.0,
-        "KeyGroup": "datatype-func_suffix-bold_task-rest",
+        "EntitySet": "datatype-func_suffix-bold_task-rest",
         "ParamGroup": 12,
         "Counts": 2,
         "DwellTime": 2.6e-06,
@@ -602,8 +602,8 @@ def test_merge_without_overwrite():
     assert not bad_slice_merge
 
 
-def test_keygroups(tmp_path):
-    """Test keygroups."""
+def test_entitysets(tmp_path):
+    """Test entitysets."""
     data_root = get_data(tmp_path)
 
     # Test the complete data
@@ -612,22 +612,22 @@ def test_keygroups(tmp_path):
     # There should be no unpaired fieldmaps
     assert len(complete_misfit_fmaps) == 0
 
-    # Test that the correct key groups are found
-    key_groups = complete_bod.get_key_groups()
-    assert key_groups == COMPLETE_KEY_GROUPS
+    # Test that the correct entity sets are found
+    entity_sets = complete_bod.get_entity_sets()
+    assert entity_sets == COMPLETE_KEY_GROUPS
 
     # Test the incomplete
     ibod = CuBIDS(data_root / "inconsistent")
     inc_misfit_fmaps = ibod._cache_fieldmaps()
     assert len(inc_misfit_fmaps) == 1
 
-    # There will still be the same number of key groups
-    ikey_groups = ibod.get_key_groups()
-    assert ikey_groups == COMPLETE_KEY_GROUPS
+    # There will still be the same number of entity sets
+    ientity_sets = ibod.get_entity_sets()
+    assert ientity_sets == COMPLETE_KEY_GROUPS
 
 
 def test_tsv_creation(tmp_path):
-    """Test the Key Group and Parameter Group creation on sample data."""
+    """Test the Entity Set and Parameter Group creation on sample data."""
     data_root = get_data(tmp_path)
 
     # Test the complete data
@@ -636,9 +636,9 @@ def test_tsv_creation(tmp_path):
     # There should be no unpaired fieldmaps
     assert len(complete_misfit_fmaps) == 0
 
-    # Test that the correct key groups are found
-    key_groups = complete_bod.get_key_groups()
-    assert key_groups == COMPLETE_KEY_GROUPS
+    # Test that the correct entity sets are found
+    entity_sets = complete_bod.get_entity_sets()
+    assert entity_sets == COMPLETE_KEY_GROUPS
 
     # Get the tsvs from the complete data
     cfiles_df, csummary_df = complete_bod.get_param_groups_dataframes()
@@ -647,7 +647,7 @@ def test_tsv_creation(tmp_path):
     assert cfiles_df.shape[0] == 21
 
     # This data should have the same number of param
-    # groups as key groups
+    # groups as entity sets
     assert csummary_df.shape[0] == len(COMPLETE_KEY_GROUPS)
 
     # check IntendedForXX and FieldmapKeyXX are boolean now
@@ -668,9 +668,9 @@ def test_tsv_creation(tmp_path):
     inc_misfit_fmaps = ibod._cache_fieldmaps()
     assert len(inc_misfit_fmaps) == 1
 
-    # There will still be the same number of key groups
-    ikey_groups = ibod.get_key_groups()
-    assert ikey_groups == COMPLETE_KEY_GROUPS
+    # There will still be the same number of entity sets
+    ientity_sets = ibod.get_entity_sets()
+    assert ientity_sets == COMPLETE_KEY_GROUPS
 
     # Get the tsvs from the inconsistent data
     ifiles_df, isummary_df = ibod.get_param_groups_dataframes()
@@ -686,8 +686,8 @@ def test_tsv_creation(tmp_path):
     for i, (_, row) in enumerate(isummary_df.iterrows()):
         if i == len(isummary_df) - 1:
             break
-        # if key groups in rows i and i+1 are the same
-        if isummary_df.iloc[i]["KeyGroup"] == isummary_df.iloc[i + 1]["KeyGroup"]:
+        # if entity sets in rows i and i+1 are the same
+        if isummary_df.iloc[i]["EntitySet"] == isummary_df.iloc[i + 1]["EntitySet"]:
             # param group i = param group i+1
             assert isummary_df.iloc[i]["ParamGroup"] == isummary_df.iloc[i + 1]["ParamGroup"] - 1
             # and count i < count i + 1
@@ -697,8 +697,8 @@ def test_tsv_creation(tmp_path):
     for i, (_, row) in enumerate(ifiles_df.iterrows()):
         if i == len(ifiles_df) - 1:
             break
-        # if key groups in rows i and i+1 are the same
-        if ifiles_df.iloc[i]["KeyGroup"] == ifiles_df.iloc[i + 1]["KeyGroup"]:
+        # if entity sets in rows i and i+1 are the same
+        if ifiles_df.iloc[i]["EntitySet"] == ifiles_df.iloc[i + 1]["EntitySet"]:
             # param group i = param group i+1
             assert ifiles_df.iloc[i]["ParamGroup"] <= ifiles_df.iloc[i + 1]["ParamGroup"]
 
@@ -707,9 +707,9 @@ def test_apply_tsv_changes(tmp_path):
     """Test apply_tsv_changes."""
     # set up like narrative of user using this
     # similar to test tsv creation
-    # open the tsv, rename a key group
+    # open the tsv, rename a entity set
     # save tsv
-    # call change key groups
+    # call change entity sets
     # give tsv with no changes (make sure it does nothing)
     # make sure files you wanted to rename exist in the bids dir
 
@@ -746,7 +746,7 @@ def test_apply_tsv_changes(tmp_path):
 
     assert og_content == mod1_content
 
-    # edit the tsv, add a RenameKeyGroup
+    # edit the tsv, add a RenameEntitySet
 
     # _edit_tsv(str(tmp_path / "originals_summary.tsv"))
     complete_cubids.apply_tsv_changes(
@@ -830,9 +830,9 @@ def test_session_apply(tmp_path):
     """Test session_apply."""
     # set up like narrative of user using this
     # similar to test tsv creation
-    # open the tsv, rename a key group
+    # open the tsv, rename a entity set
     # save tsv
-    # call change key groups
+    # call change entity sets
     # give tsv with no changes (make sure it does nothing)
     # make sure files you wanted to rename exist in the bids dir
 
