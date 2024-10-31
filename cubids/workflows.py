@@ -895,7 +895,7 @@ def print_metadata_fields(bids_dir, container):
     if container is None:
         bod = CuBIDS(data_root=str(bids_dir), use_datalad=False)
         fields = bod.get_all_metadata_fields()
-        print("\n".join(fields)) # logger not printing
+        print("\n".join(fields))  # logger not printing
         # logger.info("\n".join(fields))
         sys.exit(0)
 
