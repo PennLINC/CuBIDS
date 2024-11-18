@@ -14,9 +14,9 @@ logger = logging.getLogger("cubids-cli")
 
 def build_validator_call(path, ignore_headers=False):
     """Build a subprocess command to the bids validator."""
-    # build docker call
-    # CuBIDS automatically ignores subject consistency.
-    command = ["bids-validator", path, "--verbose", "--json", "--ignoreSubjectConsistency"]
+    # New schema BIDS validator doesn't have option to ignore subject consistency.
+    # Build the deno command to run the BIDS validator.
+    command = ["deno", "run", "-A", "jsr:@bids/validator", path, "--verbose", "--json"]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
@@ -87,32 +87,6 @@ def parse_validator_output(output):
         Dataframe of validator output.
     """
 
-    def get_nested(dct, *keys):
-        """Get a nested value from a dictionary.
-
-        Parameters
-        ----------
-        dct : :obj:`dict`
-            Dictionary to get value from.
-        keys : :obj:`list`
-            List of keys to get value from.
-
-        Returns
-        -------
-        :obj:`dict`
-            The nested value.
-        """
-        for key in keys:
-            try:
-                dct = dct[key]
-            except (KeyError, TypeError):
-                return None
-        return dct
-
-    data = json.loads(output)
-
-    issues = data["issues"]
-
     def parse_issue(issue_dict):
         """Parse a single issue from the validator output.
 
@@ -126,30 +100,27 @@ def parse_validator_output(output):
         return_dict : :obj:`dict`
             Dictionary of parsed issue.
         """
-        return_dict = {}
-        return_dict["files"] = [
-            get_nested(x, "file", "relativePath") for x in issue_dict.get("files", "")
-        ]
-        return_dict["type"] = issue_dict.get("key", "")
-        return_dict["severity"] = issue_dict.get("severity", "")
-        return_dict["description"] = issue_dict.get("reason", "")
-        return_dict["code"] = issue_dict.get("code", "")
-        return_dict["url"] = issue_dict.get("helpUrl", "")
+        return {
+            "location": issue_dict.get("location", ""),
+            "code": issue_dict.get("code", ""),
+            "subCode": issue_dict.get("subCode", ""),
+            "severity": issue_dict.get("severity", ""),
+            "rule": issue_dict.get("rule", ""),
+        }
 
-        return return_dict
+    # Load JSON data
+    data = json.loads(output)
 
-    df = pd.DataFrame()
+    # Extract issues
+    issues = data.get("issues", {}).get("issues", [])
+    if not issues:
+        return pd.DataFrame(columns=["location", "code", "subCode", "severity", "rule"])
 
-    for warn in issues["warnings"]:
-        parsed = parse_issue(warn)
-        parsed = pd.DataFrame(parsed)
-        df = pd.concat([df, parsed], ignore_index=True)
+    # Parse all issues
+    parsed_issues = [parse_issue(issue) for issue in issues]
 
-    for err in issues["errors"]:
-        parsed = parse_issue(err)
-        parsed = pd.DataFrame(parsed)
-        df = pd.concat([df, parsed], ignore_index=True)
-
+    # Convert to DataFrame
+    df = pd.DataFrame(parsed_issues)
     return df
 
 
@@ -161,12 +132,10 @@ def get_val_dictionary():
     val_dict : dict
         Dictionary of values.
     """
-    val_dict = {}
-    val_dict["files"] = {"Description": "File with warning orerror"}
-    val_dict["type"] = {"Description": "BIDS validation warning or error"}
-    val_dict["severity"] = {"Description": "gravity of problem (warning/error"}
-    val_dict["description"] = {"Description": "Description of warning/error"}
-    val_dict["code"] = {"Description": "BIDS validator issue code number"}
-    val_dict["url"] = {"Description": "Link to the issue's neurostars thread"}
-
-    return val_dict
+    return {
+        "location": {"Description": "File with the validation issue."},
+        "code": {"Description": "Code of the validation issue."},
+        "subCode": {"Description": "Subcode providing additional issue details."},
+        "severity": {"Description": "Severity of the issue (e.g., warning, error)."},
+        "rule": {"Description": "Validation rule that triggered the issue."},
+    }
