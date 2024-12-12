@@ -1037,14 +1037,6 @@ def test_validator(tmp_path):
     assert isinstance(parsed, pd.DataFrame)
 
 
-def bids_validator_version(tmp_path):
-    """Test validator.bids_validator_version."""
-    # Get the BIDS validator version
-    validator_version = get_bids_validator_version()
-    # Extract schemaVersion
-    summary_info = extract_summary_info(decoded)
-
-
 def test_bids_version(tmp_path):
     """Test workflows.bids_version."""
     data_root = get_data(tmp_path)
