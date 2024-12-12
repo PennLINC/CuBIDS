@@ -17,8 +17,7 @@ def build_validator_call(path, ignore_headers=False):
     """Build a subprocess command to the bids validator."""
     # New schema BIDS validator doesn't have option to ignore subject consistency.
     # Build the deno command to run the BIDS validator.
-    command = ["deno", "run", "-A", "jsr:@bids/validator",
-               path, "--verbose", "--json"]
+    command = ["deno", "run", "-A", "jsr:@bids/validator", path, "--verbose", "--json"]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
@@ -35,8 +34,7 @@ def get_bids_validator_version():
         Version of the BIDS validator.
     """
     command = ["deno", "run", "-A", "jsr:@bids/validator", "--version"]
-    result = subprocess.run(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output = result.stdout.decode("utf-8").strip()
     version = output.split()[-1]
     # Remove ANSI color codes
@@ -57,8 +55,7 @@ def build_subject_paths(bids_dir):
     subjects = glob.glob(bids_dir)
 
     if len(subjects) < 1:
-        raise ValueError(
-            "Couldn't find any subjects in the specified directory:\n" + bids_dir)
+        raise ValueError("Couldn't find any subjects in the specified directory:\n" + bids_dir)
 
     subjects_dict = {}
 
@@ -66,8 +63,7 @@ def build_subject_paths(bids_dir):
         purepath = pathlib.PurePath(sub)
         sub_label = purepath.name
 
-        files = [x for x in glob.glob(
-            sub + "**", recursive=True) if os.path.isfile(x)]
+        files = [x for x in glob.glob(sub + "**", recursive=True) if os.path.isfile(x)]
         files.extend(root_files)
         subjects_dict[sub_label] = files
 
@@ -87,8 +83,7 @@ def build_first_subject_path(bids_dir, subject):
     purepath = pathlib.PurePath(subject)
     sub_label = purepath.name
 
-    files = [x for x in glob.glob(
-        subject + "**", recursive=True) if os.path.isfile(x)]
+    files = [x for x in glob.glob(subject + "**", recursive=True) if os.path.isfile(x)]
     files.extend(root_files)
     subject_dict[sub_label] = files
 
@@ -159,8 +154,7 @@ def parse_validator_output(output):
     issues = data.get("issues", {}).get("issues", [])
     if not issues:
         return pd.DataFrame(
-            columns=["location", "code", "issueMessage",
-                     "subCode", "severity", "rule"]
+            columns=["location", "code", "issueMessage", "subCode", "severity", "rule"]
         )
 
     # Parse all issues

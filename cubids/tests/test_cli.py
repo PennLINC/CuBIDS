@@ -28,8 +28,7 @@ def _test_path_exists():
     It asserts that the function returns the expected path when the path exists,
     and raises an `argparse.ArgumentTypeError` when the path does not exist.
     """
-    assert _path_exists("/path/to/existing/file",
-                        None) == "/path/to/existing/file"
+    assert _path_exists("/path/to/existing/file", None) == "/path/to/existing/file"
 
     with pytest.raises(argparse.ArgumentTypeError):
         _path_exists("/path/to/nonexistent/file", None)

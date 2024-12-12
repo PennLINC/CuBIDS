@@ -27,8 +27,7 @@ def _remove_a_json(json_file):
 
 def _edit_a_nifti(nifti_file):
     img = nb.load(nifti_file)
-    new_img = nb.Nifti1Image(np.random.rand(
-        *img.shape), affine=img.affine, header=img.header)
+    new_img = nb.Nifti1Image(np.random.rand(*img.shape), affine=img.affine, header=img.header)
     new_img.to_filename(nifti_file)
 
 
@@ -77,8 +76,7 @@ def _add_ext_files(img_path):
     if "/dwi/" in img_path:
         # add bval and bvec
         for ext in dwi_exts:
-            dwi_ext_file = img_path.replace(
-                ".nii.gz", "").replace(".nii", "") + ext
+            dwi_ext_file = img_path.replace(".nii.gz", "").replace(".nii", "") + ext
             Path(dwi_ext_file).touch()
     if "bold" in img_path:
         no_suffix = img_path.rpartition("_")[0]

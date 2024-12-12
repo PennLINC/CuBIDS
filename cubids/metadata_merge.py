@@ -57,8 +57,7 @@ def check_merging_operations(action_tsv, raise_on_error=False):
         source_param_key = tuple(row_needs_merge[["MergeInto", "EntitySet"]])
         dest_param_key = tuple(row_needs_merge[["ParamGroup", "EntitySet"]])
         dest_metadata = row_needs_merge.to_dict()
-        source_row = actions.loc[(
-            actions[["ParamGroup", "EntitySet"]] == source_param_key).all(1)]
+        source_row = actions.loc[(actions[["ParamGroup", "EntitySet"]] == source_param_key).all(1)]
 
         if source_param_key[0] == 0:
             print("going to delete ", dest_param_key)
@@ -299,8 +298,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
         file_entities = parse_file_entities(row.FilePath)
 
         if acq_group_level == "subject":
-            acq_id = (file_entities.get("subject"),
-                      file_entities.get("session"))
+            acq_id = (file_entities.get("subject"), file_entities.get("session"))
             acq_groups[acq_id].append((row.EntitySet, row.ParamGroup))
         else:
             acq_id = (file_entities.get("subject"), None)
@@ -327,8 +325,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     acq_group_info = []
     for groupnum, content_id_row in enumerate(descending_order, start=1):
         content_id = content_ids[content_id_row]
-        acq_group_info.append(
-            (groupnum, content_id_counts[content_id_row]) + content_id)
+        acq_group_info.append((groupnum, content_id_counts[content_id_row]) + content_id)
         for subject, session in contents_to_subjects[content_id]:
             grouped_sub_sess.append(
                 {"subject": "sub-" + subject, "session": session, "AcqGroup": groupnum}
@@ -336,8 +333,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
 
     # Write the mapping of subject/session to
     acq_group_df = pd.DataFrame(grouped_sub_sess)
-    acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv",
-                        sep="\t", index=False)
+    acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t", index=False)
 
     # Create data dictionary for acq group tsv
     acq_dict = get_acq_dictionary()
@@ -346,8 +342,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
 
     # Write the summary of acq groups to a text file
     with open(output_prefix + "_AcqGroupInfo.txt", "w") as infotxt:
-        infotxt.write("\n".join([" ".join(map(str, line))
-                      for line in acq_group_info]))
+        infotxt.write("\n".join([" ".join(map(str, line)) for line in acq_group_info]))
 
     # Create and save AcqGroupInfo data dictionary
     header_dict = {}
