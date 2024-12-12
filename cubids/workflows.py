@@ -17,13 +17,13 @@ from cubids.cubids import CuBIDS
 from cubids.metadata_merge import merge_json_into_json
 from cubids.utils import _get_container_type
 from cubids.validator import (
+    bids_validator_version,
+    build_first_subject_path,
     build_subject_paths,
     build_validator_call,
     get_val_dictionary,
     parse_validator_output,
     run_validator,
-    build_first_subject_path,
-    bids_validator_version,
 )
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -82,7 +82,8 @@ def validate(
             # parse the string output
             parsed = parse_validator_output(ret.stdout.decode("UTF-8"))
             if parsed.shape[1] < 1:
-                logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
+                logger.info(
+                    "No issues/warnings parsed, your dataset is BIDS valid.")
                 sys.exit(0)
             else:
                 logger.info("BIDS issues/warnings found in the dataset")
@@ -129,7 +130,8 @@ def validate(
                 subjects_dict = {
                     k: v for k, v in subjects_dict.items() if k in sequential_subjects
                 }
-            assert len(list(subjects_dict.keys())) > 1, "No subjects found in filter"
+            assert len(list(subjects_dict.keys())
+                       ) > 1, "No subjects found in filter"
             for subject, files_list in tqdm.tqdm(subjects_dict.items()):
                 # logger.info(" ".join(["Processing subject:", subject]))
                 # create a temporary directory and symlink the data
@@ -158,7 +160,8 @@ def validate(
                     ret = run_validator(call)
                     # parse output
                     if ret.returncode != 0:
-                        logger.error("Errors returned from validator run, parsing now")
+                        logger.error(
+                            "Errors returned from validator run, parsing now")
 
                     # parse the output and add to list if it returns a df
                     decoded = ret.stdout.decode("UTF-8")
@@ -169,7 +172,8 @@ def validate(
 
             # concatenate the parsed data and exit
             if len(parsed) < 1:
-                logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
+                logger.info(
+                    "No issues/warnings parsed, your dataset is BIDS valid.")
                 sys.exit(0)
 
             else:
@@ -260,10 +264,7 @@ def validate(
     sys.exit(proc.returncode)
 
 
-def bids_version(
-    bids_dir,
-    write=False
-):
+def bids_version(bids_dir, write=False):
     """Get BIDS validator and schema version.
 
     Parameters
@@ -284,13 +285,14 @@ def bids_version(
             if os.path.isdir(os.path.join(bids_dir, name)) and name.startswith("sub-")
         ]
         if not sub_folders:
-            raise ValueError("No folders starting with 'sub-' found. Please provide a valid BIDS.")     
+            raise ValueError(
+                "No folders starting with 'sub-' found. Please provide a valid BIDS.")
         subject = sub_folders[0]
     except FileNotFoundError:
         raise FileNotFoundError(f"The directory {bids_dir} does not exist.")
     except ValueError as ve:
         raise ve
-    
+
     # build a dictionary with {SubjectLabel: [List of files]}
     # run first subject only
     subject_dict = build_first_subject_path(bids_dir, subject)
@@ -329,7 +331,8 @@ def bids_version(
 
 def bids_sidecar_merge(from_json, to_json):
     """Merge critical keys from one sidecar to another."""
-    merge_status = merge_json_into_json(from_json, to_json, raise_on_error=False)
+    merge_status = merge_json_into_json(
+        from_json, to_json, raise_on_error=False)
     sys.exit(merge_status)
 
 
@@ -368,7 +371,8 @@ def group(bids_dir, container, acq_group_level, config, output_prefix):
 
     apply_config = config is not None
     if apply_config:
-        input_config_dir_link = str(config.parent.absolute()) + ":/in_config:ro"
+        input_config_dir_link = str(
+            config.parent.absolute()) + ":/in_config:ro"
         linked_input_config = "/in_config/" + config.name
 
     linked_output_prefix = "/tsv/" + output_prefix.name
@@ -475,14 +479,18 @@ def apply(
     # Run it through a container
     container_type = _get_container_type(container)
     bids_dir_link = str(bids_dir.absolute()) + ":/bids"
-    input_summary_tsv_dir_link = str(edited_summary_tsv.parent.absolute()) + ":/in_summary_tsv:ro"
-    input_files_tsv_dir_link = str(edited_summary_tsv.parent.absolute()) + ":/in_files_tsv:ro"
-    output_tsv_dir_link = str(new_tsv_prefix.parent.absolute()) + ":/out_tsv:rw"
+    input_summary_tsv_dir_link = str(
+        edited_summary_tsv.parent.absolute()) + ":/in_summary_tsv:ro"
+    input_files_tsv_dir_link = str(
+        edited_summary_tsv.parent.absolute()) + ":/in_files_tsv:ro"
+    output_tsv_dir_link = str(
+        new_tsv_prefix.parent.absolute()) + ":/out_tsv:rw"
 
     # FROM BOND-GROUP
     apply_config = config is not None
     if apply_config:
-        input_config_dir_link = str(config.parent.absolute()) + ":/in_config:ro"
+        input_config_dir_link = str(
+            config.parent.absolute()) + ":/in_config:ro"
         linked_input_config = "/in_config/" + config.name
 
     linked_output_prefix = "/tsv/" + new_tsv_prefix.name

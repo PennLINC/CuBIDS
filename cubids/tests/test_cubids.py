@@ -74,7 +74,8 @@ def _test_copy_exemplars(cubids_instance):
     exemplars_dir = "/path/to/exemplars"
     exemplars_tsv = "/path/to/exemplars.tsv"
     min_group_size = 2
-    cubids_instance.copy_exemplars(exemplars_dir, exemplars_tsv, min_group_size)
+    cubids_instance.copy_exemplars(
+        exemplars_dir, exemplars_tsv, min_group_size)
     # Add assertions here
 
 
@@ -204,8 +205,10 @@ def _test__get_intended_for_reference(cubids_instance):
 
 
 def _test__get_param_groups(cubids_instance):
-    files = ["sub-01_ses-01_task-rest_bold.nii.gz", "sub-02_ses-01_task-rest_bold.nii.gz"]
-    fieldmap_lookup = {"sub-01_ses-01_task-rest_bold.nii.gz": "fieldmap.nii.gz"}
+    files = ["sub-01_ses-01_task-rest_bold.nii.gz",
+             "sub-02_ses-01_task-rest_bold.nii.gz"]
+    fieldmap_lookup = {
+        "sub-01_ses-01_task-rest_bold.nii.gz": "fieldmap.nii.gz"}
     entity_set_name = "group-01"
     grouping_config = {"group-01": {"modality": "bold"}}
     modality = "bold"
@@ -220,7 +223,8 @@ def _test_round_params(cubids_instance):
     param_group_df = pd.DataFrame({"param": [0.123456789]})
     config = {"param": {"round": 3}}
     modality = "bold"
-    rounded_params = cubids_instance.round_params(param_group_df, config, modality)
+    rounded_params = cubids_instance.round_params(
+        param_group_df, config, modality)
     # Add assertions here
 
 
@@ -234,7 +238,8 @@ def _test_format_params(cubids_instance):
     param_group_df = pd.DataFrame({"param": [0.123456789]})
     config = {"param": {"format": "{:.2f}"}}
     modality = "bold"
-    formatted_params = cubids_instance.format_params(param_group_df, config, modality)
+    formatted_params = cubids_instance.format_params(
+        param_group_df, config, modality)
     # Add assertions here
 
 

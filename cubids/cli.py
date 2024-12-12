@@ -27,7 +27,8 @@ def _is_file(path, parser):
     """Ensure a given path exists and it is a file."""
     path = _path_exists(path, parser)
     if not path.is_file():
-        raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
+        raise parser.error(
+            f"Path should point to a file (or symlink of file): <{path}>.")
     return path
 
 
@@ -144,7 +145,8 @@ def _enter_bids_version(argv=None):
 
 def _parse_bids_sidecar_merge():
     parser = argparse.ArgumentParser(
-        description=("bids-sidecar-merge: merge critical keys from one sidecar to another"),
+        description=(
+            "bids-sidecar-merge: merge critical keys from one sidecar to another"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     IsFile = partial(_is_file, parser=parser)
@@ -216,7 +218,8 @@ def _parse_group():
         default="subject",
         choices=["subject", "session"],
         action="store",
-        help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
+        help=(
+            "Level at which acquisition groups are created options: 'subject' or 'session'"),
     )
     parser.add_argument(
         "--config",
@@ -244,7 +247,8 @@ def _enter_group(argv=None):
 
 def _parse_apply():
     parser = argparse.ArgumentParser(
-        description=("cubids-apply: apply the changes specified in a tsv to a BIDS directory"),
+        description=(
+            "cubids-apply: apply the changes specified in a tsv to a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -312,7 +316,8 @@ def _parse_apply():
         default="subject",
         choices=["subject", "session"],
         action="store",
-        help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
+        help=(
+            "Level at which acquisition groups are created options: 'subject' or 'session'"),
     )
     parser.add_argument(
         "--config",
@@ -341,7 +346,8 @@ def _enter_apply(argv=None):
 
 def _parse_datalad_save():
     parser = argparse.ArgumentParser(
-        description=("cubids-datalad-save: perform a DataLad save on a BIDS directory"),
+        description=(
+            "cubids-datalad-save: perform a DataLad save on a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -699,8 +705,10 @@ COMMANDS = [
     ("copy-exemplars", _parse_copy_exemplars, workflows.copy_exemplars),
     ("undo", _parse_undo, workflows.undo),
     ("datalad-save", _parse_datalad_save, workflows.datalad_save),
-    ("print-metadata-fields", _parse_print_metadata_fields, workflows.print_metadata_fields),
-    ("remove-metadata-fields", _parse_remove_metadata_fields, workflows.remove_metadata_fields),
+    ("print-metadata-fields", _parse_print_metadata_fields,
+     workflows.print_metadata_fields),
+    ("remove-metadata-fields", _parse_remove_metadata_fields,
+     workflows.remove_metadata_fields),
 ]
 
 
@@ -709,7 +717,8 @@ def _get_parser():
     from cubids import __version__
 
     parser = argparse.ArgumentParser(prog="cubids")
-    parser.add_argument("-v", "--version", action="version", version=__version__)
+    parser.add_argument("-v", "--version",
+                        action="version", version=__version__)
     subparsers = parser.add_subparsers(help="CuBIDS commands")
 
     for command, parser_func, run_func in COMMANDS:

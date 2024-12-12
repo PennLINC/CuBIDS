@@ -5,8 +5,8 @@ import json
 import logging
 import os
 import pathlib
-import subprocess
 import re
+import subprocess
 
 import pandas as pd
 
@@ -17,7 +17,8 @@ def build_validator_call(path, ignore_headers=False):
     """Build a subprocess command to the bids validator."""
     # New schema BIDS validator doesn't have option to ignore subject consistency.
     # Build the deno command to run the BIDS validator.
-    command = ["deno", "run", "-A", "jsr:@bids/validator", path, "--verbose", "--json"]
+    command = ["deno", "run", "-A", "jsr:@bids/validator",
+               path, "--verbose", "--json"]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
@@ -34,10 +35,12 @@ def get_bids_validator_version():
         Version of the BIDS validator.
     """
     command = ["deno", "run", "-A", "jsr:@bids/validator", "--version"]
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output = result.stdout.decode("utf-8").strip()
     version = output.split()[-1]
-    clean_ver = re.sub(r'\x1b\[[0-9;]*m', '', version)  # Remove ANSI color codes
+    # Remove ANSI color codes
+    clean_ver = re.sub(r"\x1b\[[0-9;]*m", "", version)
     return {"ValidatorVersion": clean_ver}
 
 
@@ -54,7 +57,8 @@ def build_subject_paths(bids_dir):
     subjects = glob.glob(bids_dir)
 
     if len(subjects) < 1:
-        raise ValueError("Couldn't find any subjects in the specified directory:\n" + bids_dir)
+        raise ValueError(
+            "Couldn't find any subjects in the specified directory:\n" + bids_dir)
 
     subjects_dict = {}
 
@@ -62,7 +66,8 @@ def build_subject_paths(bids_dir):
         purepath = pathlib.PurePath(sub)
         sub_label = purepath.name
 
-        files = [x for x in glob.glob(sub + "**", recursive=True) if os.path.isfile(x)]
+        files = [x for x in glob.glob(
+            sub + "**", recursive=True) if os.path.isfile(x)]
         files.extend(root_files)
         subjects_dict[sub_label] = files
 
@@ -82,7 +87,8 @@ def build_first_subject_path(bids_dir, subject):
     purepath = pathlib.PurePath(subject)
     sub_label = purepath.name
 
-    files = [x for x in glob.glob(subject + "**", recursive=True) if os.path.isfile(x)]
+    files = [x for x in glob.glob(
+        subject + "**", recursive=True) if os.path.isfile(x)]
     files.extend(root_files)
     subject_dict[sub_label] = files
 
@@ -153,8 +159,9 @@ def parse_validator_output(output):
     issues = data.get("issues", {}).get("issues", [])
     if not issues:
         return pd.DataFrame(
-            columns=["location", "code", "issueMessage", "subCode", "severity", "rule"]
-            )
+            columns=["location", "code", "issueMessage",
+                     "subCode", "severity", "rule"]
+        )
 
     # Parse all issues
     parsed_issues = [parse_issue(issue) for issue in issues]
@@ -229,7 +236,7 @@ def update_dataset_description(path, new_info):
 
     # Write the updated data back to the file
     with open(description_path, "w") as f:
-        json.dump(existing_data, f, indent=4) 
+        json.dump(existing_data, f, indent=4)
     print(f"Updated dataset_description.json at: {description_path}")
 
     # Check if .datalad directory exists before running the DataLad save command
@@ -237,10 +244,14 @@ def update_dataset_description(path, new_info):
     if os.path.exists(datalad_dir) and os.path.isdir(datalad_dir):
         try:
             subprocess.run(
-                ["datalad", "save", "-m",
-                 "Save BIDS validator and schema version to dataset_description",
-                 description_path],
-                check=True
+                [
+                    "datalad",
+                    "save",
+                    "-m",
+                    "Save BIDS validator and schema version to dataset_description",
+                    description_path,
+                ],
+                check=True,
             )
             print("Changes saved with DataLad.")
         except subprocess.CalledProcessError as e:
@@ -263,11 +274,11 @@ def bids_validator_version(output, path, write=False):
     validator_version = get_bids_validator_version()
     # Extract schemaVersion
     summary_info = extract_summary_info(output)
-    
+
     combined_info = {**validator_version, **summary_info}
 
     if write:
-        # Update the dataset_description.json file 
+        # Update the dataset_description.json file
         update_dataset_description(path, combined_info)
     elif not write:
         print(combined_info)

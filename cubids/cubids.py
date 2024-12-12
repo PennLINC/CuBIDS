@@ -149,9 +149,11 @@ class CuBIDS(object):
             re.compile(r"/\."),
         ]
 
-        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=False)
+        indexer = bids.BIDSLayoutIndexer(
+            validate=validate, ignore=ignores, index_metadata=False)
 
-        self._layout = bids.BIDSLayout(self.path, validate=validate, indexer=indexer)
+        self._layout = bids.BIDSLayout(
+            self.path, validate=validate, indexer=indexer)
 
     def create_cubids_code_dir(self):
         """Create CuBIDS code directory.
@@ -201,7 +203,8 @@ class CuBIDS(object):
             Commit message to use with datalad save.
         """
         if not self.datalad_ready:
-            raise Exception("DataLad has not been initialized. use datalad_init()")
+            raise Exception(
+                "DataLad has not been initialized. use datalad_init()")
 
         statuses = self.datalad_handle.save(message=message or "CuBIDS Save")
         saved_status = set([status["status"] for status in statuses])
@@ -223,7 +226,8 @@ class CuBIDS(object):
         """
         if not self.datalad_ready:
             raise Exception("Datalad not initialized, can't determine status")
-        statuses = set([status["state"] for status in self.datalad_handle.status()])
+        statuses = set([status["state"]
+                       for status in self.datalad_handle.status()])
         return statuses == set(["clean"])
 
     def datalad_undo_last_commit(self):
@@ -237,8 +241,10 @@ class CuBIDS(object):
             If there are untracked changes in the datalad dataset.
         """
         if not self.is_datalad_clean():
-            raise Exception("Untracked changes present. Run clear_untracked_changes first")
-        reset_proc = subprocess.run(["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
+            raise Exception(
+                "Untracked changes present. Run clear_untracked_changes first")
+        reset_proc = subprocess.run(
+            ["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
     def add_nifti_info(self):
@@ -342,11 +348,13 @@ class CuBIDS(object):
         files_df = pd.read_table(files_tsv)
 
         # Check that the MergeInto column only contains valid merges
-        ok_merges, deletions = check_merging_operations(summary_tsv, raise_on_error=raise_on_error)
+        ok_merges, deletions = check_merging_operations(
+            summary_tsv, raise_on_error=raise_on_error)
 
         merge_commands = []
         for source_id, dest_id in ok_merges:
-            dest_files = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == dest_id).all(1)]
+            dest_files = files_df.loc[(
+                files_df[["ParamGroup", "EntitySet"]] == dest_id).all(1)]
             source_files = files_df.loc[
                 (files_df[["ParamGroup", "EntitySet"]] == source_id).all(1)
             ]
@@ -357,13 +365,15 @@ class CuBIDS(object):
             for dest_nii in dest_files.FilePath:
                 dest_json = img_to_new_ext(self.path + dest_nii, ".json")
                 if Path(dest_json).exists() and Path(source_json).exists():
-                    merge_commands.append(f"bids-sidecar-merge {source_json} {dest_json}")
+                    merge_commands.append(
+                        f"bids-sidecar-merge {source_json} {dest_json}")
 
         # Get the delete commands
         # delete_commands = []
         to_remove = []
         for rm_id in deletions:
-            files_to_rm = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)]
+            files_to_rm = files_df.loc[(
+                files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)]
 
             for rm_me in files_to_rm.FilePath:
                 if Path(self.path + rm_me).exists():
@@ -436,7 +446,8 @@ class CuBIDS(object):
 
                 rename_commit = s1 + s2
 
-                self.datalad_handle.run(cmd=["bash", renames], message=rename_commit)
+                self.datalad_handle.run(
+                    cmd=["bash", renames], message=rename_commit)
             else:
                 subprocess.run(
                     ["bash", renames],
@@ -476,7 +487,8 @@ class CuBIDS(object):
         entity_file_keys = []
 
         # Entities that may be in the filename?
-        file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
+        file_keys = ["task", "acquisition",
+                     "direction", "reconstruction", "run"]
 
         for key in file_keys:
             if key in list(entities.keys()):
@@ -490,7 +502,8 @@ class CuBIDS(object):
             # XXX: This adds an extra leading zero to run.
             entities["run"] = "0" + str(entities["run"])
 
-        filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
+        filename = "_".join(
+            [f"{key}-{entities[key]}" for key in entity_file_keys])
         filename = (
             filename.replace("acquisition", "acq")
             .replace("direction", "dir")
@@ -499,7 +512,8 @@ class CuBIDS(object):
         if len(filename) > 0:
             filename = sub_ses + "_" + filename + "_" + suffix + old_ext
         else:
-            raise ValueError(f"Could not construct new filename for {filepath}")
+            raise ValueError(
+                f"Could not construct new filename for {filepath}")
 
         # CHECK TO SEE IF DATATYPE CHANGED
         # datatype may be overridden/changed if the original file is located in the wrong folder.
@@ -517,7 +531,8 @@ class CuBIDS(object):
             dtype_new = dtype_orig
 
         # Construct the new filename
-        new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
+        new_path = str(self.path) + "/" + sub + "/" + \
+            ses + "/" + dtype_new + "/" + filename
 
         # Add the scan path + new path to the lists of old, new filenames
         self.old_filenames.append(filepath)
@@ -536,7 +551,8 @@ class CuBIDS(object):
                 # ensure assoc not an IntendedFor reference
                 if ".nii" not in str(assoc_path):
                     self.old_filenames.append(assoc_path)
-                    new_ext_path = img_to_new_ext(new_path, "".join(Path(assoc_path).suffixes))
+                    new_ext_path = img_to_new_ext(
+                        new_path, "".join(Path(assoc_path).suffixes))
                     self.new_filenames.append(new_ext_path)
 
         # MAKE SURE THESE AREN'T COVERED BY get_associations!!!
@@ -609,7 +625,8 @@ class CuBIDS(object):
             if Path(old_labeling).exists():
                 self.old_filenames.append(old_labeling)
                 new_scan_end = "_" + suffix + old_ext
-                new_labeling = new_path.replace(new_scan_end, "_asllabeling.jpg")
+                new_labeling = new_path.replace(
+                    new_scan_end, "_asllabeling.jpg")
                 self.new_filenames.append(new_labeling)
 
         # RENAME INTENDED FORS!
@@ -635,7 +652,8 @@ class CuBIDS(object):
                         # remove old filename
                         data["IntendedFor"].remove(item)
                         # add new filename
-                        data["IntendedFor"].append(_get_intended_for_reference(new_path))
+                        data["IntendedFor"].append(
+                            _get_intended_for_reference(new_path))
 
                 # update the json with the new data dictionary
                 _update_json(filename_with_if, data)
@@ -808,7 +826,8 @@ class CuBIDS(object):
 
                 if "/func/" in str(path):
                     # add tsvs
-                    tsv = img_to_new_ext(str(path), ".tsv").replace("_bold", "_events")
+                    tsv = img_to_new_ext(str(path), ".tsv").replace(
+                        "_bold", "_events")
                     if Path(tsv).exists():
                         to_remove.append(tsv)
                     # add tsv json (if exists)
@@ -922,7 +941,8 @@ class CuBIDS(object):
             2. A data frame with param group summaries
         """
         if not self.fieldmaps_cached:
-            raise Exception("Fieldmaps must be cached to find parameter groups.")
+            raise Exception(
+                "Fieldmaps must be cached to find parameter groups.")
         key_entities = _entity_set_to_entities(entity_set)
         key_entities["extension"] = ".nii[.gz]*"
 
@@ -975,7 +995,8 @@ class CuBIDS(object):
             mod_dict = sidecar_params[mod]
             for s_param in mod_dict.keys():
                 if s_param not in self.data_dict.keys():
-                    self.data_dict[s_param] = {"Description": "Scanning Parameter"}
+                    self.data_dict[s_param] = {
+                        "Description": "Scanning Parameter"}
 
         relational_params = self.grouping_config.get("relational_params")
         for r_param in relational_params.keys():
@@ -987,7 +1008,8 @@ class CuBIDS(object):
             mod_dict = derived_params[mod]
             for d_param in mod_dict.keys():
                 if d_param not in self.data_dict.keys():
-                    self.data_dict[d_param] = {"Description": "NIfTI Header Parameter"}
+                    self.data_dict[d_param] = {
+                        "Description": "NIfTI Header Parameter"}
 
         # Manually add non-sidecar columns/descriptions to data_dict
         desc1 = "Column where users mark groups to manually check"
@@ -1094,17 +1116,20 @@ class CuBIDS(object):
             long_name = big_df.loc[row, "FilePath"]
             big_df.loc[row, "FilePath"] = long_name.replace(self.path, "")
 
-        summary = _order_columns(pd.concat(param_group_summaries, ignore_index=True))
+        summary = _order_columns(
+            pd.concat(param_group_summaries, ignore_index=True))
 
         # create new col that strings key and param group together
-        summary["KeyParamGroup"] = summary["EntitySet"] + "__" + summary["ParamGroup"].map(str)
+        summary["KeyParamGroup"] = summary["EntitySet"] + \
+            "__" + summary["ParamGroup"].map(str)
 
         # move this column to the front of the dataframe
         key_param_col = summary.pop("KeyParamGroup")
         summary.insert(0, "KeyParamGroup", key_param_col)
 
         # do the same for the files df
-        big_df["KeyParamGroup"] = big_df["EntitySet"] + "__" + big_df["ParamGroup"].map(str)
+        big_df["KeyParamGroup"] = big_df["EntitySet"] + \
+            "__" + big_df["ParamGroup"].map(str)
 
         # move this column to the front of the dataframe
         key_param_col = big_df.pop("KeyParamGroup")
@@ -1253,8 +1278,10 @@ class CuBIDS(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        summary = summary.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
-        big_df = big_df.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
+        summary = summary.sort_values(
+            by=["Modality", "EntitySetCount"], ascending=[True, False])
+        big_df = big_df.sort_values(
+            by=["Modality", "EntitySetCount"], ascending=[True, False])
 
         # Create json dictionaries for summary and files tsvs
         self.create_data_dictionary()
@@ -1273,7 +1300,8 @@ class CuBIDS(object):
         summary.to_csv(f"{path_prefix}_summary.tsv", sep="\t", index=False)
 
         # Calculate the acq groups
-        group_by_acquisition_sets(f"{path_prefix}_files.tsv", path_prefix, self.acq_group_level)
+        group_by_acquisition_sets(
+            f"{path_prefix}_files.tsv", path_prefix, self.acq_group_level)
 
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
 
@@ -1492,7 +1520,8 @@ def _get_param_groups(
             # Get the fieldmaps out and add their types
             if "FieldmapKey" in relational_params:
                 fieldmap_types = sorted(
-                    [_file_to_entity_set(fmap.path) for fmap in fieldmap_lookup[path]]
+                    [_file_to_entity_set(fmap.path)
+                     for fmap in fieldmap_lookup[path]]
                 )
 
                 # check if config says columns or bool
@@ -1514,7 +1543,8 @@ def _get_param_groups(
             # If it's a fieldmap, see what entity set it's intended to correct
             if "IntendedForKey" in relational_params:
                 intended_entity_sets = sorted(
-                    [_file_to_entity_set(intention) for intention in intentions]
+                    [_file_to_entity_set(intention)
+                     for intention in intentions]
                 )
 
                 # check if config says columns or bool
@@ -1568,11 +1598,14 @@ def _get_param_groups(
         {"Counts": value_counts.to_numpy(), "ParamGroup": value_counts.index.to_numpy()}
     )
 
-    param_groups_with_counts = pd.merge(deduped, param_group_counts, on=["ParamGroup"])
+    param_groups_with_counts = pd.merge(
+        deduped, param_group_counts, on=["ParamGroup"])
 
     # Sort by counts and relabel the param groups
-    param_groups_with_counts.sort_values(by=["Counts"], inplace=True, ascending=False)
-    param_groups_with_counts["ParamGroup"] = np.arange(param_groups_with_counts.shape[0]) + 1
+    param_groups_with_counts.sort_values(
+        by=["Counts"], inplace=True, ascending=False)
+    param_groups_with_counts["ParamGroup"] = np.arange(
+        param_groups_with_counts.shape[0]) + 1
 
     # Send the new, ordered param group ids to the files list
     ordered_labeled_files = pd.merge(
@@ -1580,13 +1613,15 @@ def _get_param_groups(
     )
 
     # sort ordered_labeled_files by param group
-    ordered_labeled_files.sort_values(by=["Counts"], inplace=True, ascending=False)
+    ordered_labeled_files.sort_values(
+        by=["Counts"], inplace=True, ascending=False)
 
     # now get rid of cluster cols from deduped and df
     for col in list(ordered_labeled_files.columns):
         if col.startswith("Cluster_"):
             ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
-            param_groups_with_counts = param_groups_with_counts.drop(col, axis=1)
+            param_groups_with_counts = param_groups_with_counts.drop(
+                col, axis=1)
         if col.endswith("_x"):
             ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
 

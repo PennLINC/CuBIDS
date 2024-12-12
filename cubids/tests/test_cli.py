@@ -14,9 +14,10 @@ Date: [Current Date]
 """
 
 import argparse
+
 import pytest
 
-from cubids.cli import _path_exists, _is_file, _get_parser, _main
+from cubids.cli import _get_parser, _is_file, _main, _path_exists
 
 
 def _test_path_exists():
@@ -27,7 +28,8 @@ def _test_path_exists():
     It asserts that the function returns the expected path when the path exists,
     and raises an `argparse.ArgumentTypeError` when the path does not exist.
     """
-    assert _path_exists("/path/to/existing/file", None) == "/path/to/existing/file"
+    assert _path_exists("/path/to/existing/file",
+                        None) == "/path/to/existing/file"
 
     with pytest.raises(argparse.ArgumentTypeError):
         _path_exists("/path/to/nonexistent/file", None)
