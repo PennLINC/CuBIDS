@@ -1346,9 +1346,10 @@ class CuBIDS(object):
                         metadata = json.loads(content)
                     found_fields.update(metadata.keys())
                 except json.JSONDecodeError as e:
-                    print(f"Error decoding JSON in {json_file}: {e}")
+                    warnings.warn(f"Error decoding JSON in {json_file}: {e}")
                 except Exception as e:
-                    print(f"Unexpected error with file {json_file}: {e}")
+                    warnings.warn(f"Unexpected error with file {json_file}: {e}")
+
         return sorted(found_fields)
 
     def remove_metadata_fields(self, fields_to_remove):

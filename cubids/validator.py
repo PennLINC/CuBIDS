@@ -7,6 +7,7 @@ import os
 import pathlib
 import re
 import subprocess
+import warnings
 
 import pandas as pd
 
@@ -249,7 +250,7 @@ def update_dataset_description(path, new_info):
             )
             print("Changes saved with DataLad.")
         except subprocess.CalledProcessError as e:
-            print(f"Error running DataLad save: {e}")
+            warnings.warn(f"Error running DataLad save: {e}")
 
 
 def bids_validator_version(output, path, write=False):

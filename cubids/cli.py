@@ -43,7 +43,7 @@ def _parse_validate():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -119,7 +119,7 @@ def _parse_bids_version():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -188,7 +188,7 @@ def _parse_group():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -255,7 +255,7 @@ def _parse_apply():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -351,7 +351,7 @@ def _parse_datalad_save():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -393,7 +393,7 @@ def _parse_undo():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -617,7 +617,7 @@ def _parse_remove_metadata_fields():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -663,7 +663,7 @@ def _parse_print_metadata_fields():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )

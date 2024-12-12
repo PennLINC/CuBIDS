@@ -51,7 +51,7 @@ We can accomplish this using the following command:
 
     $ conda install deno
 
-The new schema ``bids-validator`` doesn't need to be installed 
+The new schema-based ``bids-validator`` doesn't need to be installed 
 and will be implemented automatically when `cubids validate` is called
 
 
