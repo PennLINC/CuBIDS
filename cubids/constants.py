@@ -1,9 +1,9 @@
 """Constants for CuBIDS."""
 
 # Names of identifier variables.
-# Used to place KeyGroup and ParamGroup at the beginning of a dataframe,
+# Used to place EntitySet and ParamGroup at the beginning of a dataframe,
 # but both are hardcoded in the relevant function.
-ID_VARS = set(["KeyGroup", "ParamGroup", "FilePath"])
+ID_VARS = set(["EntitySet", "ParamGroup", "FilePath"])
 # Entities that should not be used to group parameter sets
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
 # Multi-dimensional keys SliceTiming  XXX: what is this line about?

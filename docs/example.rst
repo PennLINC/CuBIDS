@@ -152,7 +152,7 @@ Note that it is best practice to provide a detailed commit message with each cha
 Adding NIfTI Information to JSON Sidecars
 -----------------------------------------
 
-Next, we seek to add more image parameters to our sidecars so that we can better define our Key Groups.
+Next, we seek to add more image parameters to our sidecars so that we can better define our Entity Sets.
 Historically, only a subset of parameters in the NIfTI image header have been included in a BIDS sidecar...
 Parameters such as image dimensions, number of volumes, image obliquity, and voxel sizes —
 all important data that can change how our pipelines will eventually run!
@@ -328,7 +328,7 @@ contains only one scan (see "Counts" column) with only 10 volumes
 (see "NumVolumes" column).
 Since the majority of DWI scans in this dataset have 61 volumes,
 ``CuBIDS`` assigns this single scan to a "Variant" (i.e. non-dominant) Parameter Group,
-and automatically populates that Parameter Group's "RenameKeyGroup" column in ``v0_summary.tsv``
+and automatically populates that Parameter Group's "RenameEntitySet" column in ``v0_summary.tsv``
 with a suggested name: ``acquisition-HASC55APVARIANTNumVolumes_datatype-dwi_suffix-dwi``.
 This time, though,
 we elect to remove this scan because it does not have enough volumes to be usable for most analyses.
@@ -351,7 +351,7 @@ Applying changes
 
 Now that all metadata issues have been addressed —
 both validation and ``CuBIDS`` summary —
-we are ready to rename our files based on their RenameKeyGroup values and
+we are ready to rename our files based on their RenameEntitySet values and
 apply the requested deletion in ``v0_edited_summary.tsv``.
 The ``cubids apply`` function renames scans in each Variant Parameter Group according
 to the metadata parameters with a flag “VARIANT”,

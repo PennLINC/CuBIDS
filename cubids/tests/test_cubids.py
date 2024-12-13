@@ -101,9 +101,9 @@ def _test__cache_fieldmaps(cubids_instance):
     # Add assertions here
 
 
-def _test_get_param_groups_from_key_group(cubids_instance):
-    key_group = "group-01"
-    param_groups = cubids_instance.get_param_groups_from_key_group(key_group)
+def _test_get_param_groups_from_entity_set(cubids_instance):
+    entity_set = "group-01"
+    param_groups = cubids_instance.get_param_groups_from_entity_set(entity_set)
     # Add assertions here
 
 
@@ -129,8 +129,8 @@ def _test_get_tsvs(cubids_instance):
     # Add assertions here
 
 
-def _test_get_key_groups(cubids_instance):
-    key_groups = cubids_instance.get_key_groups()
+def _test_get_entity_sets(cubids_instance):
+    entity_sets = cubids_instance.get_entity_sets()
     # Add assertions here
 
 
@@ -179,21 +179,21 @@ def _test__update_json(cubids_instance):
     # Add assertions here
 
 
-def _test__key_group_to_entities(cubids_instance):
-    key_group = "group-01"
-    entities = cubids_instance._key_group_to_entities(key_group)
+def _test__entity_set_to_entities(cubids_instance):
+    entity_set = "group-01"
+    entities = cubids_instance._entity_set_to_entities(entity_set)
     # Add assertions here
 
 
-def _test__entities_to_key_group(cubids_instance):
+def _test__entities_to_entity_set(cubids_instance):
     entities = {"subject": "sub-01", "session": "ses-01"}
-    key_group = cubids_instance._entities_to_key_group(entities)
+    entity_set = cubids_instance._entities_to_entity_set(entities)
     # Add assertions here
 
 
-def _test__file_to_key_group(cubids_instance):
+def _test__file_to_entity_set(cubids_instance):
     filename = "sub-01_ses-01_task-rest_bold.nii.gz"
-    key_group = cubids_instance._file_to_key_group(filename)
+    entity_set = cubids_instance._file_to_entity_set(filename)
     # Add assertions here
 
 
@@ -206,12 +206,12 @@ def _test__get_intended_for_reference(cubids_instance):
 def _test__get_param_groups(cubids_instance):
     files = ["sub-01_ses-01_task-rest_bold.nii.gz", "sub-02_ses-01_task-rest_bold.nii.gz"]
     fieldmap_lookup = {"sub-01_ses-01_task-rest_bold.nii.gz": "fieldmap.nii.gz"}
-    key_group_name = "group-01"
+    entity_set_name = "group-01"
     grouping_config = {"group-01": {"modality": "bold"}}
     modality = "bold"
     keys_files = {"group-01": ["sub-01_ses-01_task-rest_bold.nii.gz"]}
     param_groups = cubids_instance._get_param_groups(
-        files, fieldmap_lookup, key_group_name, grouping_config, modality, keys_files
+        files, fieldmap_lookup, entity_set_name, grouping_config, modality, keys_files
     )
     # Add assertions here
 

@@ -23,7 +23,7 @@ and **budget their computational time and resources** effectively.
 ``CuBIDS`` is designed to facilitate the curation of large,
 neuroimaging datasets so that users can infer useful information from descriptive and
 accurate BIDS labels before running pipelines *en masse*.
-``CuBIDS`` accomplishes this by summarizing BIDS data using :ref:`keygroup`,
+``CuBIDS`` accomplishes this by summarizing BIDS data using :ref:`entityset`,
 :ref:`paramgroup`, and :ref:`acquisitiongroup` categorizations in your data
 (we'll explain what these are in more detail in the next section).
 
@@ -56,15 +56,15 @@ Examples
 Dominant Group resting state BOLD:
 
     *   Example Filename: ``sub-01_ses-A_task-rest_acq-singleband_bold.nii.gz``
-    *   Key Group: ``acquisition-singleband_datatype-func_suffix-bold_task-rest``
+    *   Entity Set: ``acquisition-singleband_datatype-func_suffix-bold_task-rest``
     *   Param Group: ``1`` (Dominant Group)
 
 Variant Group resting state BOLD (all scans in this Param Group are missing a fieldmap)
 
     *   Example Filename: ``sub-02_ses-A_task-rest_acq-singleband_bold.nii.gz``
-    *   Key Group: ``acquisition-singleband_datatype-func_suffix-bold_task-rest``
+    *   Entity Set: ``acquisition-singleband_datatype-func_suffix-bold_task-rest``
     *   Param Group: ``2`` (Variant Group)
-    *   Rename Key Group: ``acquisition-singlebandVARIANTNoFmap_datatype-func_suffix-bold_task-rest``
+    *   Rename Entity Set: ``acquisition-singlebandVARIANTNoFmap_datatype-func_suffix-bold_task-rest``
 
 These definitions are described in more detail in :doc:`glossary` and :doc:`usage`.
 

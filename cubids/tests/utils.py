@@ -53,12 +53,12 @@ def _add_deletion(summary_tsv):
 
 # def _edit_tsv(summary_tsv):
 #     df = pd.read_table(summary_tsv)
-#     df['RenameKeyGroup'] = df['RenameKeyGroup'].apply(str)
-#     df['KeyGroup'] = df['KeyGroup'].apply(str)
+#     df['RenameEntitySet'] = df['RenameEntitySet'].apply(str)
+#     df['EntitySet'] = df['EntitySet'].apply(str)
 #     for row in range(len(df)):
-#         if df.loc[row, 'KeyGroup'] == \
+#         if df.loc[row, 'EntitySet'] == \
 #             "acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1":
-#             df.at[row, 'RenameKeyGroup'] = \
+#             df.at[row, 'RenameEntitySet'] = \
 #                 "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
 #     df.to_csv(summary_tsv)
 
