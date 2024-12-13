@@ -63,6 +63,7 @@ jobs:
             # We need curl for the codecov upload
             apt-get update
             apt-get install -y -qq curl
+            apt-get install -y gnupg
 
             cd /home/circleci/src/coverage/
             echo "Merge coverage files"
