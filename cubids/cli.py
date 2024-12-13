@@ -43,7 +43,7 @@ def _parse_validate():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -107,6 +107,41 @@ def _enter_validate(argv=None):
     workflows.validate(**args)
 
 
+def _parse_bids_version():
+    parser = argparse.ArgumentParser(
+        description="cubids bids-version: Get BIDS Validator and Schema version",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    PathExists = partial(_path_exists, parser=parser)
+
+    parser.add_argument(
+        "bids_dir",
+        type=PathExists,
+        action="store",
+        help=(
+            "The root of a BIDS dataset. It should contain "
+            "sub-X directories and dataset_description.json"
+        ),
+    )
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        default=False,
+        help=(
+            "Save the validator and schema version to 'dataset_description.json' "
+            "when using `cubids bids-version /bids/path --write`. "
+            "By default, `cubids bids-version /bids/path` prints to the terminal."
+        ),
+    )
+    return parser
+
+
+def _enter_bids_version(argv=None):
+    options = _parse_bids_version().parse_args(argv)
+    args = vars(options).copy()
+    workflows.bids_version(**args)
+
+
 def _parse_bids_sidecar_merge():
     parser = argparse.ArgumentParser(
         description=("bids-sidecar-merge: merge critical keys from one sidecar to another"),
@@ -153,7 +188,7 @@ def _parse_group():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -220,7 +255,7 @@ def _parse_apply():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -316,7 +351,7 @@ def _parse_datalad_save():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -358,7 +393,7 @@ def _parse_undo():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -582,7 +617,7 @@ def _parse_remove_metadata_fields():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -628,7 +663,7 @@ def _parse_print_metadata_fields():
         type=PathExists,
         action="store",
         help=(
-            "the root of a BIDS dataset. It should contain "
+            "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
     )
@@ -655,6 +690,7 @@ def _enter_print_metadata_fields(argv=None):
 
 COMMANDS = [
     ("validate", _parse_validate, workflows.validate),
+    ("bids-version", _parse_bids_version, workflows.bids_version),
     ("sidecar-merge", _parse_bids_sidecar_merge, workflows.bids_sidecar_merge),
     ("group", _parse_group, workflows.group),
     ("apply", _parse_apply, workflows.apply),

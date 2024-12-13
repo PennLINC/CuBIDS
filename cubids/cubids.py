@@ -1336,9 +1336,20 @@ class CuBIDS(object):
         found_fields = set()
         for json_file in Path(self.path).rglob("*.json"):
             if ".git" not in str(json_file):
-                with open(json_file, "r") as jsonr:
-                    metadata = json.load(jsonr)
-                found_fields.update(metadata.keys())
+                # add this in case `print-metadata-fields` is run before validate
+                try:
+                    with open(json_file, "r", encoding="utf-8") as jsonr:
+                        content = jsonr.read().strip()
+                        if not content:
+                            print(f"Empty file: {json_file}")
+                            continue
+                        metadata = json.loads(content)
+                    found_fields.update(metadata.keys())
+                except json.JSONDecodeError as e:
+                    warnings.warn(f"Error decoding JSON in {json_file}: {e}")
+                except Exception as e:
+                    warnings.warn(f"Unexpected error with file {json_file}: {e}")
+
         return sorted(found_fields)
 
     def remove_metadata_fields(self, fields_to_remove):

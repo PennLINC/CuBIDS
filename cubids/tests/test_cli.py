@@ -14,9 +14,10 @@ Date: [Current Date]
 """
 
 import argparse
+
 import pytest
 
-from cubids.cli import _path_exists, _is_file, _get_parser, _main
+from cubids.cli import _get_parser, _is_file, _main, _path_exists
 
 
 def _test_path_exists():
