@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from packaging.version import Version
 
 from cubids.cubids import CuBIDS
 from cubids.metadata_merge import merge_json_into_json, merge_without_overwrite
@@ -22,7 +23,15 @@ from cubids.tests.utils import (
     file_hash,
     get_data,
 )
-from cubids.validator import build_validator_call, parse_validator_output, run_validator
+from cubids.validator import (
+    build_validator_call,
+    parse_validator_output,
+    run_validator,
+    get_bids_validator_version,
+    extract_summary_info,
+    update_dataset_description,
+    bids_validator_version,
+)
 
 COMPLETE_KEY_GROUPS = [
     "acquisition-HASC55AP_datatype-dwi_suffix-dwi",
@@ -1026,6 +1035,39 @@ def test_validator(tmp_path):
     parsed = parse_validator_output(ret.stdout.decode("UTF-8"))
 
     assert isinstance(parsed, pd.DataFrame)
+
+
+def test_bids_version(tmp_path):
+    """Test workflows.bids_version."""
+    data_root = get_data(tmp_path)
+    bids_dir = Path(data_root) / "complete"
+
+    # Ensure the test directory exists
+    assert bids_dir.exists()
+
+    # test the validator in valid dataset
+    call = build_validator_call(bids_dir)
+    ret = run_validator(call)
+
+    assert ret.returncode == 0
+
+    decoded = ret.stdout.decode("UTF-8")
+
+    # Get the BIDS validator version
+    validator_version = Version(get_bids_validator_version()["ValidatorVersion"])
+    # Extract schemaVersion
+    schema_version = Version(extract_summary_info(decoded)["SchemaVersion"])
+
+    # Set baseline versions to compare against
+    min_validator_version = Version("2.0.0")
+    min_schema_version = Version("0.11.3")
+
+    assert (
+        validator_version >= min_validator_version
+    ), f"Validator version {validator_version} is less than minimum {min_validator_version}"
+    assert (
+        schema_version >= min_schema_version
+    ), f"Schema version {schema_version} is less than minimum {min_schema_version}"
 
 
 def test_docker():

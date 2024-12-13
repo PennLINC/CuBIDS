@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  codecov: codecov/codecov@1.0.5
+  codecov: codecov/codecov@3.2.4
 
 jobs:
   run_pytests:
@@ -31,10 +31,8 @@ jobs:
             source activate cubids
             conda install -c conda-forge -y datalad
 
-            # Add nodejs and the validator
-            conda install nodejs
-            npm install -g yarn && \
-            npm install -g bids-validator@1.14.14-dev.0
+            # Add deno to run the schema validator
+            conda install deno
 
             # Install CuBIDS
             pip install -e .[tests]
@@ -64,7 +62,8 @@ jobs:
 
             # We need curl for the codecov upload
             apt-get update
-            apt-get install -yqq curl
+            apt-get install -y -qq curl
+            apt-get install -y gnupg
 
             cd /home/circleci/src/coverage/
             echo "Merge coverage files"

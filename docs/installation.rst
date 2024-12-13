@@ -16,7 +16,7 @@ initialize a new conda environment (for example, named ``cubids``) as follows:
 
 .. code-block:: console
 
-    $ conda create -n cubids python=3.8 pip
+    $ conda create -n cubids python=3.12 pip
     $ conda activate cubids
 
 You are now ready to install CuBIDS.
@@ -44,23 +44,16 @@ Once you have a copy of the source, you can install it with:
     $ pip install -e .
 
 We will now need to install some dependencies of ``CuBIDS``.
-To do this, we first must install nodejs.
+To do this, we first must install deno to run `bids-validator`.
 We can accomplish this using the following command:
 
 .. code-block:: console
 
-    $ conda install nodejs
+    $ conda install deno
 
-Now that we have npm installed, we can install ``bids-validator`` using the following command:
+The new schema-based ``bids-validator`` doesn't need to be installed 
+and will be implemented automatically when `cubids validate` is called
 
-.. code-block:: console
-
-    $ npm install -g bids-validator@1.7.2
-
-In our example walkthrough,
-we use ``bids-validator`` v1.7.2. using a different version of the
-validator may result in slightly different validation tsv printouts,
-but ``CuBIDS`` is compatible with all versions of the validator at or above v1.6.2.
 
 We also recommend using ``CuBIDS`` with the optional ``DataLad`` version control capabilities.
 We use ``DataLad`` throughout our walkthrough of the CuBIDS Workflow on

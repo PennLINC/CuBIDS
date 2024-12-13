@@ -17,6 +17,8 @@ from cubids.cubids import CuBIDS
 from cubids.metadata_merge import merge_json_into_json
 from cubids.utils import _get_container_type
 from cubids.validator import (
+    bids_validator_version,
+    build_first_subject_path,
     build_subject_paths,
     build_validator_call,
     get_val_dictionary,
@@ -256,6 +258,70 @@ def validate(
     logger.info("RUNNING: " + " ".join(cmd))
     proc = subprocess.run(cmd)
     sys.exit(proc.returncode)
+
+
+def bids_version(bids_dir, write=False):
+    """Get BIDS validator and schema version.
+
+    Parameters
+    ----------
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    write : :obj:`bool`
+        If True, write to dataset_description.json. If False, print to terminal.
+    """
+    # Need to run validator to get output with schema version
+    # Copy code from `validate --sequential`
+
+    try:  # return first subject
+        # Get all folders that start with "sub-"
+        sub_folders = [
+            name
+            for name in os.listdir(bids_dir)
+            if os.path.isdir(os.path.join(bids_dir, name)) and name.startswith("sub-")
+        ]
+        if not sub_folders:
+            raise ValueError("No folders starting with 'sub-' found. Please provide a valid BIDS.")
+        subject = sub_folders[0]
+    except FileNotFoundError:
+        raise FileNotFoundError(f"The directory {bids_dir} does not exist.")
+    except ValueError as ve:
+        raise ve
+
+    # build a dictionary with {SubjectLabel: [List of files]}
+    # run first subject only
+    subject_dict = build_first_subject_path(bids_dir, subject)
+
+    # iterate over the dictionary
+    for subject, files_list in subject_dict.items():
+        # logger.info(" ".join(["Processing subject:", subject]))
+        # create a temporary directory and symlink the data
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            for fi in files_list:
+                # cut the path down to the subject label
+                bids_start = fi.find(subject)
+
+                # maybe it's a single file
+                if bids_start < 1:
+                    bids_folder = tmpdirname
+                    fi_tmpdir = tmpdirname
+
+                else:
+                    bids_folder = Path(fi[bids_start:]).parent
+                    fi_tmpdir = tmpdirname + "/" + str(bids_folder)
+
+                if not os.path.exists(fi_tmpdir):
+                    os.makedirs(fi_tmpdir)
+                output = fi_tmpdir + "/" + str(Path(fi).name)
+                shutil.copy2(fi, output)
+
+            # run the validator
+            call = build_validator_call(tmpdirname)
+            ret = run_validator(call)
+
+            # Get BIDS validator and schema version
+            decoded = ret.stdout.decode("UTF-8")
+            bids_validator_version(decoded, bids_dir, write=write)
 
 
 def bids_sidecar_merge(from_json, to_json):
