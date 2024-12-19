@@ -583,7 +583,7 @@ def _parse_purge():
             "When specifying files in this txt file, "
             "always use relative paths starting from your BIDS directory. "
             "e.g., ``sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii.gz``"
-            ),
+        ),
     )
     parser.add_argument(
         "--use-datalad",
