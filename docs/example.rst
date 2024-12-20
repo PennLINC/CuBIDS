@@ -211,13 +211,15 @@ To do this, we run the ``cubids purge`` command.
 ``cubids purge`` requires as input a list of files to cleanly "purge" from the dataset.
 You can create this file in any text editor,
 as long as it is saved as plain text ``.txt``.
+When specifying files in this text file, 
+always use relative paths starting from your BIDS directory.
 For this example, we created the following file:
 
 .. code-block:: console
 
     $ cat no_ped.txt
 
-    /AN/EXAMPLE/PATH/CuBIDS_Test/BIDS_Dataset_Datalad/sub-02/ses-phdiff/func/sub-02_ses-phdiff_task-rest_bold.nii.gz
+    sub-02/ses-phdiff/func/sub-02_ses-phdiff_task-rest_bold.nii.gz
 
 
 and saved it in our ``CuBIDS_Test directory``.

@@ -584,7 +584,12 @@ def _parse_purge():
         "scans",
         type=IsFile,
         action="store",
-        help="path to the txt file of scans whose associations should be purged.",
+        help=(
+            "path to the txt file of scans whose associations should be purged. "
+            "When specifying files in this txt file, "
+            "always use relative paths starting from your BIDS directory. "
+            "e.g., ``sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii.gz``"
+        ),
     )
     parser.add_argument(
         "--use-datalad",

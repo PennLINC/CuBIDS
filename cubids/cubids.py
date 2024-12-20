@@ -730,7 +730,7 @@ class CuBIDS(object):
         scans_txt : str
             path to the .txt file that lists the scans
             you want to be deleted from the dataset, along
-            with thier associations.
+            with their associations.
             example path: /Users/Covitz/CCNP/scans_to_delete.txt
         """
         self.scans_txt = scans_txt
