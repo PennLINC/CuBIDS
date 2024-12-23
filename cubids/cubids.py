@@ -410,8 +410,9 @@ class CuBIDS(object):
                 if Path(from_file).exists():
                     # if using datalad, we want to git mv instead of mv
                     if self.use_datalad:
-                        move_ops.append(f"git mv {os.path.relpath(from_file,
-                            str(self.path))} {to_file}")
+                        move_ops.append(
+                            f"git mv {os.path.relpath(from_file, str(self.path))} {to_file}"
+                        )
                     else:
                         move_ops.append(f"mv {from_file} {to_file}")
 
