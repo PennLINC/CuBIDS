@@ -261,7 +261,7 @@ def _parse_apply():
     )
     parser.add_argument(
         "edited_summary_tsv",
-        type=IsFile,
+        type=Path,
         action="store",
         help=(
             "path to the _summary.tsv that has been edited "
@@ -273,7 +273,7 @@ def _parse_apply():
     )
     parser.add_argument(
         "files_tsv",
-        type=IsFile,
+        type=Path,
         action="store",
         help=(
             "path to the _files.tsv that has been edited "
@@ -440,23 +440,26 @@ def _parse_copy_exemplars():
     )
     parser.add_argument(
         "exemplars_dir",
-        type=PathExists,
+        type=Path,
         action="store",
         help=(
-            "absolute path to the root of a BIDS dataset "
-            "containing one subject from each Acquisition Group. "
+            "name of the directory to create where to store exemplar dataset. "
+            "It will include one subject from each Acquisition Group. "
             "It should contain sub-X directories and "
             "dataset_description.json."
         ),
     )
     parser.add_argument(
         "exemplars_tsv",
-        type=IsFile,
+        type=Path,
         action="store",
         help=(
-            "absolute path to the .tsv file that lists one "
+            "path to the .tsv that lists one "
             "subject from each Acquisition Group "
-            "(*_AcqGrouping.tsv from the cubids-group output)"
+            "(*_AcqGrouping.tsv from the cubids-group output). "
+            "If the file is located in the code/CuBIDS "
+            "directory, then users can just pass the .tsv "
+            "filename instead of the full path "
         ),
     )
     parser.add_argument(
@@ -488,6 +491,12 @@ def _parse_copy_exemplars():
         "--container",
         action="store",
         help="Docker image tag or Singularity image file.",
+    )
+    parser.add_argument(
+        "--force-unlock",
+        action="store_true",
+        default=False,
+        help="unlock dataset before adding nifti info ",
     )
     return parser
 
