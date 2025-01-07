@@ -14,38 +14,98 @@ Date: [Current Date]
 """
 
 import argparse
+from functools import partial
 
 import pytest
 
 from cubids.cli import _get_parser, _is_file, _main, _path_exists
+from cubids.tests.utils import chdir
 
 
-def _test_path_exists():
-    """Test whether a given path exists or not.
+def test_path_exists(tmp_path):
+    """Test whether a given path exists or not."""
+    parser = argparse.ArgumentParser()
 
-    This function tests the `_path_exists` function by providing a path that exists
-    and a path that does not exist.
-    It asserts that the function returns the expected path when the path exists,
-    and raises an `argparse.ArgumentTypeError` when the path does not exist.
-    """
-    assert _path_exists("/path/to/existing/file", None) == "/path/to/existing/file"
+    # Test with an existing path
+    existing_path = tmp_path / "existing_file.txt"
+    existing_path.touch()  # Create the file
+    result = _path_exists(str(existing_path), parser)
+    assert result == existing_path.absolute()
 
-    with pytest.raises(argparse.ArgumentTypeError):
-        _path_exists("/path/to/nonexistent/file", None)
+    # Test with just filename
+    with chdir(tmp_path):
+        result = _path_exists("existing_file.txt", parser)
+        assert result == existing_path.absolute()
+
+    # Test with a non-existing path
+    non_existing_path = tmp_path / "non_existing_file.txt"
+    with pytest.raises(SystemExit):
+        _path_exists(str(non_existing_path), parser)
+
+    # Test within an argument parser
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    PathExists = partial(_path_exists, parser=parser)
+    parser.add_argument(
+        "existing_folder",
+        type=PathExists,
+        action="store",
+    )
+
+    # Test with an existing path within an argument parser
+    parser.parse_args([str(existing_path)])
+
+    # Test with just filename
+    with chdir(tmp_path):
+        parser.parse_args(["existing_file.txt"])
+
+    # Test with a non-existing path within an argument parser
+    with pytest.raises(SystemExit):
+        parser.parse_args([str(non_existing_path)])
 
 
-def _test_is_file():
-    """Test whether a given path is a file or a directory.
+def test_is_file(tmp_path):
+    """Test whether a given path exists or not."""
+    parser = argparse.ArgumentParser()
 
-    This function tests the `_is_file` function by providing a path that is a file
-    and a path that is a directory.
-    It asserts that the function returns the expected path when the path is a file,
-    and raises an `argparse.ArgumentTypeError` when the path is a directory.
-    """
-    assert _is_file("/path/to/file.txt", None) == "/path/to/file.txt"
+    # Test with an existing path
+    existing_path = tmp_path / "existing_file.txt"
+    existing_path.touch()  # Create the file
+    result = _is_file(str(existing_path), parser)
+    assert result == existing_path.absolute()
 
-    with pytest.raises(argparse.ArgumentTypeError):
-        _is_file("/path/to/directory", None)
+    # Test with just filename
+    with chdir(tmp_path):
+        result = _is_file("existing_file.txt", parser)
+        assert result == existing_path.absolute()
+
+    # Test with a non-existing path
+    non_existing_path = tmp_path / "non_existing_file.txt"
+    with pytest.raises(SystemExit):
+        _is_file(str(non_existing_path), parser)
+
+    # Test within an argument parser
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    IsFile = partial(_is_file, parser=parser)
+    parser.add_argument(
+        "existing_file",
+        type=IsFile,
+        action="store",
+    )
+
+    # Test with an existing path within an argument parser
+    parser.parse_args([str(existing_path)])
+
+    # Test with just filename
+    with chdir(tmp_path):
+        parser.parse_args(["existing_file.txt"])
+
+    # Test with a non-existing path within an argument parser
+    with pytest.raises(SystemExit):
+        parser.parse_args([str(non_existing_path)])
 
 
 def _test_get_parser():
