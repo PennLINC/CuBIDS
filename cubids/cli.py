@@ -31,9 +31,12 @@ def _path_exists(path, parser):
     pathlib.Path
         Absolute path to the given location.
     """
-    if path is None or not Path(path).exists():
-        raise parser.error(f"Path does not exist: <{path}>.")
-    return Path(path).absolute()
+    if path is not None:
+        path = Path(path)
+
+    if path is None or not path.exists():
+        raise parser.error(f"Path does not exist: <{path.absolute()}>.")
+    return path.absolute()
 
 
 def _is_file(path, parser):
