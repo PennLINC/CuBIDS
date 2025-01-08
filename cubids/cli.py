@@ -53,7 +53,7 @@ def _is_file(path, parser):
     """
     path = _path_exists(path, parser)
     if not path.is_file():
-        raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
+        raise parser.error(f"Path should point to a file (or symlink of file): <{path.absolute()}>.")
     return path
 
 
