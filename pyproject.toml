@@ -26,7 +26,7 @@ dependencies = [
     "pandas<=2.2.3",
     "pybids<=0.18.1",
     "pyyaml",
-    "scikit-learn<=1.6.0",
+    "scikit-learn<=1.6.1",
     "tqdm",
 ]
 dynamic = ["version"]
