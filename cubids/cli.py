@@ -489,6 +489,12 @@ def _parse_copy_exemplars():
         action="store",
         help="Docker image tag or Singularity image file.",
     )
+    parser.add_argument(
+        "--force-unlock",
+        action="store_true",
+        default=False,
+        help="unlock dataset before adding nifti info ",
+    )
     return parser
 
 
