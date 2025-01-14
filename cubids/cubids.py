@@ -416,7 +416,7 @@ class CuBIDS(object):
 
         full_cmd = "\n".join(merge_commands + move_ops)
         if full_cmd:
-            renames = new_prefix + "_full_cmd.sh"
+            renames = str(Path(self.path) / (new_prefix + "_full_cmd.sh"))
 
             # write full_cmd to a .sh file
             with open(renames, "w") as fo:
