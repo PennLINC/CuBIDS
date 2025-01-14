@@ -683,7 +683,11 @@ class CuBIDS(object):
                     exemplars_dir,
                 ]
             )
-
+        if os.sep not in str(exemplars_tsv):
+            if not self.cubids_code_dir:
+                self.create_cubids_code_dir()
+            exemplars_tsv = self.path + "/code/CuBIDS/" + exemplars_tsv
+        
         # load the exemplars tsv
         subs = pd.read_table(exemplars_tsv)
 
