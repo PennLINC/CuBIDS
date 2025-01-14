@@ -7,6 +7,10 @@ title: >-
 message: If you use this software, please cite it using the metadata from this file, as well as the NeuroImage paper (doi:10.1016/j.neuroimage.2022.119609).
 type: software
 authors:
+  - given-names: Tien
+    family-names: Tong
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0002-1940-3198'
   - given-names: Sydney
     family-names: Covitz
     affiliation: University of Pennsylvania
