@@ -1452,7 +1452,7 @@ def _get_bidsuri(filename, dataset_root):
 
     """
     if dataset_root in filename:
-        return filename.replace(dataset_root, "bids::/").replace("bids:/", "bids::")
+        return filename.replace(dataset_root, "bids::").replace("bids::/", "bids::")
     raise ValueError(f"Only local datasets are supported: {filename}")
 
 
