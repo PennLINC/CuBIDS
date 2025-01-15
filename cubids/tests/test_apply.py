@@ -152,11 +152,11 @@ bidsuri_intendedfor_cs = {
 }
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def files_data():
     """A dictionary describing a CuBIDS files tsv file for testing."""
     dict_ = {
-        'longitudinal': {
+        "longitudinal": {
             "ParamGroup": [1, 1, 1, 1],
             "EntitySet": [
                 "datatype-anat_suffix-T1w",
@@ -177,7 +177,7 @@ def files_data():
                 "datatype-fmap_direction-PA_fmap-epi_suffix-epi__1",
             ],
         },
-        'cross-sectional': {
+        "cross-sectional": {
             "ParamGroup": [1, 1, 1, 1],
             "EntitySet": [
                 "datatype-anat_suffix-T1w",
@@ -202,7 +202,7 @@ def files_data():
     return dict_
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def summary_data():
     """A dictionary describing a CuBIDS summary tsv file for testing."""
     dict_ = {
@@ -263,7 +263,9 @@ def summary_data():
         ),
     ],
 )
-def test_cubids_apply_intendedfor(tmpdir, summary_data, files_data, name, skeleton, expected):
+def test_cubids_apply_intendedfor(
+    tmpdir, summary_data, files_data, name, skeleton, expected
+):
     """Test cubids apply with different IntendedFor types."""
     import json
 
