@@ -1,5 +1,3 @@
-.. include:: links.rst
-
 Glossary
 ========
 
