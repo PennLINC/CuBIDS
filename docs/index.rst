@@ -13,7 +13,6 @@ Contents
    usage
    cli
    example
-   examples
    ../CONTRIBUTING
    ../AUTHORS
    ../HISTORY
