@@ -63,6 +63,7 @@ tests = [
     "flake8-unused-arguments",
     "flake8-use-fstring",
     "flake8-warnings",
+    "niworkflows",
     "pep8-naming",
     "pytest",
     "pytest-cov",
