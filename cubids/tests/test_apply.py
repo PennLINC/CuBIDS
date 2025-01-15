@@ -14,18 +14,14 @@ relpath_intendedfor_long = {
                     "dir": "AP",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": [
-                            "ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"
-                        ]
+                        "IntendedFor": ["ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
                 {
                     "dir": "PA",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": [
-                            "ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"
-                        ]
+                        "IntendedFor": ["ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
             ],
@@ -54,7 +50,7 @@ bidsuri_intendedfor_long = {
                     "metadata": {
                         "IntendedFor": [
                             "bids::sub-01/ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"
-                        ]
+                        ],
                     },
                 },
                 {
@@ -63,7 +59,7 @@ bidsuri_intendedfor_long = {
                     "metadata": {
                         "IntendedFor": [
                             "bids::sub-01/ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"
-                        ]
+                        ],
                     },
                 },
             ],
@@ -89,14 +85,14 @@ relpath_intendedfor_cs = {
                     "dir": "AP",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": ["dwi/sub-01_dir-AP_run-01_dwi.nii.gz"]
+                        "IntendedFor": ["dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
                 {
                     "dir": "PA",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": ["dwi/sub-01_dir-AP_run-01_dwi.nii.gz"]
+                        "IntendedFor": ["dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
             ],
@@ -122,18 +118,14 @@ bidsuri_intendedfor_cs = {
                     "dir": "AP",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": [
-                            "bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"
-                        ]
+                        "IntendedFor": ["bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
                 {
                     "dir": "PA",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": [
-                            "bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"
-                        ]
+                        "IntendedFor": ["bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
             ],
@@ -233,19 +225,21 @@ def summary_data():
 
 
 @pytest.mark.parametrize(
-    ("name", "skeleton", "expected"),
+    ("name", "skeleton", "intended_for", "expected"),
     [
         (
             "relpath_long",
             relpath_intendedfor_long,
             # XXX: Should not have extra leading zero in run entity, but that's a known bug.
             "ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
+            "pass",
         ),
         (
             "bidsuri_long",
             bidsuri_intendedfor_long,
             # XXX: Should not have extra leading zero in run entity, but that's a known bug.
             "bids::sub-01/ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
+            "pass",
         ),
         (
             "relpath_cs",
@@ -253,6 +247,7 @@ def summary_data():
             # XXX: Should not have extra leading zero in run entity, but that's a known bug.
             # XXX: CuBIDS enforces longitudinal dataset, so this fails.
             "dwi/sub-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
+            TypeError,
         ),
         (
             "bidsuri_cs",
@@ -260,11 +255,18 @@ def summary_data():
             # XXX: Should not have extra leading zero in run entity, but that's a known bug.
             # XXX: CuBIDS enforces longitudinal dataset, so this fails.
             "bids::sub-01/dwi/sub-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
+            TypeError,
         ),
     ],
 )
 def test_cubids_apply_intendedfor(
-    tmpdir, summary_data, files_data, name, skeleton, expected
+    tmpdir,
+    summary_data,
+    files_data,
+    name,
+    skeleton,
+    intended_for,
+    expected,
 ):
     """Test cubids apply with different IntendedFor types."""
     import json
@@ -275,36 +277,49 @@ def test_cubids_apply_intendedfor(
     bids_dir = tmpdir / name
     generate_bids_skeleton(str(bids_dir), skeleton)
 
-    # Create a summary tsv
+    if "long" in name:
+        fdata = files_data["longitudinal"]
+        fmap_json = bids_dir / "sub-01/ses-01/fmap/sub-01_ses-01_dir-AP_epi.json"
+    else:
+        fdata = files_data["cross-sectional"]
+        fmap_json = bids_dir / "sub-01/fmap/sub-01_dir-AP_epi.json"
+
+    # Create a CuBIDS summary tsv
     summary_tsv = tmpdir / "summary.tsv"
     df = pd.DataFrame(summary_data)
     df.to_csv(summary_tsv, sep="\t", index=False)
 
+    # Create a CuBIDS files tsv
     files_tsv = tmpdir / "files.tsv"
-    if "long" in name:
-        fdata = files_data["longitudinal"]
-    else:
-        fdata = files_data["cross-sectional"]
     df = pd.DataFrame(fdata)
     df.to_csv(files_tsv, sep="\t", index=False)
 
     # Run cubids apply
-    apply(
-        bids_dir=str(bids_dir),
-        use_datalad=False,
-        acq_group_level="subject",
-        config=None,
-        edited_summary_tsv=summary_tsv,
-        files_tsv=files_tsv,
-        new_tsv_prefix=None,
-        container=None,
-    )
-    if "long" in name:
-        fmap_json = bids_dir / "sub-01/ses-01/fmap/sub-01_ses-01_dir-AP_epi.json"
+    if isinstance(expected, str):
+        apply(
+            bids_dir=str(bids_dir),
+            use_datalad=False,
+            acq_group_level="subject",
+            config=None,
+            edited_summary_tsv=summary_tsv,
+            files_tsv=files_tsv,
+            new_tsv_prefix=None,
+            container=None,
+        )
+
+        with open(fmap_json) as f:
+            metadata = json.load(f)
+
+        assert metadata["IntendedFor"] == [intended_for]
     else:
-        fmap_json = bids_dir / "sub-01/fmap/sub-01_dir-AP_epi.json"
-
-    with open(fmap_json) as f:
-        metadata = json.load(f)
-
-    assert metadata["IntendedFor"] == [expected]
+        with pytest.raises(expected):
+            apply(
+                bids_dir=str(bids_dir),
+                use_datalad=False,
+                acq_group_level="subject",
+                config=None,
+                edited_summary_tsv=summary_tsv,
+                files_tsv=files_tsv,
+                new_tsv_prefix=None,
+                container=None,
+            )
