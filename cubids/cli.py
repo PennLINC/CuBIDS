@@ -74,7 +74,7 @@ def _parse_validate():
         default=None,
     )
     parser.add_argument(
-        "--ignore_nifti_headers",
+        "--ignore-nifti-headers",
         action="store_true",
         default=False,
         help="Disregard NIfTI header content during validation",
