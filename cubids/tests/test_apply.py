@@ -136,7 +136,7 @@ files_data = {
         ('bidsuri_longitudinal', bidsuri_longitudinal_intendedfor, summary_data, files_data, 'error'),
     ],
 )
-def test_cubids_apply_intendedfor(tmpdir, name, skeleton, summary_data, expected):
+def test_cubids_apply_intendedfor(tmpdir, name, skeleton, summary_data, files_data, expected):
     """Test cubids apply with different IntendedFor types."""
     from cubids.workflows import apply
 
