@@ -1,9 +1,9 @@
 """Test cubids apply."""
 
 import pandas as pd
-import pytest
 from niworkflows.utils.testing import generate_bids_skeleton
-from workflows import apply
+
+from cubids.workflows import apply
 
 relpath_longitudinal_intendedfor = {
     '01': [
