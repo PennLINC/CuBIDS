@@ -64,6 +64,7 @@ tests = [
     "flake8-unused-arguments",
     "flake8-use-fstring",
     "flake8-warnings",
+    "niworkflows",
     "pep8-naming",
     "pytest",
     "pytest-cov",
@@ -164,6 +165,9 @@ per-file-ignores = [
     "**/__init__.py : F401",
     "docs/conf.py : E265",
 ]
+
+[tool.pytest.ini_options]
+addopts = ["--doctest-modules"]
 
 [tool.coverage.run]
 parallel = true

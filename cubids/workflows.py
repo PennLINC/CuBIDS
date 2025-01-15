@@ -467,7 +467,7 @@ def apply(
             str(new_tsv_prefix),
             raise_on_error=False,
         )
-        sys.exit(0)
+        return
 
     # Run it through a container
     container_type = _get_container_type(container)
