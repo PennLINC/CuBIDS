@@ -166,6 +166,9 @@ per-file-ignores = [
     "docs/conf.py : E265",
 ]
 
+[tool.pytest.ini_options]
+addopts = ["--doctest-modules"]
+
 [tool.coverage.run]
 parallel = true
 omit = [
