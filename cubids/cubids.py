@@ -631,16 +631,16 @@ class CuBIDS(object):
                 # Coerce IntendedFor to a list.
                 data["IntendedFor"] = listify(data["IntendedFor"])
                 for item in data["IntendedFor"]:
-                    if item in _get_participant_relative_path(filepath):
+                    if item == _get_participant_relative_path(filepath):
                         # remove old filename
                         data["IntendedFor"].remove(item)
                         # add new filename
                         data["IntendedFor"].append(_get_participant_relative_path(new_path))
-                    if item in _get_bidsuri(filepath):
+                    if item == _get_bidsuri(filepath, self.path):
                         # remove old filename
                         data["IntendedFor"].remove(item)
                         # add new filename
-                        data["IntendedFor"].append(_get_bidsuri(new_path))
+                        data["IntendedFor"].append(_get_bidsuri(new_path, self.path))
 
                 # update the json with the new data dictionary
                 _update_json(filename_with_if, data)
@@ -1442,8 +1442,18 @@ def _get_participant_relative_path(scan):
     return "/".join(Path(scan).parts[-3:])
 
 
-def _get_bidsuri(scan):
-    return scan
+def _get_bidsuri(filename, dataset_root):
+    """Convert a file path to a bidsuri.
+
+    Examples:
+    ---------
+    >>> _get_bidsuri("/path/to/bids/sub-01/ses-01/dataset_descripion.json", "/path/to/bids")
+    "bids::sub-01/ses-01/dataset_description.json"
+
+    """
+    if dataset_root in filename:
+        return filename.replace(dataset_root, "bids::/").replace("bids:/", "bids::")
+    raise ValueError(f"Only local datasets are supported: {filename}")
 
 
 def _get_param_groups(
