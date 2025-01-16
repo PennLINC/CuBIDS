@@ -400,7 +400,7 @@ def copy_exemplars(
         Force unlock the dataset.
     """
     # Run directly from python using
-    bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad)
+    bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad, force_unlock=force_unlock)
     if use_datalad:
         if not bod.is_datalad_clean():
             raise Exception(
