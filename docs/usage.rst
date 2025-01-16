@@ -61,7 +61,7 @@ Acquisition Group
 ~~~~~~~~~~~~~~~~~
 
 We define an :term:`Acquisition Group` as a collection of sessions across participants that
-contain the exact same set of Key and Parameter Groups.
+contain the exact same set of Entity and Parameter Groups.
 Since Entity Sets are based on the BIDS filenames—
 and therefore both MRI image type and acquisition specific—
 each BIDS session directory contains images that belong to a set of Parameter Groups.
@@ -104,12 +104,12 @@ The ``_files.tsv`` file
 
 This file contains one row per imaging file in the BIDS directory.
 You won't need to edit this file directly,
-but it keeps track of every file's assignment to Key and Parameter Groups.
+but it keeps track of every file's assignment to Entity and Parameter Groups.
 
 
 .. _acqgrouptsv:
 
-Modifying Key and Parameter Group Assignments
+Modifying Entity and Parameter Group Assignments
 ---------------------------------------------
 
 Sometimes we see that there are important differences in acquisition parameters within a Entity Set.
@@ -123,10 +123,10 @@ Once the columns have been edited you can apply the changes to BIDS data using
 
 .. code-block:: console
 
-    $ cubids apply /bids/dir keyparam_edited new_keyparam_prefix
+    $ cubids apply /bids/dir entityparam_edited new_entityparam_prefix
 
-The changes in ``keyparam_edited_summary.csv`` will be applied to the BIDS data in ``/bids/dir``
-and the new Key and Parameter groups will be saved to csv files starting with ``new_keyparam_prefix``.
+The changes in ``entityparam_edited_summary.csv`` will be applied to the BIDS data in ``/bids/dir``
+and the new Entity and Parameter groups will be saved to csv files starting with ``new_entityparam_prefix``.
 Note: fieldmaps entitysets with variant parameters will be identified but not renamed.
 
 
@@ -216,7 +216,7 @@ In this example, users can apply the changes to BIDS data using the following co
     $ cubids apply FULL/PATH/TO/BIDS/DIR FULL/PATH/TO/v0_edited_summary.tsv FULL/PATH/TO/v0_files.tsv FULL/PATH/TO/v1
 
 The changes in ``v0_edited_summary.tsv`` will be applied to the BIDS data
-and the new Key and Parameter Groups will be saved to tsv files starting with ``v1``.
+and the new Entity and Parameter Groups will be saved to tsv files starting with ``v1``.
 
 Applying these changes we would see:
 
