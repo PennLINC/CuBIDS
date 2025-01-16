@@ -14,11 +14,14 @@ import pandas as pd
 logger = logging.getLogger("cubids-cli")
 
 
-def build_validator_call(path, ignore_headers=False):
+def build_validator_call(path, local_validator=False, ignore_headers=False):
     """Build a subprocess command to the bids validator."""
     # New schema BIDS validator doesn't have option to ignore subject consistency.
     # Build the deno command to run the BIDS validator.
-    command = ["deno", "run", "-A", "jsr:@bids/validator", path, "--verbose", "--json"]
+    if local_validator:
+        command = ["bids-validator", path, "--verbose", "--json"]
+    else:
+        command = ["deno", "run", "-A", "jsr:@bids/validator", path, "--verbose", "--json"]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")

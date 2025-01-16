@@ -92,6 +92,13 @@ def _parse_validate():
         nargs="+",
         required=False,
     )
+    parser.add_argument(
+        "--local-validator",
+        action="store_true",
+        default=False,
+        help="Lets user run a locally installed BIDS validator ",
+        required=False,
+    )
     return parser
 
 
