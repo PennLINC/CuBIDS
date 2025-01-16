@@ -24,13 +24,13 @@ from cubids.tests.utils import (
     get_data,
 )
 from cubids.validator import (
+    bids_validator_version,
     build_validator_call,
+    extract_summary_info,
+    get_bids_validator_version,
     parse_validator_output,
     run_validator,
-    get_bids_validator_version,
-    extract_summary_info,
     update_dataset_description,
-    bids_validator_version,
 )
 
 COMPLETE_KEY_GROUPS = [
