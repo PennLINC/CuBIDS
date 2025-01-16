@@ -7,8 +7,8 @@ applying changes, purging associations, adding NIfTI information, copying exempl
 subjects, undoing changes, saving with DataLad, and managing metadata fields.
 
 Each function that serves as an entry point for a CLI command in the formart of `cubids-function`
-is marked as deprecated and will be removed in the future. Users are advised to use the corresponding
-`cubids function` commands instead.
+is marked as deprecated and will be removed in the future. Users are advised to use the
+corresponding `cubids function` commands instead.
 """
 
 import argparse
@@ -234,8 +234,11 @@ def _parse_bids_version():
     Notes
     -----
     The parser includes the following arguments:
-    - `bids_dir`: The root directory of a BIDS dataset, which should contain sub-X directories and a dataset_description.json file.
-    - `--write`: A flag to save the validator and schema version to 'dataset_description.json'. If not provided, the versions are printed to the terminal.
+    - `bids_dir`: The root directory of a BIDS dataset, which should contain
+      sub-X directories and a dataset_description.json file.
+    - `--write`: A flag to save the validator and schema version to
+      'dataset_description.json'. If not provided, the versions are printed
+      to the terminal.
     """
     parser = argparse.ArgumentParser(
         description="cubids bids-version: Get BIDS Validator and Schema version",
@@ -388,17 +391,21 @@ def _parse_group():
     Arguments
     ---------
     bids_dir : str
-        The root of a BIDS dataset. It should contain sub-X directories and dataset_description.json.
+        The root of a BIDS dataset. It should contain sub-X directories and
+        dataset_description.json.
     output_prefix : str
-        File prefix to which a _summary.tsv, _files.tsv, _AcqGrouping.tsv, and _AcqGroupInfo.txt are written.
-        If a filename prefix is provided (e.g., V1), the outputs will be placed in bids_dir/code/CuBIDS.
-        If a path is specified (e.g., /Users/scovitz/BIDS/V1), the output files will go to the specified location.
+        File prefix to which a _summary.tsv, _files.tsv, _AcqGrouping.tsv, and
+        _AcqGroupInfo.txt are written. If a filename prefix is provided (e.g., V1),
+        the outputs will be placed in bids_dir/code/CuBIDS. If a path is specified
+        (e.g., /Users/scovitz/BIDS/V1), the output files will go to the specified location.
     --container : str, optional
         Docker image tag or Singularity image file.
     --acq-group-level : {'subject', 'session'}, optional
-        Level at which acquisition groups are created. Options are 'subject' or 'session'. Default is 'subject'.
+        Level at which acquisition groups are created. Options are 'subject' or 'session'.
+        Default is 'subject'.
     --config : str, optional
-        Path to a config file for grouping. If not provided, the default config file from CuBIDS will be used.
+        Path to a config file for grouping. If not provided, the default config file from
+        CuBIDS will be used.
     """
     parser = argparse.ArgumentParser(
         description="cubids group: find key and parameter groups in BIDS",
@@ -501,21 +508,26 @@ def _parse_apply():
     Parameters
     ----------
     bids_dir : str
-        The root of a BIDS dataset. It should contain sub-X directories and dataset_description.json.
+        The root of a BIDS dataset. It should contain sub-X directories and
+        dataset_description.json.
     edited_summary_tsv : str
-        Path to the _summary.tsv that has been edited in the MergeInto and RenameEntitySet columns.
+        Path to the _summary.tsv that has been edited in the MergeInto and
+        RenameEntitySet columns.
     files_tsv : str
-        Path to the _files.tsv that has been edited in the MergeInto and RenameEntitySet columns.
+        Path to the _files.tsv that has been edited in the MergeInto and
+        RenameEntitySet columns.
     new_tsv_prefix : str
         File prefix for writing the post-apply grouping outputs.
     --use-datalad : bool, optional
-        Ensure that there are no untracked changes before finding groups (default is False).
+        Ensure that there are no untracked changes before finding groups
+        (default is False).
     --container : str, optional
         Docker image tag or Singularity image file.
     --acq-group-level : {'subject', 'session'}, optional
         Level at which acquisition groups are created (default is 'subject').
     --config : str, optional
-        Path to a config file for grouping. If not provided, the default config file from CuBIDS will be used.
+        Path to a config file for grouping. If not provided, the default config
+        file from CuBIDS will be used.
     """
     parser = argparse.ArgumentParser(
         description=("cubids apply: apply the changes specified in a tsv to a BIDS directory"),
@@ -605,8 +617,9 @@ def _parse_apply():
 def _enter_apply(argv=None):
     """Entry point for the deprecated `cubids-apply` command.
 
-    This function serves as a wrapper for the `cubids-apply` command and issues a deprecation warning.
-    It parses the command-line arguments and invokes the `apply` workflow with the parsed arguments.
+    This function serves as a wrapper for the `cubids-apply` command and issues a
+    deprecation warning. It parses the command-line arguments and invokes the
+    `apply` workflow with the parsed arguments.
 
     Parameters
     ----------
@@ -1246,8 +1259,10 @@ def _parse_print_metadata_fields():
     Notes
     -----
     The parser includes the following arguments:
-    - bids_dir: The root of a BIDS dataset, which should contain sub-X directories and dataset_description.json.
-    - container: An optional argument specifying a Docker image tag or Singularity image file.
+    - bids_dir: The root of a BIDS dataset, which should contain sub-X directories
+        and dataset_description.json.
+    - container: An optional argument specifying a Docker image tag or Singularity
+        image file.
     """
     """Create the parser for the "cubids print-metadata-fields" command."""
     parser = argparse.ArgumentParser(
