@@ -1820,14 +1820,24 @@ def build_path(filepath, entities, out_dir):
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
+    It can change the datatype, but will warn the user.
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_asl.nii.gz",
+    ...    {"datatype": "perf", "acquisition": "VAR", "suffix": "asl"},
+    ...    "/output",
+    ... )
+    WARNING: DATATYPE CHANGE DETECTED
+    '/output/sub-01/ses-01/perf/sub-01_ses-01_acq-VAR_asl.nii.gz'
+
     It expects a longitudinal structure, so providing a cross-sectional filename won't work.
+    XXX: This is a bug.
     >>> build_path(
     ...    "/input/sub-01/func/sub-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
     ...    "/output",
     ... )
     Traceback (most recent call last):
-    TypeError: can only concatenate str (not "NoneType") to str
+    ValueError: Could not extract subject or session from ...
     """
     exts = Path(filepath).suffixes
     old_ext = "".join(exts)
@@ -1844,11 +1854,12 @@ def build_path(filepath, entities, out_dir):
 
     sub = get_key_name(filepath, "sub")
     ses = get_key_name(filepath, "ses")
-    sub_ses = sub + "_" + ses
-
     if "run" in entities.keys() and "run-0" in filepath:
         # XXX: This adds an extra leading zero to run.
         entities["run"] = "0" + str(entities["run"])
+    if sub is None or ses is None:
+        raise ValueError(f"Could not extract subject or session from {filepath}")
+
 
     filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
     filename = (
@@ -1857,7 +1868,7 @@ def build_path(filepath, entities, out_dir):
         .replace("reconstruction", "rec")
     )
     if len(filename) > 0:
-        filename = sub_ses + "_" + filename + "_" + suffix + old_ext
+        filename = f"{sub}_{ses}_{filename}_{suffix}{old_ext}"
     else:
         raise ValueError(f"Could not construct new filename for {filepath}")
 
@@ -1872,10 +1883,10 @@ def build_path(filepath, entities, out_dir):
     if "datatype" in entities.keys():
         dtype_new = entities["datatype"]
         if entities["datatype"] != dtype_orig:
-            print("WARNING: DATATYPE CHANGE DETECETD")
+            print("WARNING: DATATYPE CHANGE DETECTED")
     else:
         dtype_new = dtype_orig
 
     # Construct the new filename
-    new_path = out_dir + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
+    new_path = str(Path(out_dir) / sub / ses / dtype_new / filename)
     return new_path
