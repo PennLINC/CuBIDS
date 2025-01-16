@@ -6,8 +6,8 @@ validating BIDS datasets, merging sidecar JSON files, grouping acquisition param
 applying changes, purging associations, adding NIfTI information, copying exemplar
 subjects, undoing changes, saving with DataLad, and managing metadata fields.
 
-Each function that serves as an entry point for a CLI command in the formart of `cubids-function` 
-is marked as deprecated and will be removed in the future. Users are advised to use the corresponding 
+Each function that serves as an entry point for a CLI command in the formart of `cubids-function`
+is marked as deprecated and will be removed in the future. Users are advised to use the corresponding
 `cubids function` commands instead.
 """
 
@@ -269,8 +269,8 @@ def _parse_bids_version():
 def _enter_bids_version(argv=None):
     """Entry point for the deprecated `cubids-bids-version`.
 
-    This function serves as the entry point for the BIDS version command-line 
-    functionality. It parses command-line arguments, issues a deprecation 
+    This function serves as the entry point for the BIDS version command-line
+    functionality. It parses command-line arguments, issues a deprecation
     warning, and invokes the corresponding workflow.
 
     Parameters
@@ -285,7 +285,7 @@ def _enter_bids_version(argv=None):
     Warns
     -----
     DeprecationWarning
-        Indicates that the `cubids-bids-version` command is deprecated and 
+        Indicates that the `cubids-bids-version` command is deprecated and
         will be removed in the future.
     """
     warnings.warn(
@@ -346,7 +346,7 @@ def _enter_bids_sidecar_merge(argv=None):
     """Entry point for the deprecated `cubids-bids-sidecar-merge command`.
 
     This function serves as the entry point for the `cubids-bids-sidecar-merge`.
-    It parses command-line arguments, issues a deprecation 
+    It parses command-line arguments, issues a deprecation
     warning, and invokes the corresponding workflow.
 
     Parameters
@@ -357,7 +357,7 @@ def _enter_bids_sidecar_merge(argv=None):
     Warns
     -----
     DeprecationWarning
-        Indicates that the `bids-sidecar-merge` command is deprecated and 
+        Indicates that the `bids-sidecar-merge` command is deprecated and
         will be removed in the future.
     """
     warnings.warn(
@@ -459,8 +459,8 @@ def _enter_group(argv=None):
     """Entry point for the deprecated `cubids-group` command.
 
     This function issues a deprecation warning indicating that `cubids-group`
-    is deprecated and will be removed in the future. It then parses the 
-    command-line arguments and invokes the `group` workflow with the parsed 
+    is deprecated and will be removed in the future. It then parses the
+    command-line arguments and invokes the `group` workflow with the parsed
     arguments.
 
     Parameters
@@ -471,7 +471,7 @@ def _enter_group(argv=None):
     Warns
     -----
     DeprecationWarning
-        Indicates that 'cubids-group' is deprecated and will be removed in 
+        Indicates that 'cubids-group' is deprecated and will be removed in
         the future.
 
     Returns
@@ -491,7 +491,7 @@ def _enter_group(argv=None):
 def _parse_apply():
     """Parse command-line arguments for the `cubids apply` command.
 
-    This function sets up an argument parser for the `cubids apply` command, 
+    This function sets up an argument parser for the `cubids apply` command,
     which applies changes specified in a TSV file to a BIDS directory.
 
     Returns
@@ -688,8 +688,8 @@ def _parse_datalad_save():
 def _enter_datalad_save(argv=None):
     """Entry point for the deprecated `cubids-datalad-save` command.
 
-    This function serves as a warning that the `cubids-datalad-save` command is deprecated 
-    and will be removed in the future. It parses the command-line arguments and calls 
+    This function serves as a warning that the `cubids-datalad-save` command is deprecated
+    and will be removed in the future. It parses the command-line arguments and calls
     the `datalad_save` workflow with the parsed arguments.
 
     Parameters
@@ -920,8 +920,8 @@ def _parse_copy_exemplars():
 def _enter_copy_exemplars(argv=None):
     """Entry point for the deprecated `cubids-copy-exemplars` command.
 
-    This function is deprecated and will be removed in the future. 
-    It parses command-line arguments and invokes the `copy_exemplars` 
+    This function is deprecated and will be removed in the future.
+    It parses command-line arguments and invokes the `copy_exemplars`
     workflow with the parsed arguments.
 
     Parameters
@@ -1011,7 +1011,7 @@ def _parse_add_nifti_info():
 def _enter_add_nifti_info(argv=None):
     """Entry point for the deprecated `cubids-add-nifti-info` command.
 
-    This function is deprecated and will be removed in the future. 
+    This function is deprecated and will be removed in the future.
     Please use `cubids add-nifti-info` instead.
 
     Parameters
@@ -1026,7 +1026,7 @@ def _enter_add_nifti_info(argv=None):
 
     Notes
     -----
-    This function parses command line arguments and invokes the 
+    This function parses command line arguments and invokes the
     `add_nifti_info` workflow with the parsed arguments.
     """
     warnings.warn(
@@ -1043,8 +1043,8 @@ def _enter_add_nifti_info(argv=None):
 def _parse_purge():
     """Parse command-line arguments for the `cubids purge` command.
 
-    This function sets up an argument parser for the `cubids purge` command, 
-    which is used to purge associations from a BIDS dataset. It defines the 
+    This function sets up an argument parser for the `cubids purge` command,
+    which is used to purge associations from a BIDS dataset. It defines the
     required arguments and options for the command.
 
     Returns
@@ -1109,7 +1109,7 @@ def _parse_purge():
 def _enter_purge(argv=None):
     """Entry point for the deprecated `cubids-purge` command.
 
-    This function is deprecated and will be removed in the future. 
+    This function is deprecated and will be removed in the future.
     Please use `cubids purge` instead.
 
     Parameters
@@ -1124,7 +1124,7 @@ def _enter_purge(argv=None):
 
     Notes
     -----
-    This function parses the command-line arguments and calls the 
+    This function parses the command-line arguments and calls the
     `workflows.purge` function with the parsed arguments.
     """
     warnings.warn(
@@ -1197,9 +1197,9 @@ def _parse_remove_metadata_fields():
 def _enter_remove_metadata_fields(argv=None):
     """Entry point for the deprecated `cubids-remove-metadata-fields` command.
 
-    This function serves as the entry point for the deprecated 
-    `cubids-remove-metadata-fields` command-line interface (CLI). It issues a 
-    deprecation warning and then parses the provided arguments to execute the 
+    This function serves as the entry point for the deprecated
+    `cubids-remove-metadata-fields` command-line interface (CLI). It issues a
+    deprecation warning and then parses the provided arguments to execute the
     `remove_metadata_fields` workflow.
 
     Parameters
@@ -1210,7 +1210,7 @@ def _enter_remove_metadata_fields(argv=None):
     Warns
     -----
     DeprecationWarning
-        Indicates that the `cubids-remove-metadata-fields` CLI is deprecated and 
+        Indicates that the `cubids-remove-metadata-fields` CLI is deprecated and
         will be removed in the future. Users are advised to use `cubids remove-metadata-fields` instead.
 
     See Also
@@ -1279,7 +1279,7 @@ def _enter_print_metadata_fields(argv=None):
     """Entry point for the deprecated `cubids-print-metadata-fields` command.
 
     This function parses the command-line arguments for `cubids-print-metadata-fields`,
-    issues a deprecation warning, and then calls the `print_metadata_fields` 
+    issues a deprecation warning, and then calls the `print_metadata_fields`
     function from the `workflows` module with the parsed arguments.
 
     Parameters
@@ -1291,7 +1291,7 @@ def _enter_print_metadata_fields(argv=None):
     Warns
     -----
     DeprecationWarning
-        Indicates that the `cubids-print-metadata-fields` command is deprecated 
+        Indicates that the `cubids-print-metadata-fields` command is deprecated
         and will be removed in the future.
 
     See Also
