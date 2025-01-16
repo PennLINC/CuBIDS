@@ -21,7 +21,7 @@ from bids.utils import listify
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
 
-from cubids.config import load_config
+from cubids.config import load_config, load_schema
 from cubids.constants import ID_VARS, NON_KEY_ENTITIES
 from cubids.metadata_merge import check_merging_operations, group_by_acquisition_sets
 
@@ -47,6 +47,9 @@ class CuBIDS(object):
     force_unlock : :obj:`bool`, optional
         If True, force unlock all files in the BIDS dataset.
         Default is False.
+    schema_json : :obj:`str`, optional
+        Path to a BIDS schema JSON file.
+        Default is None, in which case the default schema in CuBIDS is used.
 
     Attributes
     ----------
@@ -93,6 +96,7 @@ class CuBIDS(object):
         acq_group_level="subject",
         grouping_config=None,
         force_unlock=False,
+        schema_json=None,
     ):
         self.path = os.path.abspath(data_root)
         self._layout = None
@@ -110,6 +114,8 @@ class CuBIDS(object):
         self.cubids_code_dir = Path(self.path + "/code/CuBIDS").is_dir()
         self.data_dict = {}  # data dictionary for TSV outputs
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
+        self.schema = load_schema(schema_json)
+
         if self.use_datalad:
             self.init_datalad()
 
