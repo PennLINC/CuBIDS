@@ -480,7 +480,9 @@ class CuBIDS(object):
             out_entities=entities,
             out_dir=str(self.path),
             valid_entities=self.schema["rules"]["entities"],
-            entity_names_to_keys=self.schema["objects"]["entities"],
+            entity_names_to_keys={
+                k: v["name"] for k, v in self.schema["objects"]["entities"].items()
+            },
         )
 
         exts = Path(filepath).suffixes
@@ -1768,10 +1770,21 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
 
     Examples
     --------
+    >>> import json
+    >>> import importlib
+    >>> schema_json = Path(importlib.resources.files("cubids") / "data/schema.json")
+    >>> with schema_file.open() as f:
+    ...    schema = json.load(f)
+    >>> valid_entities = schema["rules"]["entities"]
+    >>> entity_names_to_keys = {
+    ...     entity["name"]: entity["key"] for entity in schema["objects"]["entities"]
+    ... }
     >>> build_path(
     ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii.gz",
     ...    {"acquisition": "VAR", "suffix": "T2w"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     '/output/sub-01/ses-01/anat/sub-01_ses-01_acq-VAR_T2w.nii.gz'
 
@@ -1780,6 +1793,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
@@ -1789,6 +1804,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-00001_bold.nii.gz",
     ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-00002_bold.nii.gz'
 
@@ -1798,6 +1815,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
     ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
@@ -1806,6 +1825,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
     ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
@@ -1815,6 +1836,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
@@ -1823,6 +1846,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"subject": "02", "task": "rest", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
@@ -1831,6 +1856,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
@@ -1839,6 +1866,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_asl.nii.gz",
     ...    {"datatype": "perf", "acquisition": "VAR", "suffix": "asl"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     WARNING: DATATYPE CHANGE DETECTED
     '/output/sub-01/ses-01/perf/sub-01_ses-01_acq-VAR_asl.nii.gz'
@@ -1849,6 +1878,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/func/sub-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
     ...    "/output",
+    ...    valid_entities,
+    ...    entity_names_to_keys,
     ... )
     Traceback (most recent call last):
     ValueError: Could not extract subject or session from ...
