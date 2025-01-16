@@ -368,8 +368,6 @@ def undo(bids_dir):
     ----------
     bids_dir : :obj:`pathlib.Path`
         Path to the BIDS directory.
-    container : :obj:`str`
-        Container in which to run the workflow.
     """
     # Run directly from python using
     bod = CuBIDS(data_root=str(bids_dir), use_datalad=True)
