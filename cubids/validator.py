@@ -15,9 +15,24 @@ logger = logging.getLogger("cubids-cli")
 
 
 def build_validator_call(path, local_validator=False, ignore_headers=False):
-    """Build a subprocess command to the bids validator."""
-    # New schema BIDS validator doesn't have option to ignore subject consistency.
-    # Build the deno command to run the BIDS validator.
+    """Build a subprocess command to the bids validator.
+    
+    Parameters
+    ----------
+    path : :obj:`str`
+        Path to the BIDS dataset.
+    local_validator : :obj:`bool`
+        If provided, use the local bids-validator.
+    ignore_headers : :obj:`bool`
+        If provided, ignore NIfTI headers.
+    
+    Returns
+    -------
+    command : :obj:`list`
+        List of strings to pass to subprocess.run().
+    """
+    
+    
     if local_validator:
         command = ["bids-validator", path, "--verbose", "--json"]
     else:

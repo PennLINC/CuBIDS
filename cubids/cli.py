@@ -63,6 +63,13 @@ def _is_file(path, parser):
 
 
 def _parse_validate():
+    """Create the parser for the "cubids validate" command.
+
+    Returns:
+    -------
+    parser : argparse.ArgumentParser
+        The parser object for the "cubids validate" command.
+    """
     parser = argparse.ArgumentParser(
         description="cubids-validate: Wrapper around the official BIDS Validator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
