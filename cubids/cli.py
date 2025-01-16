@@ -143,7 +143,7 @@ def _is_file(path, parser):
 
 
 def _parse_validate():
-    """Create and configure the argument parser for the "cubids validate" command.
+    """Create and configure the argument parser for the `cubids validate` command.
 
     This function sets up an argument parser with various options for running
     the BIDS validator, including specifying the BIDS dataset directory, output
@@ -152,7 +152,7 @@ def _parse_validate():
     Returns
     -------
     argparse.ArgumentParser
-        Configured argument parser for the "cubids validate" command.
+        Configured argument parser for the `cubids validate` command.
 
     Parameters
     ----------
@@ -174,7 +174,7 @@ def _parse_validate():
       listed subjects.
     """
     parser = argparse.ArgumentParser(
-        description="cubids-validate: Wrapper around the official BIDS Validator",
+        description="cubids validate: Wrapper around the official BIDS Validator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -244,7 +244,7 @@ def _parse_validate():
 
 
 def _enter_validate(argv=None):
-    """Entry point for the 'cubids-validate' command.
+    """Entry point for the `cubids-validate` command.
 
     This function is deprecated and will be removed in the future.
     Please use 'cubids validate' instead.
@@ -276,7 +276,7 @@ def _enter_validate(argv=None):
 
 
 def _parse_bids_version():
-    """Parse command-line arguments for the BIDS version command.
+    """Parse command-line arguments for the `cubids bids-version` command.
 
     This function sets up an argument parser for the `cubids bids-version` command,
     which retrieves the BIDS Validator and Schema version for a given BIDS dataset.
@@ -325,7 +325,11 @@ def _parse_bids_version():
 
 
 def _enter_bids_version(argv=None):
-    """Parses command-line arguments and invokes the `bids_version` workflow.
+    """Entry point for the deprecated `cubids-bids-version`.
+
+    This function serves as the entry point for the BIDS version command-line 
+    functionality. It parses command-line arguments, issues a deprecation 
+    warning, and invokes the corresponding workflow.
 
     Parameters
     ----------
@@ -335,16 +339,28 @@ def _enter_bids_version(argv=None):
     Returns
     -------
     None
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that the `cubids-bids-version` command is deprecated and 
+        will be removed in the future.
     """
+    warnings.warn(
+        "cubids-bids-version is deprecated and will be removed in the future. "
+        "Please use cubids bids-version.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     options = _parse_bids_version().parse_args(argv)
     args = vars(options).copy()
     workflows.bids_version(**args)
 
 
 def _parse_bids_sidecar_merge():
-    """Create an argument parser for merging BIDS sidecar JSON files.
+    """Create an argument parser for the `cubids bids-sidecar-merge` command.
 
-    This function sets up an argument parser for the `bids-sidecar-merge` command-line tool,
+    This function sets up an argument parser for the `cubids bids-sidecar-merge` command-line tool,
     which merges critical keys from one BIDS sidecar JSON file into another.
 
     Returns
@@ -385,7 +401,7 @@ def _parse_bids_sidecar_merge():
 
 
 def _enter_bids_sidecar_merge(argv=None):
-    """Entry point for the BIDS sidecar merge command-line interface.
+    """Entry point for the deprecated `cubids-enter-bids-sidecar command`.
 
     This function serves as the entry point for the BIDS sidecar merge 
     functionality. It parses command-line arguments, issues a deprecation 
@@ -401,10 +417,6 @@ def _enter_bids_sidecar_merge(argv=None):
     DeprecationWarning
         Indicates that the `bids-sidecar-merge` command is deprecated and 
         will be removed in the future.
-
-    Notes
-    -----
-    This function is intended to be used as a command-line entry point.
     """
     warnings.warn(
         "bids-sidecar-merge is deprecated and will be removed in the future. "
@@ -418,9 +430,9 @@ def _enter_bids_sidecar_merge(argv=None):
 
 
 def _parse_group():
-    """Parses command-line arguments for the CuBIDS group command.
+    """Parse command-line arguments for the `cubids group` command.
 
-    This function sets up an argument parser for the `cubids-group` command,
+    This function sets up an argument parser for the `cubids group` command,
     which is used to find key and parameter groups in a BIDS dataset.
 
     Returns
@@ -448,7 +460,7 @@ def _parse_group():
         Path to a config file for grouping. If not provided, the default config file from CuBIDS will be used.
     """
     parser = argparse.ArgumentParser(
-        description="cubids-group: find key and parameter groups in BIDS",
+        description="cubids group: find key and parameter groups in BIDS",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -502,11 +514,11 @@ def _parse_group():
 
 
 def _enter_group(argv=None):
-    """Handles the entry point for the deprecated 'cubids-group' command.
+    """Entry point for the deprecated `cubids-group` command.
 
-    This function issues a deprecation warning indicating that 'cubids-group'
+    This function issues a deprecation warning indicating that `cubids-group`
     is deprecated and will be removed in the future. It then parses the 
-    command-line arguments and invokes the 'group' workflow with the parsed 
+    command-line arguments and invokes the `group` workflow with the parsed 
     arguments.
 
     Parameters
@@ -535,9 +547,9 @@ def _enter_group(argv=None):
 
 
 def _parse_apply():
-    """Parse command-line arguments for the `cubids-apply` command.
+    """Parse command-line arguments for the `cubids apply` command.
 
-    This function sets up an argument parser for the `cubids-apply` command, 
+    This function sets up an argument parser for the `cubids apply` command, 
     which applies changes specified in a TSV file to a BIDS directory.
 
     Returns
@@ -565,7 +577,7 @@ def _parse_apply():
         Path to a config file for grouping. If not provided, the default config file from CuBIDS will be used.
     """
     parser = argparse.ArgumentParser(
-        description=("cubids-apply: apply the changes specified in a tsv to a BIDS directory"),
+        description=("cubids apply: apply the changes specified in a tsv to a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -680,7 +692,7 @@ def _enter_apply(argv=None):
 
 
 def _parse_datalad_save():
-    """Create an argument parser for the `cubids-datalad-save` command.
+    """Create an argument parser for the `cubids datalad-save` command.
 
     This function sets up an argument parser for performing a DataLad save on a BIDS directory.
     It includes arguments for specifying the BIDS directory, a commit message, and an optional
@@ -703,7 +715,7 @@ def _parse_datalad_save():
     image tag or Singularity image file.
     """
     parser = argparse.ArgumentParser(
-        description=("cubids-datalad-save: perform a DataLad save on a BIDS directory"),
+        description=("cubids datalad-save: perform a DataLad save on a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -765,16 +777,16 @@ def _enter_datalad_save(argv=None):
 
 
 def _parse_undo():
-    """Create an argument parser for the 'cubids-undo' command.
+    """Create an argument parser for the `cubids undo` command.
 
-    This function sets up an argument parser for the 'cubids-undo' command,
+    This function sets up an argument parser for the `cubids undo` command,
     which is used to revert the most recent commit in a BIDS dataset. It
     defines the required and optional arguments for the command.
 
     Returns
     -------
     argparse.ArgumentParser
-        The argument parser for the 'cubids-undo' command.
+        The argument parser for the `cubids undo` command.
 
     Parameters
     ----------
@@ -788,7 +800,7 @@ def _parse_undo():
     - container: Docker image tag or Singularity image file.
     """
     parser = argparse.ArgumentParser(
-        description="cubids-undo: revert most recent commit",
+        description="cubids undo: revert most recent commit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -812,9 +824,9 @@ def _parse_undo():
 
 
 def _enter_undo(argv=None):
-    """Handle the 'cubids-undo' command-line interface (CLI) entry point.
+    """Entry point for the deprecated `cubids-undo` command.
 
-    This function is called when the 'cubids-undo' command is executed.
+    This function is called when the `cubids-undo` command is executed.
     It displays a deprecation warning and then parses the command-line
     arguments to execute the undo workflow.
 
@@ -827,8 +839,8 @@ def _enter_undo(argv=None):
     Warns
     -----
     DeprecationWarning
-        Indicates that 'cubids-undo' is deprecated and will be removed
-        in the future. Users should use 'cubids undo' instead.
+        Indicates that `cubids-undo` is deprecated and will be removed
+        in the future. Users should use `cubids undo` instead.
 
     Returns
     -------
@@ -845,9 +857,9 @@ def _enter_undo(argv=None):
 
 
 def _parse_copy_exemplars():
-    """Parse command-line arguments for the cubids-copy-exemplars script.
+    """Parse command-line arguments for the `cubids copy-exemplars` script.
 
-    This function sets up an argument parser for the cubids-copy-exemplars script,
+    This function sets up an argument parser for the `cubids copy-exemplars` script,
     which creates and saves a directory with one subject from each Acquisition Group
     in the BIDS dataset.
 
@@ -882,7 +894,7 @@ def _parse_copy_exemplars():
     """
     parser = argparse.ArgumentParser(
         description=(
-            "cubids-copy-exemplars: create and save a directory with "
+            "cubids copy-exemplars: create and save a directory with "
             "one subject from each Acquisition Group in the BIDS dataset"
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -964,7 +976,7 @@ def _parse_copy_exemplars():
 
 
 def _enter_copy_exemplars(argv=None):
-    """Entry point for the 'cubids-copy-exemplars' command.
+    """Entry point for the deprecated `cubids-copy-exemplars` command.
 
     This function is deprecated and will be removed in the future. 
     It parses command-line arguments and invokes the `copy_exemplars` 
@@ -992,9 +1004,9 @@ def _enter_copy_exemplars(argv=None):
 
 
 def _parse_add_nifti_info():
-    """Parse command-line arguments for adding NIfTI information to BIDS dataset sidecars.
+    """Parse command-line arguments for the `cubids add-nifti-info` command.
 
-    This function sets up an argument parser for the `cubids-add-nifti-info` command,
+    This function sets up an argument parser for the `cubids add-nifti-info` command,
     which adds information from NIfTI files to the sidecars of each dataset in a BIDS
     directory.
 
@@ -1017,7 +1029,7 @@ def _parse_add_nifti_info():
     """
     parser = argparse.ArgumentParser(
         description=(
-            "cubids-add-nifti-info: Add information from nifti"
+            "cubids add-nifti-info: Add information from nifti"
             "files to the sidecars of each dataset"
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -1055,7 +1067,7 @@ def _parse_add_nifti_info():
 
 
 def _enter_add_nifti_info(argv=None):
-    """Entry point for adding NIfTI information via command line interface.
+    """Entry point for the deprecated `cubids-add-nifti-info` command.
 
     This function is deprecated and will be removed in the future. 
     Please use `cubids add-nifti-info` instead.
@@ -1087,9 +1099,9 @@ def _enter_add_nifti_info(argv=None):
 
 
 def _parse_purge():
-    """Parse command-line arguments for the `cubids-purge` command.
+    """Parse command-line arguments for the `cubids purge` command.
 
-    This function sets up an argument parser for the `cubids-purge` command, 
+    This function sets up an argument parser for the `cubids purge` command, 
     which is used to purge associations from a BIDS dataset. It defines the 
     required arguments and options for the command.
 
@@ -1111,7 +1123,7 @@ def _parse_purge():
     - `--container`: Docker image tag or Singularity image file.
     """
     parser = argparse.ArgumentParser(
-        description="cubids-purge: purge associations from the dataset",
+        description="cubids purge: purge associations from the dataset",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -1153,10 +1165,10 @@ def _parse_purge():
 
 
 def _enter_purge(argv=None):
-    """Entry point for the 'cubids-purge' command.
+    """Entry point for the deprecated `cubids-purge` command.
 
     This function is deprecated and will be removed in the future. 
-    Please use 'cubids purge' instead.
+    Please use `cubids purge` instead.
 
     Parameters
     ----------
@@ -1184,16 +1196,16 @@ def _enter_purge(argv=None):
 
 
 def _parse_remove_metadata_fields():
-    """Create an argument parser for removing metadata fields from a BIDS dataset.
+    """Create an argument parser for the `cubids remove-metadata-fields` command.
 
     This function sets up an argument parser for the command-line interface (CLI)
-    tool `cubids-remove-metadata-fields`, which is used to delete specified fields
+    tool `cubids remove-metadata-fields`, which is used to delete specified fields
     from the metadata of a BIDS dataset.
 
     Returns
     -------
     argparse.ArgumentParser
-        The argument parser configured for the `cubids-remove-metadata-fields` CLI tool.
+        The argument parser configured for the `cubids remove-metadata-fields` CLI tool.
 
     Parameters
     ----------
@@ -1210,7 +1222,7 @@ def _parse_remove_metadata_fields():
         Docker image tag or Singularity image file.
     """
     parser = argparse.ArgumentParser(
-        description="cubids-remove-metadata-fields: delete fields from metadata",
+        description="cubids remove-metadata-fields: delete fields from metadata",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -1241,10 +1253,10 @@ def _parse_remove_metadata_fields():
 
 
 def _enter_remove_metadata_fields(argv=None):
-    """Set entrypoint for "cubids-remove-metadata-fields" CLI.
+    """Entry point for the deprecated `cubids-remove-metadata-fields` command.
 
     This function serves as the entry point for the deprecated 
-    "cubids-remove-metadata-fields" command-line interface (CLI). It issues a 
+    `cubids-remove-metadata-fields` command-line interface (CLI). It issues a 
     deprecation warning and then parses the provided arguments to execute the 
     `remove_metadata_fields` workflow.
 
@@ -1256,15 +1268,14 @@ def _enter_remove_metadata_fields(argv=None):
     Warns
     -----
     DeprecationWarning
-        Indicates that the "cubids-remove-metadata-fields" CLI is deprecated and 
-        will be removed in the future. Users are advised to use "cubids remove-metadata-fields" instead.
+        Indicates that the `cubids-remove-metadata-fields` CLI is deprecated and 
+        will be removed in the future. Users are advised to use `cubids remove-metadata-fields` instead.
 
     See Also
     --------
     _parse_remove_metadata_fields : Function to parse the command-line arguments.
     workflows.remove_metadata_fields : Workflow to remove metadata fields.
     """
-    """Set entrypoint for "cubids-remove-metadata-fields" CLI."""
     warnings.warn(
         "cubids-remove-metadata-fields is deprecated and will be removed in the future. "
         "Please use cubids remove-metadata-fields.",
@@ -1277,7 +1288,7 @@ def _enter_remove_metadata_fields(argv=None):
 
 
 def _parse_print_metadata_fields():
-    """Create the parser for the "cubids print-metadata-fields" command.
+    """Create the parser for the `cubids print-metadata-fields` command.
 
     This function sets up an argument parser for the command that prints all unique metadata fields
     in a BIDS dataset. It defines the required arguments and their types, as well as optional arguments.
@@ -1285,7 +1296,7 @@ def _parse_print_metadata_fields():
     Returns
     -------
     argparse.ArgumentParser
-        The argument parser for the "cubids print-metadata-fields" command.
+        The argument parser for the `cubids print-metadata-fields` command.
 
     Parameters
     ----------
@@ -1299,7 +1310,7 @@ def _parse_print_metadata_fields():
     """
     """Create the parser for the "cubids print-metadata-fields" command."""
     parser = argparse.ArgumentParser(
-        description="cubids-print-metadata-fields: print all unique metadata fields",
+        description="cubids print-metadata-fields: print all unique metadata fields",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     PathExists = partial(_path_exists, parser=parser)
@@ -1323,9 +1334,9 @@ def _parse_print_metadata_fields():
 
 
 def _enter_print_metadata_fields(argv=None):
-    """Parse command-line arguments and print metadata fields.
+    """Entry point for the deprecated `cubids-print-metadata-fields` command.
 
-    This function parses the command-line arguments for printing metadata fields,
+    This function parses the command-line arguments for `cubids-print-metadata-fields`,
     issues a deprecation warning, and then calls the `print_metadata_fields` 
     function from the `workflows` module with the parsed arguments.
 
@@ -1373,9 +1384,9 @@ COMMANDS = [
 
 
 def _get_parser():
-    """Create the general "cubids" parser object.
+    """Create the general `cubids` parser object.
 
-    This function sets up the argument parser for the "cubids" command-line interface.
+    This function sets up the argument parser for the `cubids` command-line interface.
     It includes a version argument and dynamically adds subparsers for each command
     defined in the COMMANDS list.
 
@@ -1405,7 +1416,7 @@ def _get_parser():
 
 
 def _main(argv=None):
-    """Set entrypoint for "cubids" CLI.
+    """Set entrypoint for `cubids` CLI.
 
     Parameters
     ----------
@@ -1416,7 +1427,6 @@ def _main(argv=None):
     -------
     None
     """
-    """Set entrypoint for "cubids" CLI."""
     options = _get_parser().parse_args(argv)
     args = vars(options).copy()
     args.pop("func")
