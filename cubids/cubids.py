@@ -480,8 +480,8 @@ class CuBIDS(object):
 
         suffix = entities["suffix"]
 
-        sub = get_key_name(filepath, "sub")
-        ses = get_key_name(filepath, "ses")
+        sub = get_entity_value(filepath, "sub")
+        ses = get_entity_value(filepath, "ses")
 
         # Add the scan path + new path to the lists of old, new filenames
         self.old_filenames.append(filepath)
@@ -1726,7 +1726,7 @@ def img_to_new_ext(img_path, new_ext):
         return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
 
 
-def get_key_name(path, key):
+def get_entity_value(path, key):
     """Given a filepath and BIDS key name, return value."""
     parts = Path(path).parts
     for part in parts:
@@ -1852,8 +1852,8 @@ def build_path(filepath, entities, out_dir):
         if key in list(entities.keys()):
             entity_file_keys.append(key)
 
-    sub = get_key_name(filepath, "sub")
-    ses = get_key_name(filepath, "ses")
+    sub = get_entity_value(filepath, "sub")
+    ses = get_entity_value(filepath, "ses")
     if sub is None or ses is None:
         raise ValueError(f"Could not extract subject or session from {filepath}")
 
