@@ -1772,7 +1772,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     --------
     >>> import json
     >>> import importlib
-    >>> schema_json = Path(importlib.resources.files("cubids") / "data/schema.json")
+    >>> schema_file = Path(importlib.resources.files("cubids") / "data/schema.json")
     >>> with schema_file.open() as f:
     ...    schema = json.load(f)
     >>> valid_entities = schema["rules"]["entities"]
