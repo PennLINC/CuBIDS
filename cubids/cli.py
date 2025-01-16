@@ -62,7 +62,7 @@ _enter_print_metadata_fields(argv=None)
 _get_parser()
     Create the general "cubids" parser object.
 _main(argv=None)
-    Set entrypoint for "cubids" CLI.
+    Entry point for "cubids" CLI.
 
 Each function that serves as an entry point for a CLI command in the formart of `cubids-function` 
 is marked as deprecated and will be removed in the future. Users are advised to use the corresponding 
@@ -401,10 +401,10 @@ def _parse_bids_sidecar_merge():
 
 
 def _enter_bids_sidecar_merge(argv=None):
-    """Entry point for the deprecated `cubids-enter-bids-sidecar command`.
+    """Entry point for the deprecated `cubids-bids-sidecar-merge command`.
 
-    This function serves as the entry point for the BIDS sidecar merge 
-    functionality. It parses command-line arguments, issues a deprecation 
+    This function serves as the entry point for the `cubids-bids-sidecar-merge`.
+    It parses command-line arguments, issues a deprecation 
     warning, and invokes the corresponding workflow.
 
     Parameters
@@ -1416,7 +1416,7 @@ def _get_parser():
 
 
 def _main(argv=None):
-    """Set entrypoint for `cubids` CLI.
+    """Entry point for `cubids` CLI.
 
     Parameters
     ----------
