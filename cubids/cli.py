@@ -106,12 +106,6 @@ def _parse_validate():
         required=False,
     )
     parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
-        default=None,
-    )
-    parser.add_argument(
         "--ignore-nifti-headers",
         action="store_true",
         default=False,
@@ -252,11 +246,6 @@ def _parse_group():
         ),
     )
     parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
-    )
-    parser.add_argument(
         "--acq-group-level",
         default="subject",
         choices=["subject", "session"],
@@ -348,11 +337,6 @@ def _parse_apply():
         help="ensure that there are no untracked changes before finding groups",
     )
     parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
-    )
-    parser.add_argument(
         "--acq-group-level",
         default="subject",
         choices=["subject", "session"],
@@ -405,11 +389,6 @@ def _parse_datalad_save():
         action="store",
         help="message for this commit",
     )
-    parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
-    )
 
     return parser
 
@@ -441,11 +420,6 @@ def _parse_undo():
             "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
-    )
-    parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
     )
 
     return parser
@@ -533,11 +507,6 @@ def _parse_copy_exemplars():
     #                     'listed Acquisition Groups in the exemplar dataset ',
     #                     required=False)
     parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
-    )
-    parser.add_argument(
         "--force-unlock",
         action="store_true",
         default=False,
@@ -590,11 +559,6 @@ def _parse_add_nifti_info():
         default=False,
         help="unlock dataset before adding nifti info ",
     )
-    parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
-    )
     return parser
 
 
@@ -645,11 +609,6 @@ def _parse_purge():
         default=False,
         help="ensure that there are no untracked changes before finding groups",
     )
-    parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
-    )
     return parser
 
 
@@ -687,11 +646,6 @@ def _parse_remove_metadata_fields():
         default=[],
         help="space-separated list of metadata fields to remove.",
     )
-    parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
-    )
 
     return parser
 
@@ -725,11 +679,6 @@ def _parse_print_metadata_fields():
             "The root of a BIDS dataset. It should contain "
             "sub-X directories and dataset_description.json"
         ),
-    )
-    parser.add_argument(
-        "--container",
-        action="store",
-        help="Docker image tag or Singularity image file.",
     )
 
     return parser
