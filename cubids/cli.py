@@ -309,17 +309,17 @@ def _parse_bids_sidecar_merge():
     This function sets up an argument parser for the `cubids bids-sidecar-merge` command-line tool,
     which merges critical keys from one BIDS sidecar JSON file into another.
 
-    Returns
-    -------
-    argparse.ArgumentParser
-        The argument parser with the necessary arguments configured.
-
     Parameters
     ----------
     from_json : str
         Source JSON file path. This file contains the data to be copied.
     to_json : str
         Destination JSON file path. This file will have data from `from_json` copied into it.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the necessary arguments configured.
 
     Notes
     -----
