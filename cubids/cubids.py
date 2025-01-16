@@ -416,7 +416,7 @@ class CuBIDS(object):
 
         full_cmd = "\n".join(merge_commands + move_ops)
         if full_cmd:
-            renames = new_prefix + "_full_cmd.sh"
+            renames = str(Path(self.path) / (new_prefix + "_full_cmd.sh"))
 
             # write full_cmd to a .sh file
             with open(renames, "w") as fo:
@@ -631,11 +631,16 @@ class CuBIDS(object):
                 # Coerce IntendedFor to a list.
                 data["IntendedFor"] = listify(data["IntendedFor"])
                 for item in data["IntendedFor"]:
-                    if item in _get_intended_for_reference(filepath):
+                    if item == _get_participant_relative_path(filepath):
                         # remove old filename
                         data["IntendedFor"].remove(item)
                         # add new filename
-                        data["IntendedFor"].append(_get_intended_for_reference(new_path))
+                        data["IntendedFor"].append(_get_participant_relative_path(new_path))
+                    if item == _get_bidsuri(filepath, self.path):
+                        # remove old filename
+                        data["IntendedFor"].remove(item)
+                        # add new filename
+                        data["IntendedFor"].append(_get_bidsuri(new_path, self.path))
 
                 # update the json with the new data dictionary
                 _update_json(filename_with_if, data)
@@ -683,6 +688,10 @@ class CuBIDS(object):
                     exemplars_dir,
                 ]
             )
+        if os.sep not in str(exemplars_tsv):
+            if not self.cubids_code_dir:
+                self.create_cubids_code_dir()
+            exemplars_tsv = self.path + "/code/CuBIDS/" + exemplars_tsv
 
         # load the exemplars tsv
         subs = pd.read_table(exemplars_tsv)
@@ -753,7 +762,7 @@ class CuBIDS(object):
         # sub, ses, modality only (no self.path)
         if_scans = []
         for scan in scans:
-            if_scans.append(_get_intended_for_reference(self.path + scan))
+            if_scans.append(_get_participant_relative_path(self.path + scan))
 
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
             # json_file = self.layout.get_file(str(path))
@@ -1424,8 +1433,26 @@ def _file_to_entity_set(filename):
     return _entities_to_entity_set(entities)
 
 
-def _get_intended_for_reference(scan):
+def _get_participant_relative_path(scan):
+    """Build the relative-from-subject version of a Path to a file.
+
+    This is what will appear in the IntendedFor field of any association.
+
+    """
     return "/".join(Path(scan).parts[-3:])
+
+
+def _get_bidsuri(filename, dataset_root):
+    """Convert a file path to a bidsuri.
+
+    Examples
+    --------
+    >>> _get_bidsuri("/path/to/bids/sub-01/ses-01/dataset_description.json", "/path/to/bids")
+    'bids::sub-01/ses-01/dataset_description.json'
+    """
+    if dataset_root in filename:
+        return filename.replace(dataset_root, "bids::").replace("bids::/", "bids::")
+    raise ValueError(f"Only local datasets are supported: {filename}")
 
 
 def _get_param_groups(

@@ -231,7 +231,7 @@ def validate(
             linked_output_prefix_t,
         ]
         if ignore_nifti_headers:
-            cmd.append("--ignore_nifti_headers")
+            cmd.append("--ignore-nifti-headers")
 
     elif container_type == "singularity":
         cmd = [
@@ -250,7 +250,7 @@ def validate(
             linked_output_prefix_t,
         ]
         if ignore_nifti_headers:
-            cmd.append("--ignore_nifti_headers")
+            cmd.append("--ignore-nifti-headers")
 
         if sequential:
             cmd.append("--sequential")
@@ -467,7 +467,7 @@ def apply(
             str(new_tsv_prefix),
             raise_on_error=False,
         )
-        sys.exit(0)
+        return
 
     # Run it through a container
     container_type = _get_container_type(container)

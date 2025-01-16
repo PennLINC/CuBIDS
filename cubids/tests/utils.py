@@ -10,9 +10,9 @@ from pathlib import Path
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from pkg_resources import resource_filename as pkgrf
+import importlib.resources
 
-TEST_DATA = pkgrf("cubids", "tests/data")
+TEST_DATA = importlib.resources.files("cubids") / "tests/data"
 
 
 def get_data(tmp_path):
@@ -50,18 +50,6 @@ def _add_deletion(summary_tsv):
     df.loc[3, "MergeInto"] = 0
     df.to_csv(summary_tsv, sep="\t", index=False)
     return df.loc[3, "KeyParamGroup"]
-
-
-# def _edit_tsv(summary_tsv):
-#     df = pd.read_table(summary_tsv)
-#     df['RenameEntitySet'] = df['RenameEntitySet'].apply(str)
-#     df['EntitySet'] = df['EntitySet'].apply(str)
-#     for row in range(len(df)):
-#         if df.loc[row, 'EntitySet'] == \
-#             "acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1":
-#             df.at[row, 'RenameEntitySet'] = \
-#                 "acquisition-v5_datatype-fmap_fmap-magnitude1_suffix-magnitude1"
-#     df.to_csv(summary_tsv)
 
 
 def _add_ext_files(img_path):
