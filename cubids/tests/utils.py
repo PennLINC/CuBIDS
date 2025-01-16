@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import shutil
+from contextlib import contextmanager
 from pathlib import Path
 
 import nibabel as nb
@@ -80,3 +81,17 @@ def _edit_a_json(json_file):
     metadata["THIS_IS_A_TEST"] = True
     with open(json_file, "w") as metadataw:
         json.dump(metadata, metadataw)
+
+
+@contextmanager
+def chdir(path):
+    """Temporarily change directories.
+
+    Taken from https://stackoverflow.com/a/37996581/2589328.
+    """
+    oldpwd = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(oldpwd)
