@@ -63,11 +63,11 @@ Ready to contribute? Here's how to set up `cubids` for local development.
 
     $ git clone git@github.com:your_name_here/cubids.git
 
-3.  Install your local copy into a virtualenv.
-    Assuming you have virtualenvwrapper installed,
-    this is how you set up your fork for local development::
+3.  Install your local copy into a miniforge environment.
+    This is how you set up your fork for local development::
 
-    $ mkvirtualenv cubids
+    $ mamba create -n cubids python=3.12
+    $ mamba activate cubids
     $ cd cubids/
     $ python setup.py develop
 
