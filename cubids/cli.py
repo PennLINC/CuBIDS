@@ -162,6 +162,26 @@ def _parse_validate():
 
 
 def _enter_validate(argv=None):
+    """Entry point for the 'cubids-validate' command.
+
+    This function is deprecated and will be removed in the future.
+    Please use 'cubids validate' instead.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, defaults to sys.argv.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that this function is deprecated.
+
+    Notes
+    -----
+    This function parses the command-line arguments and calls the
+    `workflows.validate` function with the parsed arguments.
+    """
     warnings.warn(
         "cubids-validate is deprecated and will be removed in the future. "
         "Please use cubids validate.",
@@ -174,6 +194,26 @@ def _enter_validate(argv=None):
 
 
 def _parse_bids_version():
+    """Parse command-line arguments for the BIDS version command.
+
+    This function sets up an argument parser for the `cubids bids-version` command,
+    which retrieves the BIDS Validator and Schema version for a given BIDS dataset.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser configured for the `cubids bids-version` command.
+
+    Parameters
+    ----------
+    None
+
+    Notes
+    -----
+    The parser includes the following arguments:
+    - `bids_dir`: The root directory of a BIDS dataset, which should contain sub-X directories and a dataset_description.json file.
+    - `--write`: A flag to save the validator and schema version to 'dataset_description.json'. If not provided, the versions are printed to the terminal.
+    """
     parser = argparse.ArgumentParser(
         description="cubids bids-version: Get BIDS Validator and Schema version",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -203,12 +243,44 @@ def _parse_bids_version():
 
 
 def _enter_bids_version(argv=None):
+    """Parses command-line arguments and invokes the `bids_version` workflow.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, defaults to `sys.argv`.
+
+    Returns
+    -------
+    None
+    """
     options = _parse_bids_version().parse_args(argv)
     args = vars(options).copy()
     workflows.bids_version(**args)
 
 
 def _parse_bids_sidecar_merge():
+    """Create an argument parser for merging BIDS sidecar JSON files.
+
+    This function sets up an argument parser for the `bids-sidecar-merge` command-line tool,
+    which merges critical keys from one BIDS sidecar JSON file into another.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the necessary arguments configured.
+
+    Parameters
+    ----------
+    from_json : str
+        Source JSON file path. This file contains the data to be copied.
+    to_json : str
+        Destination JSON file path. This file will have data from `from_json` copied into it.
+
+    Notes
+    -----
+    The `IsFile` partial function is used to validate that the provided file paths exist.
+    """
     parser = argparse.ArgumentParser(
         description=("bids-sidecar-merge: merge critical keys from one sidecar to another"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -231,6 +303,27 @@ def _parse_bids_sidecar_merge():
 
 
 def _enter_bids_sidecar_merge(argv=None):
+    """Entry point for the BIDS sidecar merge command-line interface.
+
+    This function serves as the entry point for the BIDS sidecar merge 
+    functionality. It parses command-line arguments, issues a deprecation 
+    warning, and invokes the corresponding workflow.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, defaults to `sys.argv`.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that the `bids-sidecar-merge` command is deprecated and 
+        will be removed in the future.
+
+    Notes
+    -----
+    This function is intended to be used as a command-line entry point.
+    """
     warnings.warn(
         "bids-sidecar-merge is deprecated and will be removed in the future. "
         "Please use cubids bids-sidecar-merge.",
@@ -243,6 +336,35 @@ def _enter_bids_sidecar_merge(argv=None):
 
 
 def _parse_group():
+    """Parses command-line arguments for the CuBIDS group command.
+
+    This function sets up an argument parser for the `cubids-group` command,
+    which is used to find key and parameter groups in a BIDS dataset.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the defined arguments.
+
+    Parameters
+    ----------
+    None
+
+    Arguments
+    ---------
+    bids_dir : str
+        The root of a BIDS dataset. It should contain sub-X directories and dataset_description.json.
+    output_prefix : str
+        File prefix to which a _summary.tsv, _files.tsv, _AcqGrouping.tsv, and _AcqGroupInfo.txt are written.
+        If a filename prefix is provided (e.g., V1), the outputs will be placed in bids_dir/code/CuBIDS.
+        If a path is specified (e.g., /Users/scovitz/BIDS/V1), the output files will go to the specified location.
+    --container : str, optional
+        Docker image tag or Singularity image file.
+    --acq-group-level : {'subject', 'session'}, optional
+        Level at which acquisition groups are created. Options are 'subject' or 'session'. Default is 'subject'.
+    --config : str, optional
+        Path to a config file for grouping. If not provided, the default config file from CuBIDS will be used.
+    """
     parser = argparse.ArgumentParser(
         description="cubids-group: find key and parameter groups in BIDS",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -298,6 +420,28 @@ def _parse_group():
 
 
 def _enter_group(argv=None):
+    """Handles the entry point for the deprecated 'cubids-group' command.
+
+    This function issues a deprecation warning indicating that 'cubids-group'
+    is deprecated and will be removed in the future. It then parses the 
+    command-line arguments and invokes the 'group' workflow with the parsed 
+    arguments.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, defaults to sys.argv.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that 'cubids-group' is deprecated and will be removed in 
+        the future.
+
+    Returns
+    -------
+    None
+    """
     warnings.warn(
         "cubids-group is deprecated and will be removed in the future. Please use cubids group.",
         DeprecationWarning,
@@ -309,6 +453,35 @@ def _enter_group(argv=None):
 
 
 def _parse_apply():
+    """Parse command-line arguments for the `cubids-apply` command.
+
+    This function sets up an argument parser for the `cubids-apply` command, 
+    which applies changes specified in a TSV file to a BIDS directory.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the defined arguments.
+
+    Parameters
+    ----------
+    bids_dir : str
+        The root of a BIDS dataset. It should contain sub-X directories and dataset_description.json.
+    edited_summary_tsv : str
+        Path to the _summary.tsv that has been edited in the MergeInto and RenameEntitySet columns.
+    files_tsv : str
+        Path to the _files.tsv that has been edited in the MergeInto and RenameEntitySet columns.
+    new_tsv_prefix : str
+        File prefix for writing the post-apply grouping outputs.
+    --use-datalad : bool, optional
+        Ensure that there are no untracked changes before finding groups (default is False).
+    --container : str, optional
+        Docker image tag or Singularity image file.
+    --acq-group-level : {'subject', 'session'}, optional
+        Level at which acquisition groups are created (default is 'subject').
+    --config : str, optional
+        Path to a config file for grouping. If not provided, the default config file from CuBIDS will be used.
+    """
     parser = argparse.ArgumentParser(
         description=("cubids-apply: apply the changes specified in a tsv to a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
