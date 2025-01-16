@@ -13,8 +13,7 @@ Contents
    usage
    cli
    example
-   ../CONTRIBUTING
-   ../AUTHORS
-   ../HISTORY
+   contributing
+   faq
    glossary
    api

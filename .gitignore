@@ -1,3 +1,4 @@
+docs/generated/
 cubids/_version.py
 *.DS_Store
 
