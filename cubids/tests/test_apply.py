@@ -247,7 +247,7 @@ def summary_data():
             # XXX: Should not have extra leading zero in run entity, but that's a known bug.
             # XXX: CuBIDS enforces longitudinal dataset, so this fails.
             "dwi/sub-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
-            TypeError,
+            ValueError,
         ),
         (
             "bidsuri_cs",
@@ -255,7 +255,7 @@ def summary_data():
             # XXX: Should not have extra leading zero in run entity, but that's a known bug.
             # XXX: CuBIDS enforces longitudinal dataset, so this fails.
             "bids::sub-01/dwi/sub-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
-            TypeError,
+            ValueError,
         ),
     ],
 )
