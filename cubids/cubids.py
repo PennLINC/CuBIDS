@@ -477,8 +477,10 @@ class CuBIDS(object):
         """
         new_path = build_path(
             filepath=filepath,
-            entities=entities,
+            out_entities=entities,
             out_dir=str(self.path),
+            valid_entities=self.schema["rules"]["entities"],
+            entity_names_to_keys=self.schema["objects"]["entities"],
         )
 
         exts = Path(filepath).suffixes
@@ -1740,18 +1742,24 @@ def get_entity_value(path, key):
             return part
 
 
-def build_path(filepath, entities, out_dir):
+def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_keys):
     """Build a new path for a file based on its BIDS entities.
 
     Parameters
     ----------
     filepath : str
         The original file path.
-    entities : dict
+    out_entities : dict
         A dictionary of BIDS entities.
         This should include all of the entities in the filename *except* for subject and session.
     out_dir : str
         The output directory for the new file.
+    valid_entities : list of str
+        List of valid BIDS entities, based on the schema.
+        The values in this list are the names of the entities (e.g., acquisition, not acq).
+    entity_names_to_keys : dict
+        A dictionary mapping entity names to their corresponding keys, based on the BIDS schema.
+        For example, {"acquisition": "acq"}.
 
     Returns
     -------
@@ -1848,15 +1856,12 @@ def build_path(filepath, entities, out_dir):
     exts = Path(filepath).suffixes
     old_ext = "".join(exts)
 
-    suffix = entities["suffix"]
-    entity_file_keys = []
+    suffix = out_entities["suffix"]
 
-    # Entities that may be in the filename?
-    file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
-
-    for key in file_keys:
-        if key in list(entities.keys()):
-            entity_file_keys.append(key)
+    # Limit file entities to valid entities from BIDS (sorted in right order)
+    file_entities = {k: out_entities[k] for k in valid_entities if k in out_entities}
+    # Replace entity names with keys (e.g., acquisition with acq)
+    file_entities = {entity_names_to_keys[k]: v for k, v in file_entities.items()}
 
     sub = get_entity_value(filepath, "sub")
     ses = get_entity_value(filepath, "ses")
@@ -1865,20 +1870,15 @@ def build_path(filepath, entities, out_dir):
 
     # Add leading zeros to run entity if it's an integer.
     # If it's a string, respect the value provided.
-    if "run" in entities.keys() and isinstance(entities["run"], int):
+    if "run" in file_entities.keys() and isinstance(file_entities["run"], int):
         # Infer the number of leading zeros needed from the original filename
         n_leading = 2  # default to 1 leading zero
         if "_run-" in filepath:
             run_str = filepath.split("_run-")[1].split("_")[0]
             n_leading = len(run_str)
-        entities["run"] = str(entities["run"]).zfill(n_leading)
+        file_entities["run"] = str(file_entities["run"]).zfill(n_leading)
 
-    filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
-    filename = (
-        filename.replace("acquisition", "acq")
-        .replace("direction", "dir")
-        .replace("reconstruction", "rec")
-    )
+    filename = "_".join([f"{key}-{value}" for key, value in file_entities.items()])
     if len(filename) > 0:
         filename = f"{sub}_{ses}_{filename}_{suffix}{old_ext}"
     else:
@@ -1892,12 +1892,9 @@ def build_path(filepath, entities, out_dir):
         if dtype in filepath:
             dtype_orig = dtype
 
-    if "datatype" in entities.keys():
-        dtype_new = entities["datatype"]
-        if entities["datatype"] != dtype_orig:
-            print("WARNING: DATATYPE CHANGE DETECTED")
-    else:
-        dtype_new = dtype_orig
+    dtype_new = out_entities.get("datatype", dtype_orig)
+    if dtype_new != dtype_orig:
+        print("WARNING: DATATYPE CHANGE DETECTED")
 
     # Construct the new filename
     new_path = str(Path(out_dir) / sub / ses / dtype_new / filename)
