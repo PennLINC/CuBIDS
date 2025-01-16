@@ -568,6 +568,25 @@ def _parse_apply():
 
 
 def _enter_apply(argv=None):
+    """Entry point for the deprecated `cubids-apply` command.
+
+    This function serves as a wrapper for the `cubids-apply` command and issues a deprecation warning.
+    It parses the command-line arguments and invokes the `apply` workflow with the parsed arguments.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, the arguments will be taken from `sys.argv`.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that `cubids-apply` is deprecated and will be removed in the future.
+
+    Notes
+    -----
+    This function is intended to be used internally and may not be suitable for direct use in user code.
+    """
     warnings.warn(
         "cubids-apply is deprecated and will be removed in the future. Please use cubids apply.",
         DeprecationWarning,
@@ -579,6 +598,28 @@ def _enter_apply(argv=None):
 
 
 def _parse_datalad_save():
+    """Create an argument parser for the `cubids-datalad-save` command.
+
+    This function sets up an argument parser for performing a DataLad save on a BIDS directory.
+    It includes arguments for specifying the BIDS directory, a commit message, and an optional
+    container image.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The configured argument parser.
+
+    Parameters
+    ----------
+    None
+
+    Notes
+    -----
+    The `bids_dir` argument is required and should point to the root of a BIDS dataset, which
+    must contain sub-X directories and a dataset_description.json file. The `-m` argument is
+    used to provide a commit message, and the `--container` argument allows specifying a Docker
+    image tag or Singularity image file.
+    """
     parser = argparse.ArgumentParser(
         description=("cubids-datalad-save: perform a DataLad save on a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -609,6 +650,27 @@ def _parse_datalad_save():
 
 
 def _enter_datalad_save(argv=None):
+    """Entry point for the deprecated `cubids-datalad-save` command.
+
+    This function serves as a warning that the `cubids-datalad-save` command is deprecated 
+    and will be removed in the future. It parses the command-line arguments and calls 
+    the `datalad_save` workflow with the parsed arguments.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If not provided, defaults to None.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that the `cubids-datalad-save` command is deprecated and will be removed in the future.
+
+    See Also
+    --------
+    _parse_datalad_save : Function to parse command-line arguments for the datalad save operation.
+    workflows.datalad_save : Function to perform the datalad save operation.
+    """
     warnings.warn(
         "cubids-datalad-save is deprecated and will be removed in the future. "
         "Please use cubids datalad-save.",
@@ -621,6 +683,28 @@ def _enter_datalad_save(argv=None):
 
 
 def _parse_undo():
+    """Create an argument parser for the 'cubids-undo' command.
+
+    This function sets up an argument parser for the 'cubids-undo' command,
+    which is used to revert the most recent commit in a BIDS dataset. It
+    defines the required and optional arguments for the command.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser for the 'cubids-undo' command.
+
+    Parameters
+    ----------
+    None
+
+    Notes
+    -----
+    The parser includes the following arguments:
+    - bids_dir: The root of a BIDS dataset, which should contain sub-X directories
+      and dataset_description.json.
+    - container: Docker image tag or Singularity image file.
+    """
     parser = argparse.ArgumentParser(
         description="cubids-undo: revert most recent commit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -646,6 +730,28 @@ def _parse_undo():
 
 
 def _enter_undo(argv=None):
+    """Handle the 'cubids-undo' command-line interface (CLI) entry point.
+
+    This function is called when the 'cubids-undo' command is executed.
+    It displays a deprecation warning and then parses the command-line
+    arguments to execute the undo workflow.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, the arguments from
+        sys.argv are used.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that 'cubids-undo' is deprecated and will be removed
+        in the future. Users should use 'cubids undo' instead.
+
+    Returns
+    -------
+    None
+    """
     warnings.warn(
         "cubids-undo is deprecated and will be removed in the future. Please use cubids undo.",
         DeprecationWarning,
@@ -657,6 +763,41 @@ def _enter_undo(argv=None):
 
 
 def _parse_copy_exemplars():
+    """Parse command-line arguments for the cubids-copy-exemplars script.
+
+    This function sets up an argument parser for the cubids-copy-exemplars script,
+    which creates and saves a directory with one subject from each Acquisition Group
+    in the BIDS dataset.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the defined arguments.
+
+    Parameters
+    ----------
+    bids_dir : str
+        Path to the root of a BIDS dataset. It should contain sub-X directories and
+        dataset_description.json.
+    exemplars_dir : str
+        Name of the directory to create where to store the exemplar dataset. It will
+        include one subject from each Acquisition Group. It should contain sub-X
+        directories and dataset_description.json.
+    exemplars_tsv : str
+        Path to the .tsv file that lists one subject from each Acquisition Group
+        (*_AcqGrouping.tsv from the cubids-group output). If the file is located in
+        the code/CuBIDS directory, then users can just pass the .tsv filename instead
+        of the full path.
+    use_datalad : bool, optional
+        Check exemplar dataset into DataLad (default is False).
+    min_group_size : int, optional
+        Minimum number of subjects an Acquisition Group must have in order to be
+        included in the exemplar dataset (default is 1).
+    container : str, optional
+        Docker image tag or Singularity image file.
+    force_unlock : bool, optional
+        Unlock dataset before adding nifti info (default is False).
+    """
     parser = argparse.ArgumentParser(
         description=(
             "cubids-copy-exemplars: create and save a directory with "
@@ -741,6 +882,22 @@ def _parse_copy_exemplars():
 
 
 def _enter_copy_exemplars(argv=None):
+    """Entry point for the 'cubids-copy-exemplars' command.
+
+    This function is deprecated and will be removed in the future. 
+    It parses command-line arguments and invokes the `copy_exemplars` 
+    workflow with the parsed arguments.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, defaults to `sys.argv`.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that this function is deprecated and will be removed in the future.
+    """
     warnings.warn(
         "cubids-copy-exemplars is deprecated and will be removed in the future. "
         "Please use cubids copy-exemplars.",
@@ -753,6 +910,29 @@ def _enter_copy_exemplars(argv=None):
 
 
 def _parse_add_nifti_info():
+    """Parse command-line arguments for adding NIfTI information to BIDS dataset sidecars.
+
+    This function sets up an argument parser for the `cubids-add-nifti-info` command,
+    which adds information from NIfTI files to the sidecars of each dataset in a BIDS
+    directory.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the defined arguments.
+
+    Parameters
+    ----------
+    bids_dir : str
+        Absolute path to the root of a BIDS dataset. It should contain sub-X directories
+        and dataset_description.json.
+    use_datalad : bool, optional
+        Ensure that there are no untracked changes before finding groups (default is False).
+    force_unlock : bool, optional
+        Unlock dataset before adding NIfTI info (default is False).
+    container : str, optional
+        Docker image tag or Singularity image file.
+    """
     parser = argparse.ArgumentParser(
         description=(
             "cubids-add-nifti-info: Add information from nifti"
@@ -793,6 +973,26 @@ def _parse_add_nifti_info():
 
 
 def _enter_add_nifti_info(argv=None):
+    """Entry point for adding NIfTI information via command line interface.
+
+    This function is deprecated and will be removed in the future. 
+    Please use `cubids add-nifti-info` instead.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command line arguments. If None, defaults to `sys.argv`.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that this function is deprecated.
+
+    Notes
+    -----
+    This function parses command line arguments and invokes the 
+    `add_nifti_info` workflow with the parsed arguments.
+    """
     warnings.warn(
         "cubids-add-nifti-info is deprecated and will be removed in the future. "
         "Please use cubids add-nifti-info.",
@@ -805,6 +1005,29 @@ def _enter_add_nifti_info(argv=None):
 
 
 def _parse_purge():
+    """Parse command-line arguments for the `cubids-purge` command.
+
+    This function sets up an argument parser for the `cubids-purge` command, 
+    which is used to purge associations from a BIDS dataset. It defines the 
+    required arguments and options for the command.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the defined arguments and options.
+
+    Parameters
+    ----------
+    None
+
+    Notes
+    -----
+    The following arguments are defined:
+    - `bids_dir`: Path to the root of a BIDS dataset.
+    - `scans`: Path to the txt file of scans whose associations should be purged.
+    - `--use-datalad`: Ensure that there are no untracked changes before finding groups.
+    - `--container`: Docker image tag or Singularity image file.
+    """
     parser = argparse.ArgumentParser(
         description="cubids-purge: purge associations from the dataset",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -848,6 +1071,26 @@ def _parse_purge():
 
 
 def _enter_purge(argv=None):
+    """Entry point for the 'cubids-purge' command.
+
+    This function is deprecated and will be removed in the future. 
+    Please use 'cubids purge' instead.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, defaults to sys.argv.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that this function is deprecated.
+
+    Notes
+    -----
+    This function parses the command-line arguments and calls the 
+    `workflows.purge` function with the parsed arguments.
+    """
     warnings.warn(
         "cubids-purge is deprecated and will be removed in the future. Please use cubids purge.",
         DeprecationWarning,
@@ -859,6 +1102,31 @@ def _enter_purge(argv=None):
 
 
 def _parse_remove_metadata_fields():
+    """Create an argument parser for removing metadata fields from a BIDS dataset.
+
+    This function sets up an argument parser for the command-line interface (CLI)
+    tool `cubids-remove-metadata-fields`, which is used to delete specified fields
+    from the metadata of a BIDS dataset.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser configured for the `cubids-remove-metadata-fields` CLI tool.
+
+    Parameters
+    ----------
+    None
+
+    Arguments
+    ---------
+    bids_dir : str
+        The root directory of a BIDS dataset. It should contain sub-X directories and
+        a dataset_description.json file.
+    --fields : list of str, optional
+        A space-separated list of metadata fields to remove. Defaults to an empty list.
+    --container : str, optional
+        Docker image tag or Singularity image file.
+    """
     parser = argparse.ArgumentParser(
         description="cubids-remove-metadata-fields: delete fields from metadata",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -891,6 +1159,29 @@ def _parse_remove_metadata_fields():
 
 
 def _enter_remove_metadata_fields(argv=None):
+    """Set entrypoint for "cubids-remove-metadata-fields" CLI.
+
+    This function serves as the entry point for the deprecated 
+    "cubids-remove-metadata-fields" command-line interface (CLI). It issues a 
+    deprecation warning and then parses the provided arguments to execute the 
+    `remove_metadata_fields` workflow.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, the default arguments will be used.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that the "cubids-remove-metadata-fields" CLI is deprecated and 
+        will be removed in the future. Users are advised to use "cubids remove-metadata-fields" instead.
+
+    See Also
+    --------
+    _parse_remove_metadata_fields : Function to parse the command-line arguments.
+    workflows.remove_metadata_fields : Workflow to remove metadata fields.
+    """
     """Set entrypoint for "cubids-remove-metadata-fields" CLI."""
     warnings.warn(
         "cubids-remove-metadata-fields is deprecated and will be removed in the future. "
@@ -904,6 +1195,26 @@ def _enter_remove_metadata_fields(argv=None):
 
 
 def _parse_print_metadata_fields():
+    """Create the parser for the "cubids print-metadata-fields" command.
+
+    This function sets up an argument parser for the command that prints all unique metadata fields
+    in a BIDS dataset. It defines the required arguments and their types, as well as optional arguments.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser for the "cubids print-metadata-fields" command.
+
+    Parameters
+    ----------
+    None
+
+    Notes
+    -----
+    The parser includes the following arguments:
+    - bids_dir: The root of a BIDS dataset, which should contain sub-X directories and dataset_description.json.
+    - container: An optional argument specifying a Docker image tag or Singularity image file.
+    """
     """Create the parser for the "cubids print-metadata-fields" command."""
     parser = argparse.ArgumentParser(
         description="cubids-print-metadata-fields: print all unique metadata fields",
@@ -930,6 +1241,28 @@ def _parse_print_metadata_fields():
 
 
 def _enter_print_metadata_fields(argv=None):
+    """Parse command-line arguments and print metadata fields.
+
+    This function parses the command-line arguments for printing metadata fields,
+    issues a deprecation warning, and then calls the `print_metadata_fields` 
+    function from the `workflows` module with the parsed arguments.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, the arguments will be taken from
+        `sys.argv`.
+
+    Warns
+    -----
+    DeprecationWarning
+        Indicates that the `cubids-print-metadata-fields` command is deprecated 
+        and will be removed in the future.
+
+    See Also
+    --------
+    workflows.print_metadata_fields : Function that prints metadata fields.
+    """
     options = _parse_print_metadata_fields().parse_args(argv)
     args = vars(options).copy()
     warnings.warn(
