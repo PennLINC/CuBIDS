@@ -24,7 +24,26 @@ def _path_exists(path, parser):
 
 
 def _is_file(path, parser):
-    """Ensure a given path exists and it is a file."""
+    """Ensure a given path exists and it is a file.
+
+    Parameters
+    ----------
+    path : str or Path
+        The path to check.
+    parser : argparse.ArgumentParser
+        The argument parser instance to use for error reporting.
+
+    Returns
+    -------
+    Path
+        The validated path as a Path object.
+
+    Raises
+    ------
+    ArgumentParserError
+        If the path does not exist or is not a file.
+    """
+
     path = _path_exists(path, parser)
     if not path.is_file():
         raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
