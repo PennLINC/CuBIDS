@@ -1,4 +1,73 @@
-"""Console script for cubids."""
+"""Console script for cubids.
+
+This module provides command-line interface (CLI) tools for CuBIDS, a BIDS dataset
+validation and manipulation toolkit. The CLI tools include functionalities for
+validating BIDS datasets, merging sidecar JSON files, grouping acquisition parameters,
+applying changes, purging associations, adding NIfTI information, copying exemplar
+subjects, undoing changes, saving with DataLad, and managing metadata fields.
+
+Functions
+_path_exists(path, parser)
+    Ensure a given path exists.
+_is_file(path, parser)
+    Ensure a given path exists and it is a file.
+_parse_validate()
+    Create and configure the argument parser for the CuBIDS validation CLI.
+_enter_validate(argv=None)
+    Entry point for the 'cubids-validate' command.
+_parse_bids_version()
+    Parse command-line arguments for the BIDS version command.
+_enter_bids_version(argv=None)
+    Parses command-line arguments and invokes the `bids_version` workflow.
+_parse_bids_sidecar_merge()
+    Create an argument parser for merging BIDS sidecar JSON files.
+_enter_bids_sidecar_merge(argv=None)
+    Entry point for the BIDS sidecar merge command-line interface.
+_parse_group()
+    Parses command-line arguments for the CuBIDS group command.
+_enter_group(argv=None)
+    Handles the entry point for the deprecated 'cubids-group' command.
+_parse_apply()
+    Parse command-line arguments for the `cubids-apply` command.
+_enter_apply(argv=None)
+    Entry point for the deprecated `cubids-apply` command.
+_parse_datalad_save()
+    Create an argument parser for the `cubids-datalad-save` command.
+_enter_datalad_save(argv=None)
+    Entry point for the deprecated `cubids-datalad-save` command.
+_parse_undo()
+    Create an argument parser for the 'cubids-undo' command.
+_enter_undo(argv=None)
+    Handle the 'cubids-undo' command-line interface (CLI) entry point.
+_parse_copy_exemplars()
+    Parse command-line arguments for the cubids-copy-exemplars script.
+_enter_copy_exemplars(argv=None)
+    Entry point for the 'cubids-copy-exemplars' command.
+_parse_add_nifti_info()
+    Parse command-line arguments for adding NIfTI information to BIDS dataset sidecars.
+_enter_add_nifti_info(argv=None)
+    Entry point for adding NIfTI information via command line interface.
+_parse_purge()
+    Parse command-line arguments for the `cubids-purge` command.
+_enter_purge(argv=None)
+    Entry point for the 'cubids-purge' command.
+_parse_remove_metadata_fields()
+    Create an argument parser for removing metadata fields from a BIDS dataset.
+_enter_remove_metadata_fields(argv=None)
+    Set entrypoint for "cubids-remove-metadata-fields" CLI.
+_parse_print_metadata_fields()
+    Create the parser for the "cubids print-metadata-fields" command.
+_enter_print_metadata_fields(argv=None)
+    Parse command-line arguments and print metadata fields.
+_get_parser()
+    Create the general "cubids" parser object.
+_main(argv=None)
+    Set entrypoint for "cubids" CLI.
+
+Each function that serves as an entry point for a CLI command in the formart of `cubids-function` 
+is marked as deprecated and will be removed in the future. Users are advised to use the corresponding 
+`cubids function` commands instead.
+"""
 
 import argparse
 import logging
