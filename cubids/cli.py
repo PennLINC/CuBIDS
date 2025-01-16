@@ -630,10 +630,6 @@ def _enter_apply(argv=None):
     -----
     DeprecationWarning
         Indicates that `cubids-apply` is deprecated and will be removed in the future.
-
-    Notes
-    -----
-    This function is intended to be used internally and may not be suitable for direct use in user code.
     """
     warnings.warn(
         "cubids-apply is deprecated and will be removed in the future. Please use cubids apply.",
@@ -712,7 +708,8 @@ def _enter_datalad_save(argv=None):
     Warns
     -----
     DeprecationWarning
-        Indicates that the `cubids-datalad-save` command is deprecated and will be removed in the future.
+        Indicates that the `cubids-datalad-save` command is deprecated and
+        will be removed in the future.
 
     See Also
     --------
@@ -1223,7 +1220,8 @@ def _enter_remove_metadata_fields(argv=None):
     -----
     DeprecationWarning
         Indicates that the `cubids-remove-metadata-fields` CLI is deprecated and
-        will be removed in the future. Users are advised to use `cubids remove-metadata-fields` instead.
+        will be removed in the future. Users are advised to use
+        `cubids remove-metadata-fields` instead.
 
     See Also
     --------
@@ -1244,8 +1242,9 @@ def _enter_remove_metadata_fields(argv=None):
 def _parse_print_metadata_fields():
     """Create the parser for the `cubids print-metadata-fields` command.
 
-    This function sets up an argument parser for the command that prints all unique metadata fields
-    in a BIDS dataset. It defines the required arguments and their types, as well as optional arguments.
+    This function sets up an argument parser for the command that prints all
+    unique metadata fields in a BIDS dataset. It defines the required arguments
+    and their types, as well as optional arguments.
 
     Returns
     -------
