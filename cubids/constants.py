@@ -12,6 +12,7 @@ NON_KEY_ENTITIES : set of str
 IMAGING_PARAMS : set of str
     List of metadata fields merged in `metadata_merge.py`.
 """
+
 ID_VARS = set(["EntitySet", "ParamGroup", "FilePath"])
 NON_KEY_ENTITIES = set(["subject", "session", "extension"])
 # Multi-dimensional keys SliceTiming  XXX: what is this line about?
