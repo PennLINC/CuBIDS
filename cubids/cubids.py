@@ -1777,7 +1777,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    schema = json.load(f)
     >>> valid_entities = schema["rules"]["entities"]
     >>> entity_names_to_keys = {
-    ...     entity["name"]: entity["key"] for entity in schema["objects"]["entities"]
+    ...     k: v["name"] for k, v in schema["objects"]["entities"].items()
     ... }
     >>> build_path(
     ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii.gz",
