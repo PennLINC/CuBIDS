@@ -102,6 +102,7 @@ def _parse_validate():
     Notes
     -----
     The following arguments are added to the parser:
+
     - bids_dir: The root of a BIDS dataset. It should contain sub-X directories
       and dataset_description.json.
     - output_prefix: File prefix to which tabulated validator output is written.
@@ -234,6 +235,7 @@ def _parse_bids_version():
     Notes
     -----
     The parser includes the following arguments:
+
     - `bids_dir`: The root directory of a BIDS dataset, which should contain
       sub-X directories and a dataset_description.json file.
     - `--write`: A flag to save the validator and schema version to
@@ -746,6 +748,7 @@ def _parse_undo():
     Notes
     -----
     The parser includes the following arguments:
+
     - bids_dir: The root of a BIDS dataset, which should contain sub-X directories
       and dataset_description.json.
     - container: Docker image tag or Singularity image file.
@@ -1068,7 +1071,9 @@ def _parse_purge():
     Notes
     -----
     The following arguments are defined:
-    - `bids_dir`: Path to the root of a BIDS dataset.
+
+    - `bids_dir`: The root of a BIDS dataset. It should contain sub-X directories
+        and dataset_description.json.
     - `scans`: Path to the txt file of scans whose associations should be purged.
     - `--use-datalad`: Ensure that there are no untracked changes before finding groups.
     - `--container`: Docker image tag or Singularity image file.
@@ -1258,12 +1263,12 @@ def _parse_print_metadata_fields():
     Notes
     -----
     The parser includes the following arguments:
+
     - bids_dir: The root of a BIDS dataset, which should contain sub-X directories
         and dataset_description.json.
     - container: An optional argument specifying a Docker image tag or Singularity
         image file.
     """
-    """Create the parser for the "cubids print-metadata-fields" command."""
     parser = argparse.ArgumentParser(
         description="cubids print-metadata-fields: print all unique metadata fields",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
