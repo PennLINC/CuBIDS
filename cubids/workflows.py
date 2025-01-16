@@ -94,10 +94,7 @@ def validate(
 
                 else:
                     val_tsv = (
-                        str(bids_dir)
-                        + "/code/CuBIDS/"
-                        + str(output_prefix)
-                        + "_validation.tsv"
+                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
                     )
 
                 parsed.to_csv(val_tsv, sep="\t", index=False)
@@ -125,9 +122,7 @@ def validate(
         parsed = []
 
         if sequential_subjects:
-            subjects_dict = {
-                k: v for k, v in subjects_dict.items() if k in sequential_subjects
-            }
+            subjects_dict = {k: v for k, v in subjects_dict.items() if k in sequential_subjects}
         assert len(list(subjects_dict.keys())) > 1, "No subjects found in filter"
         for subject, files_list in tqdm.tqdm(subjects_dict.items()):
             # logger.info(" ".join(["Processing subject:", subject]))
@@ -184,10 +179,7 @@ def validate(
                     val_tsv = str(output_prefix) + "_validation.tsv"
                 else:
                     val_tsv = (
-                        str(bids_dir)
-                        + "/code/CuBIDS/"
-                        + str(output_prefix)
-                        + "_validation.tsv"
+                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
                     )
 
                 parsed.to_csv(val_tsv, sep="\t", index=False)
@@ -404,9 +396,7 @@ def copy_exemplars(
     if use_datalad:
         if not bod.is_datalad_clean():
             raise Exception(
-                "Untracked changes. Need to save "
-                + str(bids_dir)
-                + " before coyping exemplars"
+                "Untracked changes. Need to save " + str(bids_dir) + " before coyping exemplars"
             )
     bod.copy_exemplars(
         str(exemplars_dir),
