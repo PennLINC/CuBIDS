@@ -17,7 +17,25 @@ logging.getLogger("datalad").setLevel(logging.ERROR)
 
 
 def _path_exists(path, parser):
-    """Ensure a given path exists."""
+    """Ensure a given path exists.
+
+    Parameters
+    ----------
+    path : str or None
+        The path to check for existence. If None or the path does not exist, an error is raised.
+    parser : argparse.ArgumentParser
+        The argument parser instance used to raise an error if the path does not exist.
+
+    Returns
+    -------
+    pathlib.Path
+        The absolute path if it exists.
+
+    Raises
+    ------
+    argparse.ArgumentError
+        If the path does not exist or is None.
+    """
     if path is None or not Path(path).exists():
         raise parser.error(f"Path does not exist: <{path}>.")
     return Path(path).absolute()
@@ -43,7 +61,6 @@ def _is_file(path, parser):
     ArgumentParserError
         If the path does not exist or is not a file.
     """
-
     path = _path_exists(path, parser)
     if not path.is_file():
         raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
@@ -51,6 +68,36 @@ def _is_file(path, parser):
 
 
 def _parse_validate():
+    """Create and configure the argument parser for the CuBIDS validation CLI.
+
+    This function sets up an argument parser with various options for running
+    the BIDS validator, including specifying the BIDS dataset directory, output
+    file prefix, and additional validation options.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        Configured argument parser for the CuBIDS validation CLI.
+
+    Parameters
+    ----------
+    None
+
+    Notes
+    -----
+    The following arguments are added to the parser:
+    - bids_dir: The root of a BIDS dataset. It should contain sub-X directories
+      and dataset_description.json.
+    - output_prefix: File prefix to which tabulated validator output is written.
+      If a filename prefix is provided, the output will be placed in
+      bids_dir/code/CuBIDS. If a full path is provided, the output files will
+      go to the specified location.
+    - --sequential: Run the BIDS validator sequentially on each subject.
+    - --container: Docker image tag or Singularity image file.
+    - --ignore-nifti-headers: Disregard NIfTI header content during validation.
+    - --sequential-subjects: Filter the sequential run to only include the
+      listed subjects.
+    """
     parser = argparse.ArgumentParser(
         description="cubids-validate: Wrapper around the official BIDS Validator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
