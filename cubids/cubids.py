@@ -1854,12 +1854,18 @@ def build_path(filepath, entities, out_dir):
 
     sub = get_key_name(filepath, "sub")
     ses = get_key_name(filepath, "ses")
-    if "run" in entities.keys() and "run-0" in filepath:
-        # XXX: This adds an extra leading zero to run.
-        entities["run"] = "0" + str(entities["run"])
     if sub is None or ses is None:
         raise ValueError(f"Could not extract subject or session from {filepath}")
 
+    # Add leading zeros to run entity if it's an integer.
+    # If it's a string, respect the value provided.
+    if "run" in entities.keys() and isinstance(entities["run"], int):
+        # Infer the number of leading zeros needed from the original filename
+        n_leading = 2  # default to 1 leading zero
+        if "_run-" in filepath:
+            run_str = filepath.split("_run-")[1].split("_")[0]
+            n_leading = len(run_str)
+        entities["run"] = str(entities["run"]).zfill(n_leading)
 
     filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
     filename = (
