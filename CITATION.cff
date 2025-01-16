@@ -57,6 +57,21 @@ authors:
     family-names: Vogel
   - given-names: Chenying
     family-names: Zhao
+  - given-names: Brooke L.
+    family-names: Sevchik
+    affiliation: Penn Lifespan Informatics and Neuroimaging Center, University of Pennsylvania, Philadelphia, PA, USA; Department of Psychiatry, Perelman School of Medicine, University of Pennsylvania, Philadelphia, PA, USA.
+  - given-names: Shivaram
+    family-names: Karandikar
+    affiliation: Lifespan Brain Institute (LiBI) of the Children’s Hospital of Philadelphia (CHOP) and Penn Medicine, Philadelphia, PA
+    orcid: 'https://orcid.org/0009-0003-0649-9260'
+  - given-names: Gabriele
+    family-names: De Leonardis
+    affiliation: Department of Clinical Sciences Malmö, Faculty of Medicine, SciLifeLab, Lund University, Lund, Sweden
+    orcid: 'https://orcid.org/0009-0006-9947-4768'
+  - given-names: S. Parker
+    family-names: Singleton
+    affiliation: Penn Lifespan Informatics and Neuroimaging Center, University of Pennsylvania, Philadelphia, PA, USA; Department of Psychiatry, Perelman School of Medicine, University of Pennsylvania, Philadelphia, PA, USA
+    orcid: 'https://orcid.org/0000-0002-7102-7820'
   - given-names: Damien A.
     family-names: Fair
   - given-names: Michael
