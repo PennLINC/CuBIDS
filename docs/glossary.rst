@@ -1,4 +1,4 @@
-.. include:: links.rst
+.. _BIDS filename key-value pairs: https://bids-specification.readthedocs.io/en/stable/02-common-principles.html#file-name-key-value-pairs
 
 Glossary
 ========
@@ -30,7 +30,7 @@ Glossary
         in their respective Dominant Groups.
 
     Acquisition Group
-        A collection of sessions across participants that contains the exact same set of Key
+        A collection of sessions across participants that contains the exact same set of Entity
         and Param Groups.
 
 
