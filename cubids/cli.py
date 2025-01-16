@@ -55,7 +55,6 @@ def _path_exists(path, parser):
     return path.absolute()
 
 
-
 def _is_file(path, parser):
     """Ensure a given path exists and it is a file.
 
