@@ -15,13 +15,6 @@ initialize a new conda environment (for example, named ``cubids``) as follows:
 
 .. code-block:: console
 
-    $ conda create -n cubids python=3.12 pip
-    $ conda activate cubids
-
-Or as follows:
-
-.. code-block:: console
-
     $ mamba create -n cubids python=3.12 pip
     $ mamba activate cubids
 
@@ -35,7 +28,8 @@ To obtain ``CuBIDS`` locally, we can use ``pip`` to download our software from t
 
     $ pip install CuBIDS
 
-Alternatively,
+
+**For developers:** Alternatively,
 you can clone the source code for ``CuBIDS`` from our `GitHub repository`_ using the following command:
 
 .. code-block:: console
@@ -49,13 +43,21 @@ Once you have a copy of the source, you can install it with:
     $ cd CuBIDS
     $ pip install -e .
 
+**For developers:** If you want to install so that you can also contribute code, you can install it with:
+
+.. code-block:: console
+    
+    $ cd CuBIDS
+    $ pip install -e .[all]
+
+
 We will now need to install some dependencies of ``CuBIDS``.
 To do this, we first must install deno to run `bids-validator`.
 We can accomplish this using the following command:
 
 .. code-block:: console
 
-    $ conda install deno
+    $ mamba install deno
 
 The new schema-based ``bids-validator`` doesn't need to be installed 
 and will be implemented automatically when `cubids validate` is called
