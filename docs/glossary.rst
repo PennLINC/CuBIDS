@@ -30,7 +30,7 @@ Glossary
         in their respective Dominant Groups.
 
     Acquisition Group
-        A collection of sessions across participants that contains the exact same set of Key
+        A collection of sessions across participants that contains the exact same set of Entity
         and Param Groups.
 
 
