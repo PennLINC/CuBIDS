@@ -28,8 +28,7 @@ To obtain ``CuBIDS`` locally, we can use ``pip`` to download our software from t
 
     $ pip install CuBIDS
 
- Alternatively,
-you can clone the source code for ``CuBIDS`` from our `GitHub repository`_ using the following command:
+Alternatively,you can clone the source code for ``CuBIDS`` from our `GitHub repository`_ using the following command:
 
 .. code-block:: console
 
