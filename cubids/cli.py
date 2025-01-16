@@ -1360,6 +1360,17 @@ COMMANDS = [
 
 
 def _get_parser():
+    """Create the general "cubids" parser object.
+
+    This function sets up the argument parser for the "cubids" command-line interface.
+    It includes a version argument and dynamically adds subparsers for each command
+    defined in the COMMANDS list.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser for the "cubids" CLI.
+    """
     """Create the general "cubids" parser object."""
     from cubids import __version__
 
@@ -1381,6 +1392,17 @@ def _get_parser():
 
 
 def _main(argv=None):
+    """Set entrypoint for "cubids" CLI.
+
+    Parameters
+    ----------
+    argv : list, optional
+        List of command-line arguments. If None, defaults to `sys.argv`.
+
+    Returns
+    -------
+    None
+    """
     """Set entrypoint for "cubids" CLI."""
     options = _get_parser().parse_args(argv)
     args = vars(options).copy()
