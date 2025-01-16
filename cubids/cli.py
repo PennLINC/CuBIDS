@@ -72,7 +72,7 @@ def _is_file(path, parser):
 
     Raises
     ------
-    ArgumentParserError
+    argparse.ArgumentError
         If the path does not exist or is not a file.
     """
     path = _path_exists(path, parser)
