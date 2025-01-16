@@ -15,8 +15,7 @@ TEST_DATA = importlib.resources.files("cubids") / "tests/data"
 
 
 def get_data(tmp_path):
-    """
-    Copy testing data to a local directory.
+    """Copy testing data to a local directory.
 
     Parameters
     ----------
@@ -34,8 +33,7 @@ def get_data(tmp_path):
 
 
 def _remove_a_json(json_file):
-    """
-    Remove a JSON file.
+    """Remove a JSON file.
 
     Parameters
     ----------
@@ -46,8 +44,7 @@ def _remove_a_json(json_file):
 
 
 def _edit_a_nifti(nifti_file):
-    """
-    Edit a NIfTI file by replacing its data with random values.
+    """Edit a NIfTI file by replacing its data with random values.
 
     Parameters
     ----------
@@ -60,8 +57,7 @@ def _edit_a_nifti(nifti_file):
 
 
 def file_hash(file_name):
-    """
-    Create a hash from a file.
+    """Create a hash from a file.
 
     Parameters
     ----------
@@ -79,8 +75,7 @@ def file_hash(file_name):
 
 
 def _get_json_string(json_path):
-    """
-    Get the content of a JSON file as a string.
+    """Get the content of a JSON file as a string.
 
     Parameters
     ----------
@@ -98,8 +93,7 @@ def _get_json_string(json_path):
 
 
 def _add_deletion(summary_tsv):
-    """
-    Add a deletion entry to a summary TSV file.
+    """Add a deletion entry to a summary TSV file.
 
     Parameters
     ----------
@@ -118,8 +112,7 @@ def _add_deletion(summary_tsv):
 
 
 def _add_ext_files(img_path):
-    """
-    Add and save extension files in the same directory as the image file.
+    """Add and save extension files in the same directory as the image file.
 
     Parameters
     ----------
@@ -146,8 +139,7 @@ def _add_ext_files(img_path):
 
 
 def _edit_a_json(json_file):
-    """
-    Open a JSON file, write a test entry to it, and save it to the same name.
+    """Open a JSON file, write a test entry to it, and save it to the same name.
 
     Parameters
     ----------
