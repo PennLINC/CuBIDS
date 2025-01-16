@@ -96,7 +96,7 @@ def _parse_validate():
         "--local-validator",
         action="store_true",
         default=False,
-        help="Lets user run a locally installed BIDS validator ",
+        help="Lets user run a locally installed BIDS validator. Default is set to False ",
         required=False,
     )
     return parser
