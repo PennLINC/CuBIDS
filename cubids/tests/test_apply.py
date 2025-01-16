@@ -230,32 +230,28 @@ def summary_data():
         (
             "relpath_long",
             relpath_intendedfor_long,
-            # XXX: Should not have extra leading zero in run entity, but that's a known bug.
-            "ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
+            "ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
             "pass",
         ),
         (
             "bidsuri_long",
             bidsuri_intendedfor_long,
-            # XXX: Should not have extra leading zero in run entity, but that's a known bug.
-            "bids::sub-01/ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
+            "bids::sub-01/ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
             "pass",
         ),
         (
             "relpath_cs",
             relpath_intendedfor_cs,
-            # XXX: Should not have extra leading zero in run entity, but that's a known bug.
             # XXX: CuBIDS enforces longitudinal dataset, so this fails.
-            "dwi/sub-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
-            TypeError,
+            "dwi/sub-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
+            ValueError,
         ),
         (
             "bidsuri_cs",
             bidsuri_intendedfor_cs,
-            # XXX: Should not have extra leading zero in run entity, but that's a known bug.
             # XXX: CuBIDS enforces longitudinal dataset, so this fails.
-            "bids::sub-01/dwi/sub-01_acq-VAR_dir-AP_run-001_dwi.nii.gz",
-            TypeError,
+            "bids::sub-01/dwi/sub-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
+            ValueError,
         ),
     ],
 )
