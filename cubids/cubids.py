@@ -1743,6 +1743,7 @@ def build_path(filepath, entities, out_dir):
         The original file path.
     entities : dict
         A dictionary of BIDS entities.
+        This should include all of the entities in the filename *except* for subject and session.
     out_dir : str
         The output directory for the new file.
 
@@ -1753,15 +1754,60 @@ def build_path(filepath, entities, out_dir):
 
     Examples
     --------
-    >>> build_path("sub-01/ses-01/anat/sub-01_ses-01_T1w.nii.gz", {"suffix": "T2w"}, "output")
-    'output/sub-01/ses-01/anat/sub-01_ses-01_T2w.nii.gz'
-
     >>> build_path(
-    >>>    "sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
-    >>>    {"task": "rest", "run": "01", "acquisition": "VAR"},
-    >>>    "output",
-    >>> )
-    'output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-001_bold.nii.gz'
+    ...    "/output/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii.gz",
+    ...    {"acquisition": "VAR", "suffix": "T2w"},
+    ...    "/output",
+    ... )
+    '/output/sub-01/ses-01/anat/sub-01_ses-01_acq-VAR_T2w.nii.gz'
+
+    The function adds an extra leading zero to the run entity when there's a zero.
+    >>> build_path(
+    ...    "/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    ...    {"task": "rest", "run": "01", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-001_bold.nii.gz'
+
+    The function adds an extra leading zero to the run entity when it's an integer.
+    >>> build_path(
+    ...    "/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    ...    {"task": "rest", "run": 1, "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-01_bold.nii.gz'
+
+    The function doesn't add an extra leading zero to the run entity when there isn't a zero.
+    >>> build_path(
+    ...    "/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
+    ...    {"task": "rest", "run": "1", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-1_bold.nii.gz'
+
+    Entities in the original path, but not the entity dictionary, are not included.
+    >>> build_path(
+    ...    "/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    ...    {"task": "rest", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
+
+    Entities outside of the prescribed list are ignored, such as "subject"
+    >>> build_path(
+    ...    "/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    ...    {"subject": "02", "task": "rest", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
+
+    or "echo"
+    >>> build_path(
+    ...    "/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
+    ...    "/output",
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
     """
     exts = Path(filepath).suffixes
     old_ext = "".join(exts)
