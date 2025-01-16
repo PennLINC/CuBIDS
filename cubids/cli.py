@@ -17,17 +17,48 @@ logging.getLogger("datalad").setLevel(logging.ERROR)
 
 
 def _path_exists(path, parser):
-    """Ensure a given path exists."""
-    if path is None or not Path(path).exists():
-        raise parser.error(f"Path does not exist: <{path}>.")
-    return Path(path).absolute()
+    """Ensure a given path exists.
+
+    Parameters
+    ----------
+    path : str
+        Path to check for existence.
+    parser : argparse.ArgumentParser
+        Argument parser object.
+
+    Returns
+    -------
+    pathlib.Path
+        Absolute path to the given location.
+    """
+    if path is not None:
+        path = Path(path)
+
+    if path is None or not path.exists():
+        raise parser.error(f"Path does not exist: <{path.absolute()}>.")
+    return path.absolute()
 
 
 def _is_file(path, parser):
-    """Ensure a given path exists and it is a file."""
+    """Ensure a given path exists and it is a file.
+
+    Parameters
+    ----------
+    path : str
+        Path to check for existence.
+    parser : argparse.ArgumentParser
+        Argument parser object.
+
+    Returns
+    -------
+    pathlib.Path
+        Absolute path to the given location.
+    """
     path = _path_exists(path, parser)
     if not path.is_file():
-        raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
+        raise parser.error(
+            f"Path should point to a file (or symlink of file): <{path.absolute()}>."
+        )
     return path
 
 
