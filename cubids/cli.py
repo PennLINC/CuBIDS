@@ -6,7 +6,7 @@ validating BIDS datasets, merging sidecar JSON files, grouping acquisition param
 applying changes, purging associations, adding NIfTI information, copying exemplar
 subjects, undoing changes, saving with DataLad, and managing metadata fields.
 
-Each function that serves as an entry point for a CLI command in the formart of `cubids-function`
+Each function that serves as an entry point for a CLI command in the format of `cubids-function`
 is marked as deprecated and will be removed in the future. Users are advised to use the
 corresponding `cubids function` commands instead.
 """
