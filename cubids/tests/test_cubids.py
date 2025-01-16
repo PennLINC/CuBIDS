@@ -251,8 +251,8 @@ def _test_img_to_new_ext(cubids_instance):
     # Add assertions here
 
 
-def _test_get_key_name(cubids_instance):
+def _test_get_entity_value(cubids_instance):
     path = "/path/to/file.nii.gz"
     key = "subject"
-    key_name = cubids_instance.get_key_name(path, key)
+    key_name = cubids_instance.get_entity_value(path, key)
     # Add assertions here
