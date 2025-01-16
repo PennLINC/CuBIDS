@@ -90,14 +90,14 @@ def _parse_validate():
     the BIDS validator, including specifying the BIDS dataset directory, output
     file prefix, and additional validation options.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.ArgumentParser
         Configured argument parser for the `cubids validate` command.
-
-    Parameters
-    ----------
-    None
 
     Notes
     -----
@@ -223,14 +223,14 @@ def _parse_bids_version():
     This function sets up an argument parser for the `cubids bids-version` command,
     which retrieves the BIDS Validator and Schema version for a given BIDS dataset.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.ArgumentParser
         The argument parser configured for the `cubids bids-version` command.
-
-    Parameters
-    ----------
-    None
 
     Notes
     -----
@@ -381,14 +381,14 @@ def _parse_group():
     This function sets up an argument parser for the `cubids group` command,
     which is used to find key and parameter groups in a BIDS dataset.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.ArgumentParser
         The argument parser with the defined arguments.
-
-    Parameters
-    ----------
-    None
 
     Arguments
     ---------
@@ -502,11 +502,6 @@ def _parse_apply():
     This function sets up an argument parser for the `cubids apply` command,
     which applies changes specified in a TSV file to a BIDS directory.
 
-    Returns
-    -------
-    argparse.ArgumentParser
-        The argument parser with the defined arguments.
-
     Parameters
     ----------
     bids_dir : str
@@ -530,6 +525,11 @@ def _parse_apply():
     --config : str, optional
         Path to a config file for grouping. If not provided, the default config
         file from CuBIDS will be used.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the defined arguments.
     """
     parser = argparse.ArgumentParser(
         description=("cubids apply: apply the changes specified in a tsv to a BIDS directory"),
@@ -650,14 +650,14 @@ def _parse_datalad_save():
     It includes arguments for specifying the BIDS directory, a commit message, and an optional
     container image.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.ArgumentParser
         The configured argument parser.
-
-    Parameters
-    ----------
-    None
 
     Notes
     -----
@@ -736,14 +736,14 @@ def _parse_undo():
     which is used to revert the most recent commit in a BIDS dataset. It
     defines the required and optional arguments for the command.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.ArgumentParser
         The argument parser for the `cubids undo` command.
-
-    Parameters
-    ----------
-    None
 
     Notes
     -----
@@ -817,11 +817,6 @@ def _parse_copy_exemplars():
     which creates and saves a directory with one subject from each Acquisition Group
     in the BIDS dataset.
 
-    Returns
-    -------
-    argparse.ArgumentParser
-        The argument parser with the defined arguments.
-
     Parameters
     ----------
     bids_dir : str
@@ -845,6 +840,11 @@ def _parse_copy_exemplars():
         Docker image tag or Singularity image file.
     force_unlock : bool, optional
         Unlock dataset before adding nifti info (default is False).
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the defined arguments.
     """
     parser = argparse.ArgumentParser(
         description=(
@@ -964,11 +964,6 @@ def _parse_add_nifti_info():
     which adds information from NIfTI files to the sidecars of each dataset in a BIDS
     directory.
 
-    Returns
-    -------
-    argparse.ArgumentParser
-        The argument parser with the defined arguments.
-
     Parameters
     ----------
     bids_dir : str
@@ -980,6 +975,11 @@ def _parse_add_nifti_info():
         Unlock dataset before adding NIfTI info (default is False).
     container : str, optional
         Docker image tag or Singularity image file.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the defined arguments.
     """
     parser = argparse.ArgumentParser(
         description=(
@@ -1059,14 +1059,14 @@ def _parse_purge():
     which is used to purge associations from a BIDS dataset. It defines the
     required arguments and options for the command.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.ArgumentParser
         The argument parser with the defined arguments and options.
-
-    Parameters
-    ----------
-    None
 
     Notes
     -----
@@ -1158,17 +1158,19 @@ def _parse_remove_metadata_fields():
     tool `cubids remove-metadata-fields`, which is used to delete specified fields
     from the metadata of a BIDS dataset.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.ArgumentParser
         The argument parser configured for the `cubids remove-metadata-fields` CLI tool.
 
-    Parameters
-    ----------
-    None
-
-    Arguments
+    Notes
     ---------
+    The parser includes the following arguments:
+
     bids_dir : str
         The root directory of a BIDS dataset. It should contain sub-X directories and
         a dataset_description.json file.
@@ -1251,14 +1253,14 @@ def _parse_print_metadata_fields():
     unique metadata fields in a BIDS dataset. It defines the required arguments
     and their types, as well as optional arguments.
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     argparse.ArgumentParser
         The argument parser for the `cubids print-metadata-fields` command.
-
-    Parameters
-    ----------
-    None
 
     Notes
     -----
@@ -1355,7 +1357,6 @@ def _get_parser():
     argparse.ArgumentParser
         The argument parser for the "cubids" CLI.
     """
-    """Create the general "cubids" parser object."""
     from cubids import __version__
 
     parser = argparse.ArgumentParser(prog="cubids")
