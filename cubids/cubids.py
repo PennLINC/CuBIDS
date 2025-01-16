@@ -1735,7 +1735,34 @@ def get_key_name(path, key):
 
 
 def build_path(filepath, entities, out_dir):
-    """Build a new path for a file based on its BIDS entities."""
+    """Build a new path for a file based on its BIDS entities.
+
+    Parameters
+    ----------
+    filepath : str
+        The original file path.
+    entities : dict
+        A dictionary of BIDS entities.
+    out_dir : str
+        The output directory for the new file.
+
+    Returns
+    -------
+    new_path : str
+        The new file path.
+
+    Examples
+    --------
+    >>> build_path("sub-01/ses-01/anat/sub-01_ses-01_T1w.nii.gz", {"suffix": "T2w"}, "output")
+    'output/sub-01/ses-01/anat/sub-01_ses-01_T2w.nii.gz'
+
+    >>> build_path(
+    >>>    "sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    >>>    {"task": "rest", "run": "01", "acquisition": "VAR"},
+    >>>    "output",
+    >>> )
+    'output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-001_bold.nii.gz'
+    """
     exts = Path(filepath).suffixes
     old_ext = "".join(exts)
 
