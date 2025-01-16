@@ -73,6 +73,7 @@ def _parse_validate():
     parser = argparse.ArgumentParser(
         description="cubids-validate: Wrapper around the official BIDS Validator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
 
@@ -156,6 +157,7 @@ def _parse_bids_version():
     parser = argparse.ArgumentParser(
         description="cubids bids-version: Get BIDS Validator and Schema version",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
 
@@ -191,6 +193,7 @@ def _parse_bids_sidecar_merge():
     parser = argparse.ArgumentParser(
         description=("bids-sidecar-merge: merge critical keys from one sidecar to another"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     IsFile = partial(_is_file, parser=parser)
 
@@ -225,6 +228,7 @@ def _parse_group():
     parser = argparse.ArgumentParser(
         description="cubids-group: find key and parameter groups in BIDS",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
 
@@ -291,6 +295,7 @@ def _parse_apply():
     parser = argparse.ArgumentParser(
         description=("cubids-apply: apply the changes specified in a tsv to a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
     IsFile = partial(_is_file, parser=parser)
@@ -388,6 +393,7 @@ def _parse_datalad_save():
     parser = argparse.ArgumentParser(
         description=("cubids-datalad-save: perform a DataLad save on a BIDS directory"),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
 
@@ -430,6 +436,7 @@ def _parse_undo():
     parser = argparse.ArgumentParser(
         description="cubids-undo: revert most recent commit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
 
@@ -469,6 +476,7 @@ def _parse_copy_exemplars():
             "one subject from each Acquisition Group in the BIDS dataset"
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
     IsFile = partial(_is_file, parser=parser)
@@ -565,6 +573,7 @@ def _parse_add_nifti_info():
             "files to the sidecars of each dataset"
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
 
@@ -614,6 +623,7 @@ def _parse_purge():
     parser = argparse.ArgumentParser(
         description="cubids-purge: purge associations from the dataset",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
     IsFile = partial(_is_file, parser=parser)
@@ -668,6 +678,7 @@ def _parse_remove_metadata_fields():
     parser = argparse.ArgumentParser(
         description="cubids-remove-metadata-fields: delete fields from metadata",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
 
@@ -714,6 +725,7 @@ def _parse_print_metadata_fields():
     parser = argparse.ArgumentParser(
         description="cubids-print-metadata-fields: print all unique metadata fields",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
 
@@ -767,7 +779,7 @@ def _get_parser():
     """Create the general "cubids" parser object."""
     from cubids import __version__
 
-    parser = argparse.ArgumentParser(prog="cubids")
+    parser = argparse.ArgumentParser(prog="cubids", allow_abbrev=False)
     parser.add_argument("-v", "--version", action="version", version=__version__)
     subparsers = parser.add_subparsers(help="CuBIDS commands")
 
@@ -779,6 +791,7 @@ def _get_parser():
             parents=[subparser],
             help=subparser.description,
             add_help=False,
+            allow_abbrev=False,
         )
 
     return parser
