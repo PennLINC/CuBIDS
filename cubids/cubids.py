@@ -469,55 +469,19 @@ class CuBIDS(object):
         -----
         This is the function I need to spend the most time on, since it has entities hardcoded.
         """
+        new_path = build_path(
+            filepath=filepath,
+            entities=entities,
+            out_dir=str(self.path),
+        )
+
         exts = Path(filepath).suffixes
         old_ext = "".join(exts)
 
         suffix = entities["suffix"]
-        entity_file_keys = []
-
-        # Entities that may be in the filename?
-        file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
-
-        for key in file_keys:
-            if key in list(entities.keys()):
-                entity_file_keys.append(key)
 
         sub = get_key_name(filepath, "sub")
         ses = get_key_name(filepath, "ses")
-        sub_ses = sub + "_" + ses
-
-        if "run" in list(entities.keys()) and "run-0" in filepath:
-            # XXX: This adds an extra leading zero to run.
-            entities["run"] = "0" + str(entities["run"])
-
-        filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
-        filename = (
-            filename.replace("acquisition", "acq")
-            .replace("direction", "dir")
-            .replace("reconstruction", "rec")
-        )
-        if len(filename) > 0:
-            filename = sub_ses + "_" + filename + "_" + suffix + old_ext
-        else:
-            raise ValueError(f"Could not construct new filename for {filepath}")
-
-        # CHECK TO SEE IF DATATYPE CHANGED
-        # datatype may be overridden/changed if the original file is located in the wrong folder.
-        dtypes = ["anat", "func", "perf", "fmap", "dwi"]
-        dtype_orig = ""
-        for dtype in dtypes:
-            if dtype in filepath:
-                dtype_orig = dtype
-
-        if "datatype" in entities.keys():
-            dtype_new = entities["datatype"]
-            if entities["datatype"] != dtype_orig:
-                print("WARNING: DATATYPE CHANGE DETECETD")
-        else:
-            dtype_new = dtype_orig
-
-        # Construct the new filename
-        new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
 
         # Add the scan path + new path to the lists of old, new filenames
         self.old_filenames.append(filepath)
@@ -1768,3 +1732,57 @@ def get_key_name(path, key):
     for part in parts:
         if part.startswith(key + "-"):
             return part
+
+
+def build_path(filepath, entities, out_dir):
+    """Build a new path for a file based on its BIDS entities."""
+    exts = Path(filepath).suffixes
+    old_ext = "".join(exts)
+
+    suffix = entities["suffix"]
+    entity_file_keys = []
+
+    # Entities that may be in the filename?
+    file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
+
+    for key in file_keys:
+        if key in list(entities.keys()):
+            entity_file_keys.append(key)
+
+    sub = get_key_name(filepath, "sub")
+    ses = get_key_name(filepath, "ses")
+    sub_ses = sub + "_" + ses
+
+    if "run" in list(entities.keys()) and "run-0" in filepath:
+        # XXX: This adds an extra leading zero to run.
+        entities["run"] = "0" + str(entities["run"])
+
+    filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
+    filename = (
+        filename.replace("acquisition", "acq")
+        .replace("direction", "dir")
+        .replace("reconstruction", "rec")
+    )
+    if len(filename) > 0:
+        filename = sub_ses + "_" + filename + "_" + suffix + old_ext
+    else:
+        raise ValueError(f"Could not construct new filename for {filepath}")
+
+    # CHECK TO SEE IF DATATYPE CHANGED
+    # datatype may be overridden/changed if the original file is located in the wrong folder.
+    dtypes = ["anat", "func", "perf", "fmap", "dwi"]
+    dtype_orig = ""
+    for dtype in dtypes:
+        if dtype in filepath:
+            dtype_orig = dtype
+
+    if "datatype" in entities.keys():
+        dtype_new = entities["datatype"]
+        if entities["datatype"] != dtype_orig:
+            print("WARNING: DATATYPE CHANGE DETECETD")
+    else:
+        dtype_new = dtype_orig
+
+    # Construct the new filename
+    new_path = out_dir + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
+    return new_path
