@@ -270,6 +270,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     """Find unique sets of Key/Param groups across subjects.
 
     This writes out the following files:
+
     - <output_prefix>_AcqGrouping.tsv: A tsv with the mapping of subject/session to
       acquisition group.
     - <output_prefix>_AcqGrouping.json: A data dictionary for the AcqGrouping.tsv.

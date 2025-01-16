@@ -25,17 +25,17 @@ API
    :toctree: generated/
    :template: function.rst
 
-   cubids.workflows.validate
-   cubids.workflows.bids_sidecar_merge
-   cubids.workflows.group
-   cubids.workflows.apply
-   cubids.workflows.datalad_save
-   cubids.workflows.undo
-   cubids.workflows.copy_exemplars
-   cubids.workflows.add_nifti_info
-   cubids.workflows.purge
-   cubids.workflows.remove_metadata_fields
-   cubids.workflows.print_metadata_fields
+   workflows.validate
+   workflows.bids_sidecar_merge
+   workflows.group
+   workflows.apply
+   workflows.datalad_save
+   workflows.undo
+   workflows.copy_exemplars
+   workflows.add_nifti_info
+   workflows.purge
+   workflows.remove_metadata_fields
+   workflows.print_metadata_fields
 
 
 **********************************************
@@ -48,11 +48,11 @@ API
    :toctree: generated/
    :template: function.rst
 
-   cubids.metadata_merge.check_merging_operations
-   cubids.metadata_merge.merge_without_overwrite
-   cubids.metadata_merge.merge_json_into_json
-   cubids.metadata_merge.get_acq_dictionary
-   cubids.metadata_merge.group_by_acquisition_sets
+   metadata_merge.check_merging_operations
+   metadata_merge.merge_without_overwrite
+   metadata_merge.merge_json_into_json
+   metadata_merge.get_acq_dictionary
+   metadata_merge.group_by_acquisition_sets
 
 
 ***********************************
@@ -65,8 +65,8 @@ API
    :toctree: generated/
    :template: function.rst
 
-   cubids.validator.build_validator_call
-   cubids.validator.build_subject_paths
-   cubids.validator.run_validator
-   cubids.validator.parse_validator_output
-   cubids.validator.get_val_dictionary
+   validator.build_validator_call
+   validator.build_subject_paths
+   validator.run_validator
+   validator.parse_validator_output
+   validator.get_val_dictionary

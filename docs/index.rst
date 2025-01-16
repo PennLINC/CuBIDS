@@ -13,9 +13,7 @@ Contents
    usage
    cli
    example
-   ../CONTRIBUTING.rst
-   ../AUTHORS
-   ../HISTORY
+   contributing
    faq
    glossary
    api
