@@ -39,6 +39,7 @@ def validate(
     container,
     sequential,
     sequential_subjects,
+    local_validator,
     ignore_nifti_headers,
 ):
     """Run the bids validator.
@@ -55,6 +56,8 @@ def validate(
         Run the validator sequentially.
     sequential_subjects : :obj:`list` of :obj:`str`
         Filter the sequential run to only include the listed subjects.
+    local_validator : :obj:`bool`
+        Use the local bids validator.
     ignore_nifti_headers : :obj:`bool`
         Ignore NIfTI headers when validating.
     """
@@ -75,6 +78,7 @@ def validate(
             # run on full dataset
             call = build_validator_call(
                 str(bids_dir),
+                local_validator,
                 ignore_nifti_headers,
             )
             ret = run_validator(call)
@@ -154,7 +158,7 @@ def validate(
 
                     # run the validator
                     nifti_head = ignore_nifti_headers
-                    call = build_validator_call(tmpdirname, nifti_head)
+                    call = build_validator_call(tmpdirname, local_validator, nifti_head)
                     ret = run_validator(call)
                     # parse output
                     if ret.returncode != 0:

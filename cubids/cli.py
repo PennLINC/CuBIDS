@@ -105,9 +105,13 @@ def _path_exists(path, parser):
     argparse.ArgumentError
         If the path does not exist or is None.
     """
-    if path is None or not Path(path).exists():
-        raise parser.error(f"Path does not exist: <{path}>.")
-    return Path(path).absolute()
+    if path is not None:
+        path = Path(path)
+
+    if path is None or not path.exists():
+        raise parser.error(f"Path does not exist: <{path.absolute()}>.")
+    return path.absolute()
+
 
 
 def _is_file(path, parser):
@@ -132,12 +136,14 @@ def _is_file(path, parser):
     """
     path = _path_exists(path, parser)
     if not path.is_file():
-        raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
+        raise parser.error(
+            f"Path should point to a file (or symlink of file): <{path.absolute()}>."
+        )
     return path
 
 
 def _parse_validate():
-    """Create and configure the argument parser for the CuBIDS validation CLI.
+    """Create and configure the argument parser for the "cubids validate" command.
 
     This function sets up an argument parser with various options for running
     the BIDS validator, including specifying the BIDS dataset directory, output
@@ -146,7 +152,7 @@ def _parse_validate():
     Returns
     -------
     argparse.ArgumentParser
-        Configured argument parser for the CuBIDS validation CLI.
+        Configured argument parser for the "cubids validate" command.
 
     Parameters
     ----------
@@ -225,6 +231,13 @@ def _parse_validate():
             "sub-01 sub-02 sub-03"
         ),
         nargs="+",
+        required=False,
+    )
+    parser.add_argument(
+        "--local-validator",
+        action="store_true",
+        default=False,
+        help="Lets user run a locally installed BIDS validator. Default is set to False ",
         required=False,
     )
     return parser
