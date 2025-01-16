@@ -1761,31 +1761,42 @@ def build_path(filepath, entities, out_dir):
     ... )
     '/output/sub-01/ses-01/anat/sub-01_ses-01_acq-VAR_T2w.nii.gz'
 
-    The function adds an extra leading zero to the run entity when there's a zero.
+    The function does not add an extra leading zero to the run entity when it's a string.
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
-    ...    {"task": "rest", "run": "01", "acquisition": "VAR", "suffix": "bold"},
+    ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
     ... )
-    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-001_bold.nii.gz'
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
-    The function adds an extra leading zero to the run entity when it's an integer.
+    The function adds an extra leading zero to the run entity when it's an integer
+    and the original filename has a leading zero.
     >>> build_path(
-    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
-    ...    {"task": "rest", "run": 1, "acquisition": "VAR", "suffix": "bold"},
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-00001_bold.nii.gz",
+    ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
     ... )
-    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-01_bold.nii.gz'
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-00002_bold.nii.gz'
+
+    The function does not add an extra leading zero to the run entity when it's an integer
+    and the original filename doesn't have a leading zero.
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
+    ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
     The function doesn't add an extra leading zero to the run entity when there isn't a zero.
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
-    ...    {"task": "rest", "run": "1", "acquisition": "VAR", "suffix": "bold"},
+    ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
     ... )
-    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-1_bold.nii.gz'
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
-    Entities in the original path, but not the entity dictionary, are not included.
+    Entities in the original path, but not the entity dictionary, are not included,
+    like run in this case.
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "suffix": "bold"},
