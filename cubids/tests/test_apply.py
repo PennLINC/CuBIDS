@@ -146,7 +146,13 @@ bidsuri_intendedfor_cs = {
 
 @pytest.fixture(scope="module")
 def files_data():
-    """A dictionary describing a CuBIDS files tsv file for testing."""
+    """A dictionary describing a CuBIDS files tsv file for testing.
+
+    Returns
+    -------
+    dict
+        A dictionary containing file data for longitudinal and cross-sectional datasets.
+    """
     dict_ = {
         "longitudinal": {
             "ParamGroup": [1, 1, 1, 1],
@@ -196,7 +202,13 @@ def files_data():
 
 @pytest.fixture(scope="module")
 def summary_data():
-    """A dictionary describing a CuBIDS summary tsv file for testing."""
+    """A dictionary describing a CuBIDS summary tsv file for testing.
+
+    Returns
+    -------
+    dict
+        A dictionary containing summary data for CuBIDS.
+    """
     dict_ = {
         "RenameEntitySet": [
             None,
@@ -264,7 +276,30 @@ def test_cubids_apply_intendedfor(
     intended_for,
     expected,
 ):
-    """Test cubids apply with different IntendedFor types."""
+    """Test cubids apply with different IntendedFor types.
+
+    Parameters
+    ----------
+    tmpdir : LocalPath
+        Temporary directory for the test.
+    summary_data : dict
+        Summary data fixture.
+    files_data : dict
+        Files data fixture.
+    name : str
+        Name of the test case.
+    skeleton : dict
+        BIDS skeleton structure.
+    intended_for : str
+        IntendedFor field value.
+    expected : str or Exception
+        Expected result or exception.
+
+    Raises
+    ------
+    ValueError
+        If the test case is expected to raise an error.
+    """
     import json
 
     from cubids.workflows import apply

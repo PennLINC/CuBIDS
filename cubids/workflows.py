@@ -691,7 +691,7 @@ def copy_exemplars(
     """
     # Run directly from python using
     if container is None:
-        bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad)
+        bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad, force_unlock=force_unlock)
         if use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception(
