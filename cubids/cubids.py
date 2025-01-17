@@ -85,7 +85,7 @@ class CuBIDS(object):
     use_datalad : :obj:`bool`
         If True, use datalad to track changes to the BIDS dataset.
     is_longitudinal : :obj:`bool`
-        If True, includes "ses" in filepath. Default is False.
+        If True, adds "ses" in filepath.
     """
 
     def __init__(
@@ -95,7 +95,6 @@ class CuBIDS(object):
         acq_group_level="subject",
         grouping_config=None,
         force_unlock=False,
-        is_longitudinal=False,
     ):
         self.path = os.path.abspath(data_root)
         self._layout = None
@@ -113,12 +112,15 @@ class CuBIDS(object):
         self.cubids_code_dir = Path(self.path + "/code/CuBIDS").is_dir()
         self.data_dict = {}  # data dictionary for TSV outputs
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
-        self.is_longitudinal = is_longitudinal  # True if flag set, False if flag unset
+        self.is_longitudinal = self._infer_longitudinal()  # inferred from dataset structure
+
         if self.use_datalad:
             self.init_datalad()
 
         if self.is_longitudinal and self.acq_group_level == "session":
             NON_KEY_ENTITIES.remove("session")
+        elif not self.is_longitudinal and self.acq_group_level == "session":
+            raise ValueError('Data is not longitudinal, so "session" is not a valid grouping level.')
 
     @property
     def layout(self):
@@ -131,6 +133,10 @@ class CuBIDS(object):
             self.reset_bids_layout()
             # print("LAYOUT OBJECT SET")
         return self._layout
+
+    def _infer_longitudinal(self):
+        """Infer if the dataset is longitudinal based on its structure."""
+        return any("ses-" in str(f) for f in Path(self.path).rglob("*"))
 
     def reset_bids_layout(self, validate=False):
         """Reset the BIDS layout.
@@ -1766,7 +1772,7 @@ def get_entity_value(path, key):
             return part
 
 
-def build_path(filepath, entities, out_dir, is_longitudinal=False):
+def build_path(filepath, entities, out_dir, is_longitudinal):
     """Build a new path for a file based on its BIDS entities.
 
     Parameters
@@ -1778,8 +1784,8 @@ def build_path(filepath, entities, out_dir, is_longitudinal=False):
         This should include all of the entities in the filename *except* for subject and session.
     out_dir : str
         The output directory for the new file.
-    is_longitudinal : bool, optional
-        If True, add "ses" to file path. Default is False.
+    is_longitudinal : bool
+        If True, add "ses" to file path.
 
     Returns
     -------

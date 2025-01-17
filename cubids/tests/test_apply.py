@@ -295,6 +295,8 @@ def test_cubids_apply_intendedfor(
         BIDS skeleton structure.
     intended_for : str
         IntendedFor field value.
+    is_longitudinal : bool
+        Indicate whether the data structure is longitudinal or cross-sectional.
     expected : str or Exception
         Expected result or exception.
 
@@ -339,7 +341,6 @@ def test_cubids_apply_intendedfor(
             files_tsv=files_tsv,
             new_tsv_prefix=None,
             container=None,
-            is_longitudinal=is_longitudinal,
         )
 
         with open(fmap_json) as f:
@@ -357,5 +358,4 @@ def test_cubids_apply_intendedfor(
                 files_tsv=files_tsv,
                 new_tsv_prefix=None,
                 container=None,
-                is_longitudinal=is_longitudinal,
             )

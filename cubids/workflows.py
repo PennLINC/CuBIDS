@@ -432,7 +432,6 @@ def apply(
     files_tsv,
     new_tsv_prefix,
     container,
-    is_longitudinal=False,
 ):
     """Apply the tsv changes.
 
@@ -454,8 +453,6 @@ def apply(
         Path to the new tsv prefix.
     container : :obj:`str`
         Container in which to run the workflow.
-    is_longitudinal : :obj:`bool`
-        If True, includes "ses" in filepath. Default is False.
     """
     # Run directly from python using
     if container is None:
@@ -464,7 +461,6 @@ def apply(
             use_datalad=use_datalad,
             acq_group_level=acq_group_level,
             grouping_config=config,
-            is_longitudinal=is_longitudinal,
         )
         if use_datalad:
             if not bod.is_datalad_clean():

@@ -489,7 +489,7 @@ def test_tsv_merge_changes(tmp_path):
         The temporary path where the test data will be copied.
     """
     data_root = get_data(tmp_path)
-    bod = CuBIDS(data_root / "inconsistent", use_datalad=True, is_longitudinal=True)
+    bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
     bod.datalad_save()
     assert bod.is_datalad_clean()
 
@@ -950,7 +950,6 @@ def test_session_apply(tmp_path):
         data_root / "inconsistent",
         acq_group_level="session",
         use_datalad=True,
-        is_longitudinal=True,
     )
 
     ses_cubids.get_tsvs(str(tmp_path / "originals"))
