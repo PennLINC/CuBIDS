@@ -479,10 +479,7 @@ class CuBIDS(object):
             filepath=filepath,
             out_entities=entities,
             out_dir=str(self.path),
-            valid_entities=self.schema["rules"]["entities"],
-            entity_names_to_keys={
-                k: v["name"] for k, v in self.schema["objects"]["entities"].items()
-            },
+            schema=self.schema,
         )
 
         exts = Path(filepath).suffixes
@@ -1744,7 +1741,7 @@ def get_entity_value(path, key):
             return part
 
 
-def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_keys):
+def build_path(filepath, out_entities, out_dir, schema):
     """Build a new path for a file based on its BIDS entities.
 
     Parameters
@@ -1756,12 +1753,15 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
         This should include all of the entities in the filename *except* for subject and session.
     out_dir : str
         The output directory for the new file.
-    valid_entities : list of str
-        List of valid BIDS entities, based on the schema.
-        The values in this list are the names of the entities (e.g., acquisition, not acq).
-    entity_names_to_keys : dict
-        A dictionary mapping entity names to their corresponding keys, based on the BIDS schema.
-        For example, {"acquisition": "acq"}.
+    schema : dict
+        The BIDS schema. The elements that are used in this function include:
+
+        -   schema["rules"]["entities"]: a list of valid BIDS entities,
+            in the order they must appear in filenames.
+        -   schema["objects"]["entities"]: a dictionary mapping entity names
+            (e.g., acquisition) to their corresponding keys (e.g., acq).
+        -   schema["objects"]["datatypes"]: a dictionary defining the valid datatypes.
+            This function only uses the keys of this dictionary.
 
     Returns
     -------
@@ -1775,16 +1775,11 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     >>> schema_file = Path(importlib.resources.files("cubids") / "data/schema.json")
     >>> with schema_file.open() as f:
     ...    schema = json.load(f)
-    >>> valid_entities = schema["rules"]["entities"]
-    >>> entity_names_to_keys = {
-    ...     k: v["name"] for k, v in schema["objects"]["entities"].items()
-    ... }
     >>> build_path(
     ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii.gz",
     ...    {"acquisition": "VAR", "suffix": "T2w"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     '/output/sub-01/ses-01/anat/sub-01_ses-01_acq-VAR_T2w.nii.gz'
 
@@ -1793,8 +1788,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
@@ -1804,8 +1798,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-00001_bold.nii.gz",
     ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-00002_bold.nii.gz'
 
@@ -1815,8 +1808,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
     ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
@@ -1825,8 +1817,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
     ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
@@ -1836,8 +1827,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
@@ -1846,8 +1836,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"subject": "02", "task": "rest", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
@@ -1856,8 +1845,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_echo-1_bold.nii.gz'
 
@@ -1866,8 +1854,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_asl.nii.gz",
     ...    {"datatype": "perf", "acquisition": "VAR", "suffix": "asl"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     WARNING: DATATYPE CHANGE DETECTED
     '/output/sub-01/ses-01/perf/sub-01_ses-01_acq-VAR_asl.nii.gz'
@@ -1878,8 +1865,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    "/input/sub-01/func/sub-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
     ...    "/output",
-    ...    valid_entities,
-    ...    entity_names_to_keys,
+    ...    schema,
     ... )
     Traceback (most recent call last):
     ValueError: Could not extract subject or session from ...
@@ -1888,6 +1874,12 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     old_ext = "".join(exts)
 
     suffix = out_entities["suffix"]
+
+    valid_entities = schema["rules"]["entities"]
+    entity_names_to_keys = entity_names_to_keys = {
+        k: v["name"] for k, v in schema["objects"]["entities"].items()
+    }
+    valid_datatypes = list(schema["objects"]["datatypes"].keys())
 
     # Remove subject and session from the entities
     file_entities = {k: v for k, v in out_entities.items() if k not in ["subject", "session"]}
@@ -1919,9 +1911,8 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
 
     # CHECK TO SEE IF DATATYPE CHANGED
     # datatype may be overridden/changed if the original file is located in the wrong folder.
-    dtypes = ["anat", "func", "perf", "fmap", "dwi"]
     dtype_orig = ""
-    for dtype in dtypes:
+    for dtype in valid_datatypes:
         if dtype in filepath:
             dtype_orig = dtype
 
