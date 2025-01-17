@@ -1669,9 +1669,9 @@ def format_params(param_group_df, config, modality):
             if any(isinstance(x, list) for x in column_data):
                 # For array/list data, we should first define "clusters" based on the number of
                 # elements, then apply the clustering within each set of lengths.
-                # For example, if there are four runs with five elements and 10 runs with four
-                # elements, we should cluster the four-element runs separately from the
-                # five-element runs, and account for that in the clustering labels.
+                # For example, if there are four runs with five elements and 10 runs with three
+                # elements, we should cluster the five-element runs separately from the
+                # three-element runs, and account for that in the clustering labels.
                 lengths = ["x".join(str(i) for i in np.array(x).shape) for x in column_data]
                 unique_lengths = np.unique(lengths)
                 cluster_idx = 0
@@ -1707,6 +1707,21 @@ def format_params(param_group_df, config, modality):
 
                 # now add clustering_labels as a column
                 param_group_df[f"Cluster_{column_name}"] = clustering.labels_
+
+        else:
+            # We can rely on string matching for string-type fields,
+            # but arrays of strings need to be handled differently.
+            column_data = param_group_df[column_name].tolist()
+
+            if any(isinstance(x, list) for x in column_data):
+                cluster_idx = 0
+
+                column_data = ["|&|".join(str(val) for val in cell) for cell in column_data]
+                unique_vals = np.unique(column_data)
+                for val in unique_vals:
+                    sel_rows = [i for i, x in enumerate(column_data) if x == val]
+                    param_group_df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
+                    cluster_idx += 1
 
     return param_group_df
 
