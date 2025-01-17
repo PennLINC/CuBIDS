@@ -264,5 +264,5 @@ hoverxref_roles = [
 # sphinx_copybutton
 # -----------------------------------------------------------------------------
 # Configuration for sphinx_copybutton to remove shell prompts, i.e. $
-copybutton_prompt_text = r'^\$ '  # matching lines starting with "$ "
+copybutton_prompt_text = r'^(\.\.\s+|(\s+)?\$) ' # matching lines starting with "$ "
 copybutton_only_copy_prompt_lines = False  # ensures all lines are copied, even those without a prompt
