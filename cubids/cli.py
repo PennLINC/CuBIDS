@@ -554,7 +554,7 @@ def _parse_apply():
     )
     parser.add_argument(
         "edited_summary_tsv",
-        type=IsFile,
+        type=Path,
         action="store",
         help=(
             "path to the _summary.tsv that has been edited "
@@ -566,7 +566,7 @@ def _parse_apply():
     )
     parser.add_argument(
         "files_tsv",
-        type=IsFile,
+        type=Path,
         action="store",
         help=(
             "path to the _files.tsv that has been edited "
@@ -862,7 +862,7 @@ def _parse_copy_exemplars():
         allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
-    IsFile = partial(_is_file, parser=parser)
+    # IsFile = partial(_is_file, parser=parser)
 
     parser.add_argument(
         "bids_dir",
@@ -876,7 +876,7 @@ def _parse_copy_exemplars():
     )
     parser.add_argument(
         "exemplars_dir",
-        type=PathExists,
+        type=Path,
         action="store",
         help=(
             "name of the directory to create where to store exemplar dataset. "
@@ -887,7 +887,7 @@ def _parse_copy_exemplars():
     )
     parser.add_argument(
         "exemplars_tsv",
-        type=IsFile,
+        type=Path,
         action="store",
         help=(
             "path to the .tsv that lists one "
