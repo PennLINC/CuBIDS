@@ -259,3 +259,10 @@ hoverxref_roles = [
     "term",
     "footcite",
 ]
+
+# -----------------------------------------------------------------------------
+# sphinx_copybutton
+# -----------------------------------------------------------------------------
+# Configuration for sphinx_copybutton to remove shell prompts, i.e. $
+copybutton_prompt_text = "$ "
+copybutton_only_copy_prompt_lines = False  # ensures all lines are copied, even those without a prompt
