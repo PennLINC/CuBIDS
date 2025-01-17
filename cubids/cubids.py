@@ -1841,7 +1841,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
-    Entities outside of the prescribed list are ignored, such as "subject"...
+    The "subject" and "session" entities are ignored.
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"subject": "02", "task": "rest", "acquisition": "VAR", "suffix": "bold"},
@@ -1851,7 +1851,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
-    or "echo".
+    But uncommon (but BIDS-valid) entities, like echo, will work
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
@@ -1859,7 +1859,7 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
     ...    valid_entities,
     ...    entity_names_to_keys,
     ... )
-    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_echo-1_bold.nii.gz'
 
     It can change the datatype, but will warn the user.
     >>> build_path(
