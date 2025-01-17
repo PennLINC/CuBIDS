@@ -10,8 +10,8 @@ Installation
     We **strongly recommend** using ``CuBIDS`` with environment management.
     For this, we recommend `miniforge <https://github.com/conda-forge/miniforge>`_.
 
-Once you've installed conda,
-initialize a new conda environment (for example, named ``cubids``) as follows:
+Once you've installed mamba,
+initialize a new mamba environment (for example, named ``cubids``) as follows:
 
 .. code-block:: console
 
