@@ -84,8 +84,6 @@ class CuBIDS(object):
         A data dictionary for TSV outputs.
     use_datalad : :obj:`bool`
         If True, use datalad to track changes to the BIDS dataset.
-    is_longitudinal : :obj:`bool`
-        If True, adds "ses" in filepath.
     """
 
     def __init__(
