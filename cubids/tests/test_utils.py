@@ -1,6 +1,5 @@
 """Tests for the utils module."""
 
-import numpy as np
 import pandas as pd
 
 from cubids.cubids import format_params
