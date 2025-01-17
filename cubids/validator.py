@@ -74,7 +74,8 @@ def build_subject_paths(bids_dir):
     Returns
     -------
     dict
-        A dictionary where the keys are subject labels and the values are lists of file paths associated with each subject.
+        A dictionary where the keys are subject labels and the values are
+        lists of file paths associated with each subject.
 
     Raises
     ------

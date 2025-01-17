@@ -210,9 +210,11 @@ def print_merges(merge_list):
         A list of tuples where each tuple contains two elements:
 
         - src_id : tuple
-            The source identifier, where the last element is the source ID and the first element is the source name.
+            The source identifier, where the last element is the source ID and
+            the first element is the source name.
         - dest_id : tuple
-            The destination identifier, where the last element is the destination ID and the first element is the destination name.
+            The destination identifier, where the last element is the destination
+            ID and the first element is the destination name.
 
     Returns
     -------
