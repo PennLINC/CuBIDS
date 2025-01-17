@@ -1,4 +1,8 @@
-"""Tools for merging metadata."""
+"""Metadata merging utilities for CuBIDS.
+
+This module provides utilities for merging metadata in CuBIDS, including functions
+for checking merging operations, grouping acquisitions, and handling metadata fields.
+"""
 
 import json
 from collections import defaultdict
@@ -179,7 +183,18 @@ def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
 
 
 def is_nan(val):
-    """Return True if val is NaN."""
+    """Check if the given value is NaN (Not a Number).
+
+    Parameters
+    ----------
+    val : any
+        The value to check.
+
+    Returns
+    -------
+    bool
+        True if the value is NaN, False otherwise.
+    """
     if not isinstance(val, float):
         return False
 
@@ -187,7 +202,25 @@ def is_nan(val):
 
 
 def print_merges(merge_list):
-    """Print formatted text of merges."""
+    """Print formatted text of merges.
+
+    Parameters
+    ----------
+    merge_list : list of tuple
+        A list of tuples where each tuple contains two elements:
+
+        - src_id : tuple
+            The source identifier, where the last element is the source ID and
+            the first element is the source name.
+        - dest_id : tuple
+            The destination identifier, where the last element is the destination
+            ID and the first element is the destination name.
+
+    Returns
+    -------
+    str
+        A formatted string representing the merges, with each merge on a new line.
+    """
     merge_strings = []
     for src_id, dest_id in merge_list:
         src_id_str = f"{src_id[-1]}:{src_id[0]}"
