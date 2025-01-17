@@ -39,6 +39,7 @@ def validate(
     container,
     sequential,
     sequential_subjects,
+    local_validator,
     ignore_nifti_headers,
 ):
     """Run the bids validator.
@@ -55,6 +56,8 @@ def validate(
         Run the validator sequentially.
     sequential_subjects : :obj:`list` of :obj:`str`
         Filter the sequential run to only include the listed subjects.
+    local_validator : :obj:`bool`
+        Use the local bids validator.
     ignore_nifti_headers : :obj:`bool`
         Ignore NIfTI headers when validating.
     """
@@ -75,6 +78,7 @@ def validate(
             # run on full dataset
             call = build_validator_call(
                 str(bids_dir),
+                local_validator,
                 ignore_nifti_headers,
             )
             ret = run_validator(call)
@@ -154,7 +158,7 @@ def validate(
 
                     # run the validator
                     nifti_head = ignore_nifti_headers
-                    call = build_validator_call(tmpdirname, nifti_head)
+                    call = build_validator_call(tmpdirname, local_validator, nifti_head)
                     ret = run_validator(call)
                     # parse output
                     if ret.returncode != 0:
@@ -231,7 +235,7 @@ def validate(
             linked_output_prefix_t,
         ]
         if ignore_nifti_headers:
-            cmd.append("--ignore_nifti_headers")
+            cmd.append("--ignore-nifti-headers")
 
     elif container_type == "singularity":
         cmd = [
@@ -250,7 +254,7 @@ def validate(
             linked_output_prefix_t,
         ]
         if ignore_nifti_headers:
-            cmd.append("--ignore_nifti_headers")
+            cmd.append("--ignore-nifti-headers")
 
         if sequential:
             cmd.append("--sequential")
@@ -467,7 +471,7 @@ def apply(
             str(new_tsv_prefix),
             raise_on_error=False,
         )
-        sys.exit(0)
+        return
 
     # Run it through a container
     container_type = _get_container_type(container)
@@ -687,7 +691,7 @@ def copy_exemplars(
     """
     # Run directly from python using
     if container is None:
-        bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad)
+        bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad, force_unlock=force_unlock)
         if use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception(
