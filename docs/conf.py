@@ -56,7 +56,7 @@ extensions = [
     "sphinx_gallery.load_style",
     "sphinxarg.ext",  # argparse extension
     "sphinxcontrib.bibtex",  # bibtex-based bibliographies
-    "sphinx_design",   # for adding in-line badges etc
+    "sphinx_design",  # for adding in-line badges etc
 ]
 
 # Mock modules in autodoc:
@@ -266,4 +266,6 @@ hoverxref_roles = [
 # -----------------------------------------------------------------------------
 # Configuration for sphinx_copybutton to remove shell prompts, i.e. $
 copybutton_prompt_text = "$ "
-copybutton_only_copy_prompt_lines = False  # ensures all lines are copied, even those without a prompt
+copybutton_only_copy_prompt_lines = (
+    False  # ensures all lines are copied, even those without a prompt
+)

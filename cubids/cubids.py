@@ -120,7 +120,9 @@ class CuBIDS(object):
         if self.is_longitudinal and self.acq_group_level == "session":
             NON_KEY_ENTITIES.remove("session")
         elif not self.is_longitudinal and self.acq_group_level == "session":
-            raise ValueError('Data is not longitudinal, so "session" is not a valid grouping level.')
+            raise ValueError(
+                'Data is not longitudinal, so "session" is not a valid grouping level.'
+            )
 
     @property
     def layout(self):
