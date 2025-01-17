@@ -56,6 +56,7 @@ extensions = [
     "sphinx_gallery.load_style",
     "sphinxarg.ext",  # argparse extension
     "sphinxcontrib.bibtex",  # bibtex-based bibliographies
+    "sphinx_design",   # for adding in-line badges etc
 ]
 
 # Mock modules in autodoc:
