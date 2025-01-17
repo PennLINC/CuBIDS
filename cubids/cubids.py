@@ -1744,6 +1744,9 @@ def get_entity_value(path, key):
 def build_path(filepath, out_entities, out_dir, schema):
     """Build a new path for a file based on its BIDS entities.
 
+    This function could ultimately be replaced with bids.BIDSLayout.build_path(),
+    but that method doesn't use the schema.
+
     Parameters
     ----------
     filepath : str
@@ -1871,7 +1874,7 @@ def build_path(filepath, out_entities, out_dir, schema):
 
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-meg_bold.nii.gz",
-    ...    {"datatype": "func", "acquisition": "VAR", "suffix": "bold"},
+    ...    {"datatype": "func", "acquisition": "VAR", "task": "meg", "suffix": "bold"},
     ...    "/output",
     ...    schema,
     ... )
