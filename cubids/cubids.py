@@ -1867,6 +1867,17 @@ def build_path(filepath, out_entities, out_dir, schema):
     WARNING: DATATYPE CHANGE DETECTED
     '/output/sub-01/ses-01/perf/sub-01_ses-01_acq-VAR_asl.nii.gz'
 
+    The datatype change is subject to false positives.
+
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-meg_bold.nii.gz",
+    ...    {"datatype": "func", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ...    schema,
+    ... )
+    WARNING: DATATYPE CHANGE DETECTED
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-meg_acq-VAR_bold.nii.gz'
+
     It expects a longitudinal structure, so providing a cross-sectional filename won't work.
     XXX: This is a bug.
 
@@ -1920,6 +1931,8 @@ def build_path(filepath, out_entities, out_dir, schema):
 
     # CHECK TO SEE IF DATATYPE CHANGED
     # datatype may be overridden/changed if the original file is located in the wrong folder.
+    # XXX: This check for the datatype is fragile and should be improved.
+    # For example, what if we have sub-01/func/sub-01_task-anatomy_bold.nii.gz?
     dtype_orig = ""
     for dtype in valid_datatypes:
         if dtype in filepath:
