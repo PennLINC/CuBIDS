@@ -862,7 +862,7 @@ def _parse_copy_exemplars():
         allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
-    IsFile = partial(_is_file, parser=parser)
+    #IsFile = partial(_is_file, parser=parser)
 
     parser.add_argument(
         "bids_dir",
