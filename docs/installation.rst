@@ -56,7 +56,10 @@ and will be implemented automatically when `cubids validate` is called
 
 .. dropdown:: If there is no Internet connection on compute nodes
 
-    You should run one of these commands below, after installing deno, that downloads the latest version 
+    If your HPC doesn't allow internet access on its compute nodes, it won't be able to run the online 
+    version of the BIDS validator. In that scenario, you need to install the BIDS validator on your HPC 
+    and then point to the installed version in your cubids validate calls. 
+    To do that, you should run one of these commands below, after installing deno, that downloads the latest version 
     of the bids-validator in your virtual environment either by installing a lightscript version 
     (into ``$HOME/.deno/bin``) or by compiling, respectively:
 
