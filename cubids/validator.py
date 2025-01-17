@@ -1,4 +1,8 @@
-"""Methods for validating BIDS datasets."""
+"""Methods for validating BIDS datasets.
+
+This module provides functions for validating BIDS datasets, including building
+subprocess commands for the BIDS validator and handling validation results.
+"""
 
 import glob
 import json
@@ -60,7 +64,23 @@ def get_bids_validator_version():
 
 
 def build_subject_paths(bids_dir):
-    """Build a list of BIDS dirs with 1 subject each."""
+    """Build a dictionary of BIDS directories with one subject each.
+
+    Parameters
+    ----------
+    bids_dir : str
+        The root directory of the BIDS dataset.
+
+    Returns
+    -------
+    dict
+        A dictionary where the keys are subject labels and the values are lists of file paths associated with each subject.
+
+    Raises
+    ------
+    ValueError
+        If no subjects are found in the specified directory.
+    """
     bids_dir = str(bids_dir)
     if not bids_dir.endswith("/"):
         bids_dir += "/"
@@ -88,7 +108,21 @@ def build_subject_paths(bids_dir):
 
 
 def build_first_subject_path(bids_dir, subject):
-    """Build a list of BIDS dirs with 1 subject each."""
+    """Build a dictionary containing BIDS directory paths for a single subject.
+
+    Parameters
+    ----------
+    bids_dir : str
+        The root directory of the BIDS dataset.
+    subject : str
+        The path to the subject directory.
+
+    Returns
+    -------
+    dict
+        A dictionary where the key is the subject label and the value is a list of file paths
+        within the subject directory and the root BIDS directory.
+    """
     bids_dir = str(bids_dir)
     if not bids_dir.endswith("/"):
         bids_dir += "/"
@@ -224,7 +258,7 @@ def extract_summary_info(output):
 
 
 def update_dataset_description(path, new_info):
-    """Update or append information to dataset_description.json.
+    """Update or append information to dataset_description.json with new information.
 
     Parameters
     ----------
