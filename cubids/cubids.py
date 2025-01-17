@@ -107,7 +107,7 @@ class CuBIDS(object):
         self.acq_group_level = acq_group_level
         self.scans_txt = None  # txt file of scans to purge (for purge only)
         self.force_unlock = force_unlock  # force unlock for add-nifti-info
-        self.cubids_code_dir = Path(self.path + "/code/CuBIDS").is_dir()
+        self.cubids_code_dir = (Path(self.path) / "code" / "CuBIDS").is_dir()
         self.data_dict = {}  # data dictionary for TSV outputs
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
         if self.use_datalad:
@@ -169,8 +169,8 @@ class CuBIDS(object):
         """
         # check if BIDS_ROOT/code/CuBIDS exists
         if not self.cubids_code_dir:
-            subprocess.run(["mkdir", self.path + "/code"])
-            subprocess.run(["mkdir", self.path + "/code/CuBIDS/"])
+            subprocess.run(["mkdir", os.path.join(self.path, "code")])
+            subprocess.run(["mkdir", os.path.join(self.path, "code", "CuBIDS")])
             self.cubids_code_dir = True
         return self.cubids_code_dir
 
@@ -251,7 +251,7 @@ class CuBIDS(object):
         # loop through all niftis in the bids dir
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
-            if "/." in str(path):
+            if any(part.startswith('.') for part in path.parts):
                 continue
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
@@ -328,15 +328,15 @@ class CuBIDS(object):
         self.old_filenames = []
         self.new_filenames = []
 
-        if "/" not in str(summary_tsv):
+        if os.sep not in str(summary_tsv):
             if not self.cubids_code_dir:
                 self.create_cubids_code_dir()
-            summary_tsv = self.path + "/code/CuBIDS/" + summary_tsv
+            summary_tsv = Path(self.path) / "code" / "CuBIDS" / summary_tsv
 
-        if "/" not in str(files_tsv):
+        if os.sep not in str(files_tsv):
             if not self.cubids_code_dir:
                 self.create_cubids_code_dir()
-            files_tsv = self.path + "/code/CuBIDS/" + files_tsv
+            files_tsv = Path(self.path) / "code" / "CuBIDS" / files_tsv
 
         summary_df = pd.read_table(summary_tsv)
         files_df = pd.read_table(files_tsv)
@@ -392,7 +392,7 @@ class CuBIDS(object):
 
             for row in range(len(files_df)):
                 file_path = self.path + files_df.loc[row, "FilePath"]
-                if Path(file_path).exists() and "/fmap/" not in file_path:
+                if Path(file_path).exists() and Path("fmap") not in Path(file_path).parts:
                     key_param_group = files_df.loc[row, "KeyParamGroup"]
 
                     if key_param_group in to_change:
@@ -505,7 +505,7 @@ class CuBIDS(object):
 
         # MAKE SURE THESE AREN'T COVERED BY get_associations!!!
         # Update DWI-specific files
-        if "/dwi/" in filepath:
+        if "dwi" in Path(filepath).parts:
             # add the bval and bvec if there
             bval_old = img_to_new_ext(filepath, ".bval")
             bval_new = img_to_new_ext(new_path, ".bval")
@@ -524,7 +524,7 @@ class CuBIDS(object):
         old_suffix = parse_file_entities(filepath)["suffix"]
         scan_end = "_" + old_suffix + old_ext
 
-        if "_task-" in filepath:
+        if "_task-" in Path(filepath).parts:
             old_events = filepath.replace(scan_end, "_events.tsv")
             if Path(old_events).exists():
                 self.old_filenames.append(old_events)
@@ -547,7 +547,7 @@ class CuBIDS(object):
             self.new_filenames.append(new_physio)
 
         # Update ASL-specific files
-        if "/perf/" in filepath:
+        if "perf" in Path(filepath).parts:
             old_context = filepath.replace(scan_end, "_aslcontext.tsv")
             if Path(old_context).exists():
                 self.old_filenames.append(old_context)
@@ -577,7 +577,7 @@ class CuBIDS(object):
                 self.new_filenames.append(new_labeling)
 
         # RENAME INTENDED FORS!
-        ses_path = self.path + "/" + sub + "/" + ses
+        ses_path = Path(self.path) / sub / ses
         files_with_if = []
         files_with_if += Path(ses_path).rglob("fmap/*.json")
         files_with_if += Path(ses_path).rglob("perf/*_m0scan.json")
@@ -655,7 +655,7 @@ class CuBIDS(object):
         if os.sep not in str(exemplars_tsv):
             if not self.cubids_code_dir:
                 self.create_cubids_code_dir()
-            exemplars_tsv = self.path + "/code/CuBIDS/" + exemplars_tsv
+            exemplars_tsv = Path(self.path) / "code" / "CuBIDS" / exemplars_tsv
 
         # load the exemplars tsv
         subs = pd.read_table(exemplars_tsv)
@@ -674,15 +674,15 @@ class CuBIDS(object):
         # cast list to a set to drop duplicates, then convert back to list
         unique_subs = list(set(unique["subject"].tolist()))
         for subid in unique_subs:
-            source = str(self.path) + "/" + subid
-            dest = exemplars_dir + "/" + subid
+            source = Path(self.path) / subid
+            dest = Path(exemplars_dir) / subid
             # Copy the content of source to destination
             copytree(source, dest)
 
         # Copy the dataset_description.json
         copyfile(
-            str(self.path) + "/" + "dataset_description.json",
-            exemplars_dir + "/" + "dataset_description.json",
+            source = os.path.join(self.path, "dataset_description.json"),
+            destination = os.path.join(exemplars_dir, "dataset_description.json"),
         )
 
         s1 = "Copied one subject from each Acquisition Group "
@@ -708,7 +708,7 @@ class CuBIDS(object):
         with open(scans_txt, "r") as fd:
             reader = csv.reader(fd)
             for row in reader:
-                scans.append(self.path + "/" + str(row[0]))
+                scans.append(os.path.join(self.path, str(row[0])))
 
         # check to ensure scans are all real files in the ds!
 
@@ -772,14 +772,14 @@ class CuBIDS(object):
 
             # ensure association is not an IntendedFor reference!
             if ".nii" not in str(path):
-                if "/dwi/" in str(path):
+                if "dwi" in Path(path).parts:
                     # add the bval and bvec if there
                     if Path(img_to_new_ext(str(path), ".bval")).exists():
                         to_remove.append(img_to_new_ext(str(path), ".bval"))
                     if Path(img_to_new_ext(str(path), ".bvec")).exists():
                         to_remove.append(img_to_new_ext(str(path), ".bvec"))
 
-                if "/func/" in str(path):
+                if "func" in Path(path).parts:
                     # add tsvs
                     tsv = img_to_new_ext(str(path), ".tsv").replace("_bold", "_events")
                     if Path(tsv).exists():
@@ -804,7 +804,7 @@ class CuBIDS(object):
 
             path_prefix = str(Path(self.path).parent)
 
-            with open(path_prefix + "/" + "_full_cmd.sh", "w") as fo:
+            with open(os.path.join(path_prefix, "_full_cmd.sh"), "w") as fo:
                 fo.write("#!/bin/bash\n")
                 fo.write(full_cmd)
 
@@ -813,12 +813,12 @@ class CuBIDS(object):
             else:
                 cmt = "Purged Parameter Groups marked for removal"
 
-            purge_file = path_prefix + "/" + "_full_cmd.sh"
+            purge_file = os.path.join(path_prefix, "_full_cmd.sh")
             if self.use_datalad:
                 self.datalad_handle.run(cmd=["bash", purge_file], message=cmt)
             else:
                 subprocess.run(
-                    ["bash", path_prefix + "/" + "_full_cmd.sh"],
+                    ["bash", purge_file],
                     stdout=subprocess.PIPE,
                     cwd=path_prefix,
                 )
@@ -835,7 +835,11 @@ class CuBIDS(object):
         but with a different extension.
         """
         # get all assocation files of a nifti image
-        no_ext_file = str(nifti).split("/")[-1].split(".")[0]
+        filename = os.path.basename(nifti)
+
+        # Remove the file extension to get the base name without extension
+        no_ext_file = os.path.splitext(filename)[0]
+        
         associations = []
         for path in Path(self.path).rglob(f"sub-*/**/{no_ext_file}.*"):
             if ".nii.gz" not in str(path):
@@ -913,11 +917,11 @@ class CuBIDS(object):
                 to_include.append(filepath)
 
         # get the modality associated with the entity set
-        modalities = ["/dwi/", "/anat/", "/func/", "/perf/", "/fmap/"]
+        modalities = ["dwi", "anat", "func", "perf", "fmap"]
         modality = ""
         for mod in modalities:
             if mod in filepath:
-                modality = mod.replace("/", "").replace("/", "")
+                modality = mod
 
         if modality == "":
             print("Unusual Modality Detected")
@@ -1216,13 +1220,13 @@ class CuBIDS(object):
 
         # check if path_prefix is absolute or relative
         # if relative, put output in BIDS_ROOT/code/CuBIDS/ dir
-        if "/" not in path_prefix:
+        if os.sep not in path_prefix:
             # path is relative
-            # first check if code/CuBIDS dir exits
+            # first check if code/CuBIDS dir exists
             # if not, create it
             self.create_cubids_code_dir()
             # send outputs to code/CuBIDS in BIDS tree
-            path_prefix = self.path + "/code/CuBIDS/" + path_prefix
+            path_prefix = str(Path(self.path) / "code" / "CuBIDS" / path_prefix)
 
         big_df, summary = self.get_param_groups_dataframes()
 
@@ -1259,7 +1263,7 @@ class CuBIDS(object):
 
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
-            if "/." in str(path):
+            if any(part.startswith('.') for part in path.parts):
                 continue
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
@@ -1403,7 +1407,7 @@ def _get_participant_relative_path(scan):
     This is what will appear in the IntendedFor field of any association.
 
     """
-    return "/".join(Path(scan).parts[-3:])
+    return Path(scan).parts[-3:]
 
 
 def _get_bidsuri(filename, dataset_root):
