@@ -142,8 +142,7 @@ def test_format_params():
 
 
 def compare_group_assignments(list1, list2):
-    """
-    Compare two lists for equality based on group assignments.
+    """Compare two lists for equality based on group assignments.
 
     This function checks if two lists can be considered equal based on their group assignments.
     The actual values in the lists do not matter, only the group assignments do. Each unique value
@@ -166,6 +165,11 @@ def compare_group_assignments(list1, list2):
     --------
     >>> list1 = [1, 2, 1, 3, 2]
     >>> list2 = ['a', 'b', 'a', 'c', 'b']
+    >>> compare_group_assignments(list1, list2)
+    True
+
+    >>> list1 = [1, 2, 1, 3, 2]
+    >>> list2 = ['b', 'd', 'b', 'q', 'd']
     >>> compare_group_assignments(list1, list2)
     True
 
