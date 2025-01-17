@@ -58,7 +58,7 @@ and will be implemented automatically when `cubids validate` is called
 
     You should run one of these commands below, after installing deno, that downloads the latest version 
     of the bids-validator in your virtual environment either by installing a lightscript version 
-    (into $HOME/.deno/bin) or by compiling, respectively:
+    (into ``$HOME/.deno/bin``) or by compiling, respectively:
 
     ..  code-block:: console
 
