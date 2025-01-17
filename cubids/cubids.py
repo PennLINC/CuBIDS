@@ -477,6 +477,7 @@ class CuBIDS(object):
             filepath=filepath,
             entities=entities,
             out_dir=str(self.path),
+            is_longitudinal=self.is_longitudinal,
         )
 
         exts = Path(filepath).suffixes
@@ -608,6 +609,7 @@ class CuBIDS(object):
                         data["IntendedFor"].remove(item)
                         # add new filename
                         data["IntendedFor"].append(_get_participant_relative_path(new_path))
+
                     if item == _get_bidsuri(filepath, self.path):
                         # remove old filename
                         data["IntendedFor"].remove(item)
