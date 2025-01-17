@@ -313,7 +313,8 @@ class CuBIDS(object):
 
         Notes
         -----
-        - This method assumes that the NIfTI files are organized in a BIDS-compliant directory structure.
+        - This method assumes that the NIfTI files are organized in a BIDS-compliant
+            directory structure.
         - The method will skip any files in hidden directories (directories starting with a dot).
         - If a JSON sidecar file does not exist for a NIfTI file, it will be skipped.
         """
@@ -917,7 +918,8 @@ class CuBIDS(object):
         Returns
         -------
         associations : list of str
-            A list of paths to files associated with the given NIfTI file, excluding the NIfTI file itself.
+            A list of paths to files associated with the given NIfTI file, excluding
+            the NIfTI file itself.
         """
         # get all assocation files of a nifti image
         no_ext_file = str(nifti).split("/")[-1].split(".")[0]
@@ -1063,15 +1065,19 @@ class CuBIDS(object):
         ----------------------
         - ManualCheck: Column where users mark groups to manually check.
         - Notes: Column to mark notes about the parameter group.
-        - RenameEntitySet: Auto-generated suggested rename of Non-Dominant Groups based on variant scanning parameters.
+        - RenameEntitySet: Auto-generated suggested rename of Non-Dominant Groups
+            based on variant scanning parameters.
         - Counts: Number of files in the parameter group.
         - Modality: MRI image type.
         - MergeInto: Column to mark groups to remove with a '0'.
         - FilePath: Location of file.
         - EntitySetCount: Number of participants in an Entity Set.
-        - EntitySet: A set of scans whose filenames share all BIDS filename key-value pairs, excluding subject and session.
-        - ParamGroup: The set of scans with identical metadata parameters in their sidecars (defined within an Entity Set and denoted numerically).
-        - KeyParamGroup: Entity Set name and Param Group number separated by a double underscore.
+        - EntitySet: A set of scans whose filenames share all BIDS filename key-value
+            pairs, excluding subject and session.
+        - ParamGroup: The set of scans with identical metadata parameters in their
+            sidecars (defined within an Entity Set and denoted numerically).
+        - KeyParamGroup: Entity Set name and Param Group number separated by a double
+            underscore.
         """
         sidecar_params = self.grouping_config.get("sidecar_params")
         for mod in sidecar_params.keys():
@@ -2034,7 +2040,6 @@ def format_params(param_group_df, config, modality):
 
 def _order_columns(df):
     """Organize columns of the summary and files DataFrames.
-
 
     Parameters
     ----------
