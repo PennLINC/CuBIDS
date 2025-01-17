@@ -1889,8 +1889,10 @@ def build_path(filepath, out_entities, out_dir, valid_entities, entity_names_to_
 
     suffix = out_entities["suffix"]
 
+    # Remove subject and session from the entities
+    file_entities = {k: v for k, v in out_entities.items() if k not in ["subject", "session"]}
     # Limit file entities to valid entities from BIDS (sorted in right order)
-    file_entities = {k: out_entities[k] for k in valid_entities if k in out_entities}
+    file_entities = {k: out_entities[k] for k in valid_entities if k in file_entities}
     # Replace entity names with keys (e.g., acquisition with acq)
     file_entities = {entity_names_to_keys[k]: v for k, v in file_entities.items()}
 
