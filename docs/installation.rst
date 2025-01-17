@@ -60,11 +60,11 @@ and will be implemented automatically when `cubids validate` is called
     of the bids-validator in your virtual environment either by installing a lightscript version 
     (into $HOME/.deno/bin) or by compiling, respectively:
 
-    However, you can also install a lightweight script (into $HOME/.deno/bin):
-
     ..  code-block:: console
 
         $ deno install -ERN -g -n bids-validator jsr:@bids/validator
+    
+    or:
 
     ..  code-block:: console
 
