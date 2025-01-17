@@ -1,4 +1,8 @@
-"""Main module."""
+"""Main module for CuBIDS.
+
+This module provides the core functionalities of the CuBIDS package, including
+operations for handling BIDS datasets, clustering, and metadata merging.
+"""
 
 import csv
 import json
@@ -126,7 +130,10 @@ class CuBIDS(object):
     def layout(self):
         """Return the BIDSLayout object.
 
-        If the BIDSLayout object has not been created, create it.
+        Returns
+        -------
+        BIDSLayout
+            The BIDSLayout object associated with the current instance.
         """
         if self._layout is None:
             # print("SETTING LAYOUT OBJECT")
@@ -135,7 +142,18 @@ class CuBIDS(object):
         return self._layout
 
     def _infer_longitudinal(self):
-        """Infer if the dataset is longitudinal based on its structure."""
+        """Infer if the dataset is longitudinal based on its structure.
+
+        This method checks if any file or directory within the dataset path
+        contains the substring "ses-" in its name, which is a common convention
+        used to denote session identifiers in longitudinal datasets.
+
+        Returns
+        -------
+        bool
+            True if the dataset is longitudinal (i.e., contains session identifiers),
+            False otherwise.
+        """
         return any("ses-" in str(f) for f in Path(self.path).rglob("*"))
 
     def reset_bids_layout(self, validate=False):
@@ -185,11 +203,24 @@ class CuBIDS(object):
         return self.cubids_code_dir
 
     def init_datalad(self):
-        """Initialize a datalad Dataset at self.path.
+        """Initialize a datalad Dataset at the specified path.
 
-        This creates a datalad dataset at self.path and sets the
-        ``datalad_ready`` attribute to True.
-        It also sets the ``datalad_handle`` attribute to the datalad.Dataset object.
+        This method creates a datalad dataset at the path specified by `self.path`.
+        It sets the `datalad_ready` attribute to True and assigns the datalad.Dataset
+        object to the `datalad_handle` attribute.
+
+        Attributes
+        ----------
+        datalad_ready : bool
+            Indicates whether the datalad dataset has been successfully initialized.
+        datalad_handle : datalad.api.Dataset
+            The datalad dataset object associated with the specified path.
+
+        Notes
+        -----
+        If the dataset is not already installed at the specified path, this method
+        will create a new dataset with the configuration process "text2git" and
+        enable the annex feature.
         """
         self.datalad_ready = True
 
@@ -202,13 +233,19 @@ class CuBIDS(object):
     def datalad_save(self, message=None):
         """Perform a DataLad Save operation on the BIDS tree.
 
-        Additionally a check for an active datalad handle and that the
-        status of all objects after the save is "ok".
+        This method checks for an active DataLad handle and ensures that the
+        status of all objects after the save operation is "ok".
 
-        Parameters:
-        -----------
-        message : str or None
-            Commit message to use with datalad save.
+        Parameters
+        ----------
+        message : str or None, optional
+            Commit message to use with DataLad save. If None, a default message
+            "CuBIDS Save" will be used.
+
+        Raises
+        ------
+        Exception
+            If DataLad has not been initialized or if the save operation fails.
         """
         if not self.datalad_ready:
             raise Exception("DataLad has not been initialized. use datalad_init()")
@@ -252,7 +289,34 @@ class CuBIDS(object):
         reset_proc.check_returncode()
 
     def add_nifti_info(self):
-        """Add info from nifti files to json sidecars."""
+        """
+        Add information from NIfTI files to their corresponding JSON sidecars.
+
+        This method processes all NIfTI files in the BIDS directory specified by `self.path`.
+        It extracts relevant metadata from each NIfTI file and updates the corresponding JSON
+        sidecar files with this information. If `self.force_unlock` is set, it will unlock
+        the dataset using `datalad` before processing the files.
+
+        Metadata added to the JSON sidecars includes:
+        - Obliquity
+        - Voxel sizes (dimensions 1, 2, and 3)
+        - Matrix dimensions (sizes of dimensions 1, 2, and 3)
+        - Number of volumes (for 4D images)
+        - Image orientation
+
+        If `self.use_datalad` is set, the changes will be saved using `datalad`.
+
+        Raises
+        ------
+        Exception
+            If there is an error loading a NIfTI file or parsing a JSON sidecar file.
+
+        Notes
+        -----
+        - This method assumes that the NIfTI files are organized in a BIDS-compliant directory structure.
+        - The method will skip any files in hidden directories (directories starting with a dot).
+        - If a JSON sidecar file does not exist for a NIfTI file, it will be skipped.
+        """
         # check if force_unlock is set
         if self.force_unlock:
             # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
@@ -370,7 +434,6 @@ class CuBIDS(object):
                     merge_commands.append(f"bids-sidecar-merge {source_json} {dest_json}")
 
         # Get the delete commands
-        # delete_commands = []
         to_remove = []
         for rm_id in deletions:
             files_to_rm = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)]
@@ -378,7 +441,6 @@ class CuBIDS(object):
             for rm_me in files_to_rm.FilePath:
                 if Path(self.path + rm_me).exists():
                     to_remove.append(self.path + rm_me)
-                    # delete_commands.append("rm " + rm_me)
 
         # call purge associations on list of files to remove
         self._purge_associations(to_remove)
@@ -847,8 +909,15 @@ class CuBIDS(object):
     def get_nifti_associations(self, nifti):
         """Get nifti associations.
 
-        This uses globbing to find files with the same path, entities, and suffix as the NIfTI,
-        but with a different extension.
+        Parameters
+        ----------
+        nifti : str or Path
+            The path to the NIfTI file for which to find associated files.
+
+        Returns
+        -------
+        associations : list of str
+            A list of paths to files associated with the given NIfTI file, excluding the NIfTI file itself.
         """
         # get all assocation files of a nifti image
         no_ext_file = str(nifti).split("/")[-1].split(".")[0]
@@ -860,7 +929,18 @@ class CuBIDS(object):
         return associations
 
     def _cache_fieldmaps(self):
-        """Search all fieldmaps and create a lookup for each file."""
+        """Search all fieldmaps and create a lookup for each file.
+
+        This method scans for fieldmap files with specific suffixes and extensions,
+        retrieves their metadata, and creates a lookup dictionary that maps each
+        file to its corresponding fieldmap(s). If a fieldmap file does not have an
+        "IntendedFor" field in its metadata, it is added to a list of misfits.
+
+        Returns
+        -------
+        misfits : list
+            A list of fieldmap files that do not have an "IntendedFor" field in their metadata.
+        """
         suffix = "(phase1|phasediff|epi|fieldmap)"
         fmap_files = self.layout.get(
             suffix=suffix, regex_search=True, extension=[".nii.gz", ".nii"]
@@ -958,7 +1038,41 @@ class CuBIDS(object):
         return tup_ret
 
     def create_data_dictionary(self):
-        """Create a data dictionary."""
+        """Create a data dictionary for scanning parameters and other metadata.
+
+        This method populates the `data_dict` attribute with descriptions for various
+        scanning parameters, relational parameters, and derived parameters based on
+        the `grouping_config` attribute. Additionally, it manually adds descriptions
+        for non-sidecar columns.
+
+        Attributes
+        ----------
+        grouping_config : dict
+            Configuration dictionary containing `sidecar_params`, `relational_params`,
+            and `derived_params` which are used to populate the `data_dict`.
+
+        data_dict : dict
+            Dictionary to be populated with parameter descriptions.
+
+        Sidecar Parameters
+        ------------------
+        - Scanning Parameter: Parameters extracted from sidecar files.
+        - NIfTI Header Parameter: Parameters derived from NIfTI headers.
+
+        Manually Added Columns
+        ----------------------
+        - ManualCheck: Column where users mark groups to manually check.
+        - Notes: Column to mark notes about the parameter group.
+        - RenameEntitySet: Auto-generated suggested rename of Non-Dominant Groups based on variant scanning parameters.
+        - Counts: Number of files in the parameter group.
+        - Modality: MRI image type.
+        - MergeInto: Column to mark groups to remove with a '0'.
+        - FilePath: Location of file.
+        - EntitySetCount: Number of participants in an Entity Set.
+        - EntitySet: A set of scans whose filenames share all BIDS filename key-value pairs, excluding subject and session.
+        - ParamGroup: The set of scans with identical metadata parameters in their sidecars (defined within an Entity Set and denoted numerically).
+        - KeyParamGroup: Entity Set name and Param Group number separated by a double underscore.
+        """
         sidecar_params = self.grouping_config.get("sidecar_params")
         for mod in sidecar_params.keys():
             mod_dict = sidecar_params[mod]
@@ -1058,7 +1172,19 @@ class CuBIDS(object):
         return json_dict
 
     def get_param_groups_dataframes(self):
-        """Create DataFrames of files x param groups and a summary."""
+        """Create DataFrames of files x param groups and a summary.
+
+        This method processes entity sets to generate two DataFrames:
+        one containing labeled file parameters and another summarizing
+        parameter groups. It also suggests renaming based on variant parameters.
+
+        Returns
+        -------
+        tuple of pandas.DataFrame
+            A tuple containing two DataFrames:
+            - big_df: DataFrame with labeled file parameters.
+            - summary: DataFrame summarizing parameter groups with suggested renaming.
+        """
         entity_sets = self.get_entity_sets()
         labeled_files = []
         param_group_summaries = []
@@ -1267,7 +1393,18 @@ class CuBIDS(object):
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
 
     def get_entity_sets(self):
-        """Identify the entity sets for the bids dataset."""
+        """Identify the entity sets for the BIDS dataset.
+
+        This method scans the dataset directory for files matching the BIDS
+        specification and identifies unique entity sets based on the filenames.
+        It also populates a dictionary mapping each entity set to a list of
+        corresponding file paths.
+
+        Returns
+        -------
+        list of str
+            A sorted list of unique entity sets found in the dataset.
+        """
         # reset self.keys_files
         self.keys_files = {}
 
@@ -1292,9 +1429,32 @@ class CuBIDS(object):
         return sorted(entity_sets)
 
     def change_metadata(self, filters, metadata):
-        """Change metadata.
+        """Change metadata of BIDS files based on provided filters.
 
-        NOTE: Appears unused.
+        This method updates the metadata of BIDS files that match the given filters.
+        It retrieves the associated JSON sidecar files, updates them with the provided
+        metadata, and writes the changes back to the JSON files.
+
+        Parameters
+        ----------
+        filters : dict
+            A dictionary of filters to apply when searching for BIDS files.
+            The keys should correspond to BIDS entity names (e.g., 'subject', 'session').
+        metadata : dict
+            A dictionary containing the metadata to update in the JSON sidecar files.
+            The keys should correspond to the metadata fields to be updated.
+
+        Raises
+        ------
+        FileNotFoundError
+            If no JSON sidecar files are found for the BIDS files.
+        ValueError
+            If irregular associations are found (i.e., more than one JSON file is
+            associated with a BIDS file).
+
+        Notes
+        -----
+        This method appears to be unused in the current codebase.
         """
         files_to_change = self.layout.get(return_type="object", **filters)
 
@@ -1321,7 +1481,24 @@ class CuBIDS(object):
                 _update_json(json_file.path, sidecar)
 
     def get_all_metadata_fields(self):
-        """Return all metadata fields in a bids directory."""
+        """Return all metadata fields in a BIDS directory.
+
+        This method searches through all JSON files in the specified BIDS directory
+        and collects all unique metadata fields present in those files. It skips
+        files within any ".git" directory and handles empty files and JSON decoding
+        errors gracefully.
+
+        Returns
+        -------
+        list of str
+            A sorted list of all unique metadata fields found in the BIDS directory.
+
+        Raises
+        ------
+        UserWarning
+            If there is an error decoding a JSON file or any unexpected error occurs
+            while processing a file.
+        """
         found_fields = set()
         for json_file in Path(self.path).rglob("*.json"):
             if ".git" not in str(json_file):
@@ -1342,7 +1519,20 @@ class CuBIDS(object):
         return sorted(found_fields)
 
     def remove_metadata_fields(self, fields_to_remove):
-        """Remove specific fields from all metadata files."""
+        """Remove specific fields from all metadata files in the directory.
+
+        This method iterates through all JSON files in the specified directory
+        and removes the specified fields from each file's metadata.
+
+        Parameters
+        ----------
+        fields_to_remove : list of str
+            A list of field names to be removed from the metadata files.
+
+        Returns
+        -------
+        None
+        """
         remove_fields = set(fields_to_remove)
         if not remove_fields:
             return
@@ -1390,6 +1580,22 @@ def _validate_json():
 
 
 def _update_json(json_file, metadata):
+    """Update a JSON file with the provided metadata.
+
+    This function writes the given metadata to the specified JSON file if the
+    JSON data is valid. If the JSON data is invalid, it prints an error message.
+
+    Parameters
+    ----------
+    json_file : str
+        The path to the JSON file to be updated.
+    metadata : dict
+        The metadata to be written to the JSON file.
+
+    Returns
+    -------
+    None
+    """
     if _validate_json():
         with open(json_file, "w", encoding="utf-8") as f:
             json.dump(metadata, f, ensure_ascii=False, indent=4)
@@ -1398,18 +1604,59 @@ def _update_json(json_file, metadata):
 
 
 def _entity_set_to_entities(entity_set):
-    """Split a entity_set name into a pybids dictionary of entities."""
+    """Split an entity_set name into a pybids dictionary of entities.
+
+    Parameters
+    ----------
+    entity_set : str
+        A string representing a set of entities, where each entity is
+        separated by an underscore and each key-value pair is separated by a hyphen.
+
+    Returns
+    -------
+    dict
+        A dictionary where the keys are entity names and the values are entity values.
+
+    Examples
+    --------
+    >>> _entity_set_to_entities("sub-01_ses-02_task-rest")
+    {'sub': '01', 'ses': '02', 'task': 'rest'}
+    """
     return dict([group.split("-") for group in entity_set.split("_")])
 
 
 def _entities_to_entity_set(entities):
-    """Convert a pybids entities dictionary into a entity set name."""
+    """Convert a pybids entities dictionary into an entity set name.
+
+    Parameters
+    ----------
+    entities : dict
+        A dictionary containing pybids entities where keys are entity names
+        and values are entity values.
+
+    Returns
+    -------
+    str
+        A string representing the entity set name, constructed by joining
+        the sorted entity keys and their corresponding values, separated by hyphens.
+    """
     group_keys = sorted(entities.keys() - NON_KEY_ENTITIES)
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
 
 
 def _file_to_entity_set(filename):
-    """Identify and return the entity set of a bids valid filename."""
+    """Identify and return the entity set of a BIDS valid filename.
+
+    Parameters
+    ----------
+    filename : str
+        The filename to parse for BIDS entities.
+
+    Returns
+    -------
+    set
+        A set of entities extracted from the filename.
+    """
     entities = parse_file_entities(str(filename))
     return _entities_to_entity_set(entities)
 
@@ -1417,9 +1664,23 @@ def _file_to_entity_set(filename):
 def _get_participant_relative_path(scan):
     """Build the relative-from-subject version of a Path to a file.
 
-    This is what will appear in the IntendedFor field of any association.
+    Parameters
+    ----------
+    scan : str
+        The full path to the scan file.
 
-    Examples:
+    Returns
+    -------
+    str
+        The relative path from the subject directory.
+
+    Raises
+    ------
+    ValueError
+        If the subject directory cannot be found in the path.
+
+    Examples
+    --------
     >>> _get_participant_relative_path(
     ...    "/path/to/dset/sub-01/ses-01/func/sub-01_ses-01_bold.nii.gz",
     ... )
@@ -1445,7 +1706,24 @@ def _get_participant_relative_path(scan):
 
 
 def _get_bidsuri(filename, dataset_root):
-    """Convert a file path to a bidsuri.
+    """Convert a file path to a BIDS URI.
+
+    Parameters
+    ----------
+    filename : str
+        The full path to the file within the BIDS dataset.
+    dataset_root : str
+        The root directory of the BIDS dataset.
+
+    Returns
+    -------
+    str
+        The BIDS URI corresponding to the given file path.
+
+    Raises
+    ------
+    ValueError
+        If the filename is not within the dataset_root.
 
     Examples
     --------
@@ -1624,7 +1902,22 @@ def _get_param_groups(
 
 
 def round_params(param_group_df, config, modality):
-    """Round columns' values in DataFrame according to requested precision."""
+    """Round columns' values in a DataFrame according to requested precision.
+
+    Parameters
+    ----------
+    param_group_df : pandas.DataFrame
+        DataFrame containing the parameters to be rounded.
+    config : dict
+        Configuration dictionary containing rounding precision information.
+    modality : str
+        The modality key to access the relevant rounding precision settings in the config.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with the specified columns' values rounded to the requested precision.
+    """
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
 
@@ -1644,7 +1937,23 @@ def round_params(param_group_df, config, modality):
 def get_sidecar_metadata(json_file):
     """Get all metadata values in a file's sidecar.
 
-    Transform json dictionary to Python dictionary.
+    Transform JSON dictionary to Python dictionary.
+
+    Parameters
+    ----------
+    json_file : str
+        Path to the JSON sidecar file.
+
+    Returns
+    -------
+    dict or str
+        Returns a dictionary containing the metadata if the file is successfully read,
+        otherwise returns the string "Erroneous sidecar".
+
+    Raises
+    ------
+    Exception
+        If there is an error loading the JSON file.
     """
     try:
         with open(json_file) as json_file:
@@ -1726,8 +2035,19 @@ def format_params(param_group_df, config, modality):
 def _order_columns(df):
     """Organize columns of the summary and files DataFrames.
 
-    This ensures that EntitySet and ParamGroup are the first two columns,
-    FilePath is the last, and the others are sorted alphabetically.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame whose columns need to be organized.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The DataFrame with columns organized such that 'EntitySet' and
+        'ParamGroup' are the first two columns, 'FilePath' is the last
+        column (if present), and the remaining columns are sorted
+        alphabetically.
 
     Notes
     -----
@@ -1747,7 +2067,30 @@ def _order_columns(df):
 
 
 def img_to_new_ext(img_path, new_ext):
-    """Convert img to new extension.
+    """Convert an image file path to a new extension.
+
+    Parameters
+    ----------
+    img_path : str
+        The file path of the image to be converted.
+    new_ext : str
+        The new extension to be applied to the image file path.
+
+    Returns
+    -------
+    str
+        The file path with the new extension applied.
+
+    Examples
+    --------
+    >>> img_to_new_ext('/path/to/image.nii.gz', '.tsv')
+    '/path/to/image_events.tsv'
+
+    >>> img_to_new_ext('/path/to/image.nii.gz', '.tsv.gz')
+    '/path/to/image_physio.tsv.gz'
+
+    >>> img_to_new_ext('/path/to/image.nii.gz', '.json')
+    '/path/to/image.json'
 
     Notes
     -----
@@ -1765,7 +2108,31 @@ def img_to_new_ext(img_path, new_ext):
 
 
 def get_entity_value(path, key):
-    """Given a filepath and BIDS key name, return value."""
+    """Given a filepath and BIDS key name, return the value associated with the key.
+
+    Parameters
+    ----------
+    path : str
+        The file path to be parsed.
+    key : str
+        The BIDS key name to search for in the file path.
+
+    Returns
+    -------
+    str or None
+        The value associated with the BIDS key if found, otherwise None.
+
+    Examples
+    --------
+    >>> get_entity_value('/path/to/sub-01_ses-02_task-rest_bold.nii.gz', 'sub')
+    '01'
+    >>> get_entity_value('/path/to/sub-01_ses-02_task-rest_bold.nii.gz', 'ses')
+    '02'
+    >>> get_entity_value('/path/to/sub-01_ses-02_task-rest_bold.nii.gz', 'task')
+    'rest'
+    >>> get_entity_value('/path/to/sub-01_ses-02_task-rest_bold.nii.gz', 'run')
+    None
+    """
     parts = Path(path).parts
     for part in parts:
         if part.startswith(key + "-"):
