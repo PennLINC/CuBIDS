@@ -239,28 +239,28 @@ def summary_data():
 @pytest.mark.parametrize(
     ("name", "skeleton", "intended_for", "is_longitudinal", "expected"),
     [
-        (  # doesn't have acq-VAR
+        (
             "relpath_long",
             relpath_intendedfor_long,
             "ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
             True,
             "pass",
         ),
-        (  # doesn't have ses-01
+        (
             "bidsuri_long",
             bidsuri_intendedfor_long,
             "bids::sub-01/ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
             True,
             "pass",
         ),
-        (  # doesn't have acq-VAR
+        (
             "relpath_cs",
             relpath_intendedfor_cs,
             "dwi/sub-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
             False,
             "pass",
         ),
-        (  # pass
+        (
             "bidsuri_cs",
             bidsuri_intendedfor_cs,
             "bids::sub-01/dwi/sub-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",

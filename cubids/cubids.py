@@ -456,7 +456,7 @@ class CuBIDS(object):
         # remove renames file that gets created under the hood
         subprocess.run(["rm", "-rf", "renames"])
 
-    def change_filename(self, filepath, entities, is_longitudinal=False):
+    def change_filename(self, filepath, entities):
         """Apply changes to a filename based on the renamed entity sets.
 
         This function takes into account the new entity set names
@@ -468,8 +468,6 @@ class CuBIDS(object):
             Path prefix to a file in the affected entity set change.
         entities : :obj:`dict`
             A pybids dictionary of entities parsed from the new entity set name.
-        is_longitudinal : :obj:`bool`, optional
-            If True, includes "ses" in filepath. Default is False.
 
         Notes
         -----
@@ -479,7 +477,6 @@ class CuBIDS(object):
             filepath=filepath,
             entities=entities,
             out_dir=str(self.path),
-            is_longitudinal=self.is_longitudinal,
         )
 
         exts = Path(filepath).suffixes
