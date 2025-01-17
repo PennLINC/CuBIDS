@@ -54,6 +54,23 @@ We can accomplish this using the following command:
 The new schema-based ``bids-validator`` doesn't need to be installed 
 and will be implemented automatically when `cubids validate` is called
 
+.. dropdown:: If there is no Internet connection on compute nodes
+
+    You should run one of these commands below, after installing deno, that downloads the latest version 
+    of the bids-validator in your virtual environment either by installing a lightscript version 
+    (into $HOME/.deno/bin) or by compiling, respectively:
+
+    However, you can also install a lightweight script (into $HOME/.deno/bin):
+
+    ..  code-block:: console
+
+        $ deno install -ERN -g -n bids-validator jsr:@bids/validator
+
+    ..  code-block:: console
+
+        $ deno compile -ERN -o bids-validator jsr:@bids/validator
+
+    For more information, you can read: https://bids-validator.readthedocs.io/en/latest/user_guide/command-line.html
 
 We also recommend using ``CuBIDS`` with the optional ``DataLad`` version control capabilities.
 We use ``DataLad`` throughout our walkthrough of the CuBIDS Workflow on
