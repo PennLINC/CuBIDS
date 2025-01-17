@@ -489,7 +489,7 @@ def test_tsv_merge_changes(tmp_path):
         The temporary path where the test data will be copied.
     """
     data_root = get_data(tmp_path)
-    bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
+    bod = CuBIDS(data_root / "inconsistent", use_datalad=True, is_longitudinal=True)
     bod.datalad_save()
     assert bod.is_datalad_clean()
 
@@ -946,7 +946,8 @@ def test_session_apply(tmp_path):
 
     data_root = get_data(tmp_path)
 
-    ses_cubids = CuBIDS(data_root / "inconsistent", acq_group_level="session", use_datalad=True)
+    ses_cubids = CuBIDS(data_root / "inconsistent", acq_group_level="session",
+                         use_datalad=True, is_longitudinal=True)
 
     ses_cubids.get_tsvs(str(tmp_path / "originals"))
 
@@ -1193,6 +1194,7 @@ def test_bids_version(tmp_path):
     ), f"Schema version {schema_version} is less than minimum {min_schema_version}"
 
 
+<<<<<<< HEAD
 def test_docker():
     """Verify that docker is installed and the user has permission to run docker images.
 
@@ -1217,7 +1219,6 @@ def test_docker():
         print("Cannot connect to Docker daemon!")
         return_status = 0
     assert return_status
-
 
 # def test_image(image='pennlinc/bond:latest'):
 #     """Check whether image is present on local system."""
