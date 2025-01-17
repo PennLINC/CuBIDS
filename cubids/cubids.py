@@ -1784,6 +1784,7 @@ def build_path(filepath, out_entities, out_dir, schema):
     '/output/sub-01/ses-01/anat/sub-01_ses-01_acq-VAR_T2w.nii.gz'
 
     The function does not add an extra leading zero to the run entity when it's a string.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
@@ -1794,6 +1795,7 @@ def build_path(filepath, out_entities, out_dir, schema):
 
     The function adds an extra leading zero to the run entity when it's an integer
     and the original filename has a leading zero.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-00001_bold.nii.gz",
     ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
@@ -1804,6 +1806,7 @@ def build_path(filepath, out_entities, out_dir, schema):
 
     The function does not add an extra leading zero to the run entity when it's an integer
     and the original filename doesn't have a leading zero.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
     ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
@@ -1813,6 +1816,7 @@ def build_path(filepath, out_entities, out_dir, schema):
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
     The function doesn't add an extra leading zero to the run entity when there isn't a zero.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
     ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
@@ -1823,6 +1827,7 @@ def build_path(filepath, out_entities, out_dir, schema):
 
     Entities in the original path, but not the entity dictionary, are not included,
     like run in this case.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "suffix": "bold"},
@@ -1832,6 +1837,7 @@ def build_path(filepath, out_entities, out_dir, schema):
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
     The "subject" and "session" entities are ignored.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"subject": "02", "task": "rest", "acquisition": "VAR", "suffix": "bold"},
@@ -1840,7 +1846,8 @@ def build_path(filepath, out_entities, out_dir, schema):
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
-    But uncommon (but BIDS-valid) entities, like echo, will work
+    But uncommon (but BIDS-valid) entities, like echo, will work.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
@@ -1850,6 +1857,7 @@ def build_path(filepath, out_entities, out_dir, schema):
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_echo-1_bold.nii.gz'
 
     It can change the datatype, but will warn the user.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_asl.nii.gz",
     ...    {"datatype": "perf", "acquisition": "VAR", "suffix": "asl"},
@@ -1861,6 +1869,7 @@ def build_path(filepath, out_entities, out_dir, schema):
 
     It expects a longitudinal structure, so providing a cross-sectional filename won't work.
     XXX: This is a bug.
+
     >>> build_path(
     ...    "/input/sub-01/func/sub-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
