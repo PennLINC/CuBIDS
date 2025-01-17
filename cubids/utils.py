@@ -34,3 +34,19 @@ def _get_container_type(image_name):
         return "docker"
 
     raise Exception("Unable to determine the container type of " + image_name)
+
+
+def _compress_lists(df):
+    """Compress lists in a DataFrame to strings."""
+    for col in df.columns:
+        if isinstance(df[col].values[0], list):
+            df[col] = df[col].apply(lambda x: "|&|".join(x))
+    return df
+
+
+def _expand_lists(df):
+    """Expand strings in a DataFrame to lists."""
+    for col in df.columns:
+        if isinstance(df[col].values[0], str):
+            df[col] = df[col].apply(lambda x: x.split("|&|"))
+    return df

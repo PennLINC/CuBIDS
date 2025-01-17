@@ -1664,23 +1664,49 @@ def format_params(param_group_df, config, modality):
             continue
 
         if "tolerance" in column_fmt and len(param_group_df) > 1:
-            array = param_group_df[column_name].to_numpy().reshape(-1, 1)
+            column_data = param_group_df[column_name].to_numpy()
 
-            for i in range(len(array)):
-                if np.isnan(array[i, 0]):
-                    array[i, 0] = -999
+            if any(isinstance(x, list) for x in column_data):
+                # For array/list data, we should first define "clusters" based on the number of
+                # elements, then apply the clustering within each set of lengths.
+                # For example, if there are four runs with five elements and 10 runs with four
+                # elements, we should cluster the four-element runs separately from the
+                # five-element runs, and account for that in the clustering labels.
+                lengths = ["x".join(str(i) for i in np.array(x).shape) for x in column_data]
+                unique_lengths = np.unique(lengths)
+                cluster_idx = 0
+                for unique_length in unique_lengths:
+                    sel_rows = [i for i, x in enumerate(lengths) if x == unique_length]
+                    array = np.array([np.array(x) for x in column_data[sel_rows]])
 
-            tolerance = to_format[column_name]["tolerance"]
-            clustering = AgglomerativeClustering(
-                n_clusters=None, distance_threshold=tolerance, linkage="complete"
-            ).fit(array)
+                    if array.shape[0] > 1:
+                        # clustering requires at least two samples
+                        array[np.isnan(array)] = -999
 
-            for i in range(len(array)):
-                if array[i, 0] == -999:
-                    array[i, 0] = np.nan
+                        tolerance = to_format[column_name]["tolerance"]
+                        clustering = AgglomerativeClustering(
+                            n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                        ).fit(array)
 
-            # now add clustering_labels as a column
-            param_group_df[f"Cluster_{column_name}"] = clustering.labels_
+                        param_group_df.loc[sel_rows, f"Cluster_{column_name}"] = (
+                            clustering.labels_ + cluster_idx
+                        )
+                        cluster_idx += max(clustering.labels_) + 1
+                    else:
+                        # single-file cluster
+                        param_group_df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
+                        cluster_idx += 1
+            else:
+                array = column_data.reshape(-1, 1)
+                array[np.isnan(array)] = -999
+
+                tolerance = to_format[column_name]["tolerance"]
+                clustering = AgglomerativeClustering(
+                    n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                ).fit(array)
+
+                # now add clustering_labels as a column
+                param_group_df[f"Cluster_{column_name}"] = clustering.labels_
 
     return param_group_df
 
