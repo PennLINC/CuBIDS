@@ -1,4 +1,7 @@
-"""Miscellaneous utility functions for CuBIDS."""
+"""Miscellaneous utility functions for CuBIDS.
+
+This module provides various utility functions used throughout the CuBIDS package.
+"""
 
 import re
 from pathlib import Path
