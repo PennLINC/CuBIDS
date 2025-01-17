@@ -51,6 +51,7 @@ doc = [
     "sphinx_markdown_tables",
     "sphinx_rtd_theme",
     "sphinxcontrib-bibtex",
+    "sphinx_design",
 ]
 tests = [
     "codespell",
