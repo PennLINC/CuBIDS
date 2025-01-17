@@ -113,7 +113,7 @@ class CuBIDS(object):
         self.cubids_code_dir = Path(self.path + "/code/CuBIDS").is_dir()
         self.data_dict = {}  # data dictionary for TSV outputs
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
-        self.is_longitudinal = is_longitudinal # True if flag set, False if flag unset
+        self.is_longitudinal = is_longitudinal  # True if flag set, False if flag unset
         if self.use_datalad:
             self.init_datalad()
 
@@ -479,7 +479,7 @@ class CuBIDS(object):
             filepath=filepath,
             entities=entities,
             out_dir=str(self.path),
-            is_longitudinal=self.is_longitudinal
+            is_longitudinal=self.is_longitudinal,
         )
 
         exts = Path(filepath).suffixes
@@ -606,7 +606,7 @@ class CuBIDS(object):
                 # Coerce IntendedFor to a list.
                 data["IntendedFor"] = listify(data["IntendedFor"])
                 for item in data["IntendedFor"]:
-                    if item == _get_participant_relative_path(filepath):                       
+                    if item == _get_participant_relative_path(filepath):
                         # remove old filename
                         data["IntendedFor"].remove(item)
                         # add new filename
@@ -1419,12 +1419,12 @@ def _get_participant_relative_path(scan):
     ...    "/path/to/dset/sub-01/ses-01/func/sub-01_ses-01_bold.nii.gz",
     ... )
     'ses-01/func/sub-01_ses-01_bold.nii.gz'
-    
+
     >>> _get_participant_relative_path(
     ...    "/path/to/dset/sub-01/func/sub-01_bold.nii.gz",
     ... )
     'func/sub-01_bold.nii.gz'
-    
+
     >>> _get_participant_relative_path(
     ...    "/path/to/dset/ses-01/func/ses-01_bold.nii.gz",
     ... )
@@ -1435,7 +1435,7 @@ def _get_participant_relative_path(scan):
     # Find the first part that starts with "sub-"
     for i, part in enumerate(parts):
         if part.startswith("sub-"):
-            return "/".join(parts[i+1:])
+            return "/".join(parts[i + 1 :])
     raise ValueError(f"Could not find subject in {scan}")
 
 

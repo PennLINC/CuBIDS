@@ -304,7 +304,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level, is_long
             if is_longitudinal:
                 acq_id = (file_entities.get("subject"), file_entities.get("session"))
             elif not is_longitudinal:
-                acq_id = (file_entities.get("subject"))
+                acq_id = file_entities.get("subject")
             acq_groups[acq_id].append((row.EntitySet, row.ParamGroup))
         elif is_longitudinal and acq_group_level == "session":
             acq_id = (file_entities.get("subject"), None)
@@ -339,9 +339,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level, is_long
                 )
         elif not is_longitudinal:
             for subject in contents_to_subjects[content_id]:
-                grouped_sub_sess.append(
-                    {"subject": "sub-" + subject, "AcqGroup": groupnum}
-                )
+                grouped_sub_sess.append({"subject": "sub-" + subject, "AcqGroup": groupnum})
 
     # Write the mapping of subject/session to
     acq_group_df = pd.DataFrame(grouped_sub_sess)
