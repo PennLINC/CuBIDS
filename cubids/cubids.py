@@ -84,6 +84,8 @@ class CuBIDS(object):
         A data dictionary for TSV outputs.
     use_datalad : :obj:`bool`
         If True, use datalad to track changes to the BIDS dataset.
+    is_longitudinal : :obj:`bool`
+        If True, adds "ses" in filepath.
     """
 
     def __init__(
@@ -110,11 +112,17 @@ class CuBIDS(object):
         self.cubids_code_dir = Path(self.path + "/code/CuBIDS").is_dir()
         self.data_dict = {}  # data dictionary for TSV outputs
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
+        self.is_longitudinal = self._infer_longitudinal()  # inferred from dataset structure
+
         if self.use_datalad:
             self.init_datalad()
 
-        if self.acq_group_level == "session":
+        if self.is_longitudinal and self.acq_group_level == "session":
             NON_KEY_ENTITIES.remove("session")
+        elif not self.is_longitudinal and self.acq_group_level == "session":
+            raise ValueError(
+                'Data is not longitudinal, so "session" is not a valid grouping level.'
+            )
 
     @property
     def layout(self):
@@ -127,6 +135,10 @@ class CuBIDS(object):
             self.reset_bids_layout()
             # print("LAYOUT OBJECT SET")
         return self._layout
+
+    def _infer_longitudinal(self):
+        """Infer if the dataset is longitudinal based on its structure."""
+        return any("ses-" in str(f) for f in Path(self.path).rglob("*"))
 
     def reset_bids_layout(self, validate=False):
         """Reset the BIDS layout.
@@ -469,55 +481,21 @@ class CuBIDS(object):
         -----
         This is the function I need to spend the most time on, since it has entities hardcoded.
         """
+        new_path = build_path(
+            filepath=filepath,
+            entities=entities,
+            out_dir=str(self.path),
+            is_longitudinal=self.is_longitudinal,
+        )
+
         exts = Path(filepath).suffixes
         old_ext = "".join(exts)
 
         suffix = entities["suffix"]
-        entity_file_keys = []
 
-        # Entities that may be in the filename?
-        file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
-
-        for key in file_keys:
-            if key in list(entities.keys()):
-                entity_file_keys.append(key)
-
-        sub = get_key_name(filepath, "sub")
-        ses = get_key_name(filepath, "ses")
-        sub_ses = sub + "_" + ses
-
-        if "run" in list(entities.keys()) and "run-0" in filepath:
-            # XXX: This adds an extra leading zero to run.
-            entities["run"] = "0" + str(entities["run"])
-
-        filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
-        filename = (
-            filename.replace("acquisition", "acq")
-            .replace("direction", "dir")
-            .replace("reconstruction", "rec")
-        )
-        if len(filename) > 0:
-            filename = sub_ses + "_" + filename + "_" + suffix + old_ext
-        else:
-            raise ValueError(f"Could not construct new filename for {filepath}")
-
-        # CHECK TO SEE IF DATATYPE CHANGED
-        # datatype may be overridden/changed if the original file is located in the wrong folder.
-        dtypes = ["anat", "func", "perf", "fmap", "dwi"]
-        dtype_orig = ""
-        for dtype in dtypes:
-            if dtype in filepath:
-                dtype_orig = dtype
-
-        if "datatype" in entities.keys():
-            dtype_new = entities["datatype"]
-            if entities["datatype"] != dtype_orig:
-                print("WARNING: DATATYPE CHANGE DETECETD")
-        else:
-            dtype_new = dtype_orig
-
-        # Construct the new filename
-        new_path = str(self.path) + "/" + sub + "/" + ses + "/" + dtype_new + "/" + filename
+        sub = get_entity_value(filepath, "sub")
+        if self.is_longitudinal:
+            ses = get_entity_value(filepath, "ses")
 
         # Add the scan path + new path to the lists of old, new filenames
         self.old_filenames.append(filepath)
@@ -613,7 +591,10 @@ class CuBIDS(object):
                 self.new_filenames.append(new_labeling)
 
         # RENAME INTENDED FORS!
-        ses_path = self.path + "/" + sub + "/" + ses
+        if self.is_longitudinal:
+            ses_path = self.path + "/" + sub + "/" + ses
+        elif not self.is_longitudinal:
+            ses_path = self.path + "/" + sub
         files_with_if = []
         files_with_if += Path(ses_path).rglob("fmap/*.json")
         files_with_if += Path(ses_path).rglob("perf/*_m0scan.json")
@@ -636,6 +617,7 @@ class CuBIDS(object):
                         data["IntendedFor"].remove(item)
                         # add new filename
                         data["IntendedFor"].append(_get_participant_relative_path(new_path))
+
                     if item == _get_bidsuri(filepath, self.path):
                         # remove old filename
                         data["IntendedFor"].remove(item)
@@ -1399,6 +1381,7 @@ class CuBIDS(object):
         return self.layout
 
 
+# XXX: Remove _validate_json?
 def _validate_json():
     """Validate a JSON file's contents.
 
@@ -1438,8 +1421,29 @@ def _get_participant_relative_path(scan):
 
     This is what will appear in the IntendedFor field of any association.
 
+    Examples:
+    >>> _get_participant_relative_path(
+    ...    "/path/to/dset/sub-01/ses-01/func/sub-01_ses-01_bold.nii.gz",
+    ... )
+    'ses-01/func/sub-01_ses-01_bold.nii.gz'
+
+    >>> _get_participant_relative_path(
+    ...    "/path/to/dset/sub-01/func/sub-01_bold.nii.gz",
+    ... )
+    'func/sub-01_bold.nii.gz'
+
+    >>> _get_participant_relative_path(
+    ...    "/path/to/dset/ses-01/func/ses-01_bold.nii.gz",
+    ... )
+    Traceback (most recent call last):
+    ValueError: Could not find subject in ...
     """
-    return "/".join(Path(scan).parts[-3:])
+    parts = Path(scan).parts
+    # Find the first part that starts with "sub-"
+    for i, part in enumerate(parts):
+        if part.startswith("sub-"):
+            return "/".join(parts[i + 1 :])
+    raise ValueError(f"Could not find subject in {scan}")
 
 
 def _get_bidsuri(filename, dataset_root):
@@ -1762,9 +1766,194 @@ def img_to_new_ext(img_path, new_ext):
         return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
 
 
-def get_key_name(path, key):
+def get_entity_value(path, key):
     """Given a filepath and BIDS key name, return value."""
     parts = Path(path).parts
     for part in parts:
         if part.startswith(key + "-"):
             return part
+
+
+def build_path(filepath, entities, out_dir, is_longitudinal):
+    """Build a new path for a file based on its BIDS entities.
+
+    Parameters
+    ----------
+    filepath : str
+        The original file path.
+    entities : dict
+        A dictionary of BIDS entities.
+        This should include all of the entities in the filename *except* for subject and session.
+    out_dir : str
+        The output directory for the new file.
+    is_longitudinal : bool
+        If True, add "ses" to file path.
+
+    Returns
+    -------
+    new_path : str
+        The new file path.
+
+    Examples
+    --------
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii.gz",
+    ...    {"acquisition": "VAR", "suffix": "T2w"},
+    ...    "/output",
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/anat/sub-01_ses-01_acq-VAR_T2w.nii.gz'
+
+    The function does not add an extra leading zero to the run entity when it's a string.
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
+
+    The function adds an extra leading zero to the run entity when it's an integer
+    and the original filename has a leading zero.
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-00001_bold.nii.gz",
+    ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-00002_bold.nii.gz'
+
+    The function does not add an extra leading zero to the run entity when it's an integer
+    and the original filename doesn't have a leading zero.
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
+    ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
+
+    The function doesn't add an extra leading zero to the run entity when there isn't a zero.
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
+    ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
+
+    Entities in the original path, but not the entity dictionary, are not included,
+    like run in this case.
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    ...    {"task": "rest", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
+
+    Entities outside of the prescribed list are ignored, such as "subject"...
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    ...    {"subject": "02", "task": "rest", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
+
+    or "echo".
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
+    ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
+    ...    "/output",
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
+
+    It can change the datatype, but will warn the user.
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_asl.nii.gz",
+    ...    {"datatype": "perf", "acquisition": "VAR", "suffix": "asl"},
+    ...    "/output",
+    ...    True,
+    ... )
+    WARNING: DATATYPE CHANGE DETECTED
+    '/output/sub-01/ses-01/perf/sub-01_ses-01_acq-VAR_asl.nii.gz'
+
+    It also works for cross-sectional filename.
+    >>> build_path(
+    ...    "/input/sub-01/func/sub-01_task-rest_run-01_bold.nii.gz",
+    ...    {"task": "rest", "acquisition": "VAR", "suffix": "bold"},
+    ...    "/output",
+    ...    False,
+    ... )
+    '/output/sub-01/func/sub-01_task-rest_acq-VAR_bold.nii.gz'
+    """
+    exts = Path(filepath).suffixes
+    old_ext = "".join(exts)
+
+    suffix = entities["suffix"]
+    entity_file_keys = []
+
+    # Entities that may be in the filename?
+    file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
+
+    for key in file_keys:
+        if key in list(entities.keys()):
+            entity_file_keys.append(key)
+
+    sub = get_entity_value(filepath, "sub")
+    if sub is None:
+        raise ValueError(f"Could not extract subject from {filepath}")
+
+    if is_longitudinal:
+        ses = get_entity_value(filepath, "ses")
+        if ses is None:
+            raise ValueError(f"Could not extract session from {filepath}")
+
+    # Add leading zeros to run entity if it's an integer.
+    # If it's a string, respect the value provided.
+    if "run" in entities.keys() and isinstance(entities["run"], int):
+        # Infer the number of leading zeros needed from the original filename
+        n_leading = 2  # default to 1 leading zero
+        if "_run-" in filepath:
+            run_str = filepath.split("_run-")[1].split("_")[0]
+            n_leading = len(run_str)
+        entities["run"] = str(entities["run"]).zfill(n_leading)
+
+    filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
+    filename = (
+        filename.replace("acquisition", "acq")
+        .replace("direction", "dir")
+        .replace("reconstruction", "rec")
+    )
+    if len(filename) > 0:
+        if is_longitudinal:
+            filename = f"{sub}_{ses}_{filename}_{suffix}{old_ext}"
+        elif not is_longitudinal:
+            filename = f"{sub}_{filename}_{suffix}{old_ext}"
+    else:
+        raise ValueError(f"Could not construct new filename for {filepath}")
+
+    # CHECK TO SEE IF DATATYPE CHANGED
+    # datatype may be overridden/changed if the original file is located in the wrong folder.
+    dtypes = ["anat", "func", "perf", "fmap", "dwi"]
+    dtype_orig = ""
+    for dtype in dtypes:
+        if dtype in filepath:
+            dtype_orig = dtype
+
+    if "datatype" in entities.keys():
+        dtype_new = entities["datatype"]
+        if entities["datatype"] != dtype_orig:
+            print("WARNING: DATATYPE CHANGE DETECTED")
+    else:
+        dtype_new = dtype_orig
+
+    # Construct the new filename
+    if is_longitudinal:
+        new_path = str(Path(out_dir) / sub / ses / dtype_new / filename)
+    elif not is_longitudinal:
+        new_path = str(Path(out_dir) / sub / dtype_new / filename)
+
+    return new_path

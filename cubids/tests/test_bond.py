@@ -45,7 +45,13 @@ COMPLETE_KEY_GROUPS = [
 
 
 def test_ok_json_merge(tmp_path):
-    """Test ok_json_merge."""
+    """Test that a successful merge can happen.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
 
     # Test that a successful merge can happen
@@ -73,7 +79,13 @@ def test_ok_json_merge(tmp_path):
 
 
 def test_ok_json_merge_cli(tmp_path):
-    """Test ok_json_merge_cli."""
+    """Test that a successful merge can happen using the CLI.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
 
     # Test that a successful merge can happen
@@ -103,7 +115,13 @@ def test_ok_json_merge_cli(tmp_path):
 
 
 def test_get_param_groups(tmp_path):
-    """Test get_param_groups."""
+    """Test the retrieval of parameter groups.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
     entity_sets = bod.get_entity_sets()
@@ -115,7 +133,13 @@ def test_get_param_groups(tmp_path):
 
 
 def test_copy_exemplars(tmp_path):
-    """Test copy_exemplars."""
+    """Test the copying of exemplars.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "complete", use_datalad=True)
     tsv_prefix = str(tmp_path / "tsvs")
@@ -139,7 +163,13 @@ def test_copy_exemplars(tmp_path):
 
 
 def test_purge_no_datalad(tmp_path):
-    """Test purge_no_datalad."""
+    """Test the purge operation without using DataLad.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     scans = []
     scan_name = "sub-03/ses-phdiff/func/sub-03_ses-phdiff_task-rest_bold.nii.gz"
@@ -203,7 +233,13 @@ def test_purge_no_datalad(tmp_path):
 
 
 def test_purge(tmp_path):
-    """Test purge."""
+    """Test the purge operation using DataLad.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     scans = []
     scan_name = "sub-03/ses-phdiff/func/sub-03_ses-phdiff_task-rest_bold.nii.gz"
@@ -236,7 +272,13 @@ def test_purge(tmp_path):
 
 
 def test_bad_json_merge(tmp_path):
-    """Test bad_json_merge."""
+    """Test that an unsuccessful merge returns an error.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
 
     # Test that a successful merge can happen
@@ -263,7 +305,13 @@ def test_bad_json_merge(tmp_path):
 
 
 def test_bad_json_merge_cli(tmp_path):
-    """Test bade_json_merge_cli."""
+    """Test that an unsuccessful merge returns an error using the CLI.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
 
     # Test that a successful merge can happen
@@ -291,7 +339,13 @@ def test_bad_json_merge_cli(tmp_path):
 
 
 def test_add_nifti_info_datalad(tmp_path):
-    """Test add_nifti_info_datalad."""
+    """Test adding NIfTI info to sidecars using DataLad.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "complete", use_datalad=True, force_unlock=True)
     tsv_prefix = str(tmp_path / "tsvs")
@@ -326,7 +380,13 @@ def test_add_nifti_info_datalad(tmp_path):
 
 
 def test_add_nifti_info_no_datalad(tmp_path):
-    """Test add_nifti_info_no_datalad."""
+    """Test adding NIfTI info to sidecars without using DataLad.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "complete", use_datalad=False, force_unlock=False)
     bod.add_nifti_info()
@@ -354,7 +414,13 @@ def test_add_nifti_info_no_datalad(tmp_path):
 
 
 def test_tsv_merge_no_datalad(tmp_path):
-    """Test tsv_merge_no_datalad."""
+    """Test merging TSV files without using DataLad.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "inconsistent", use_datalad=False)
 
@@ -415,7 +481,13 @@ def test_tsv_merge_no_datalad(tmp_path):
 
 
 def test_tsv_merge_changes(tmp_path):
-    """Test tsv_merge_changes."""
+    """Test merging TSV files with changes.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root / "inconsistent", use_datalad=True)
     bod.datalad_save()
@@ -545,7 +617,10 @@ def test_tsv_merge_changes(tmp_path):
 
 
 def test_merge_without_overwrite():
-    """Test merge_without_overwrite."""
+    """Test merge_without_overwrite.
+
+    Test that metadata fields are merged without overwriting existing values.
+    """
     meta1 = {
         "ManualCheck": 1.0,
         "RenameEntitySet": np.nan,
@@ -612,7 +687,13 @@ def test_merge_without_overwrite():
 
 
 def test_entitysets(tmp_path):
-    """Test entitysets."""
+    """Test entitysets.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
 
     # Test the complete data
@@ -636,7 +717,13 @@ def test_entitysets(tmp_path):
 
 
 def test_tsv_creation(tmp_path):
-    """Test the Entity Set and Parameter Group creation on sample data."""
+    """Test the Entity Set and Parameter Group creation on sample data.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
 
     # Test the complete data
@@ -713,7 +800,13 @@ def test_tsv_creation(tmp_path):
 
 
 def test_apply_tsv_changes(tmp_path):
-    """Test apply_tsv_changes."""
+    """Test apply_tsv_changes.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     # set up like narrative of user using this
     # similar to test tsv creation
     # open the tsv, rename a entity set
@@ -836,7 +929,13 @@ def test_apply_tsv_changes(tmp_path):
 
 
 def test_session_apply(tmp_path):
-    """Test session_apply."""
+    """Test session_apply.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     # set up like narrative of user using this
     # similar to test tsv creation
     # open the tsv, rename a entity set
@@ -847,7 +946,11 @@ def test_session_apply(tmp_path):
 
     data_root = get_data(tmp_path)
 
-    ses_cubids = CuBIDS(data_root / "inconsistent", acq_group_level="session", use_datalad=True)
+    ses_cubids = CuBIDS(
+        data_root / "inconsistent",
+        acq_group_level="session",
+        use_datalad=True,
+    )
 
     ses_cubids.get_tsvs(str(tmp_path / "originals"))
 
@@ -871,7 +974,13 @@ def test_session_apply(tmp_path):
 
 
 def test_remove_fields(tmp_path):
-    """Test that we metadata fields are detected and removed."""
+    """Test that we metadata fields are detected and removed.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     bod = CuBIDS(data_root, use_datalad=False)
 
@@ -895,7 +1004,13 @@ def test_remove_fields(tmp_path):
 
 
 def test_datalad_integration(tmp_path):
-    """Test that datalad works for basic file modification operations."""
+    """Test that datalad works for basic file modification operations.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
 
     # Test that an uninitialized CuBIDS raises exceptions
@@ -990,7 +1105,13 @@ def test_datalad_integration(tmp_path):
 
 
 def test_validator(tmp_path):
-    """Test validator."""
+    """Test validator.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
 
     # test the validator in valid dataset
@@ -1038,7 +1159,13 @@ def test_validator(tmp_path):
 
 
 def test_bids_version(tmp_path):
-    """Test workflows.bids_version."""
+    """Test workflows.bids_version.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        The temporary path where the test data will be copied.
+    """
     data_root = get_data(tmp_path)
     bids_dir = Path(data_root) / "complete"
 
@@ -1068,31 +1195,6 @@ def test_bids_version(tmp_path):
     assert (
         schema_version >= min_schema_version
     ), f"Schema version {schema_version} is less than minimum {min_schema_version}"
-
-
-def test_docker():
-    """Verify that docker is installed and the user has permission to run docker images.
-
-    Returns
-    -------
-    -1  Docker can't be found
-     0  Docker found, but user can't connect to daemon
-     1  Test run OK
-    """
-    try:
-        return_status = 1
-        ret = subprocess.run(["docker", "version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError as e:
-        from errno import ENOENT
-
-        if e.errno == ENOENT:
-            print("Cannot find Docker engine!")
-            return_status = 0
-        raise e
-    if ret.stderr.startswith(b"Cannot connect to the Docker daemon."):
-        print("Cannot connect to Docker daemon!")
-        return_status = 0
-    assert return_status
 
 
 # def test_image(image='pennlinc/bond:latest'):

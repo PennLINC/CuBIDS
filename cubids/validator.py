@@ -1,4 +1,8 @@
-"""Methods for validating BIDS datasets."""
+"""Methods for validating BIDS datasets.
+
+This module provides functions for validating BIDS datasets, including building
+subprocess commands for the BIDS validator and handling validation results.
+"""
 
 import glob
 import json
@@ -14,11 +18,27 @@ import pandas as pd
 logger = logging.getLogger("cubids-cli")
 
 
-def build_validator_call(path, ignore_headers=False):
-    """Build a subprocess command to the bids validator."""
-    # New schema BIDS validator doesn't have option to ignore subject consistency.
-    # Build the deno command to run the BIDS validator.
-    command = ["deno", "run", "-A", "jsr:@bids/validator", path, "--verbose", "--json"]
+def build_validator_call(path, local_validator=False, ignore_headers=False):
+    """Build a subprocess command to the bids validator.
+
+    Parameters
+    ----------
+    path : :obj:`str`
+        Path to the BIDS dataset.
+    local_validator : :obj:`bool`
+        If provided, use the local bids-validator.
+    ignore_headers : :obj:`bool`
+        If provided, ignore NIfTI headers.
+
+    Returns
+    -------
+    command : :obj:`list`
+        List of strings to pass to subprocess.run().
+    """
+    if local_validator:
+        command = ["bids-validator", path, "--verbose", "--json"]
+    else:
+        command = ["deno", "run", "-A", "jsr:@bids/validator", path, "--verbose", "--json"]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
@@ -44,7 +64,24 @@ def get_bids_validator_version():
 
 
 def build_subject_paths(bids_dir):
-    """Build a list of BIDS dirs with 1 subject each."""
+    """Build a dictionary of BIDS directories with one subject each.
+
+    Parameters
+    ----------
+    bids_dir : str
+        The root directory of the BIDS dataset.
+
+    Returns
+    -------
+    dict
+        A dictionary where the keys are subject labels and the values are
+        lists of file paths associated with each subject.
+
+    Raises
+    ------
+    ValueError
+        If no subjects are found in the specified directory.
+    """
     bids_dir = str(bids_dir)
     if not bids_dir.endswith("/"):
         bids_dir += "/"
@@ -72,7 +109,21 @@ def build_subject_paths(bids_dir):
 
 
 def build_first_subject_path(bids_dir, subject):
-    """Build a list of BIDS dirs with 1 subject each."""
+    """Build a dictionary containing BIDS directory paths for a single subject.
+
+    Parameters
+    ----------
+    bids_dir : str
+        The root directory of the BIDS dataset.
+    subject : str
+        The path to the subject directory.
+
+    Returns
+    -------
+    dict
+        A dictionary where the key is the subject label and the value is a list of file paths
+        within the subject directory and the root BIDS directory.
+    """
     bids_dir = str(bids_dir)
     if not bids_dir.endswith("/"):
         bids_dir += "/"
@@ -208,7 +259,7 @@ def extract_summary_info(output):
 
 
 def update_dataset_description(path, new_info):
-    """Update or append information to dataset_description.json.
+    """Update or append information to dataset_description.json with new information.
 
     Parameters
     ----------

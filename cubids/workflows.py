@@ -39,6 +39,7 @@ def validate(
     container,
     sequential,
     sequential_subjects,
+    local_validator,
     ignore_nifti_headers,
 ):
     """Run the bids validator.
@@ -55,6 +56,8 @@ def validate(
         Run the validator sequentially.
     sequential_subjects : :obj:`list` of :obj:`str`
         Filter the sequential run to only include the listed subjects.
+    local_validator : :obj:`bool`
+        Use the local bids validator.
     ignore_nifti_headers : :obj:`bool`
         Ignore NIfTI headers when validating.
     """
@@ -75,6 +78,7 @@ def validate(
             # run on full dataset
             call = build_validator_call(
                 str(bids_dir),
+                local_validator,
                 ignore_nifti_headers,
             )
             ret = run_validator(call)
@@ -154,7 +158,7 @@ def validate(
 
                     # run the validator
                     nifti_head = ignore_nifti_headers
-                    call = build_validator_call(tmpdirname, nifti_head)
+                    call = build_validator_call(tmpdirname, local_validator, nifti_head)
                     ret = run_validator(call)
                     # parse output
                     if ret.returncode != 0:
@@ -687,7 +691,7 @@ def copy_exemplars(
     """
     # Run directly from python using
     if container is None:
-        bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad)
+        bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad, force_unlock=force_unlock)
         if use_datalad:
             if not bod.is_datalad_clean():
                 raise Exception(
@@ -948,15 +952,36 @@ def remove_metadata_fields(bids_dir, container, fields):
 
 
 def print_metadata_fields(bids_dir, container):
-    """Print unique metadata fields.
+    """Print unique metadata fields from a BIDS dataset.
+
+    This function identifies and prints all unique metadata fields from
+    the `dataset_description.json` file in a BIDS directory. It can run
+    either directly in Python or within a specified container (Docker or
+    Singularity).
 
     Parameters
     ----------
     bids_dir : :obj:`pathlib.Path`
-        Path to the BIDS directory.
+        Path to the BIDS directory containing the `dataset_description.json` file.
     container : :obj:`str`
-        Container in which to run the workflow.
+        Name of the container (e.g., Docker, Singularity) to use for running the
+        `cubids print-metadata-fields` command. If `None`, the operation is performed
+        directly in Python without a container.
+
+    Raises
+    ------
+    SystemExit
+        Raised in the following cases:
+        - The `dataset_description.json` file is not found in the BIDS directory.
+        - The subprocess returns a non-zero exit code when executed in a container.
+
     """
+    # Check if dataset_description.json exists
+    dataset_description = bids_dir / "dataset_description.json"
+    if not dataset_description.exists():
+        logger.error("dataset_description.json not found in the BIDS directory.")
+        sys.exit(1)
+
     # Run directly from python
     if container is None:
         bod = CuBIDS(data_root=str(bids_dir), use_datalad=False)

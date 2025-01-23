@@ -17,7 +17,18 @@ from cubids.tests.utils import chdir
 
 
 def test_path_exists(tmp_path):
-    """Test whether a given path exists or not."""
+    """Test whether a given path exists or not.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory path provided by pytest.
+
+    Raises
+    ------
+    SystemExit
+        If the path does not exist.
+    """
     parser = argparse.ArgumentParser()
 
     # Test with an existing path
@@ -60,7 +71,18 @@ def test_path_exists(tmp_path):
 
 
 def test_is_file(tmp_path):
-    """Test whether a given path exists or not."""
+    """Test whether a given path is a file or not.
+
+    Parameters
+    ----------
+    tmp_path : pathlib.Path
+        Temporary directory path provided by pytest.
+
+    Raises
+    ------
+    SystemExit
+        If the path does not exist or is not a file.
+    """
     parser = argparse.ArgumentParser()
 
     # Test with an existing path
