@@ -4,10 +4,12 @@ Credits
 
 Development Lead
 ----------------
-* Taylor Salo <taylor dot salo at pennmedicine dot upenn dot edu>
+* Tien Tong <tien dot tong at pennmedicine dot upenn dot edu>
 
 Contributors
 ------------
+* Taylor Salo <taylor dot salo at pennmedicine dot upenn dot edu>
+
 * Matt Cieslak <matthew dot cieslak at pennmedicine dot upenn dot edu>
 
 Principal Investigator
