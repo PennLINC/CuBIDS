@@ -263,7 +263,7 @@ class CuBIDS(object):
         # loop through all niftis in the bids dir
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
-            if any(part.startswith('.') for part in path.parts):
+            if any(part.startswith(".") for part in path.parts):
                 continue
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
@@ -858,7 +858,7 @@ class CuBIDS(object):
 
         # Remove the file extension to get the base name without extension
         no_ext_file = os.path.splitext(filename)[0]
-        
+
         associations = []
         for path in Path(self.path).rglob(f"sub-*/**/{no_ext_file}.*"):
             if ".nii.gz" not in str(path):
@@ -1282,7 +1282,7 @@ class CuBIDS(object):
 
         for path in Path(self.path).rglob("sub-*/**/*.*"):
             # ignore all dot directories
-            if any(part.startswith('.') for part in path.parts):
+            if any(part.startswith(".") for part in path.parts):
                 continue
 
             if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
@@ -1450,6 +1450,7 @@ def _get_participant_relative_path(scan):
         if part.startswith("sub-"):
             return "/".join(parts[i + 1 :])
     raise ValueError(f"Could not find subject in {scan}")
+
 
 def _get_bidsuri(filename, dataset_root):
     """Convert a file path to a bidsuri.
