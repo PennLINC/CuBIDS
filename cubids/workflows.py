@@ -467,13 +467,31 @@ def remove_metadata_fields(bids_dir, fields):
 
 
 def print_metadata_fields(bids_dir):
-    """Print unique metadata fields.
+    """Print unique metadata fields from a BIDS dataset.
+
+    This function identifies and prints all unique metadata fields from
+    the `dataset_description.json` file in a BIDS directory. It can run
+    either directly in Python or within a specified container (Docker or
+    Singularity).
 
     Parameters
     ----------
     bids_dir : :obj:`pathlib.Path`
-        Path to the BIDS directory.
+        Path to the BIDS directory containing the `dataset_description.json` file.
+
+    Raises
+    ------
+    SystemExit
+        Raised in the following cases:
+        - The `dataset_description.json` file is not found in the BIDS directory.
+
     """
+    # Check if dataset_description.json exists
+    dataset_description = bids_dir / "dataset_description.json"
+    if not dataset_description.exists():
+        logger.error("dataset_description.json not found in the BIDS directory.")
+        sys.exit(1)
+
     # Run directly from python
     bod = CuBIDS(data_root=str(bids_dir), use_datalad=False)
     fields = bod.get_all_metadata_fields()

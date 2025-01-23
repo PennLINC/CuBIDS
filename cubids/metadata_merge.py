@@ -1,4 +1,8 @@
-"""Tools for merging metadata."""
+"""Metadata merging utilities for CuBIDS.
+
+This module provides utilities for merging metadata in CuBIDS, including functions
+for checking merging operations, grouping acquisitions, and handling metadata fields.
+"""
 
 import json
 from collections import defaultdict
@@ -179,7 +183,18 @@ def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
 
 
 def is_nan(val):
-    """Return True if val is NaN."""
+    """Check if the given value is NaN (Not a Number).
+
+    Parameters
+    ----------
+    val : any
+        The value to check.
+
+    Returns
+    -------
+    bool
+        True if the value is NaN, False otherwise.
+    """
     if not isinstance(val, float):
         return False
 
@@ -187,7 +202,25 @@ def is_nan(val):
 
 
 def print_merges(merge_list):
-    """Print formatted text of merges."""
+    """Print formatted text of merges.
+
+    Parameters
+    ----------
+    merge_list : list of tuple
+        A list of tuples where each tuple contains two elements:
+
+        - src_id : tuple
+            The source identifier, where the last element is the source ID and
+            the first element is the source name.
+        - dest_id : tuple
+            The destination identifier, where the last element is the destination
+            ID and the first element is the destination name.
+
+    Returns
+    -------
+    str
+        A formatted string representing the merges, with each merge on a new line.
+    """
     merge_strings = []
     for src_id, dest_id in merge_list:
         src_id_str = f"{src_id[-1]}:{src_id[0]}"
@@ -243,13 +276,13 @@ def merge_json_into_json(from_file, to_file, raise_on_error=False):
     return 0
 
 
-def get_acq_dictionary():
+def get_acq_dictionary(is_longitudinal=False):
     """Create a BIDS data dictionary from dataframe columns.
 
     Parameters
     ----------
-    df : :obj:`pandas.DataFrame`
-        Pre export TSV that will be converted to a json dictionary.
+    is_longitudinal : :obj:`bool`, optional
+       If True, add "session" to acq_dict. Default is False.
 
     Returns
     -------
@@ -258,7 +291,8 @@ def get_acq_dictionary():
     """
     acq_dict = {}
     acq_dict["subject"] = {"Description": "Participant ID"}
-    acq_dict["session"] = {"Description": "Session ID"}
+    if is_longitudinal:
+        acq_dict["session"] = {"Description": "Session ID"}
     docs = " https://cubids.readthedocs.io/en/latest/about.html#definitions"
     desc = "Acquisition Group. See Read the Docs for more information"
     acq_dict["AcqGroup"] = {"Description": desc + docs}
@@ -266,10 +300,11 @@ def get_acq_dictionary():
     return acq_dict
 
 
-def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
+def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level, is_longitudinal=False):
     """Find unique sets of Key/Param groups across subjects.
 
     This writes out the following files:
+
     - <output_prefix>_AcqGrouping.tsv: A tsv with the mapping of subject/session to
       acquisition group.
     - <output_prefix>_AcqGrouping.json: A data dictionary for the AcqGrouping.tsv.
@@ -284,6 +319,8 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
         Prefix for output files.
     acq_group_level : {"subject", "session"}
         Level at which to group acquisitions.
+    is_longitudinal : :obj:`bool`, optional
+       If True, add "session" to acq_dict. Default is False.
     """
     from bids import config
     from bids.layout import parse_file_entities
@@ -298,9 +335,12 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
         file_entities = parse_file_entities(row.FilePath)
 
         if acq_group_level == "subject":
-            acq_id = (file_entities.get("subject"), file_entities.get("session"))
+            if is_longitudinal:
+                acq_id = (file_entities.get("subject"), file_entities.get("session"))
+            elif not is_longitudinal:
+                acq_id = file_entities.get("subject")
             acq_groups[acq_id].append((row.EntitySet, row.ParamGroup))
-        else:
+        elif is_longitudinal and acq_group_level == "session":
             acq_id = (file_entities.get("subject"), None)
             acq_groups[acq_id].append(
                 (row.EntitySet, row.ParamGroup, file_entities.get("session"))
@@ -326,17 +366,21 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level):
     for groupnum, content_id_row in enumerate(descending_order, start=1):
         content_id = content_ids[content_id_row]
         acq_group_info.append((groupnum, content_id_counts[content_id_row]) + content_id)
-        for subject, session in contents_to_subjects[content_id]:
-            grouped_sub_sess.append(
-                {"subject": "sub-" + subject, "session": session, "AcqGroup": groupnum}
-            )
+        if is_longitudinal:
+            for subject, session in contents_to_subjects[content_id]:
+                grouped_sub_sess.append(
+                    {"subject": "sub-" + subject, "session": session, "AcqGroup": groupnum}
+                )
+        elif not is_longitudinal:
+            for subject in contents_to_subjects[content_id]:
+                grouped_sub_sess.append({"subject": "sub-" + subject, "AcqGroup": groupnum})
 
     # Write the mapping of subject/session to
     acq_group_df = pd.DataFrame(grouped_sub_sess)
     acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t", index=False)
 
     # Create data dictionary for acq group tsv
-    acq_dict = get_acq_dictionary()
+    acq_dict = get_acq_dictionary(is_longitudinal)
     with open(output_prefix + "_AcqGrouping.json", "w") as outfile:
         json.dump(acq_dict, outfile, indent=4)
 

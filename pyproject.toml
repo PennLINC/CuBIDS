@@ -23,7 +23,7 @@ license = {file = "LICENSE"}
 requires-python = ">=3.9"
 dependencies = [
     "datalad>=0.13.5,!=0.17.3,!=0.17.0,!=0.16.1",
-    "numpy<=2.2.1",
+    "numpy<=2.2.2",
     "pandas<=2.2.3",
     "pybids<=0.18.1",
     "pyyaml",
@@ -51,6 +51,7 @@ doc = [
     "sphinx_markdown_tables",
     "sphinx_rtd_theme",
     "sphinxcontrib-bibtex",
+    "sphinx_design",
 ]
 tests = [
     "codespell",
