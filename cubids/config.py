@@ -4,6 +4,7 @@ from pathlib import Path
 import importlib.resources
 import yaml
 
+
 def load_config(config_file):
     """Load a YAML file containing a configuration for param groups.
 
