@@ -364,10 +364,10 @@ class CuBIDS(object):
             ]
 
             # Get a source json file
-            img_full_path = self.path + source_files.iloc[0].FilePath
+            img_full_path = Path(self.path) / source_files.iloc[0].FilePath
             source_json = img_to_new_ext(img_full_path, ".json")
             for dest_nii in dest_files.FilePath:
-                dest_json = img_to_new_ext(self.path + dest_nii, ".json")
+                dest_json = img_to_new_ext(Path(self.path) / dest_nii, ".json")
                 if Path(dest_json).exists() and Path(source_json).exists():
                     merge_commands.append(f"bids-sidecar-merge {source_json} {dest_json}")
 
@@ -378,8 +378,8 @@ class CuBIDS(object):
             files_to_rm = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)]
 
             for rm_me in files_to_rm.FilePath:
-                if Path(self.path + rm_me).exists():
-                    to_remove.append(self.path + rm_me)
+                if Path(self.path) / rm_me.exists():
+                    to_remove.append(Path(self.path) / rm_me)
                     # delete_commands.append("rm " + rm_me)
 
         # call purge associations on list of files to remove
@@ -403,7 +403,7 @@ class CuBIDS(object):
             to_change = list(entity_sets.keys())
 
             for row in range(len(files_df)):
-                file_path = self.path + files_df.loc[row, "FilePath"]
+                file_path = Path(self.path) / files_df.loc[row, "FilePath"]
                 if Path(file_path).exists() and Path("fmap") not in Path(file_path).parts:
                     key_param_group = files_df.loc[row, "KeyParamGroup"]
 
@@ -428,7 +428,7 @@ class CuBIDS(object):
 
         full_cmd = "\n".join(merge_commands + move_ops)
         if full_cmd:
-            renames = str(Path(self.path) / (new_prefix + "_full_cmd.sh"))
+            renames = Path(self.path) / f"{new_prefix}_full_cmd.sh"
 
             # write full_cmd to a .sh file
             with open(renames, "w") as fo:
@@ -453,13 +453,13 @@ class CuBIDS(object):
                 subprocess.run(
                     ["bash", renames],
                     stdout=subprocess.PIPE,
-                    cwd=str(Path(new_prefix).parent),
+                    cwd=str(Path(self.path) / new_prefix).parent,
                 )
         else:
             print("Not running any commands")
 
         self.reset_bids_layout()
-        self.get_tsvs(new_prefix)
+        self.get_tsvs(str(Path(self.path) / new_prefix))
 
         # remove renames file that gets created under the hood
         subprocess.run(["rm", "-rf", "renames"])
@@ -700,8 +700,8 @@ class CuBIDS(object):
 
         # Copy the dataset_description.json
         copyfile(
-            source = os.path.join(self.path, "dataset_description.json"),
-            destination = os.path.join(exemplars_dir, "dataset_description.json"),
+            os.path.join(self.path, "dataset_description.json"),
+            os.path.join(exemplars_dir, "dataset_description.json"),
         )
 
         s1 = "Copied one subject from each Acquisition Group "
@@ -727,7 +727,7 @@ class CuBIDS(object):
         with open(scans_txt, "r") as fd:
             reader = csv.reader(fd)
             for row in reader:
-                scans.append(os.path.join(self.path, str(row[0])))
+                scans.append(Path(self.path) / row[0])
 
         # check to ensure scans are all real files in the ds!
 
@@ -745,7 +745,7 @@ class CuBIDS(object):
         # sub, ses, modality only (no self.path)
         if_scans = []
         for scan in scans:
-            if_scans.append(_get_participant_relative_path(self.path + scan))
+            if_scans.append(_get_participant_relative_path(Path(self.path) / scan))
 
         for path in Path(self.path).rglob("sub-*/*/fmap/*.json"):
             # json_file = self.layout.get_file(str(path))
@@ -813,7 +813,7 @@ class CuBIDS(object):
         purge_commands = []
         for rm_me in to_remove:
             if Path(rm_me).exists():
-                purge_commands.append("rm " + rm_me)
+                purge_commands.append("rm " + str(rm_me))
 
         # datalad run the file deletions (purges)
         full_cmd = "\n".join(purge_commands)
