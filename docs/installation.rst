@@ -53,6 +53,26 @@ We can accomplish this using the following command:
 The new schema-based ``bids-validator`` doesn't need to be installed 
 and will be implemented automatically when `cubids validate` is called
 
+.. dropdown:: If there is no Internet connection on compute nodes
+
+    If your HPC doesn't allow internet access on its compute nodes, it won't be able to run the online 
+    version of the BIDS validator. In that scenario, you need to install the BIDS validator on your HPC 
+    and then point to the installed version in your cubids validate calls. 
+    To do that, you should run one of these commands below, after installing deno, that downloads the latest version 
+    of the bids-validator in your virtual environment either by installing a lightscript version 
+    (into ``$HOME/.deno/bin``) or by compiling, respectively:
+
+    ..  code-block:: console
+
+        $ deno install -ERN -g -n bids-validator jsr:@bids/validator
+    
+    or:
+
+    ..  code-block:: console
+
+        $ deno compile -ERN -o bids-validator jsr:@bids/validator
+
+    For more information, you can read: https://bids-validator.readthedocs.io/en/latest/user_guide/command-line.html
 
 .. tip::
    If you want to modify the CuBIDS codebase
