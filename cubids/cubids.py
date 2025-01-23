@@ -1927,6 +1927,7 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     ...    {"datatype": "func", "acquisition": "VAR", "task": "meg", "suffix": "bold"},
     ...    "/output",
     ...    schema,
+    ...    True,
     ... )
     WARNING: DATATYPE CHANGE DETECTED
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-meg_acq-VAR_bold.nii.gz'
