@@ -110,7 +110,7 @@ but it keeps track of every file's assignment to Entity and Parameter Groups.
 .. _acqgrouptsv:
 
 Modifying Entity and Parameter Group Assignments
----------------------------------------------
+------------------------------------------------
 
 Sometimes we see that there are important differences in acquisition parameters within a Entity Set.
 If these differences impact how a pipeline will process the data,

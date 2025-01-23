@@ -73,7 +73,7 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext"}
 
 # The master toctree document.
 master_doc = "index"
@@ -171,13 +171,10 @@ _python_version_str = f"{sys.version_info.major}.{sys.version_info.minor}"
 _python_doc_base = "https://docs.python.org/" + _python_version_str
 intersphinx_mapping = {
     "python": (_python_doc_base, None),
-    "numpy": ("https://numpy.org/doc/stable/", (None, "./_intersphinx/numpy-objects.inv")),
-    "scipy": (
-        "https://docs.scipy.org/doc/scipy/reference",
-        (None, "./_intersphinx/scipy-objects.inv"),
-    ),
-    "sklearn": ("https://scikit-learn.org/stable", (None, "./_intersphinx/sklearn-objects.inv")),
-    "matplotlib": ("https://matplotlib.org/", (None, "https://matplotlib.org/objects.inv")),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "sklearn": ("https://scikit-learn.org/stable", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "pybids": ("https://bids-standard.github.io/pybids/", None),
     "nibabel": ("https://nipy.org/nibabel/", None),
