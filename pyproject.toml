@@ -56,19 +56,10 @@ doc = [
 tests = [
     "codespell",
     "coverage",
-    "flake8",
-    "flake8-absolute-import",
-    "flake8-black",
-    "flake8-docstrings",
-    "flake8-isort",
-    "flake8-pyproject",
-    "flake8-unused-arguments",
-    "flake8-use-fstring",
-    "flake8-warnings",
     "niworkflows",
-    "pep8-naming",
     "pytest",
     "pytest-cov",
+    "ruff ~= 0.9.2",
     "tomli",
 ]
 maint = [
@@ -122,50 +113,54 @@ version-file = "cubids/_version.py"
 # Developer tool configurations
 #
 
+# Disable black
 [tool.black]
+exclude = ".*"
+
+[tool.ruff]
 line-length = 99
-target-version = ['py38']
-include = '\.pyi?$'
-exclude = '''
-(
-  /(
-      \.eggs         # exclude a few common directories in the
-    | \.git          # root of the project
-    | \.github
-    | \.hg
-    | \.pytest_cache
-    | _build
-    | build
-    | dist
-  )/
-  | versioneer.py
-  | cubids/_version.py
-)
-'''
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-src_paths = ["isort", "test"]
-known_local_folder = ["cubids"]
+[tool.ruff.lint]
+extend-select = [
+  "F",
+  "E",
+  "W",
+  "I",
+  "UP",
+  "YTT",
+  "S",
+  "BLE",
+  "B",
+  "A",
+  # "CPY",
+  "C4",
+  "DTZ",
+  "T10",
+  # "EM",
+  "EXE",
+  "FA",
+  "ISC",
+  "ICN",
+  "PT",
+  "Q",
+]
+ignore = [
+  "S105",
+  "S311",  # We are not using random for cryptographic purposes
+  "ISC001",
+  "S603",
+]
 
-[tool.flake8]
-max-line-length = "99"
-doctests = "False"
-exclude = [
-    "*build/",
-    "cubids/_version.py",
-    "cubids/_warnings.py",
-    "cubids/config.py",
-    "cubids/data/",
-    "cubids/tests/",
-    "cubids/utils/sentry.py",
-]
-ignore = ["D107", "E203", "E402", "E722", "W503", "N803", "N806", "N815"]
-per-file-ignores = [
-    "**/__init__.py : F401",
-    "docs/conf.py : E265",
-]
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"*/test_*.py" = ["S101"]
+"docs/conf.py" = ["A001"]
+"docs/sphinxext/github_link.py" = ["BLE001"]
+
+[tool.ruff.format]
+quote-style = "single"
 
 [tool.pytest.ini_options]
 addopts = ["--doctest-modules"]
