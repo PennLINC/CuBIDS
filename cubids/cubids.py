@@ -2090,14 +2090,14 @@ def img_to_new_ext(img_path, new_ext):
 
     Examples
     --------
-    >>> img_to_new_ext('/path/to/image.nii.gz', '.tsv')
-    '/path/to/image_events.tsv'
+    >>> img_to_new_ext('/path/to/file_image.nii.gz', '.tsv')
+    '/path/to/file_events.tsv'
 
-    >>> img_to_new_ext('/path/to/image.nii.gz', '.tsv.gz')
-    '/path/to/image_physio.tsv.gz'
+    >>> img_to_new_ext('/path/to/file_image.nii.gz', '.tsv.gz')
+    '/path/to/file_physio.tsv.gz'
 
-    >>> img_to_new_ext('/path/to/image.nii.gz', '.json')
-    '/path/to/image.json'
+    >>> img_to_new_ext('/path/to/file_image.nii.gz', '.json')
+    '/path/to/file_image.json'
 
     Notes
     -----
@@ -2131,14 +2131,10 @@ def get_entity_value(path, key):
 
     Examples
     --------
-    >>> get_entity_value('/path/to/sub-01_ses-02_task-rest_bold.nii.gz', 'sub')
-    '01'
-    >>> get_entity_value('/path/to/sub-01_ses-02_task-rest_bold.nii.gz', 'ses')
-    '02'
-    >>> get_entity_value('/path/to/sub-01_ses-02_task-rest_bold.nii.gz', 'task')
-    'rest'
-    >>> get_entity_value('/path/to/sub-01_ses-02_task-rest_bold.nii.gz', 'run')
-    None
+    >>> get_entity_value('/path/to/sub-01/ses-01/func/sub-01_ses-02_task-rest_bold.nii.gz', 'sub')
+    'sub-01'
+    >>> get_entity_value('/path/to/sub-01/ses-02/func/sub-01_ses-02_task-rest_bold.nii.gz', 'ses')
+    'ses-02'
     """
     parts = Path(path).parts
     for part in parts:
