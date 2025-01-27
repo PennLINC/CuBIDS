@@ -30,7 +30,7 @@ jobs:
             mamba install -c conda-forge -y datalad
 
             # Add deno to run the schema validator
-            mamba install deno
+            mamba install -y deno
 
             # Install CuBIDS
             pip install -e .[tests]
