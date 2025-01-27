@@ -27,7 +27,7 @@ jobs:
             export PATH=/tmp/miniforge/bin:$PATH
             mamba create -n cubids python=<< parameters.python_version >> pip
             source activate cubids
-            mamba install -c mamba-forge -y datalad
+            mamba install -c conda-forge -y datalad
 
             # Add deno to run the schema validator
             mamba install deno
