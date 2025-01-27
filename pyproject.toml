@@ -28,7 +28,6 @@ dependencies = [
     "pybids<=0.18.1",
     "pyyaml",
     "scikit-learn<=1.6.1",
-    "sqlite>=3.45.3",
     "tqdm",
 ]
 dynamic = ["version"]
