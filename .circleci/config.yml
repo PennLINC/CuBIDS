@@ -55,7 +55,7 @@ jobs:
       - run:
           name: Merge coverage files
           command: |
-            mamba create -n cov python=3.9 pip coverage
+            conda create -n cov python=3.9 pip coverage
             source activate cov
 
             # We need curl for the codecov upload
