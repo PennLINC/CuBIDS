@@ -18,21 +18,21 @@ jobs:
       - run:
           name: Test CuBIDS
           command: |
-            export MINICONDA=/tmp/miniconda
-            export PATH="$MINICONDA/bin:$PATH"
-            wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh
-            bash /tmp/miniconda.sh -b -f -p $MINICONDA
-            conda config --set always_yes yes
-            conda update conda
-            conda info -a
+            export MINIFORGE=/tmp/miniforge
+            export PATH="$MINIFORGE/bin:$PATH"
+            wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O /tmp/miniforge.sh
+            bash /tmp/miniforge.sh -b -f -p $MINIFORGE
+            mamba config --set always_yes yes
+            mamba update mamba
+            mamba info -a
 
-            export PATH=/tmp/miniconda/bin:$PATH
-            conda create -n cubids python=<< parameters.python_version >> pip
+            export PATH=/tmp/miniforge/bin:$PATH
+            mamba create -n cubids python=<< parameters.python_version >> pip
             source activate cubids
-            conda install -c conda-forge -y datalad
+            mamba install -c mamba-forge -y datalad
 
             # Add deno to run the schema validator
-            conda install deno
+            mamba install deno
 
             # Install CuBIDS
             pip install -e .[tests]
@@ -57,7 +57,7 @@ jobs:
       - run:
           name: Merge coverage files
           command: |
-            conda create -n cov python=3.9 pip coverage
+            mamba create -n cov python=3.9 pip coverage
             source activate cov
 
             # We need curl for the codecov upload
