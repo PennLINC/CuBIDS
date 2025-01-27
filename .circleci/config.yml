@@ -22,17 +22,17 @@ jobs:
             export PATH="$MINIFORGE/bin:$PATH"
             wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O /tmp/miniforge.sh
             bash /tmp/miniforge.sh -b -f -p $MINIFORGE
-            mamba config --set always_yes yes
-            mamba update mamba
-            mamba info -a
+            micromamba config --set always_yes yes
+            micromamba update micromamba
+            micromamba info -a
 
             export PATH=/tmp/miniforge/bin:$PATH
-            mamba create -n cubids python=<< parameters.python_version >> pip
+            micromamba create -n cubids python=<< parameters.python_version >> pip
             source activate cubids
-            mamba install -c mamba-forge -y datalad
+            micromamba install -c micromamba-forge -y datalad
 
             # Add deno to run the schema validator
-            mamba install deno
+            micromamba install deno
 
             # Install CuBIDS
             pip install -e .[tests]
@@ -57,7 +57,7 @@ jobs:
       - run:
           name: Merge coverage files
           command: |
-            mamba create -n cov python=3.9 pip coverage
+            micromamba create -n cov python=3.9 pip coverage
             source activate cov
 
             # We need curl for the codecov upload
