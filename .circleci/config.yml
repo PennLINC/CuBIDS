@@ -22,7 +22,6 @@ jobs:
             export PATH="$MINIFORGE/bin:$PATH"
             wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O /tmp/miniforge.sh
             bash /tmp/miniforge.sh -b -f -p $MINIFORGE
-            mamba config --set always_yes yes
             mamba update mamba
 
             export PATH=/tmp/miniforge/bin:$PATH
