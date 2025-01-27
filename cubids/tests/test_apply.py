@@ -237,33 +237,35 @@ def summary_data():
 
 
 @pytest.mark.parametrize(
-    ("name", "skeleton", "intended_for", "expected"),
+    ("name", "skeleton", "intended_for", "is_longitudinal", "expected"),
     [
         (
             "relpath_long",
             relpath_intendedfor_long,
             "ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
+            True,
             "pass",
         ),
         (
             "bidsuri_long",
             bidsuri_intendedfor_long,
             "bids::sub-01/ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
+            True,
             "pass",
         ),
         (
             "relpath_cs",
             relpath_intendedfor_cs,
-            # XXX: CuBIDS enforces longitudinal dataset, so this fails.
             "dwi/sub-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
-            ValueError,
+            False,
+            "pass",
         ),
         (
             "bidsuri_cs",
             bidsuri_intendedfor_cs,
-            # XXX: CuBIDS enforces longitudinal dataset, so this fails.
             "bids::sub-01/dwi/sub-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
-            ValueError,
+            False,
+            "pass",
         ),
     ],
 )
@@ -274,6 +276,7 @@ def test_cubids_apply_intendedfor(
     name,
     skeleton,
     intended_for,
+    is_longitudinal,
     expected,
 ):
     """Test cubids apply with different IntendedFor types.
@@ -292,6 +295,8 @@ def test_cubids_apply_intendedfor(
         BIDS skeleton structure.
     intended_for : str
         IntendedFor field value.
+    is_longitudinal : bool
+        Indicate whether the data structure is longitudinal or cross-sectional.
     expected : str or Exception
         Expected result or exception.
 
@@ -308,7 +313,7 @@ def test_cubids_apply_intendedfor(
     bids_dir = tmpdir / name
     generate_bids_skeleton(str(bids_dir), skeleton)
 
-    if "long" in name:
+    if is_longitudinal:
         fdata = files_data["longitudinal"]
         fmap_json = bids_dir / "sub-01/ses-01/fmap/sub-01_ses-01_dir-AP_epi.json"
     else:
