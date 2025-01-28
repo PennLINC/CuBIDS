@@ -396,7 +396,7 @@ def copy_exemplars(
     if use_datalad:
         if not bod.is_datalad_clean():
             raise Exception(
-                "Untracked changes. Need to save " + str(bids_dir) + " before coyping exemplars"
+                "Untracked changes. Need to save " + str(bids_dir) + " before copying exemplars"
             )
     bod.copy_exemplars(
         str(exemplars_dir),

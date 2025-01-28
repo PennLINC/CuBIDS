@@ -709,11 +709,11 @@ class CuBIDS(object):
         ----------
         exemplars_dir : :obj:`str`
             path to the directory that will contain one subject
-            from each Acqusition Group (*_AcqGrouping.tsv)
+            from each Acquisition Group (*_AcqGrouping.tsv)
             example path: /Users/Covitz/tsvs/CCNP_Acq_Groups/
         exemplars_tsv : :obj:`str`
             path to the .tsv file that lists one subject
-            from each Acqusition Group (*_AcqGrouping.tsv
+            from each Acquisition Group (*_AcqGrouping.tsv
             from the cubids-group output)
             example path: /Users/Covitz/tsvs/CCNP_Acq_Grouping.tsv
         min_group_size : :obj:`int`
@@ -923,7 +923,7 @@ class CuBIDS(object):
             A list of paths to files associated with the given NIfTI file, excluding
             the NIfTI file itself.
         """
-        # get all assocation files of a nifti image
+        # get all association files of a nifti image
         no_ext_file = str(nifti).split("/")[-1].split(".")[0]
         associations = []
         for path in Path(self.path).rglob(f"sub-*/**/{no_ext_file}.*"):

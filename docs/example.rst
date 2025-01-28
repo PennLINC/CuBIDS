@@ -185,8 +185,8 @@ BIDS validation
     but can be slowed down by extremely large datasets.
 
 .. warning::
-    For internetless use cases, please see dedicated section of the `Installation page 
-    <https://cubids.readthedocs.io/en/latest/installation.html>`_ on how to download a local version 
+    For internetless use cases, please see dedicated section of the `Installation page
+    <https://cubids.readthedocs.io/en/latest/installation.html>`_ on how to download a local version
     of the validator.
 
     After that, you will need to add ``--local-validator`` option to the command string above.
@@ -216,7 +216,7 @@ To do this, we run the ``cubids purge`` command.
 ``cubids purge`` requires as input a list of files to cleanly "purge" from the dataset.
 You can create this file in any text editor,
 as long as it is saved as plain text ``.txt``.
-When specifying files in this text file, 
+When specifying files in this text file,
 always use relative paths starting from your BIDS directory.
 For this example, we created the following file:
 
@@ -321,7 +321,7 @@ based on acquisition fields such as dimension and voxel sizes, number of volumes
 
 While ``v0_validation.tsv`` identified all the BIDS validation errors present in the dataset,
 it did not identify any potential issues that might be present within the sidecars' metadata.
-Below, we see insances of missing metadata fields in a handful of sidecars,
+Below, we see instances of missing metadata fields in a handful of sidecars,
 which may impact successful execution of BIDS Apps.
 
 .. csv-table:: v0_summary.tsv
