@@ -2125,6 +2125,8 @@ def img_to_new_ext(img_path, new_ext):
 def get_entity_value(path, key):
     """Given a filepath and BIDS key name, return the value associated with the key.
 
+    This really only works for the sub and ses entities.
+
     Parameters
     ----------
     path : str
