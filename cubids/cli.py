@@ -121,6 +121,7 @@ def _parse_validate():
         allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
+    IsFile = partial(_is_file, parser=parser)
 
     parser.add_argument(
         "bids_dir",
@@ -181,6 +182,17 @@ def _parse_validate():
         action="store_true",
         default=False,
         help="Lets user run a locally installed BIDS validator. Default is set to False ",
+        required=False,
+    )
+    parser.add_argument(
+        "--schema",
+        type=IsFile,
+        action="store",
+        default=None,
+        help=(
+            "Path to a BIDS schema JSON file. "
+            "Default is None, which uses the latest schema available to the validator."
+        ),
         required=False,
     )
     return parser
@@ -249,6 +261,7 @@ def _parse_bids_version():
         allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
+    IsFile = partial(_is_file, parser=parser)
 
     parser.add_argument(
         "bids_dir",
@@ -268,6 +281,17 @@ def _parse_bids_version():
             "when using `cubids bids-version /bids/path --write`. "
             "By default, `cubids bids-version /bids/path` prints to the terminal."
         ),
+    )
+    parser.add_argument(
+        "--schema",
+        type=IsFile,
+        action="store",
+        default=None,
+        help=(
+            "Path to a BIDS schema JSON file. "
+            "Default is None, which uses the latest schema available to the validator."
+        ),
+        required=False,
     )
     return parser
 
@@ -418,6 +442,7 @@ def _parse_group():
         allow_abbrev=False,
     )
     PathExists = partial(_path_exists, parser=parser)
+    IsFile = partial(_is_file, parser=parser)
 
     parser.add_argument(
         "bids_dir",
@@ -457,12 +482,23 @@ def _parse_group():
     parser.add_argument(
         "--config",
         action="store",
-        type=PathExists,
+        type=IsFile,
         default=None,
         help=(
             "Path to a config file for grouping. "
             "If not provided, then the default config file from CuBIDS will be used."
         ),
+    )
+    parser.add_argument(
+        "--schema",
+        type=IsFile,
+        action="store",
+        default=None,
+        help=(
+            "Path to a BIDS schema JSON file. "
+            "Default is None, which uses the latest schema available to the validator."
+        ),
+        required=False,
     )
     return parser
 
@@ -616,6 +652,17 @@ def _parse_apply():
             "Path to a config file for grouping. "
             "If not provided, then the default config file from CuBIDS will be used."
         ),
+    )
+    parser.add_argument(
+        "--schema",
+        type=IsFile,
+        action="store",
+        default=None,
+        help=(
+            "Path to a BIDS schema JSON file. "
+            "Default is None, which uses the latest schema available to the validator."
+        ),
+        required=False,
     )
 
     return parser
