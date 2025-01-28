@@ -1,6 +1,7 @@
 """Utility functions for CuBIDS' tests."""
 
 import hashlib
+import importlib.resources
 import json
 import os
 import shutil
@@ -10,7 +11,6 @@ from pathlib import Path
 import nibabel as nb
 import numpy as np
 import pandas as pd
-import importlib.resources
 
 TEST_DATA = importlib.resources.files("cubids") / "tests/data"
 

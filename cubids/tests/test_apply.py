@@ -340,7 +340,6 @@ def test_cubids_apply_intendedfor(
             edited_summary_tsv=summary_tsv,
             files_tsv=files_tsv,
             new_tsv_prefix=None,
-            container=None,
         )
 
         with open(fmap_json) as f:
@@ -357,5 +356,4 @@ def test_cubids_apply_intendedfor(
                 edited_summary_tsv=summary_tsv,
                 files_tsv=files_tsv,
                 new_tsv_prefix=None,
-                container=None,
             )
