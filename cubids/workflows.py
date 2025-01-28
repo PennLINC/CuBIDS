@@ -167,7 +167,7 @@ def validate(
             sys.exit(0)
 
         else:
-            parsed = pd.concat(parsed, axis=0)
+            parsed = pd.concat(parsed, axis=0, ignore_index=True)
             subset = parsed.columns.difference(["subject"])
             parsed = parsed.drop_duplicates(subset=subset)
 
