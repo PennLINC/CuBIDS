@@ -33,16 +33,7 @@ __credits__ : str
     The credits for the CuBIDS package.
 """
 
-from cubids import (
-    cli,
-    config,
-    constants,
-    cubids,
-    metadata_merge,
-    utils,
-    validator,
-    workflows,
-)
+from cubids import cli, config, constants, cubids, metadata_merge, validator, workflows
 from cubids.__about__ import __copyright__, __credits__, __packagename__, __version__
 
 __all__ = [
@@ -55,7 +46,6 @@ __all__ = [
     "constants",
     "cubids",
     "metadata_merge",
-    "utils",
     "validator",
     "workflows",
 ]

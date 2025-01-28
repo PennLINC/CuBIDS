@@ -1,7 +1,8 @@
 """Functions for configuring CuBIDS."""
 
-from pathlib import Path
 import importlib.resources
+from pathlib import Path
+
 import yaml
 
 
