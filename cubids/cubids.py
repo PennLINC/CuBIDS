@@ -1020,7 +1020,7 @@ class CuBIDS(object):
                 modality = mod.replace("/", "").replace("/", "")
 
         if modality == "":
-            print("Unusual Modality Detected")
+            print(f"Unusual Modality Detected: {filepath}")
             modality = "other"
 
         ret = _get_param_groups(
