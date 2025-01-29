@@ -1385,20 +1385,33 @@ class CuBIDS(object):
         summary_dict = self.get_data_dictionary(summary)
 
         # Save data dictionaires as JSONs
-        with open(f"{path_prefix}_files.json", "w") as outfile:
+        files_tsv = f"{path_prefix}_files.tsv"
+        files_json = f"{path_prefix}_files.json"
+        summary_tsv = f"{path_prefix}_summary.tsv"
+        summary_json = f"{path_prefix}_summary.json"
+
+        with open(files_json, "w") as outfile:
             json.dump(files_dict, outfile, indent=4)
 
-        with open(f"{path_prefix}_summary.json", "w") as outfile:
+        with open(summary_json, "w") as outfile:
             json.dump(summary_dict, outfile, indent=4)
 
-        big_df.to_csv(f"{path_prefix}_files.tsv", sep="\t", index=False)
+        big_df.to_csv(files_tsv, sep="\t", index=False)
 
-        summary.to_csv(f"{path_prefix}_summary.tsv", sep="\t", index=False)
+        summary.to_csv(summary_tsv, sep="\t", index=False)
 
         # Calculate the acq groups
-        group_by_acquisition_sets(f"{path_prefix}_files.tsv", path_prefix, self.acq_group_level)
+        group_by_acquisition_sets(files_tsv, path_prefix, self.acq_group_level)
 
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
+        print(f"""Groupings info is available in
+
+  * {files_tsv}
+  * {files_json}
+  * {summary_tsv}
+  * {summary_json}
+
+""")
 
     def get_entity_sets(self):
         """Identify the entity sets for the BIDS dataset.
