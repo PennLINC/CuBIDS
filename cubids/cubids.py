@@ -1911,14 +1911,6 @@ def _get_param_groups(
     # sort ordered_labeled_files by param group
     ordered_labeled_files.sort_values(by=["Counts"], inplace=True, ascending=False)
 
-    # now get rid of cluster cols from deduped and df
-    for col in list(ordered_labeled_files.columns):
-        if col.startswith("Cluster_"):
-            ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
-            param_groups_with_counts = param_groups_with_counts.drop(col, axis=1)
-        if col.endswith("_x"):
-            ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
-
     return ordered_labeled_files, param_groups_with_counts
 
 
