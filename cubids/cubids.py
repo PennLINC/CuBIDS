@@ -1330,14 +1330,16 @@ class CuBIDS(object):
         group_by_acquisition_sets(files_tsv, path_prefix, self.acq_group_level)
 
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
-        print(f"""Groupings info is available in
+        print(
+            f"""Groupings info is available in
 
   * {files_tsv}
   * {files_json}
   * {summary_tsv}
   * {summary_json}
 
-""")
+"""
+        )
 
     def get_entity_sets(self):
         """Identify the entity sets for the BIDS dataset.
