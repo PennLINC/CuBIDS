@@ -1289,6 +1289,10 @@ class CuBIDS(object):
                 for col in rename_cols:
                     summary[col] = summary[col].apply(str)
                     val[col] = summary.loc[row, col]
+
+                    if f"Cluster_{col}" in summary.columns:
+                        val[f"Cluster_{col}"] = summary.loc[row, f"Cluster_{col}"]
+
                 dom_dict[key] = val
 
         # now loop through again and ID variance
@@ -1308,17 +1312,22 @@ class CuBIDS(object):
                 acq_str = "VARIANT"
                 # now we know we have a deviant param group
                 # check if TR is same as param group 1
-                key = summary.loc[row, "EntitySet"]
+                entity_set = summary.loc[row, "EntitySet"]
                 for col in rename_cols:
+                    dom_entity_set = dom_dict[entity_set]
                     summary[col] = summary[col].apply(str)
-                    if summary.loc[row, col] != dom_dict[key][col]:
+
+                    if f"Cluster_{col}" in dom_entity_set.keys():
+                        if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
+                            acq_str += col
+                    elif summary.loc[row, col] != dom_entity_set[col]:
                         if col == "HasFieldmap":
-                            if dom_dict[key][col] == "True":
+                            if dom_entity_set[col] == "True":
                                 acq_str = acq_str + "NoFmap"
                             else:
                                 acq_str = acq_str + "HasFmap"
                         elif col == "UsedAsFieldmap":
-                            if dom_dict[key][col] == "True":
+                            if dom_entity_set[col] == "True":
                                 acq_str = acq_str + "Unused"
                             else:
                                 acq_str = acq_str + "IsUsed"
