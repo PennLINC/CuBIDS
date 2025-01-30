@@ -1020,7 +1020,7 @@ class CuBIDS(object):
                 modality = mod.replace("/", "").replace("/", "")
 
         if modality == "":
-            print("Unusual Modality Detected")
+            print(f"Unusual Modality Detected: {filepath}")
             modality = "other"
 
         ret = _get_param_groups(
@@ -1188,10 +1188,10 @@ class CuBIDS(object):
 
         Returns
         -------
-        tuple of pandas.DataFrame
-            A tuple containing two DataFrames:
-            - big_df: DataFrame with labeled file parameters.
-            - summary: DataFrame summarizing parameter groups with suggested renaming.
+        big_df : pandas.DataFrame
+            DataFrame with labeled file parameters.
+        summary : pandas.DataFrame
+            DataFrame summarizing parameter groups with suggested renaming.
         """
         entity_sets = self.get_entity_sets()
         labeled_files = []
@@ -1274,83 +1274,9 @@ class CuBIDS(object):
                     if relational["IntendedForKey"]["display_mode"] == "bool":
                         rename_cols.append("UsedAsFieldmap")
 
-        dom_dict = {}
-        # loop through summary tsv and create dom_dict
-        for row in range(len(summary)):
-            # if 'NumVolumes' in summary.columns \
-            #         and str(summary.loc[row, "NumVolumes"]) == 'nan':
-            #     summary.at[row, "NumVolumes"] = 1.0
+        summary = assign_variants(summary, rename_cols)
 
-            # if dominant group identified
-            if str(summary.loc[row, "ParamGroup"]) == "1":
-                val = {}
-                # grab col, all vals send to dict
-                key = summary.loc[row, "EntitySet"]
-                for col in rename_cols:
-                    summary[col] = summary[col].apply(str)
-                    val[col] = summary.loc[row, col]
-                dom_dict[key] = val
-
-        # now loop through again and ID variance
-        for row in range(len(summary)):
-            # check to see if renaming has already happened
-            renamed = False
-            entities = _entity_set_to_entities(summary.loc[row, "EntitySet"])
-            if "VARIANT" in summary.loc[row, "EntitySet"]:
-                renamed = True
-
-            # if NumVolumes is nan, set to 1.0
-            # if 'NumVolumes' in summary.columns \
-            #         and str(summary.loc[row, "NumVolumes"]) == 'nan':
-            #     summary.at[row, "NumVolumes"] = 1.0
-
-            if summary.loc[row, "ParamGroup"] != 1 and not renamed:
-                acq_str = "VARIANT"
-                # now we know we have a deviant param group
-                # check if TR is same as param group 1
-                key = summary.loc[row, "EntitySet"]
-                for col in rename_cols:
-                    summary[col] = summary[col].apply(str)
-                    if summary.loc[row, col] != dom_dict[key][col]:
-                        if col == "HasFieldmap":
-                            if dom_dict[key][col] == "True":
-                                acq_str = acq_str + "NoFmap"
-                            else:
-                                acq_str = acq_str + "HasFmap"
-                        elif col == "UsedAsFieldmap":
-                            if dom_dict[key][col] == "True":
-                                acq_str = acq_str + "Unused"
-                            else:
-                                acq_str = acq_str + "IsUsed"
-                        else:
-                            acq_str = acq_str + col
-
-                if acq_str == "VARIANT":
-                    acq_str = acq_str + "Other"
-
-                if "acquisition" in entities.keys():
-                    acq = f"acquisition-{entities['acquisition'] + acq_str}"
-
-                    new_name = summary.loc[row, "EntitySet"].replace(
-                        f"acquisition-{entities['acquisition']}",
-                        acq,
-                    )
-                else:
-                    acq = f"acquisition-{acq_str}"
-                    new_name = acq + "_" + summary.loc[row, "EntitySet"]
-
-                summary.at[row, "RenameEntitySet"] = new_name
-
-            # convert all "nan" to empty str
-            # so they don't show up in the summary tsv
-            if summary.loc[row, "RenameEntitySet"] == "nan":
-                summary.at[row, "RenameEntitySet"] = ""
-
-            for col in rename_cols:
-                if summary.loc[row, col] == "nan":
-                    summary.at[row, col] = ""
-
-        return (big_df, summary)
+        return big_df, summary
 
     def get_tsvs(self, path_prefix):
         """Create the _summary and _files tsvs for the bids dataset.
@@ -1385,20 +1311,35 @@ class CuBIDS(object):
         summary_dict = self.get_data_dictionary(summary)
 
         # Save data dictionaires as JSONs
-        with open(f"{path_prefix}_files.json", "w") as outfile:
+        files_tsv = f"{path_prefix}_files.tsv"
+        files_json = f"{path_prefix}_files.json"
+        summary_tsv = f"{path_prefix}_summary.tsv"
+        summary_json = f"{path_prefix}_summary.json"
+
+        with open(files_json, "w") as outfile:
             json.dump(files_dict, outfile, indent=4)
 
-        with open(f"{path_prefix}_summary.json", "w") as outfile:
+        with open(summary_json, "w") as outfile:
             json.dump(summary_dict, outfile, indent=4)
 
-        big_df.to_csv(f"{path_prefix}_files.tsv", sep="\t", index=False)
+        big_df.to_csv(files_tsv, sep="\t", index=False)
 
-        summary.to_csv(f"{path_prefix}_summary.tsv", sep="\t", index=False)
+        summary.to_csv(summary_tsv, sep="\t", index=False)
 
         # Calculate the acq groups
-        group_by_acquisition_sets(f"{path_prefix}_files.tsv", path_prefix, self.acq_group_level)
+        group_by_acquisition_sets(files_tsv, path_prefix, self.acq_group_level)
 
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
+        print(
+            f"""Groupings info is available in
+
+  * {files_tsv}
+  * {files_json}
+  * {summary_tsv}
+  * {summary_json}
+
+"""
+        )
 
     def get_entity_sets(self):
         """Identify the entity sets for the BIDS dataset.
@@ -1768,7 +1709,7 @@ def _get_param_groups(
 
     Returns
     -------
-    labeled_files : :obj:`pandas.DataFrame`
+    ordered_labeled_files : :obj:`pandas.DataFrame`
         A data frame with one row per file where the ParamGroup column
         indicates which group each scan is a part of.
     param_groups_with_counts : :obj:`pandas.DataFrame`
@@ -1897,14 +1838,6 @@ def _get_param_groups(
 
     # sort ordered_labeled_files by param group
     ordered_labeled_files.sort_values(by=["Counts"], inplace=True, ascending=False)
-
-    # now get rid of cluster cols from deduped and df
-    for col in list(ordered_labeled_files.columns):
-        if col.startswith("Cluster_"):
-            ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
-            param_groups_with_counts = param_groups_with_counts.drop(col, axis=1)
-        if col.endswith("_x"):
-            ordered_labeled_files = ordered_labeled_files.drop(col, axis=1)
 
     return ordered_labeled_files, param_groups_with_counts
 
@@ -2325,3 +2258,103 @@ def build_path(filepath, entities, out_dir, is_longitudinal):
         new_path = str(Path(out_dir) / sub / dtype_new / filename)
 
     return new_path
+
+
+def assign_variants(summary, rename_cols):
+    """Assign variant names to files based on differences from dominant group.
+
+    Parameters
+    ----------
+    summary : pandas.DataFrame
+        The summary DataFrame containing the metadata for each file.
+        The columns that are used include "ParamGroup", "EntitySet",
+        the columns in ``rename_cols``,
+        and any columns in ``rename_cols`` that are prefixed with "Cluster_".
+    rename_cols : list of str
+        A list of column names to use for renaming files.
+        The values in these columns will be compared against the dominant group
+        and labeled with a variant name if they differ.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The updated summary DataFrame with a new column "RenameEntitySet"
+        containing the new entity set names for each file.
+    """
+    # loop through summary tsv and create dom_dict
+    dom_dict = {}
+    for row in range(len(summary)):
+        # if dominant group identified
+        if str(summary.loc[row, "ParamGroup"]) == "1":
+            val = {}
+            # grab col, all vals send to dict
+            key = summary.loc[row, "EntitySet"]
+            for col in rename_cols:
+                summary[col] = summary[col].apply(str)
+                val[col] = summary.loc[row, col]
+
+                if f"Cluster_{col}" in summary.columns:
+                    val[f"Cluster_{col}"] = summary.loc[row, f"Cluster_{col}"]
+
+            dom_dict[key] = val
+
+    # now loop through again and ID variance
+    for row in range(len(summary)):
+        # check to see if renaming has already happened
+        renamed = False
+        entities = _entity_set_to_entities(summary.loc[row, "EntitySet"])
+        if "VARIANT" in summary.loc[row, "EntitySet"]:
+            renamed = True
+
+        if summary.loc[row, "ParamGroup"] != 1 and not renamed:
+            acq_str = "VARIANT"
+            # now we know we have a deviant param group
+            # check if TR is same as param group 1
+            entity_set = summary.loc[row, "EntitySet"]
+            for col in rename_cols:
+                dom_entity_set = dom_dict[entity_set]
+                summary[col] = summary[col].apply(str)
+
+                if f"Cluster_{col}" in dom_entity_set.keys():
+                    if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
+                        acq_str += col
+                elif summary.loc[row, col] != dom_entity_set[col]:
+                    if col == "HasFieldmap":
+                        if dom_entity_set[col] == "True":
+                            acq_str += "NoFmap"
+                        else:
+                            acq_str += "HasFmap"
+                    elif col == "UsedAsFieldmap":
+                        if dom_entity_set[col] == "True":
+                            acq_str += "Unused"
+                        else:
+                            acq_str += "IsUsed"
+                    else:
+                        acq_str += col
+
+            if acq_str == "VARIANT":
+                acq_str += "Other"
+
+            if "acquisition" in entities.keys():
+                acq = f"acquisition-{entities['acquisition'] + acq_str}"
+
+                new_name = summary.loc[row, "EntitySet"].replace(
+                    f"acquisition-{entities['acquisition']}",
+                    acq,
+                )
+            else:
+                acq = f"acquisition-{acq_str}"
+                new_name = acq + "_" + summary.loc[row, "EntitySet"]
+
+            summary.at[row, "RenameEntitySet"] = new_name
+
+        # convert all "nan" to empty str
+        # so they don't show up in the summary tsv
+        if summary.loc[row, "RenameEntitySet"] == "nan":
+            summary.at[row, "RenameEntitySet"] = ""
+
+        for col in rename_cols:
+            if summary.loc[row, col] == "nan":
+                summary.at[row, col] = ""
+
+    return summary

@@ -19,7 +19,7 @@ def load_config(config_file):
     dict
         The configuration loaded from the YAML file.
     """
-    if config_file is None:
+    if not config_file:
         config_file = Path(importlib.resources.files("cubids") / "data/config.yml")
 
     with config_file.open() as f:
