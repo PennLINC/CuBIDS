@@ -1709,7 +1709,7 @@ def _get_param_groups(
 
     Returns
     -------
-    labeled_files : :obj:`pandas.DataFrame`
+    ordered_labeled_files : :obj:`pandas.DataFrame`
         A data frame with one row per file where the ParamGroup column
         indicates which group each scan is a part of.
     param_groups_with_counts : :obj:`pandas.DataFrame`
