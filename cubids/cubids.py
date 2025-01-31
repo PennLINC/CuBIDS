@@ -24,10 +24,10 @@ from bids.layout import parse_file_entities
 from bids.utils import listify
 from tqdm import tqdm
 
+from cubids import utils
 from cubids.config import load_config
 from cubids.constants import NON_KEY_ENTITIES
 from cubids.metadata_merge import check_merging_operations, group_by_acquisition_sets
-from cubids import utils
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
