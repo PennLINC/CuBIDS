@@ -11,16 +11,6 @@ from sklearn.cluster import AgglomerativeClustering
 from cubids.constants import ID_VARS, NON_KEY_ENTITIES
 
 
-# XXX: Remove _validate_json?
-def _validate_json():
-    """Validate a JSON file's contents.
-
-    This is currently not implemented, but would accept metadata as its param.
-    """
-    # TODO: implement this or delete ???
-    return True
-
-
 def _update_json(json_file, metadata):
     """Update a JSON file with the provided metadata.
 
@@ -38,11 +28,8 @@ def _update_json(json_file, metadata):
     -------
     None
     """
-    if _validate_json():
-        with open(json_file, "w", encoding="utf-8") as f:
-            json.dump(metadata, f, ensure_ascii=False, indent=4)
-    else:
-        print("INVALID JSON DATA")
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=4)
 
 
 def _entity_set_to_entities(entity_set):
