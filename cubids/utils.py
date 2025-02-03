@@ -158,6 +158,9 @@ def _get_bidsuri(filename, dataset_root):
     --------
     >>> _get_bidsuri("/path/to/bids/sub-01/ses-01/dataset_description.json", "/path/to/bids")
     'bids::sub-01/ses-01/dataset_description.json'
+    >>> _get_bidsuri("/path/to/bids/sub-01/ses-01/dataset_description.json", "/path/to/other")
+    Traceback (most recent call last):
+    ValueError: Only local datasets are supported: ...
     """
     if dataset_root in filename:
         return filename.replace(dataset_root, "bids::").replace("bids::/", "bids::")
