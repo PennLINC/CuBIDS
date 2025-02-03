@@ -83,8 +83,13 @@ def _file_to_entity_set(filename):
 
     Returns
     -------
-    set
+    str
         A set of entities extracted from the filename.
+
+    Examples
+    --------
+    >>> _file_to_entity_set("sub-01_ses-01_task-rest_bold.nii.gz")
+    'task-rest_suffix-bold'
     """
     entities = parse_file_entities(str(filename))
     return _entities_to_entity_set(entities)
