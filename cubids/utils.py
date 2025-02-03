@@ -89,7 +89,7 @@ def _file_to_entity_set(filename):
     Examples
     --------
     >>> _file_to_entity_set("sub-01_ses-01_task-rest_bold.nii.gz")
-    'task-rest_suffix-bold'
+    'session-01_suffix-bold_task-rest'
     """
     entities = parse_file_entities(str(filename))
     return _entities_to_entity_set(entities)
