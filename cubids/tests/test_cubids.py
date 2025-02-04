@@ -363,18 +363,6 @@ def _test_get_layout(cubids_instance):
     # Add assertions here
 
 
-def _test__validate_json(cubids_instance):
-    """Test validating JSON.
-
-    Parameters
-    ----------
-    cubids_instance : CuBIDS
-        An instance of the CuBIDS class.
-    """
-    cubids_instance._validate_json()
-    # Add assertions here
-
-
 def _test__update_json(cubids_instance):
     """Test updating JSON.
 
