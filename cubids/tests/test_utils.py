@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from cubids.cubids import cluster_single_parameters
+from cubids.utils import cluster_single_parameters
 
 
 def test_cluster_single_parameters():
