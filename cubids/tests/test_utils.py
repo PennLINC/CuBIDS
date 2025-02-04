@@ -82,12 +82,12 @@ def test_cluster_single_parameters():
             "ImageType": ["ORIGINAL", "NONE", "P"],
         },
     ]
-    param_group_df = pd.DataFrame(params)
+    files_df = pd.DataFrame(params)
     modality = "func"
 
     # Run the function
     out_df = cluster_single_parameters(
-        param_group_df=param_group_df,
+        files_df=files_df,
         config=config,
         modality=modality,
     )
@@ -114,7 +114,7 @@ def test_cluster_single_parameters():
     # Change the tolerance for SliceTiming
     config["sidecar_params"]["func"]["SliceTiming"]["tolerance"] = 0.5
     out_df = cluster_single_parameters(
-        param_group_df=param_group_df,
+        files_df=files_df,
         config=config,
         modality=modality,
     )
