@@ -1795,7 +1795,9 @@ def _get_param_groups(
     df = cluster_single_parameters(df, grouping_config, modality)
     # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
-    # get the subset of columns to drop duplicates by
+    # Create parameter group DataFrame (summary_tsv) by removing filenames
+    # and dropping duplicate rows of parameters.
+    # Get the subset of columns to drop duplicates by.
     check_cols = []
     for col in list(df.columns):
         if f"Cluster_{col}" not in list(df.columns) and col != "FilePath":
@@ -1906,7 +1908,7 @@ def get_sidecar_metadata(json_file):
 
 
 def cluster_single_parameters(param_group_df, config, modality):
-    """Run AgglomerativeClustering on param groups and add columns to dataframe.
+    """Run agglomerative clustering on individual parameters and add cluster columns to dataframe.
 
     Parameters
     ----------
@@ -1915,7 +1917,7 @@ def cluster_single_parameters(param_group_df, config, modality):
         indicates which group each scan is a part of.
     config : :obj:`dict`
         Configuration for defining parameter groups.
-        This dictionary has two keys: ``'sidecar_params'`` and ``'derived_params'``.
+        This dictionary has two relevant keys: ``'sidecar_params'`` and ``'derived_params'``.
     modality : :obj:`str`
         Modality of the scan.
         This is used to select the correct configuration from the config dict.
@@ -1997,7 +1999,7 @@ def cluster_single_parameters(param_group_df, config, modality):
                 param_group_df[f"Cluster_{column_name}"] = clustering.labels_
 
         else:
-            # We can rely on string matching for string-type fields,
+            # We can rely on string matching (done separately) for string-type fields,
             # but arrays of strings need to be handled differently.
             column_data = param_group_df[column_name].tolist()
 
