@@ -2,11 +2,11 @@
 
 import pandas as pd
 
-from cubids.cubids import format_params
+from cubids.cubids import cluster_single_parameters
 
 
-def test_format_params():
-    """Test the format_params function.
+def test_cluster_single_parameters():
+    """Test the cluster_single_parameters function.
 
     We want to test that the function correctly clusters parameters based on the
     configuration dictionary.
@@ -86,7 +86,7 @@ def test_format_params():
     modality = "func"
 
     # Run the function
-    out_df = format_params(
+    out_df = cluster_single_parameters(
         param_group_df=param_group_df,
         config=config,
         modality=modality,
@@ -113,7 +113,7 @@ def test_format_params():
 
     # Change the tolerance for SliceTiming
     config["sidecar_params"]["func"]["SliceTiming"]["tolerance"] = 0.5
-    out_df = format_params(
+    out_df = cluster_single_parameters(
         param_group_df=param_group_df,
         config=config,
         modality=modality,

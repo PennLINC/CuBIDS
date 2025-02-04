@@ -1792,7 +1792,7 @@ def _get_param_groups(
     df = round_params(pd.DataFrame(dfs), grouping_config, modality)
 
     # cluster param groups based on tolerance
-    df = format_params(df, grouping_config, modality)
+    df = cluster_single_parameters(df, grouping_config, modality)
     # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
     # get the subset of columns to drop duplicates by
@@ -1905,7 +1905,7 @@ def get_sidecar_metadata(json_file):
         return "Erroneous sidecar"
 
 
-def format_params(param_group_df, config, modality):
+def cluster_single_parameters(param_group_df, config, modality):
     """Run AgglomerativeClustering on param groups and add columns to dataframe.
 
     Parameters
