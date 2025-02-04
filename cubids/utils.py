@@ -320,22 +320,23 @@ def _get_param_groups(
 
             dfs.append(example_data)
 
-    # Assign each file to a ParamGroup
-
-    # round param groups based on precision
+    # Assign each file to a ParamGroup based on the unique set of parameters
+    # Round numeric parameters based on precision
     df = round_params(pd.DataFrame(dfs), grouping_config, modality)
 
-    # cluster param groups based on tolerance
+    # Cluster parameters based on tolerance
     df = cluster_single_parameters(df, grouping_config, modality)
     # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
-    # get the subset of columns to drop duplicates by
+    # Create parameter group DataFrame (summary_tsv) by removing filenames
+    # and dropping duplicate rows of parameters.
+    # Get the subset of columns to drop duplicates by.
     check_cols = []
     for col in list(df.columns):
         if f"Cluster_{col}" not in list(df.columns) and col != "FilePath":
             check_cols.append(col)
 
-    # Find the unique ParamGroups and assign ID numbers in "ParamGroup"\
+    # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
     try:
         deduped = df.drop("FilePath", axis=1)
     except Exception:
@@ -439,16 +440,15 @@ def get_sidecar_metadata(json_file):
         return "Erroneous sidecar"
 
 
-def cluster_single_parameters(param_group_df, config, modality):
+def cluster_single_parameters(files_df, config, modality):
     """Run agglomerative clustering on individual parameters and add cluster columns to dataframe.
 
     Parameters
     ----------
-    param_group_df : :obj:`pandas.DataFrame`
-        A data frame with one row per file where the ParamGroup column
-        indicates which group each scan is a part of.
+    files_df : :obj:`pandas.DataFrame`
+        A data frame with one row per file and separate columns for parameters to cluster.
     config : :obj:`dict`
-        Configuration for defining parameter groups.
+        Configuration that defines which columns to cluster.
         This dictionary has two relevant keys: ``'sidecar_params'`` and ``'derived_params'``.
     modality : :obj:`str`
         Modality of the scan.
@@ -456,7 +456,7 @@ def cluster_single_parameters(param_group_df, config, modality):
 
     Returns
     -------
-    param_group_df : :obj:`pandas.DataFrame`
+    files_df : :obj:`pandas.DataFrame`
         An updated version of the input data frame,
         with a new column added for each element in the modality's
         ``'sidecar_params'`` and ``'derived_params'`` dictionaries.
@@ -482,11 +482,11 @@ def cluster_single_parameters(param_group_df, config, modality):
     to_format.update(config["derived_params"][modality])
 
     for column_name, column_fmt in to_format.items():
-        if column_name not in param_group_df:
+        if column_name not in files_df:
             continue
 
-        if "tolerance" in column_fmt and len(param_group_df) > 1:
-            column_data = param_group_df[column_name].to_numpy()
+        if "tolerance" in column_fmt and len(files_df) > 1:
+            column_data = files_df[column_name].to_numpy()
 
             if any(isinstance(x, list) for x in column_data):
                 # For array/list data, we should first define "clusters" based on the number of
@@ -510,13 +510,13 @@ def cluster_single_parameters(param_group_df, config, modality):
                             n_clusters=None, distance_threshold=tolerance, linkage="complete"
                         ).fit(array)
 
-                        param_group_df.loc[sel_rows, f"Cluster_{column_name}"] = (
+                        files_df.loc[sel_rows, f"Cluster_{column_name}"] = (
                             clustering.labels_ + cluster_idx
                         )
                         cluster_idx += max(clustering.labels_) + 1
                     else:
                         # single-file cluster
-                        param_group_df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
+                        files_df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
                         cluster_idx += 1
             else:
                 array = column_data.reshape(-1, 1)
@@ -528,12 +528,12 @@ def cluster_single_parameters(param_group_df, config, modality):
                 ).fit(array)
 
                 # now add clustering_labels as a column
-                param_group_df[f"Cluster_{column_name}"] = clustering.labels_
+                files_df[f"Cluster_{column_name}"] = clustering.labels_
 
         else:
             # We can rely on string matching (done separately) for string-type fields,
             # but arrays of strings need to be handled differently.
-            column_data = param_group_df[column_name].tolist()
+            column_data = files_df[column_name].tolist()
 
             if any(isinstance(x, list) for x in column_data):
                 cluster_idx = 0
@@ -542,10 +542,10 @@ def cluster_single_parameters(param_group_df, config, modality):
                 unique_vals = np.unique(column_data)
                 for val in unique_vals:
                     sel_rows = [i for i, x in enumerate(column_data) if x == val]
-                    param_group_df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
+                    files_df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
                     cluster_idx += 1
 
-    return param_group_df
+    return files_df
 
 
 def _order_columns(df):
