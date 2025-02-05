@@ -57,6 +57,39 @@ def _expand_lists(df):
     return df
 
 
+def download_schema(version="latest", out_file=None):
+    """Download the BIDS schema as a dereferenced JSON file.
+
+    Parameters
+    ----------
+    version : :obj:`str`, optional
+        The version of the schema to download.
+        If not provided, the latest version will be downloaded.
+
+    Returns
+    -------
+    :obj:`str`
+        The path to the downloaded schema.
+    """
+    import json
+    from urllib.request import urlopen
+
+    out_file = out_file or Path("schema.json")
+
+    schema_url = f"https://bids-specification.readthedocs.io/en/{version}/schema.json"
+
+    # Check if the schema is available
+    try:
+        schema = urlopen(schema_url).read()
+    except Exception as e:
+        raise Exception(f"Unable to download schema from {schema_url}: {e}")
+
+    with open(out_file, "wb") as f:
+        json.dump(schema, f, indent=4, sort_keys=True)
+
+    return out_file
+
+
 def _update_json(json_file, metadata):
     """Update a JSON file with the provided metadata.
 
@@ -664,18 +697,30 @@ def get_entity_value(path, key):
             return part
 
 
-def build_path(filepath, entities, out_dir, is_longitudinal):
+def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     """Build a new path for a file based on its BIDS entities.
+
+    This function could ultimately be replaced with bids.BIDSLayout.build_path(),
+    but that method doesn't use the schema.
 
     Parameters
     ----------
     filepath : str
         The original file path.
-    entities : dict
+    out_entities : dict
         A dictionary of BIDS entities.
         This should include all of the entities in the filename *except* for subject and session.
     out_dir : str
         The output directory for the new file.
+    schema : dict
+        The BIDS schema. The elements that are used in this function include:
+
+        -   schema["rules"]["entities"]: a list of valid BIDS entities,
+            in the order they must appear in filenames.
+        -   schema["objects"]["entities"]: a dictionary mapping entity names
+            (e.g., acquisition) to their corresponding keys (e.g., acq).
+        -   schema["objects"]["datatypes"]: a dictionary defining the valid datatypes.
+            This function only uses the keys of this dictionary.
     is_longitudinal : bool
         If True, add "ses" to file path.
 
@@ -686,95 +731,133 @@ def build_path(filepath, entities, out_dir, is_longitudinal):
 
     Examples
     --------
+    >>> import json
+    >>> import importlib
+    >>> schema_file = Path(importlib.resources.files("cubids") / "data/schema.json")
+    >>> with schema_file.open() as f:
+    ...    schema = json.load(f)
     >>> build_path(
     ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_T1w.nii.gz",
     ...    {"acquisition": "VAR", "suffix": "T2w"},
     ...    "/output",
+    ...    schema,
     ...    True,
     ... )
     '/output/sub-01/ses-01/anat/sub-01_ses-01_acq-VAR_T2w.nii.gz'
 
     The function does not add an extra leading zero to the run entity when it's a string.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    schema,
     ...    True,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
     The function adds an extra leading zero to the run entity when it's an integer
     and the original filename has a leading zero.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-00001_bold.nii.gz",
     ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    schema,
     ...    True,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-00002_bold.nii.gz'
 
     The function does not add an extra leading zero to the run entity when it's an integer
     and the original filename doesn't have a leading zero.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
     ...    {"task": "rest", "run": 2, "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    schema,
     ...    True,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
     The function doesn't add an extra leading zero to the run entity when there isn't a zero.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-1_bold.nii.gz",
     ...    {"task": "rest", "run": "2", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    schema,
     ...    True,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_run-2_bold.nii.gz'
 
     Entities in the original path, but not the entity dictionary, are not included,
     like run in this case.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    schema,
     ...    True,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
-    Entities outside of the prescribed list are ignored, such as "subject"...
+    The "subject" and "session" entities are ignored.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"subject": "02", "task": "rest", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    schema,
     ...    True,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
-    or "echo".
+    But uncommon (but BIDS-valid) entities, like echo, will work.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "echo": 1, "suffix": "bold"},
     ...    "/output",
+    ...    schema,
     ...    True,
     ... )
-    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_echo-1_bold.nii.gz'
 
     It can change the datatype, but will warn the user.
+
     >>> build_path(
     ...    "/input/sub-01/ses-01/anat/sub-01_ses-01_asl.nii.gz",
     ...    {"datatype": "perf", "acquisition": "VAR", "suffix": "asl"},
     ...    "/output",
+    ...    schema,
     ...    True,
     ... )
     WARNING: DATATYPE CHANGE DETECTED
     '/output/sub-01/ses-01/perf/sub-01_ses-01_acq-VAR_asl.nii.gz'
+
+    The datatype change is subject to false positives.
+
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-meg_bold.nii.gz",
+    ...    {"datatype": "func", "acquisition": "VAR", "task": "meg", "suffix": "bold"},
+    ...    "/output",
+    ...    schema,
+    ...    True,
+    ... )
+    WARNING: DATATYPE CHANGE DETECTED
+    '/output/sub-01/ses-01/func/sub-01_ses-01_task-meg_acq-VAR_bold.nii.gz'
+
+    It expects a longitudinal structure, so providing a cross-sectional filename won't work.
+    XXX: This is a bug.
 
     It also works for cross-sectional filename.
     >>> build_path(
     ...    "/input/sub-01/func/sub-01_task-rest_run-01_bold.nii.gz",
     ...    {"task": "rest", "acquisition": "VAR", "suffix": "bold"},
     ...    "/output",
+    ...    schema,
     ...    False,
     ... )
     '/output/sub-01/func/sub-01_task-rest_acq-VAR_bold.nii.gz'
@@ -782,15 +865,20 @@ def build_path(filepath, entities, out_dir, is_longitudinal):
     exts = Path(filepath).suffixes
     old_ext = "".join(exts)
 
-    suffix = entities["suffix"]
-    entity_file_keys = []
+    suffix = out_entities["suffix"]
 
-    # Entities that may be in the filename?
-    file_keys = ["task", "acquisition", "direction", "reconstruction", "run"]
+    valid_entities = schema["rules"]["entities"]
+    entity_names_to_keys = entity_names_to_keys = {
+        k: v["name"] for k, v in schema["objects"]["entities"].items()
+    }
+    valid_datatypes = list(schema["objects"]["datatypes"].keys())
 
-    for key in file_keys:
-        if key in list(entities.keys()):
-            entity_file_keys.append(key)
+    # Remove subject and session from the entities
+    file_entities = {k: v for k, v in out_entities.items() if k not in ["subject", "session"]}
+    # Limit file entities to valid entities from BIDS (sorted in right order)
+    file_entities = {k: out_entities[k] for k in valid_entities if k in file_entities}
+    # Replace entity names with keys (e.g., acquisition with acq)
+    file_entities = {entity_names_to_keys[k]: v for k, v in file_entities.items()}
 
     sub = get_entity_value(filepath, "sub")
     if sub is None:
@@ -803,20 +891,15 @@ def build_path(filepath, entities, out_dir, is_longitudinal):
 
     # Add leading zeros to run entity if it's an integer.
     # If it's a string, respect the value provided.
-    if "run" in entities.keys() and isinstance(entities["run"], int):
+    if "run" in file_entities.keys() and isinstance(file_entities["run"], int):
         # Infer the number of leading zeros needed from the original filename
         n_leading = 2  # default to 1 leading zero
         if "_run-" in filepath:
             run_str = filepath.split("_run-")[1].split("_")[0]
             n_leading = len(run_str)
-        entities["run"] = str(entities["run"]).zfill(n_leading)
+        file_entities["run"] = str(file_entities["run"]).zfill(n_leading)
 
-    filename = "_".join([f"{key}-{entities[key]}" for key in entity_file_keys])
-    filename = (
-        filename.replace("acquisition", "acq")
-        .replace("direction", "dir")
-        .replace("reconstruction", "rec")
-    )
+    filename = "_".join([f"{key}-{value}" for key, value in file_entities.items()])
     if len(filename) > 0:
         if is_longitudinal:
             filename = f"{sub}_{ses}_{filename}_{suffix}{old_ext}"
@@ -827,18 +910,16 @@ def build_path(filepath, entities, out_dir, is_longitudinal):
 
     # CHECK TO SEE IF DATATYPE CHANGED
     # datatype may be overridden/changed if the original file is located in the wrong folder.
-    dtypes = ["anat", "func", "perf", "fmap", "dwi"]
+    # XXX: This check for the datatype is fragile and should be improved.
+    # For example, what if we have sub-01/func/sub-01_task-anatomy_bold.nii.gz?
     dtype_orig = ""
-    for dtype in dtypes:
+    for dtype in valid_datatypes:
         if dtype in filepath:
             dtype_orig = dtype
 
-    if "datatype" in entities.keys():
-        dtype_new = entities["datatype"]
-        if entities["datatype"] != dtype_orig:
-            print("WARNING: DATATYPE CHANGE DETECTED")
-    else:
-        dtype_new = dtype_orig
+    dtype_new = out_entities.get("datatype", dtype_orig)
+    if dtype_new != dtype_orig:
+        print("WARNING: DATATYPE CHANGE DETECTED")
 
     # Construct the new filename
     if is_longitudinal:
