@@ -114,6 +114,7 @@ def test_variant_numbering_multiple_groups():
         "ParamGroup": [1, 2, 1, 2],
         "EchoTime": ["0.05", "0.03", "0.05", "0.03"],
         "RepetitionTime": ["2.5", "2.5", "2.5", "2.5"],
+        "RenameEntitySet": [np.nan] * 4  # Initialize RenameEntitySet column
     })
 
     result = assign_variants(df, ["EchoTime", "RepetitionTime"])
@@ -144,6 +145,7 @@ def test_variant_numbering_consistency():
         "EntitySet": ["datatype-dwi_suffix-dwi"] * 4,
         "ParamGroup": [1, 2, 3, 4],
         "EchoTime": ["0.05", "0.03", "0.03", "0.07"],
+        "RenameEntitySet": [np.nan] * 4  # Initialize RenameEntitySet column
     })
 
     # Run variant assignment twice
