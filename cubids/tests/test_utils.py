@@ -21,13 +21,13 @@ def test_round_params():
     # Example config
     config = {
         "sidecar_params": {
-            "modality1": {
+            "func": {
                 "A": {"precision": 2},
                 "B": {"precision": 2},
             },
         },
         "derived_params": {
-            "modality1": {},
+            "func": {},
         },
     }
 
@@ -42,7 +42,7 @@ def test_round_params():
     )
 
     # Round columns
-    rounded_df = utils.round_params(df, config, "modality1")
+    rounded_df = utils.round_params(df, config, "func")
 
     # Assert that the rounded DataFrame matches the expected DataFrame
     pd.testing.assert_frame_equal(rounded_df, expected_df)

@@ -403,12 +403,14 @@ def round_params(df, config, modality):
 
         if "precision" in column_fmt:
             precision = column_fmt["precision"]
-            if isinstance(df[column_name], float):
+            if df[column_name].apply(lambda x: isinstance(x, (float, int))).any():
                 df[column_name] = df[column_name].round(precision)
             elif df[column_name].apply(lambda x: isinstance(x, (list, np.ndarray))).any():
                 df[column_name] = df[column_name].apply(
                     lambda x: np.round(x, precision) if isinstance(x, (list, np.ndarray)) else x
                 )
+            else:
+                raise ValueError(f"Unsupported data type for rounding in column {column_name}")
 
     return df
 
