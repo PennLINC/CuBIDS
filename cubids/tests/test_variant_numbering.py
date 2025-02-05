@@ -132,6 +132,7 @@ def test_variant_numbering_acquisition_handling():
         ],
         "ParamGroup": [1, 2],
         "EchoTime": ["0.05", "0.03"],
+        "RenameEntitySet": [np.nan] * 2  # Initialize RenameEntitySet column
     })
 
     result = assign_variants(df, ["EchoTime"])
