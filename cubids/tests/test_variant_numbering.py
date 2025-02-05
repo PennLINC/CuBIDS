@@ -4,6 +4,7 @@ import pytest
 from cubids.cubids import CuBIDS
 from cubids.utils import assign_variants
 
+
 @pytest.fixture
 def sample_summary_df():
     """Create a sample summary DataFrame with multiple variant groups."""
@@ -22,6 +23,8 @@ def sample_summary_df():
     # Add cluster columns
     df["Cluster_EchoTime"] = [1, 2, 3, 1, 2]
     df["Cluster_RepetitionTime"] = [1, 1, 1, 2, 2]
+    # Initialize RenameEntitySet column
+    df["RenameEntitySet"] = np.nan
     return df
 
 def test_variant_numbering_with_clusters(sample_summary_df):
@@ -50,6 +53,7 @@ def test_variant_numbering_mixed_clustering():
         "EchoTime": ["0.05", "0.03", "0.07"],
         "FlipAngle": ["90", "45", "90"],
         "Cluster_EchoTime": [1, 2, 3],
+        "RenameEntitySet": [np.nan] * 3  # Initialize RenameEntitySet column
     })
 
     result = assign_variants(df, ["EchoTime", "FlipAngle"])
@@ -66,6 +70,7 @@ def test_variant_numbering_fieldmap():
         "ParamGroup": [1, 2, 3],
         "HasFieldmap": ["True", "False", "False"],
         "UsedAsFieldmap": ["False", "True", "False"],
+        "RenameEntitySet": [np.nan] * 3  # Initialize RenameEntitySet column
     })
 
     result = assign_variants(df, ["HasFieldmap", "UsedAsFieldmap"])
