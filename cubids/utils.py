@@ -377,13 +377,13 @@ def _get_param_groups(
     return ordered_labeled_files, param_groups_with_counts
 
 
-def round_params(param_group_df, config, modality):
+def round_params(df, config, modality):
     """Round columns' values in a DataFrame according to requested precision.
 
     Parameters
     ----------
-    param_group_df : pandas.DataFrame
-        DataFrame containing the parameters to be rounded.
+    df : pandas.DataFrame
+        DataFrame containing the parameters to be rounded, with one row per file.
     config : dict
         Configuration dictionary containing rounding precision information.
     modality : str
@@ -398,16 +398,19 @@ def round_params(param_group_df, config, modality):
     to_format.update(config["derived_params"][modality])
 
     for column_name, column_fmt in to_format.items():
-        if column_name not in param_group_df:
+        if column_name not in df:
             continue
 
         if "precision" in column_fmt:
-            if isinstance(param_group_df[column_name], float):
-                param_group_df[column_name] = param_group_df[column_name].round(
-                    column_fmt["precision"]
+            precision = column_fmt["precision"]
+            if isinstance(df[column_name], float):
+                df[column_name] = df[column_name].round(precision)
+            elif df[column_name].apply(lambda x: isinstance(x, (list, np.ndarray))).any():
+                df[column_name] = df[column_name].apply(
+                    lambda x: np.round(x, precision) if isinstance(x, (list, np.ndarray)) else x
                 )
 
-    return param_group_df
+    return df
 
 
 def get_sidecar_metadata(json_file):
