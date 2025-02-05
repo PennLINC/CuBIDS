@@ -769,8 +769,6 @@ def assign_variants(summary, rename_cols):
         The updated summary DataFrame with a new column "RenameEntitySet"
         containing the new entity set names for each file.
     """
-    # Track variant counts for each parameter
-    variant_counts = {}
 
     # loop through summary tsv and create dom_dict
     dom_dict = {}
@@ -799,6 +797,7 @@ def assign_variants(summary, rename_cols):
 
         if summary.loc[row, "ParamGroup"] != 1 and not renamed:
             variant_params = []
+            variant_clusters = []
             # now we know we have a deviant param group
             entity_set = summary.loc[row, "EntitySet"]
             for col in rename_cols:
@@ -808,6 +807,7 @@ def assign_variants(summary, rename_cols):
                 if f"Cluster_{col}" in dom_entity_set.keys():
                     if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
                         variant_params.append(col)
+                        variant_clusters.append(str(summary.loc[row, f"Cluster_{col}"]))
                 elif summary.loc[row, col] != dom_entity_set[col]:
                     if col == "HasFieldmap":
                         variant_params.append("NoFmap" if dom_entity_set[col] == "True" else "HasFmap")
@@ -815,25 +815,23 @@ def assign_variants(summary, rename_cols):
                         variant_params.append("Unused" if dom_entity_set[col] == "True" else "IsUsed")
                     else:
                         variant_params.append(col)
+                        variant_clusters.append("")
 
             # Sort params to ensure consistent ordering
-            variant_params.sort()
+            sorted_pairs = sorted(zip(variant_params, variant_clusters))
+            variant_params = [p for p, _ in sorted_pairs]
+            variant_clusters = [c for _, c in sorted_pairs]
 
             # Create variant string
             if variant_params:
-                variant_key = "".join(variant_params)
-                if variant_key not in variant_counts:
-                    variant_counts[variant_key] = 1
-                else:
-                    variant_counts[variant_key] += 1
-
-                acq_str = f"VARIANT{''.join(variant_params)}{variant_counts[variant_key]}"
+                variant_str = "VARIANT"
+                for param, cluster in zip(variant_params, variant_clusters):
+                    variant_str += param
+                    if cluster:
+                        variant_str += cluster
+                acq_str = variant_str
             else:
-                if "Other" not in variant_counts:
-                    variant_counts["Other"] = 1
-                else:
-                    variant_counts["Other"] += 1
-                acq_str = f"VARIANTOther{variant_counts['Other']}"
+                acq_str = "VARIANTOther"
 
             if "acquisition" in entities.keys():
                 acq = f"acquisition-{entities['acquisition'] + acq_str}"
