@@ -452,13 +452,13 @@ def get_sidecar_metadata(json_file):
         return "Erroneous sidecar"
 
 
-def cluster_single_parameters(files_df, config, modality):
+def cluster_single_parameters(df, config, modality):
     """Run agglomerative clustering on individual parameters and add cluster columns to dataframe.
 
     Parameters
     ----------
-    files_df : :obj:`pandas.DataFrame`
-        A data frame with one row per file and separate columns for parameters to cluster.
+    df : :obj:`pandas.DataFrame`
+        A DataFrame with one row per file and separate columns for parameters to cluster.
     config : :obj:`dict`
         Configuration that defines which columns to cluster.
         This dictionary has two relevant keys: ``'sidecar_params'`` and ``'derived_params'``.
@@ -468,8 +468,8 @@ def cluster_single_parameters(files_df, config, modality):
 
     Returns
     -------
-    files_df : :obj:`pandas.DataFrame`
-        An updated version of the input data frame,
+    df : :obj:`pandas.DataFrame`
+        An updated version of the input DataFrame,
         with a new column added for each element in the modality's
         ``'sidecar_params'`` and ``'derived_params'`` dictionaries.
         The new columns will have the name ``'Cluster_' + column_name``,
@@ -490,15 +490,17 @@ def cluster_single_parameters(files_df, config, modality):
     The modality-wise dictionary's keys are names of BIDS fields to derive from the
     NIfTI header and include in the Parameter Groupings.
     """
+    df = df.copy()  # don't modify DataFrame in place
+
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
 
     for column_name, column_fmt in to_format.items():
-        if column_name not in files_df:
+        if column_name not in df:
             continue
 
-        if "tolerance" in column_fmt and len(files_df) > 1:
-            column_data = files_df[column_name].to_numpy()
+        if "tolerance" in column_fmt and len(df) > 1:
+            column_data = df[column_name].to_numpy()
 
             if any(isinstance(x, list) for x in column_data):
                 # For array/list data, we should first define "clusters" based on the number of
@@ -522,13 +524,13 @@ def cluster_single_parameters(files_df, config, modality):
                             n_clusters=None, distance_threshold=tolerance, linkage="complete"
                         ).fit(array)
 
-                        files_df.loc[sel_rows, f"Cluster_{column_name}"] = (
+                        df.loc[sel_rows, f"Cluster_{column_name}"] = (
                             clustering.labels_ + cluster_idx
                         )
                         cluster_idx += max(clustering.labels_) + 1
                     else:
                         # single-file cluster
-                        files_df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
+                        df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
                         cluster_idx += 1
             else:
                 array = column_data.reshape(-1, 1)
@@ -540,12 +542,12 @@ def cluster_single_parameters(files_df, config, modality):
                 ).fit(array)
 
                 # now add clustering_labels as a column
-                files_df[f"Cluster_{column_name}"] = clustering.labels_
+                df[f"Cluster_{column_name}"] = clustering.labels_
 
         else:
             # We can rely on string matching (done separately) for string-type fields,
             # but arrays of strings need to be handled differently.
-            column_data = files_df[column_name].tolist()
+            column_data = df[column_name].tolist()
 
             if any(isinstance(x, list) for x in column_data):
                 cluster_idx = 0
@@ -554,10 +556,10 @@ def cluster_single_parameters(files_df, config, modality):
                 unique_vals = np.unique(column_data)
                 for val in unique_vals:
                     sel_rows = [i for i, x in enumerate(column_data) if x == val]
-                    files_df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
+                    df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
                     cluster_idx += 1
 
-    return files_df
+    return df
 
 
 def _order_columns(df):

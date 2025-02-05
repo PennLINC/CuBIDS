@@ -130,7 +130,7 @@ def test_cluster_single_parameters():
 
     # Run the function
     out_df = utils.cluster_single_parameters(
-        files_df=files_df,
+        df=files_df,
         config=config,
         modality=modality,
     )
@@ -157,7 +157,7 @@ def test_cluster_single_parameters():
     # Change the tolerance for SliceTiming
     config["sidecar_params"]["func"]["SliceTiming"]["tolerance"] = 0.5
     out_df = utils.cluster_single_parameters(
-        files_df=files_df,
+        df=files_df,
         config=config,
         modality=modality,
     )
