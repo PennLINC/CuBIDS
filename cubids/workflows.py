@@ -267,7 +267,7 @@ def bids_sidecar_merge(from_json, to_json):
     sys.exit(merge_status)
 
 
-def group(bids_dir, acq_group_level, config, output_prefix):
+def group(bids_dir, acq_group_level, config, schema, output_prefix):
     """Find key and param groups.
 
     Parameters
@@ -278,6 +278,8 @@ def group(bids_dir, acq_group_level, config, output_prefix):
         Level at which acquisition groups are created.
     config : :obj:`pathlib.Path`
         Path to the grouping config file.
+    schema : :obj:`pathlib.Path`
+        Path to the BIDS schema file.
     output_prefix : :obj:`pathlib.Path`
         Output filename prefix.
     """
@@ -286,6 +288,7 @@ def group(bids_dir, acq_group_level, config, output_prefix):
         data_root=str(bids_dir),
         acq_group_level=acq_group_level,
         grouping_config=config,
+        schema_json=schema,
     )
     bod.get_tsvs(
         str(output_prefix),
@@ -297,6 +300,7 @@ def apply(
     use_datalad,
     acq_group_level,
     config,
+    schema,
     edited_summary_tsv,
     files_tsv,
     new_tsv_prefix,
@@ -313,6 +317,8 @@ def apply(
         Level at which acquisition groups are created.
     config : :obj:`pathlib.Path`
         Path to the grouping config file.
+    schema : :obj:`pathlib.Path`
+        Path to the BIDS schema file.
     edited_summary_tsv : :obj:`pathlib.Path`
         Path to the edited summary tsv.
     files_tsv : :obj:`pathlib.Path`
@@ -326,6 +332,7 @@ def apply(
         use_datalad=use_datalad,
         acq_group_level=acq_group_level,
         grouping_config=config,
+        schema_json=schema,
     )
     if use_datalad:
         if not bod.is_datalad_clean():

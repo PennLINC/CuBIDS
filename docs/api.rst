@@ -13,6 +13,7 @@ API
    :template: class.rst
 
    cubids.cubids.CuBIDS
+   cubids.cubids.build_path
 
 
 *******************************************
