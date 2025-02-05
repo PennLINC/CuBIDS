@@ -392,8 +392,15 @@ def round_params(df, config, modality):
     Returns
     -------
     pandas.DataFrame
-        DataFrame with the specified columns' values rounded to the requested precision.
+        Modified DataFrame with the specified columns' values rounded to the requested precision.
+
+    Raises
+    ------
+    ValueError
+        If the data type of the column is not supported for rounding, such as strings.
     """
+    df = df.copy()  # don't modify DataFrame in place
+
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
 

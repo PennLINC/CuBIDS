@@ -449,21 +449,6 @@ def _test__get_param_groups(cubids_instance):
     # Add assertions here
 
 
-def _test_round_params(cubids_instance):
-    """Test rounding parameters.
-
-    Parameters
-    ----------
-    cubids_instance : CuBIDS
-        An instance of the CuBIDS class.
-    """
-    param_group_df = pd.DataFrame({"param": [0.123456789]})
-    config = {"param": {"round": 3}}
-    modality = "bold"
-    rounded_params = cubids_instance.round_params(param_group_df, config, modality)
-    # Add assertions here
-
-
 def _test_get_sidecar_metadata(cubids_instance):
     """Test getting sidecar metadata.
 
