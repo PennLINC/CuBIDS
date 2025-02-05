@@ -769,6 +769,9 @@ def assign_variants(summary, rename_cols):
         The updated summary DataFrame with a new column "RenameEntitySet"
         containing the new entity set names for each file.
     """
+    # Track variant counts for each parameter
+    variant_counts = {}
+
     # loop through summary tsv and create dom_dict
     dom_dict = {}
     for row in range(len(summary)):
@@ -795,9 +798,8 @@ def assign_variants(summary, rename_cols):
             renamed = True
 
         if summary.loc[row, "ParamGroup"] != 1 and not renamed:
-            acq_str = "VARIANT"
+            variant_params = []
             # now we know we have a deviant param group
-            # check if TR is same as param group 1
             entity_set = summary.loc[row, "EntitySet"]
             for col in rename_cols:
                 dom_entity_set = dom_dict[entity_set]
@@ -805,27 +807,36 @@ def assign_variants(summary, rename_cols):
 
                 if f"Cluster_{col}" in dom_entity_set.keys():
                     if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
-                        acq_str += col
+                        variant_params.append(col)
                 elif summary.loc[row, col] != dom_entity_set[col]:
                     if col == "HasFieldmap":
-                        if dom_entity_set[col] == "True":
-                            acq_str += "NoFmap"
-                        else:
-                            acq_str += "HasFmap"
+                        variant_params.append("NoFmap" if dom_entity_set[col] == "True" else "HasFmap")
                     elif col == "UsedAsFieldmap":
-                        if dom_entity_set[col] == "True":
-                            acq_str += "Unused"
-                        else:
-                            acq_str += "IsUsed"
+                        variant_params.append("Unused" if dom_entity_set[col] == "True" else "IsUsed")
                     else:
-                        acq_str += col
+                        variant_params.append(col)
 
-            if acq_str == "VARIANT":
-                acq_str += "Other"
+            # Sort params to ensure consistent ordering
+            variant_params.sort()
+
+            # Create variant string
+            if variant_params:
+                variant_key = "".join(variant_params)
+                if variant_key not in variant_counts:
+                    variant_counts[variant_key] = 1
+                else:
+                    variant_counts[variant_key] += 1
+
+                acq_str = f"VARIANT{''.join(variant_params)}{variant_counts[variant_key]}"
+            else:
+                if "Other" not in variant_counts:
+                    variant_counts["Other"] = 1
+                else:
+                    variant_counts["Other"] += 1
+                acq_str = f"VARIANTOther{variant_counts['Other']}"
 
             if "acquisition" in entities.keys():
                 acq = f"acquisition-{entities['acquisition'] + acq_str}"
-
                 new_name = summary.loc[row, "EntitySet"].replace(
                     f"acquisition-{entities['acquisition']}",
                     acq,
