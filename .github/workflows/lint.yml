@@ -1,26 +1,38 @@
-name: Linters
+name: Contribution checks
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  lint:
+  style:
     runs-on: ubuntu-latest
     steps:
-    - name: Set up environment
-      uses: actions/checkout@v4
-      with:  # no need for the history
-        fetch-depth: 1
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-    - name: Install dependencies
-      run: |
-        pip install flake8 flake8-absolute-import flake8-black flake8-docstrings \
-        flake8-isort flake8-pyproject flake8-unused-arguments \
-        flake8-use-fstring pep8-naming \
-        codespell tomli
-    - name: Run linters
-      run: python -m flake8 cubids
+      - uses: actions/checkout@v4
+      - run: pipx run ruff check .
+      - run: pipx run ruff format --diff .
+
+  codespell:
+    name: Check for spelling errors
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Codespell
+        uses: codespell-project/actions-codespell@v2
