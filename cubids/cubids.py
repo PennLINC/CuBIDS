@@ -379,6 +379,7 @@ class CuBIDS(object):
                             data["NumVolumes"] = 1
                     if "ImageOrientation" not in data.keys():
                         orient = nb.orientations.aff2axcodes(img.affine)
+                        orient = [str(orientation) for orientation in orient]
                         joined = "".join(orient) + "+"
                         data["ImageOrientation"] = joined
 
