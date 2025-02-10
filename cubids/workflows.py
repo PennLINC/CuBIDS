@@ -39,6 +39,7 @@ def validate(
     sequential_subjects,
     local_validator,
     ignore_nifti_headers,
+    schema,
 ):
     """Run the bids validator.
 
@@ -56,6 +57,8 @@ def validate(
         Use the local bids validator.
     ignore_nifti_headers : :obj:`bool`
         Ignore NIfTI headers when validating.
+    schema : :obj:`pathlib.Path` or None
+        Path to the BIDS schema file.
     """
     # check status of output_prefix, absolute or relative?
     abs_path_output = True
@@ -75,6 +78,7 @@ def validate(
             str(bids_dir),
             local_validator,
             ignore_nifti_headers,
+            schema=schema,
         )
         ret = run_validator(call)
 
@@ -148,7 +152,7 @@ def validate(
 
                 # run the validator
                 nifti_head = ignore_nifti_headers
-                call = build_validator_call(tmpdirname, local_validator, nifti_head)
+                call = build_validator_call(tmpdirname, local_validator, nifti_head, schema=schema)
                 ret = run_validator(call)
                 # parse output
                 if ret.returncode != 0:
@@ -197,7 +201,7 @@ def validate(
                 return parsed
 
 
-def bids_version(bids_dir, write=False):
+def bids_version(bids_dir, write=False, schema=None):
     """Get BIDS validator and schema version.
 
     Parameters
@@ -206,6 +210,8 @@ def bids_version(bids_dir, write=False):
         Path to the BIDS directory.
     write : :obj:`bool`
         If True, write to dataset_description.json. If False, print to terminal.
+    schema : :obj:`pathlib.Path` or None
+        Path to the BIDS schema file.
     """
     # Need to run validator to get output with schema version
     # Copy code from `validate --sequential`
@@ -253,7 +259,7 @@ def bids_version(bids_dir, write=False):
                 shutil.copy2(fi, output)
 
             # run the validator
-            call = build_validator_call(tmpdirname)
+            call = build_validator_call(tmpdirname, schema=schema)
             ret = run_validator(call)
 
             # Get BIDS validator and schema version
