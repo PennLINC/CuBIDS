@@ -168,7 +168,7 @@ def validate(
         # concatenate the parsed data and exit
         if len(parsed) < 1:
             logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
-            sys.exit(0)
+            return
 
         else:
             parsed = pd.concat(parsed, axis=0, ignore_index=True)
@@ -195,7 +195,7 @@ def validate(
                     json.dump(val_dict, outfile, indent=4)
 
                 logger.info("Writing issues out to file %s", val_tsv)
-                sys.exit(0)
+                return
             else:
                 # user may be in python session, return dataframe
                 return parsed
