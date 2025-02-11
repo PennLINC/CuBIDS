@@ -151,10 +151,16 @@ def test_validate_command(tmp_path):
     bids_dir.mkdir()
     (bids_dir / "dataset_description.json").touch()
 
+    # Create output prefix
+    output_prefix = tmp_path / "validation_output"
+
     # Test validation
     with pytest.raises(SystemExit) as excinfo:
-        _main(["validate", str(bids_dir)])
+        _main(["validate", str(bids_dir), str(output_prefix)])
     assert excinfo.value.code == 0
+
+    # Check that output files were created
+    assert (output_prefix.parent / f"{output_prefix.name}_validation.txt").exists()
 
 
 def test_validate_command_invalid_dir(tmp_path):
