@@ -15,7 +15,7 @@ import shutil
 import pytest
 
 from cubids.cli import _main, _path_exists, _is_file
-from cubids.tests.utils import chdir, get_test_data_path
+from cubids.tests.utils import TEST_DATA, chdir
 
 
 def test_path_exists(tmp_path):
@@ -237,7 +237,7 @@ def test_remove_metadata_fields_command(tmp_path):
 def test_validate_command_with_test_dataset(tmp_path):
     """Test the validate command with the test BIDS dataset."""
     # Copy test dataset to temporary directory
-    test_data = get_test_data_path() / "BIDS_Dataset"
+    test_data = TEST_DATA / "BIDS_Dataset"
     bids_dir = tmp_path / "BIDS_Dataset"
     shutil.copytree(test_data, bids_dir)
 
@@ -255,7 +255,7 @@ def test_validate_command_with_test_dataset(tmp_path):
 def test_group_command_with_test_dataset(tmp_path):
     """Test the group command with the test BIDS dataset."""
     # Copy test dataset to temporary directory
-    test_data = get_test_data_path() / "BIDS_Dataset"
+    test_data = TEST_DATA / "BIDS_Dataset"
     bids_dir = tmp_path / "BIDS_Dataset"
     shutil.copytree(test_data, bids_dir)
 
@@ -274,7 +274,7 @@ def test_group_command_with_test_dataset(tmp_path):
 def test_add_nifti_info_command_with_test_dataset(tmp_path):
     """Test the add-nifti-info command with the test BIDS dataset."""
     # Copy test dataset to temporary directory
-    test_data = get_test_data_path() / "BIDS_Dataset"
+    test_data = TEST_DATA / "BIDS_Dataset"
     bids_dir = tmp_path / "BIDS_Dataset"
     shutil.copytree(test_data, bids_dir)
 
@@ -303,7 +303,7 @@ def test_add_nifti_info_command_with_test_dataset(tmp_path):
 def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys):
     """Test the print-metadata-fields command with the test BIDS dataset."""
     # Copy test dataset to temporary directory
-    test_data = get_test_data_path() / "BIDS_Dataset"
+    test_data = TEST_DATA / "BIDS_Dataset"
     bids_dir = tmp_path / "BIDS_Dataset"
     shutil.copytree(test_data, bids_dir)
 
@@ -321,7 +321,7 @@ def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys):
 def test_remove_metadata_fields_command_with_test_dataset(tmp_path):
     """Test the remove-metadata-fields command with the test BIDS dataset."""
     # Copy test dataset to temporary directory
-    test_data = get_test_data_path() / "BIDS_Dataset"
+    test_data = TEST_DATA / "BIDS_Dataset"
     bids_dir = tmp_path / "BIDS_Dataset"
     shutil.copytree(test_data, bids_dir)
 
@@ -349,7 +349,7 @@ def test_remove_metadata_fields_command_with_test_dataset(tmp_path):
 def test_purge_command_with_test_dataset(tmp_path):
     """Test the purge command with the test BIDS dataset."""
     # Copy test dataset to temporary directory
-    test_data = get_test_data_path() / "BIDS_Dataset"
+    test_data = TEST_DATA / "BIDS_Dataset"
     bids_dir = tmp_path / "BIDS_Dataset"
     shutil.copytree(test_data, bids_dir)
 
