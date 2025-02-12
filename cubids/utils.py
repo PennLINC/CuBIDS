@@ -904,7 +904,7 @@ def assign_variants(summary, rename_cols):
                             acq_str += "IsUsed"
                     else:
                         val = summary.loc[row, col]
-                        # If the value is a string representation of a float (contains decimal point)
+                        # If the value is a string float (contains decimal point)
                         if isinstance(val, str) and "." in val:
                             val = val.replace(".", "p")
                         # If the value is an actual float
