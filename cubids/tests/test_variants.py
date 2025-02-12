@@ -1,57 +1,58 @@
+import pytest
 import pandas as pd
 from cubids.utils import assign_variants
 
-def test_assign_variants_with_cluster_values(tmp_path):
-    """Test that assign_variants includes cluster values in variant names."""
-    # Create test DataFrame
-    data = {
+
+@pytest.fixture
+def base_df():
+    """Create a basic DataFrame for testing variant assignments.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame with basic structure needed for assign_variants testing
+    """
+    return pd.DataFrame({
         "ParamGroup": ["1", "2", "2"],
         "EntitySet": ["task-test", "task-test", "task-test"],
-        "EchoTime": ["0.03", "0.05", "0.07"],
-        "Cluster_EchoTime": ["1", "2", "3"],
-        "RenameEntitySet": ["", "", ""],
-    }
-    df = pd.DataFrame(data)
+        "RenameEntitySet": ["", "", ""]
+    })
+
+def test_assign_variants_with_cluster_values(base_df):
+    """Test that assign_variants includes cluster values in variant names."""
+    # Add specific columns for this test
+    base_df["EchoTime"] = ["0.03", "0.05", "0.07"]
+    base_df["Cluster_EchoTime"] = ["1", "2", "3"]
 
     # Run assign_variants
-    result = assign_variants(df, ["EchoTime"])
+    result = assign_variants(base_df, ["EchoTime"])
 
     # Check that variant names include cluster values
     assert "VARIANTEchoTime2" in result.loc[1, "RenameEntitySet"]
     assert "VARIANTEchoTime3" in result.loc[2, "RenameEntitySet"]
 
-def test_assign_variants_mixed_parameters(tmp_path):
+def test_assign_variants_mixed_parameters(base_df):
     """Test assign_variants with both clustered and non-clustered parameters."""
-    data = {
-        "ParamGroup": ["1", "2", "2"],
-        "EntitySet": ["task-test", "task-test", "task-test"],
-        "EchoTime": ["0.03", "0.05", "0.07"],
-        "FlipAngle": ["90", "75", "60"],
-        "Cluster_EchoTime": ["1", "2", "3"],
-        "RenameEntitySet": ["", "", ""],
-    }
-    df = pd.DataFrame(data)
+    # Add specific columns for this test
+    base_df["EchoTime"] = ["0.03", "0.05", "0.07"]
+    base_df["FlipAngle"] = ["90", "75", "60"]
+    base_df["Cluster_EchoTime"] = ["1", "2", "3"]
 
     # Run assign_variants
-    result = assign_variants(df, ["EchoTime", "FlipAngle"])
+    result = assign_variants(base_df, ["EchoTime", "FlipAngle"])
 
     # Check variant names include both cluster values and actual values
     assert "VARIANTEchoTime2FlipAngle75" in result.loc[1, "RenameEntitySet"]
     assert "VARIANTEchoTime3FlipAngle60" in result.loc[2, "RenameEntitySet"]
 
-def test_assign_variants_special_parameters(tmp_path):
+def test_assign_variants_special_parameters(base_df):
     """Test assign_variants handles special parameters correctly."""
-    data = {
-        "ParamGroup": ["1", "2", "2"],
-        "EntitySet": ["task-test", "task-test", "task-test"],
-        "HasFieldmap": ["True", "False", "True"],
-        "UsedAsFieldmap": ["True", "False", "True"],
-        "RenameEntitySet": ["", "", ""],
-    }
-    df = pd.DataFrame(data)
+    # Add specific columns for this test
+    base_df["HasFieldmap"] = ["True", "False", "True"]
+    base_df["UsedAsFieldmap"] = ["True", "False", "True"]
 
     # Run assign_variants
-    result = assign_variants(df, ["HasFieldmap", "UsedAsFieldmap"])
+    result = assign_variants(base_df, ["HasFieldmap", "UsedAsFieldmap"])
 
     # Check special parameter handling
     assert "VARIANTNoFmap" in result.loc[1, "RenameEntitySet"]
