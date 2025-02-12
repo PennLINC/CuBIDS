@@ -889,7 +889,8 @@ def assign_variants(summary, rename_cols):
 
                 if f"Cluster_{col}" in dom_entity_set.keys():
                     if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
-                        acq_str += col
+                        cluster_val = summary.loc[row, f"Cluster_{col}"]
+                        acq_str += f"{col}{cluster_val}"
                 elif summary.loc[row, col] != dom_entity_set[col]:
                     if col == "HasFieldmap":
                         if dom_entity_set[col] == "True":
@@ -902,17 +903,16 @@ def assign_variants(summary, rename_cols):
                         else:
                             acq_str += "IsUsed"
                     else:
-                        acq_str += col
+                        val = summary.loc[row, col]
+                        acq_str += f"{col}{val}"
 
             if acq_str == "VARIANT":
                 acq_str += "Other"
 
             if "acquisition" in entities.keys():
                 acq = f"acquisition-{entities['acquisition'] + acq_str}"
-
                 new_name = summary.loc[row, "EntitySet"].replace(
-                    f"acquisition-{entities['acquisition']}",
-                    acq,
+                    f"acquisition-{entities['acquisition']}", acq
                 )
             else:
                 acq = f"acquisition-{acq_str}"
