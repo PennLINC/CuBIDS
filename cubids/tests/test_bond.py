@@ -509,8 +509,9 @@ def test_tsv_merge_changes(tmp_path):
 
     # TESTING RENAMES GOT APPLIED
     applied = pd.read_table(str(tmp_path / "unmodified_summary.tsv"))
-
     applied_f = pd.read_table(str(tmp_path / "unmodified_files.tsv"))
+
+    # Check for inconsistencies between FilePath and KeyParamGroup
     odd = []
     for row in range(len(applied_f)):
         if (
@@ -519,6 +520,7 @@ def test_tsv_merge_changes(tmp_path):
         ):
             odd.append((applied_f.loc[row, "FilePath"]))
 
+    # Track KeyParamGroups for files with inconsistencies
     occurrences = {}
     for row in range(len(applied_f)):
         if applied_f.loc[row, "FilePath"] in odd:
@@ -529,8 +531,10 @@ def test_tsv_merge_changes(tmp_path):
             else:
                 occurrences[applied_f.loc[row, "FilePath"]] = [applied_f.loc[row, "KeyParamGroup"]]
 
+    # Ensure no rows were lost
     assert len(orig) == len(applied)
 
+    # Check for exact matches in EntitySet
     renamed = True
     new_keys = applied["EntitySet"].tolist()
     for row in range(len(orig)):
