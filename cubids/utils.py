@@ -890,7 +890,7 @@ def assign_variants(summary, rename_cols):
                 if f"Cluster_{col}" in dom_entity_set.keys():
                     if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
                         cluster_val = summary.loc[row, f"Cluster_{col}"]
-                        acq_str += f"{col}{cluster_val}"
+                        acq_str += f"{col}{int(cluster_val)}"
                 elif summary.loc[row, col] != dom_entity_set[col]:
                     if col == "HasFieldmap":
                         if dom_entity_set[col] == "True":
@@ -904,6 +904,12 @@ def assign_variants(summary, rename_cols):
                             acq_str += "IsUsed"
                     else:
                         val = summary.loc[row, col]
+                        # If the value is a string representation of a float (contains decimal point)
+                        if isinstance(val, str) and "." in val:
+                            val = val.replace(".", "p")
+                        # If the value is an actual float
+                        elif isinstance(val, float):
+                            val = str(val).replace(".", "p")
                         acq_str += f"{col}{val}"
 
             if acq_str == "VARIANT":
