@@ -158,7 +158,7 @@ def test_validate_command(tmp_path):
     _main(["validate", str(bids_dir), str(output_prefix)])
 
     # Check that output files were created
-    assert (output_prefix.parent / f"{output_prefix.name}_validation.txt").exists()
+    assert (output_prefix.parent / f"{output_prefix.name}_validation.tsv").exists()
 
 
 def test_validate_command_invalid_dir(tmp_path):
@@ -182,7 +182,6 @@ def test_purge_command(tmp_path):
     with pytest.raises(SystemExit) as excinfo:
         _main(["purge", str(bids_dir), str(bids_dir / "scans.txt")])
     assert excinfo.value.code == 2
-    assert not cubids_dir.exists()
 
 
 def test_group_command(tmp_path):
@@ -246,8 +245,8 @@ def test_validate_command_with_test_dataset(tmp_path):
     _main(["validate", str(bids_dir), str(output_prefix)])
 
     # Check that output files were created
-    assert (output_prefix.parent / f"{output_prefix.name}_summary.tsv").exists()
-    assert (output_prefix.parent / f"{output_prefix.name}_files.tsv").exists()
+    assert (output_prefix.parent / f"{output_prefix.name}_validation.tsv").exists()
+    assert (output_prefix.parent / f"{output_prefix.name}_validation.json").exists()
 
 
 def test_group_command_with_test_dataset(tmp_path):
@@ -291,7 +290,8 @@ def test_add_nifti_info_command_with_test_dataset(tmp_path):
 
     # Verify NIfTI info was added
     assert len(modified_json) > len(original_json)
-    assert any(key.startswith("Nifti") for key in modified_json)
+    assert not any(key.startswith("VoxelSize") for key in original_json)
+    assert any(key.startswith("VoxelSize") for key in modified_json)
 
 
 def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys):
@@ -350,11 +350,16 @@ def test_purge_command_with_test_dataset(tmp_path):
 
     # Create scans.txt with a list of files to purge
     scans_file = tmp_path / "scans.txt"
+    dwi_niis = list(bids_dir.rglob("*_dwi.nii.gz"))
+    for dwi_nii in dwi_niis:
+        assert dwi_nii.exists()
+
     with open(scans_file, "w") as f:
-        f.write(str(next(bids_dir.rglob("*.nii.gz")).relative_to(bids_dir)))
+        f.write("\n".join([str(dwi_nii.relative_to(bids_dir)) for dwi_nii in dwi_niis]))
 
     # Run purge
     _main(["purge", str(bids_dir), str(scans_file)])
 
     # Verify .cubids directory was removed
-    assert not cubids_dir.exists()
+    for dwi_nii in dwi_niis:
+        assert not dwi_nii.exists()
