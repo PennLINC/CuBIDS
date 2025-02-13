@@ -69,6 +69,8 @@ tests = [
     "pep8-naming",
     "pytest",
     "pytest-cov",
+    "pytest-env",
+    "pytest-xdist",
     "tomli",
 ]
 maint = [
