@@ -60,7 +60,7 @@ jobs:
       - run:
           name: Merge coverage files
           command: |
-            conda create -n cov python=<< parameters.python_version >> pip coverage
+            conda create -n cov python=3.12 pip coverage
             source activate cov
 
             # We need curl for the codecov upload
