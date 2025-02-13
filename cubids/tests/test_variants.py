@@ -18,6 +18,7 @@ def base_df():
         "RenameEntitySet": ["", "", ""]
     })
 
+
 def test_assign_variants_with_cluster_values(base_df):
     """Test that assign_variants includes cluster values in variant names."""
     # Add specific columns for this test
@@ -30,6 +31,7 @@ def test_assign_variants_with_cluster_values(base_df):
     # Check that variant names include cluster values
     assert "VARIANTEchoTime2" in result.loc[1, "RenameEntitySet"]
     assert "VARIANTEchoTime3" in result.loc[2, "RenameEntitySet"]
+
 
 def test_assign_variants_mixed_parameters(base_df):
     """Test assign_variants with both clustered and non-clustered parameters."""
@@ -44,6 +46,7 @@ def test_assign_variants_mixed_parameters(base_df):
     # Check variant names include both cluster values and actual values
     assert "VARIANTEchoTime2FlipAngle75" in result.loc[1, "RenameEntitySet"]
     assert "VARIANTEchoTime3FlipAngle60" in result.loc[2, "RenameEntitySet"]
+
 
 def test_assign_variants_special_parameters(base_df):
     """Test assign_variants handles special parameters correctly."""
