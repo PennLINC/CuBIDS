@@ -36,7 +36,12 @@ jobs:
             pip install -e .[tests]
 
             # Run tests
-            pytest --cov-append --cov-report term-missing --cov=cubids cubids
+            pytest -rP -o log_cli=true \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=cubids \
+              cubids
             mkdir /home/circleci/src/coverage
             mv /home/circleci/src/CuBIDS/.coverage /home/circleci/src/coverage/.coverage.<< parameters.python_version >>
       - persist_to_workspace:
