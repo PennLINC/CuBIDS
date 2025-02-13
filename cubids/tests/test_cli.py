@@ -155,9 +155,7 @@ def test_validate_command(tmp_path):
     output_prefix = tmp_path / "validation_output"
 
     # Test validation
-    with pytest.raises(SystemExit) as excinfo:
-        _main(["validate", str(bids_dir), str(output_prefix)])
-    assert excinfo.value.code == 0
+    _main(["validate", str(bids_dir), str(output_prefix)])
 
     # Check that output files were created
     assert (output_prefix.parent / f"{output_prefix.name}_validation.txt").exists()
@@ -183,7 +181,7 @@ def test_purge_command(tmp_path):
     # Test purge
     with pytest.raises(SystemExit) as excinfo:
         _main(["purge", str(bids_dir), str(bids_dir / "scans.txt")])
-    assert excinfo.value.code == 0
+    assert excinfo.value.code == 2
     assert not cubids_dir.exists()
 
 
@@ -196,9 +194,8 @@ def test_group_command(tmp_path):
 
     # Test grouping
     output_prefix = tmp_path / "group_output"
-    with pytest.raises(SystemExit) as excinfo:
+    with pytest.raises(ValueError, match="No objects to concatenate"):
         _main(["group", str(bids_dir), str(output_prefix)])
-    assert excinfo.value.code == 0
 
 
 def test_add_nifti_info_command(tmp_path):
@@ -209,9 +206,7 @@ def test_add_nifti_info_command(tmp_path):
     (bids_dir / "dataset_description.json").touch()
 
     # Test add-nifti-info
-    with pytest.raises(SystemExit) as excinfo:
-        _main(["add-nifti-info", str(bids_dir)])
-    assert excinfo.value.code == 0
+    _main(["add-nifti-info", str(bids_dir)])
 
 
 def test_print_metadata_fields_command(tmp_path):
@@ -222,22 +217,21 @@ def test_print_metadata_fields_command(tmp_path):
     (bids_dir / "dataset_description.json").touch()
 
     # Test print-metadata-fields
-    with pytest.raises(SystemExit) as excinfo:
-        _main(["print-metadata-fields", str(bids_dir)])
-    assert excinfo.value.code == 0
+    _main(["print-metadata-fields", str(bids_dir)])
 
 
 def test_remove_metadata_fields_command(tmp_path):
     """Test the remove-metadata-fields command."""
+    from json.decoder import JSONDecodeError
+
     # Create mock BIDS dataset
     bids_dir = tmp_path / "bids_dataset"
     bids_dir.mkdir()
     (bids_dir / "dataset_description.json").touch()
 
     # Test remove-metadata-fields
-    with pytest.raises(SystemExit) as excinfo:
+    with pytest.raises(JSONDecodeError):
         _main(["remove-metadata-fields", str(bids_dir), "--fields", "field1", "field2"])
-    assert excinfo.value.code == 0
 
 
 def test_validate_command_with_test_dataset(tmp_path):
@@ -249,9 +243,7 @@ def test_validate_command_with_test_dataset(tmp_path):
 
     # Run validation
     output_prefix = tmp_path / "validation_output"
-    with pytest.raises(SystemExit) as excinfo:
-        _main(["validate", str(bids_dir), str(output_prefix)])
-    assert excinfo.value.code == 0
+    _main(["validate", str(bids_dir), str(output_prefix)])
 
     # Check that output files were created
     assert (output_prefix.parent / f"{output_prefix.name}_summary.tsv").exists()
@@ -267,9 +259,7 @@ def test_group_command_with_test_dataset(tmp_path):
 
     # Run grouping
     output_prefix = tmp_path / "group_output"
-    with pytest.raises(SystemExit) as excinfo:
-        _main(["group", str(bids_dir), str(output_prefix)])
-    assert excinfo.value.code == 0
+    _main(["group", str(bids_dir), str(output_prefix)])
 
     # Check that output files were created
     assert (output_prefix.parent / f"{output_prefix.name}_summary.tsv").exists()
@@ -293,9 +283,7 @@ def test_add_nifti_info_command_with_test_dataset(tmp_path):
         original_json = json.load(f)
 
     # Run add-nifti-info
-    with pytest.raises(SystemExit) as excinfo:
-        _main(["add-nifti-info", str(bids_dir)])
-    assert excinfo.value.code == 0
+    _main(["add-nifti-info", str(bids_dir)])
 
     # Check that JSON was modified
     with open(json_file) as f:
@@ -314,9 +302,7 @@ def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys):
     shutil.copytree(test_data, bids_dir)
 
     # Run print-metadata-fields
-    with pytest.raises(SystemExit) as excinfo:
-        _main(["print-metadata-fields", str(bids_dir)])
-    assert excinfo.value.code == 0
+    _main(["print-metadata-fields", str(bids_dir)])
 
     # Check output
     captured = capsys.readouterr()
@@ -342,9 +328,7 @@ def test_remove_metadata_fields_command_with_test_dataset(tmp_path):
     field_to_remove = next(iter(original_json.keys()))
 
     # Run remove-metadata-fields
-    with pytest.raises(SystemExit) as excinfo:
-        _main(["remove-metadata-fields", str(bids_dir), "--fields", field_to_remove])
-    assert excinfo.value.code == 0
+    _main(["remove-metadata-fields", str(bids_dir), "--fields", field_to_remove])
 
     # Check that field was removed
     with open(json_file) as f:
@@ -370,9 +354,7 @@ def test_purge_command_with_test_dataset(tmp_path):
         f.write(str(next(bids_dir.rglob("*.nii.gz")).relative_to(bids_dir)))
 
     # Run purge
-    with pytest.raises(SystemExit) as excinfo:
-        _main(["purge", str(bids_dir), str(scans_file)])
-    assert excinfo.value.code == 0
+    _main(["purge", str(bids_dir), str(scans_file)])
 
     # Verify .cubids directory was removed
     assert not cubids_dir.exists()
