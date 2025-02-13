@@ -29,8 +29,8 @@ def test_assign_variants_with_cluster_values(base_df):
     result = assign_variants(base_df, ["EchoTime"])
 
     # Check that variant names include cluster values
-    assert "VARIANTEchoTime2" in result.loc[1, "RenameEntitySet"]
-    assert "VARIANTEchoTime3" in result.loc[2, "RenameEntitySet"]
+    assert "acquisition-VARIANTEchoTime2_" in result.loc[1, "RenameEntitySet"]
+    assert "acquisition-VARIANTEchoTime3_" in result.loc[2, "RenameEntitySet"]
 
 
 def test_assign_variants_mixed_parameters(base_df):
@@ -44,8 +44,8 @@ def test_assign_variants_mixed_parameters(base_df):
     result = assign_variants(base_df, ["EchoTime", "FlipAngle"])
 
     # Check variant names include both cluster values and actual values
-    assert "VARIANTEchoTime2FlipAngle75" in result.loc[1, "RenameEntitySet"]
-    assert "VARIANTEchoTime3FlipAngle60" in result.loc[2, "RenameEntitySet"]
+    assert "acquisition-VARIANTEchoTime2_FlipAngle75_task-test" in result.loc[1, "RenameEntitySet"]
+    assert "acquisition-VARIANTEchoTime3_FlipAngle60_task-test" in result.loc[2, "RenameEntitySet"]
 
 
 def test_assign_variants_special_parameters(base_df):
@@ -58,5 +58,5 @@ def test_assign_variants_special_parameters(base_df):
     result = assign_variants(base_df, ["HasFieldmap", "UsedAsFieldmap"])
 
     # Check special parameter handling
-    assert "VARIANTNoFmap" in result.loc[1, "RenameEntitySet"]
-    assert "Unused" in result.loc[1, "RenameEntitySet"]
+    assert "acquisition-VARIANTNoFmap_" in result.loc[1, "RenameEntitySet"]
+    assert "acquisition-VARIANTIsUsed_" in result.loc[1, "RenameEntitySet"]
