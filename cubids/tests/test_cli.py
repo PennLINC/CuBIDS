@@ -326,6 +326,7 @@ def test_remove_metadata_fields_command_with_test_dataset(tmp_path):
 
     # Choose a field that exists in the JSON
     field_to_remove = next(iter(original_json.keys()))
+    assert field_to_remove in original_json
 
     # Run remove-metadata-fields
     _main(["remove-metadata-fields", str(bids_dir), "--fields", field_to_remove])
