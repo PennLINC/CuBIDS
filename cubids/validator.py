@@ -18,7 +18,7 @@ import pandas as pd
 logger = logging.getLogger("cubids-cli")
 
 
-def build_validator_call(path, local_validator=False, ignore_headers=False):
+def build_validator_call(path, local_validator=False, ignore_headers=False, schema=None):
     """Build a subprocess command to the bids validator.
 
     Parameters
@@ -29,12 +29,16 @@ def build_validator_call(path, local_validator=False, ignore_headers=False):
         If provided, use the local bids-validator.
     ignore_headers : :obj:`bool`
         If provided, ignore NIfTI headers.
+    schema : :obj:`pathlib.Path` or None
+        Path to the BIDS schema file.
 
     Returns
     -------
     command : :obj:`list`
         List of strings to pass to subprocess.run().
     """
+    import importlib.resources
+
     if local_validator:
         command = ["bids-validator", path, "--verbose", "--json"]
     else:
@@ -42,6 +46,13 @@ def build_validator_call(path, local_validator=False, ignore_headers=False):
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
+
+    if schema is None:
+        schema = str(importlib.resources.files("cubids") / "data/schema.json")
+    else:
+        schema = str(schema.resolve())
+
+    command += ["--schema", schema]
 
     return command
 
