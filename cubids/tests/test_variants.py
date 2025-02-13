@@ -51,12 +51,13 @@ def test_assign_variants_mixed_parameters(base_df):
 def test_assign_variants_special_parameters(base_df):
     """Test assign_variants handles special parameters correctly."""
     # Add specific columns for this test
-    base_df["HasFieldmap"] = ["True", "False", "True"]
-    base_df["UsedAsFieldmap"] = ["True", "False", "True"]
+    base_df["HasFieldmap"] = ["True", "False", "False"]
+    base_df["UsedAsFieldmap"] = ["False", "True", "False"]
 
     # Run assign_variants
     result = assign_variants(base_df, ["HasFieldmap", "UsedAsFieldmap"])
 
     # Check special parameter handling
-    assert "acquisition-VARIANTNoFmapUnused_" in result.loc[1, "RenameEntitySet"]
-    assert "acquisition-VARIANTIsUsed_" in result.loc[1, "RenameEntitySet"]
+    assert "acquisition-VARIANTOther_" in result.loc[0, "RenameEntitySet"]
+    assert "acquisition-VARIANTNoFmapIsUsed_" in result.loc[1, "RenameEntitySet"]
+    assert "acquisition-VARIANTNoFmap_" in result.loc[2, "RenameEntitySet"]
