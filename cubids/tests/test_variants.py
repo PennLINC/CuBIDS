@@ -58,5 +58,5 @@ def test_assign_variants_special_parameters(base_df):
     result = assign_variants(base_df, ["HasFieldmap", "UsedAsFieldmap"])
 
     # Check special parameter handling
-    assert "acquisition-VARIANTNoFmap_" in result.loc[1, "RenameEntitySet"]
+    assert "acquisition-VARIANTNoFmapUnused_" in result.loc[1, "RenameEntitySet"]
     assert "acquisition-VARIANTIsUsed_" in result.loc[1, "RenameEntitySet"]
