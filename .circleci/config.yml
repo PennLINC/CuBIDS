@@ -10,10 +10,10 @@ jobs:
         default: "3.12"
     machine:
       image: ubuntu-2404:2024.08.1
-    working_directory: /src/CuBIDS
+    working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
-          path: /src/CuBIDS
+          path: /home/circleci/src/CuBIDS
 
       - run:
           name: Test CuBIDS
@@ -42,10 +42,10 @@ jobs:
               --cov-report term-missing \
               --cov=cubids \
               cubids
-            mkdir /src/coverage
-            mv /src/CuBIDS/.coverage /src/coverage/.coverage.<< parameters.python_version >>
+            mkdir /home/circleci/src/coverage
+            mv /home/circleci/src/CuBIDS/.coverage /home/circleci/src/coverage/.coverage.<< parameters.python_version >>
       - persist_to_workspace:
-          root: /src/coverage
+          root: /home/circleci/src/coverage
           paths:
               - .coverage.<< parameters.python_version >>
 
@@ -54,9 +54,9 @@ jobs:
         - image: continuumio/miniconda3
     steps:
       - checkout:
-          path: /src/CuBIDS
+          path: /home/circleci/src/CuBIDS
       - attach_workspace:
-          at: /src/coverage
+          at: /home/circleci/src/coverage
       - run:
           name: Merge coverage files
           command: |
@@ -68,13 +68,13 @@ jobs:
             apt-get install -y -qq curl
             apt-get install -y gnupg
 
-            cd /src/coverage
+            cd /home/circleci/src/coverage
             coverage combine
             coverage xml
       - store_artifacts:
-          path: /src/coverage
+          path: /home/circleci/src/coverage
       - codecov/upload:
-          file: /src/coverage/coverage.xml
+          file: /home/circleci/src/coverage/coverage.xml
 
   deployable:
     docker:
@@ -85,10 +85,10 @@ jobs:
   deploy_pypi:
     machine:
       image: ubuntu-2404:2024.08.1
-    working_directory: /src/CuBIDS
+    working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
-          path: /src/CuBIDS
+          path: /home/circleci/src/CuBIDS
       - run:
           name: Update build tools
           command: pip install --upgrade build twine
