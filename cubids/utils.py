@@ -107,7 +107,7 @@ def _entities_to_entity_set(entities):
     """
     group_keys = sorted(set(entities.keys()) - NON_KEY_ENTITIES)
     if "session" in group_keys:
-        raise Exception()
+        raise Exception(NON_KEY_ENTITIES)
 
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
 
