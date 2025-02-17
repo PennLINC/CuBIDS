@@ -105,7 +105,7 @@ def _entities_to_entity_set(entities):
         A string representing the entity set name, constructed by joining
         the sorted entity keys and their corresponding values, separated by hyphens.
     """
-    group_keys = sorted(entities.keys() - NON_KEY_ENTITIES)
+    group_keys = sorted(set(entities.keys()) - NON_KEY_ENTITIES)
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
 
 
