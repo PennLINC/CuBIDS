@@ -104,11 +104,15 @@ def _entities_to_entity_set(entities):
     str
         A string representing the entity set name, constructed by joining
         the sorted entity keys and their corresponding values, separated by hyphens.
+
+    Notes
+    -----
+    This function relies on the variable NON_KEY_ENTITIES from cubids.constants.
+    This is a set of entities to ignore in the entity set.
+    The constant may be modified by the CuBIDS class, which will remove "session"
+    if is_longitudinal is True and acq_group_level is "session".
     """
     group_keys = sorted(set(entities.keys()) - NON_KEY_ENTITIES)
-    if "session" in group_keys:
-        raise Exception(NON_KEY_ENTITIES)
-
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
 
 
@@ -128,11 +132,11 @@ def _file_to_entity_set(filename):
     Examples
     --------
     >>> _file_to_entity_set("sub-01_ses-01_task-rest_bold.nii.gz")
-    'suffix-bold_task-rest'
+    'session-01_suffix-bold_task-rest'
 
     Field maps will have an extraneous "fmap" entity.
     >>> _file_to_entity_set("sub-01_ses-01_dir-AP_epi.nii.gz")
-    'direction-AP_fmap-epi_suffix-epi'
+    'direction-AP_fmap-epi_session-01_suffix-epi'
     """
     entities = parse_file_entities(str(filename))
     return _entities_to_entity_set(entities)
