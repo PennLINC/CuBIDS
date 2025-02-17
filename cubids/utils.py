@@ -129,6 +129,13 @@ def _file_to_entity_set(filename):
     str
         A set of entities extracted from the filename.
 
+    Notes
+    -----
+    This function relies on the variable NON_KEY_ENTITIES from cubids.constants.
+    This is a set of entities to ignore in the entity set.
+    The constant may be modified by the CuBIDS class, which will remove "session"
+    if is_longitudinal is True and acq_group_level is "session".
+
     Examples
     --------
     >>> _file_to_entity_set("sub-01_ses-01_task-rest_bold.nii.gz")
