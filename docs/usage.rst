@@ -180,16 +180,24 @@ Renaming is automatically suggested when the summary.tsv is generated from a ``c
 with the suggested new name listed in the tsv's :term:`Rename Entity Set` column.
 CuBIDS populates this column for all Variant Groups
 (e.g., every Parameter Group except the Dominant one).
-Specifically, CuBIDS will suggest renaming all non-dominant Parameter Group to include ``VARIANT*``
-in their acquisition field where ``*`` is the reason
-the Parameter Group varies from the Dominant Group.
-For example, when CuBIDS encounters a Parameter Group with a repetition time that varies from
-the one present in the Dominant Group,
-it will automatically suggest renaming all scans in that Variant Group to include
-``acquisition-VARIANTRepetitionTime`` in their filenames.
-When the user runs ``cubids apply``,
-filenames will get renamed according to the auto-generated names in the “Rename Entity Set” column
-in the summary.tsv
+
+Specifically, CuBIDS will suggest renaming all non-dominant Parameter Groups to include ``VARIANT*``
+in their acquisition field where ``*`` indicates how the Parameter Group varies from the Dominant Group:
+
+1. For clustered parameters (like EchoTime), the cluster number is used (e.g., ``VARIANTEchoTime2``)
+2. For regular parameters (like FlipAngle), the actual value is used (e.g., ``VARIANTFlipAngle75``)
+3. For special parameters:
+   - HasFieldmap variations use ``NoFmap`` or ``HasFmap``
+   - UsedAsFieldmap variations use ``Unused`` or ``IsUsed``
+
+For example, when CuBIDS encounters a Parameter Group with a clustered EchoTime that varies from
+the one present in the Dominant Group, it will automatically suggest renaming all scans in that
+Variant Group to include ``acquisition-VARIANTEchoTime2`` in their filenames (if the scan belongs
+to cluster 2).
+
+When multiple parameters vary, their names are concatenated (e.g., ``VARIANTEchoTime2FlipAngle75``).
+When the user runs ``cubids apply``, filenames will get renamed according to the auto-generated
+names in the "Rename Entity Set" column in the summary.tsv
 
 
 Deleting a mistake
