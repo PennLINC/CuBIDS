@@ -27,7 +27,8 @@ Glossary
     Rename Entity Set
         Auto-generated, recommended new Entity Set name for Variant Groups.
         Based on the metadata parameters that cause scans in Variant Groups to vary from those
-        in their respective Dominant Groups.
+        in their respective Dominant Groups. For clustered parameters, the cluster number is
+        used in the variant name (e.g., VARIANTEchoTime2 for cluster 2).
 
     Acquisition Group
         A collection of sessions across participants that contains the exact same set of Entity

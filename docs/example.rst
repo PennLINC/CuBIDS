@@ -346,7 +346,13 @@ contains only one scan (see "Counts" column) with only 10 volumes
 Since the majority of DWI scans in this dataset have 61 volumes,
 ``CuBIDS`` assigns this single scan to a "Variant" (i.e. non-dominant) Parameter Group,
 and automatically populates that Parameter Group's "RenameEntitySet" column in ``v0_summary.tsv``
-with a suggested name: ``acquisition-HASC55APVARIANTNumVolumes_datatype-dwi_suffix-dwi``.
+with a suggested name.
+
+.. note::
+   CuBIDS now uses a more explicit variant naming format. In this case, since NumVolumes is a regular
+   (non-clustered) parameter, the actual value is included in the variant name:
+   ``acquisition-HASC55APVARIANTNumVolumes10_datatype-dwi_suffix-dwi``.
+
 This time, though,
 we elect to remove this scan because it does not have enough volumes to be usable for most analyses.
 To do this, we can either use ``cubids purge`` again,
@@ -371,9 +377,14 @@ both validation and ``CuBIDS`` summary —
 we are ready to rename our files based on their RenameEntitySet values and
 apply the requested deletion in ``v0_edited_summary.tsv``.
 The ``cubids apply`` function renames scans in each Variant Parameter Group according
-to the metadata parameters with a flag “VARIANT”,
-which is useful because the user will then be able to see, in each scan's filename,
-which metadata parameters associated with that scan vary from those in the acquisition's Dominant Group.
+to the metadata parameters that differ from the dominant group. The variant name follows
+the format ``acquisition-VARIANT{parameter}{value}_``, where:
+- VARIANT indicates a deviation from the dominant group
+- {parameter} is the name of the differing parameter
+- {value} is either the cluster number (for clustered parameters) or actual value
+
+This naming scheme allows users to easily see which parameters vary from the dominant group
+in each scan's filename.
 If the edited summary and files tsvs are located in the ``bids_dir/code/CuBIDS`` directory,
 the user may just pass in those filenames.
 Otherwise, specifying the path to those files is necessary.
@@ -388,8 +399,9 @@ Checking our git log, we can see that our changes from apply have been saved.
 .. image:: _static/screenshot_7.png
 
 We can check the four grouping tsvs ``cubids apply`` produces (``v1_*``) to ensure they look as expected —
-that all files with variant scanning parameters have been renamed to indicate the parameters
-that vary in the acquisition fields of their filenames.
+that all files with variant scanning parameters have been renamed with the correct format
+(e.g., ``VARIANTEchoTime2`` for clustered parameters, ``VARIANTFlipAngle75`` for regular parameters)
+in their acquisition fields.
 
 
 Exemplar testing
