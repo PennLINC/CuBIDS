@@ -341,7 +341,7 @@ with a suggested name.
 .. note::
    CuBIDS now uses a more explicit variant naming format. In this case, since NumVolumes is a regular
    (non-clustered) parameter, the actual value is included in the variant name:
-   ``acquisition-VARIANTNumVolumes10_datatype-dwi_suffix-dwi``.
+   ``acquisition-HASC55APVARIANTNumVolumes10_datatype-dwi_suffix-dwi``.
 
 This time, though,
 we elect to remove this scan because it does not have enough volumes to be usable for most analyses.
