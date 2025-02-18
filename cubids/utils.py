@@ -467,6 +467,10 @@ def format_params(param_group_df, config, modality):
     ``'derived_params'`` is a dictionary of dictionaries, where keys are modalities.
     The modality-wise dictionary's keys are names of BIDS fields to derive from the
     NIfTI header and include in the Parameter Groupings.
+
+    The cluster values assigned by this function are used in variant naming when
+    parameters differ from the dominant group. For example, if EchoTime is clustered
+    and a file is in cluster 2, its variant name will include 'EchoTime2'.
     """
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
@@ -852,6 +856,14 @@ def assign_variants(summary, rename_cols):
     pandas.DataFrame
         The updated summary DataFrame with a new column "RenameEntitySet"
         containing the new entity set names for each file.
+
+    Notes
+    -----
+    Variant names are constructed using the following rules:
+    1. Basic parameters use their actual values (e.g., VARIANTFlipAngle75)
+    2. Clustered parameters use their cluster numbers (e.g., VARIANTEchoTime2)
+    3. Special parameters like HasFieldmap use predefined strings (e.g., VARIANTNoFmap)
+    4. Multiple parameters are concatenated (e.g., VARIANTEchoTime2FlipAngle75)
     """
     # loop through summary tsv and create dom_dict
     dom_dict = {}
