@@ -185,8 +185,8 @@ BIDS validation
     but can be slowed down by extremely large datasets.
 
 .. warning::
-    For internetless use cases, please see dedicated section of the `Installation page 
-    <https://cubids.readthedocs.io/en/latest/installation.html>`_ on how to download a local version 
+    For internetless use cases, please see dedicated section of the `Installation page
+    <https://cubids.readthedocs.io/en/latest/installation.html>`_ on how to download a local version
     of the validator.
 
     After that, you will need to add ``--local-validator`` option to the command string above.
@@ -216,7 +216,7 @@ To do this, we run the ``cubids purge`` command.
 ``cubids purge`` requires as input a list of files to cleanly "purge" from the dataset.
 You can create this file in any text editor,
 as long as it is saved as plain text ``.txt``.
-When specifying files in this text file, 
+When specifying files in this text file,
 always use relative paths starting from your BIDS directory.
 For this example, we created the following file:
 
@@ -314,14 +314,24 @@ This command will produce four tables that describe the dataset's heterogeneity 
 #.  ``v0_AcqGrouping.tsv`` maps each session in the dataset to an Acquisition Group.
 #.  ``v0_AcqGroupInfo.txt`` lists the set of scanning parameters present in each Acquisition Group.
 
-By first examining ``v0_summary.tsv`` users are given he opportunity to conduct metadata
+By first examining ``v0_summary.tsv`` users are given the opportunity to conduct metadata
 quality assurance (QA).
 The file can help identify instances of incomplete, incorrect, or unusable parameter groups,
 based on acquisition fields such as dimension and voxel sizes, number of volumes, obliquity, and more.
 
+.. warning::
+
+    You may see some non-BIDS entities in the entity sets;
+    for example, ``fmap-<suffix>`` is generally present for fieldmaps,
+    even though ``fmap`` is not a BIDS entity.
+    This is because ``PyBIDS`` includes some custom entities that are not part of the BIDS specification.
+
+    Don't worry about these.
+    The step that generates filenames from the entity sets should ignore them automatically.
+
 While ``v0_validation.tsv`` identified all the BIDS validation errors present in the dataset,
 it did not identify any potential issues that might be present within the sidecars' metadata.
-Below, we see insances of missing metadata fields in a handful of sidecars,
+Below, we see instances of missing metadata fields in a handful of sidecars,
 which may impact successful execution of BIDS Apps.
 
 .. csv-table:: v0_summary.tsv

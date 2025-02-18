@@ -84,8 +84,8 @@ def _entity_set_to_entities(entity_set):
 
     Examples
     --------
-    >>> _entity_set_to_entities("sub-01_ses-02_task-rest")
-    {'sub': '01', 'ses': '02', 'task': 'rest'}
+    >>> _entity_set_to_entities("subject-01_session-02_task-rest")
+    {'subject': '01', 'session': '02', 'task': 'rest'}
     """
     return dict([group.split("-") for group in entity_set.split("_")])
 
@@ -104,8 +104,15 @@ def _entities_to_entity_set(entities):
     str
         A string representing the entity set name, constructed by joining
         the sorted entity keys and their corresponding values, separated by hyphens.
+
+    Notes
+    -----
+    This function relies on the variable NON_KEY_ENTITIES from cubids.constants.
+    This is a set of entities to ignore in the entity set.
+    The constant may be modified by the CuBIDS class, which will remove "session"
+    if is_longitudinal is True and acq_group_level is "session".
     """
-    group_keys = sorted(entities.keys() - NON_KEY_ENTITIES)
+    group_keys = sorted(set(entities.keys()) - NON_KEY_ENTITIES)
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
 
 
@@ -122,10 +129,21 @@ def _file_to_entity_set(filename):
     str
         A set of entities extracted from the filename.
 
+    Notes
+    -----
+    This function relies on the variable NON_KEY_ENTITIES from cubids.constants.
+    This is a set of entities to ignore in the entity set.
+    The constant may be modified by the CuBIDS class, which will remove "session"
+    if is_longitudinal is True and acq_group_level is "session".
+
     Examples
     --------
     >>> _file_to_entity_set("sub-01_ses-01_task-rest_bold.nii.gz")
     'session-01_suffix-bold_task-rest'
+
+    Field maps will have an extraneous "fmap" entity.
+    >>> _file_to_entity_set("sub-01_ses-01_dir-AP_epi.nii.gz")
+    'direction-AP_fmap-epi_session-01_suffix-epi'
     """
     entities = parse_file_entities(str(filename))
     return _entities_to_entity_set(entities)
@@ -716,7 +734,7 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
-    But uncommon (but BIDS-valid) entities, like echo, will work.
+    Uncommon (but BIDS-valid) entities, like echo, will work.
 
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
@@ -726,6 +744,17 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     ...    True,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_echo-1_bold.nii.gz'
+
+    But non-BIDS entities, like fmap, will be ignored.
+
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/fmap/sub-01_ses-01_dir-AP_epi.nii.gz",
+    ...    {"acquisition": "VAR", "direction": "AP", "fmap": "epi", "suffix": "epi"},
+    ...    "/output",
+    ...    schema,
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/fmap/sub-01_ses-01_acq-VAR_dir-AP_epi.nii.gz'
 
     It can change the datatype, but will warn the user.
 
