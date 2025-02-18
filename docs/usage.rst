@@ -200,7 +200,7 @@ When the user runs ``cubids apply``, filenames will get renamed according to the
 names in the "Rename Entity Set" column in the summary.tsv
 
 .. note::
-   The above behavior is new as of version X.X.X. Prior to this, the variant name was just ``VARIANT{parameter}``.
+   The above behavior is new as of version 1.2.0. Prior to this, the variant name was just ``VARIANT{parameter}``.
 
 
 Deleting a mistake
