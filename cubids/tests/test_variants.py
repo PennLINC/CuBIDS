@@ -1,3 +1,21 @@
+"""Tests for variant name generation in CuBIDS.
+
+This module tests the assign_variants function which is responsible for generating
+variant names when files differ from the dominant group. The tests cover:
+
+1. Basic variant name generation
+2. Handling of cluster values (e.g., from parameter clustering)
+3. Special parameter handling (HasFieldmap, UsedAsFieldmap)
+4. Mixed parameter cases (both clustered and non-clustered parameters)
+
+The variant naming follows the format:
+    acquisition-VARIANT{parameter}{value}_
+where:
+- VARIANT indicates a deviation from the dominant group
+- {parameter} is the name of the differing parameter
+- {value} is either the cluster number or actual value
+"""
+
 import pytest
 import pandas as pd
 from cubids.utils import assign_variants
