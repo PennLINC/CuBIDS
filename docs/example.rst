@@ -336,7 +336,13 @@ contains only one scan (see "Counts" column) with only 10 volumes
 Since the majority of DWI scans in this dataset have 61 volumes,
 ``CuBIDS`` assigns this single scan to a "Variant" (i.e. non-dominant) Parameter Group,
 and automatically populates that Parameter Group's "RenameEntitySet" column in ``v0_summary.tsv``
-with a suggested name: ``acquisition-VARIANTNumVolumes10_datatype-dwi_suffix-dwi``.
+with a suggested name.
+
+.. note::
+   CuBIDS now uses a more explicit variant naming format. In this case, since NumVolumes is a regular
+   (non-clustered) parameter, the actual value is included in the variant name:
+   ``acquisition-VARIANTNumVolumes10_datatype-dwi_suffix-dwi``.
+
 This time, though,
 we elect to remove this scan because it does not have enough volumes to be usable for most analyses.
 To do this, we can either use ``cubids purge`` again,

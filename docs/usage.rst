@@ -199,6 +199,9 @@ When multiple parameters vary, their names are concatenated (e.g., ``VARIANTEcho
 When the user runs ``cubids apply``, filenames will get renamed according to the auto-generated
 names in the "Rename Entity Set" column in the summary.tsv
 
+.. note::
+   The above behavior is new as of version X.X.X. Prior to this, the variant name was just ``VARIANT{parameter}``.
+
 
 Deleting a mistake
 ~~~~~~~~~~~~~~~~~~
