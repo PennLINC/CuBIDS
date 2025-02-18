@@ -331,7 +331,7 @@ based on acquisition fields such as dimension and voxel sizes, number of volumes
 
 While ``v0_validation.tsv`` identified all the BIDS validation errors present in the dataset,
 it did not identify any potential issues that might be present within the sidecars' metadata.
-Below, we see insances of missing metadata fields in a handful of sidecars,
+Below, we see instances of missing metadata fields in a handful of sidecars,
 which may impact successful execution of BIDS Apps.
 
 .. csv-table:: v0_summary.tsv
