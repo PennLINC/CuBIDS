@@ -921,7 +921,10 @@ def assign_variants(summary, rename_cols):
 
         if summary.loc[row, "ParamGroup"] != 1 and not renamed:
             orig_acq = entities.get("acquisition", "")
-            acq_str = f"{orig_acq}+VARIANT"
+            if orig_acq == "":
+                acq_str = "VARIANT"
+            else:
+                acq_str = f"{orig_acq}+VARIANT"
             # now we know we have a deviant param group
             # check if TR is same as param group 1
             entity_set = summary.loc[row, "EntitySet"]
