@@ -931,7 +931,7 @@ def assign_variants(summary, rename_cols):
                 if f"Cluster_{col}" in dom_entity_set.keys():
                     if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
                         cluster_val = summary.loc[row, f"Cluster_{col}"]
-                        acq_str += f"{col}{int(cluster_val)}"
+                        acq_str += f"{col}C{int(cluster_val)}"
                 elif summary.loc[row, col] != dom_entity_set[col]:
                     if col == "HasFieldmap":
                         if dom_entity_set[col] == "True":
