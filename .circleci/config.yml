@@ -36,7 +36,12 @@ jobs:
             pip install -e .[tests]
 
             # Run tests
-            pytest --cov-append --cov-report term-missing --cov=cubids cubids
+            pytest -rP -o log_cli=true \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=cubids \
+              cubids
             mkdir /home/circleci/src/coverage
             mv /home/circleci/src/CuBIDS/.coverage /home/circleci/src/coverage/.coverage.<< parameters.python_version >>
       - persist_to_workspace:
@@ -55,7 +60,7 @@ jobs:
       - run:
           name: Merge coverage files
           command: |
-            conda create -n cov python=3.9 pip coverage
+            conda create -n cov python=3.12 pip coverage
             source activate cov
 
             # We need curl for the codecov upload
@@ -63,12 +68,11 @@ jobs:
             apt-get install -y -qq curl
             apt-get install -y gnupg
 
-            cd /home/circleci/src/coverage/
-            echo "Merge coverage files"
-            coverage combine --data-file=/home/circleci/src/coverage/.coverage
-            echo "Generate XML report"
-            coverage xml --data-file /home/circleci/src/coverage/.coverage -o /home/circleci/src/coverage/coverage.xml
-            echo "Upload to Codecov"
+            cd /home/circleci/src/coverage
+            coverage combine
+            coverage xml
+      - store_artifacts:
+          path: /home/circleci/src/coverage
       - codecov/upload:
           file: /home/circleci/src/coverage/coverage.xml
 
