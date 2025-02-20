@@ -17,7 +17,7 @@
     "ConversionSoftware": "dcm2niix",
     "ScanningSequence": "EP",
     "Manufacturer": "Siemens",
-    "FlipAngle": 70,
+    "FlipAngle": 70.5,
     "ConversionSoftwareVersion": "v1.0.20170724 (OpenJPEG build) GCC6.1.0",
     "SeriesDescription": "ABCD_dMRI",
     "InstitutionAddress": "Spruce_Street_3400_Philadelphia_Pennsylvania_US_19104",
