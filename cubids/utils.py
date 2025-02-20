@@ -503,7 +503,7 @@ def format_params(param_group_df, config, modality):
             param_group_df[f"Cluster_{column_name}"] = 0
             continue  # Skip clustering since all values are NaN
 
-        if "tolerance" in column_fmt and len(param_group_df) > 1:
+        if "tolerance" in column_fmt and param_group_df.shape[0] > 1:
             array = param_group_df[column_name].to_numpy().reshape(-1, 1)
 
             # Handle NaNs correctly: Ignore NaNs instead of replacing with -999
@@ -920,6 +920,8 @@ def assign_variants(summary, rename_cols):
 
                 if f"Cluster_{col}" in summary.columns:
                     val[f"Cluster_{col}"] = summary.loc[row, f"Cluster_{col}"]
+                    if pd.isna(val[f"Cluster_{col}"]):
+                        val[f"Cluster_{col}"] = 0
 
             dom_dict[key] = val
 
@@ -941,16 +943,15 @@ def assign_variants(summary, rename_cols):
                 summary[col] = summary[col].apply(str)
 
                 if f"Cluster_{col}" in dom_entity_set.keys():
-                    if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
-                        cluster_val = summary.loc[row, f"Cluster_{col}"]
+                    cluster_val = summary.loc[row, f"Cluster_{col}"]
+                    if pd.isna(cluster_val):
+                        # This should only occur when the entity set does not have the
+                        # cluster column, so concatenation across entity sets will result
+                        # in NaN values in those cells.
+                        cluster_val = 0
 
-                        # Ensure cluster_val is not NaN before conversion
-                        if pd.notna(cluster_val):
-                            acq_str += f"{col}{int(cluster_val)}"
-                        else:
-                            raise ValueError(
-                                f"Encountered NaN value in Cluster_{col} at row {row}"
-                            )
+                    if cluster_val != dom_entity_set[f"Cluster_{col}"]:
+                        acq_str += f"{col}{int(cluster_val)}"
 
                 elif summary.loc[row, col] != dom_entity_set[col]:
                     if col == "HasFieldmap":
