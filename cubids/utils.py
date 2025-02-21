@@ -615,8 +615,11 @@ def cluster_single_parameters(df, config, modality):
 
                     df[f"Cluster_{column_name}"] = cluster_labels
                 else:
-                    # If there's only one unique non-NaN value, assign it the same cluster
-                    df[f"Cluster_{column_name}"] = 0
+                    # If there's only one unique non-NaN value,
+                    # define only two clusters (NaN vs. non-NaN)
+                    cluster_labels = np.full_like(array.flatten(), fill_value=1, dtype=float)
+                    cluster_labels[valid_mask] = 0
+                    df[f"Cluster_{column_name}"] = cluster_labels
 
         else:
             # We can rely on string matching (done separately) for string-type fields,
