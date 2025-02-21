@@ -1,19 +1,21 @@
 """Unit tests for the command-line interface (CLI) of the CuBIDS package.
 
-The tests cover the following functions:
-- _path_exists: Tests whether a given path exists or not.
-- _is_file: Tests whether a given path is a file or a directory.
+The tests cover the following:
+- Path validation functions (_path_exists, _is_file)
+- CLI commands (validate, purge, merge, etc.)
 
 Each test case includes assertions to verify the expected behavior of the corresponding function.
 """
 
 import argparse
 from functools import partial
+import json
+import shutil
 
 import pytest
 
-from cubids.cli import _is_file, _path_exists
-from cubids.tests.utils import chdir
+from cubids.cli import _main, _path_exists, _is_file
+from cubids.tests.utils import TEST_DATA, chdir
 
 
 def test_path_exists(tmp_path):
@@ -122,3 +124,243 @@ def test_is_file(tmp_path):
     # Test with a non-existing path within an argument parser
     with pytest.raises(SystemExit):
         parser.parse_args([str(non_existing_path)])
+
+
+def test_main_version(capsys):
+    """Test the --version flag."""
+    with pytest.raises(SystemExit) as excinfo:
+        _main(["--version"])
+    assert excinfo.value.code == 0
+    captured = capsys.readouterr()
+    assert "cubids" in captured.out
+
+
+def test_main_help(capsys):
+    """Test the --help flag."""
+    with pytest.raises(SystemExit) as excinfo:
+        _main(["--help"])
+    assert excinfo.value.code == 0
+    captured = capsys.readouterr()
+    assert "CuBIDS commands" in captured.out
+
+
+def test_validate_command(tmp_path):
+    """Test the validate command."""
+    # Create mock BIDS dataset
+    bids_dir = tmp_path / "bids_dataset"
+    bids_dir.mkdir()
+    (bids_dir / "dataset_description.json").touch()
+
+    # Create output prefix
+    output_prefix = tmp_path / "validation_output"
+
+    # Test validation
+    _main(["validate", str(bids_dir), str(output_prefix)])
+
+    # Check that output files were created
+    assert (output_prefix.parent / f"{output_prefix.name}_validation.tsv").exists()
+
+
+def test_validate_command_invalid_dir(tmp_path):
+    """Test the validate command with an invalid directory."""
+    invalid_dir = tmp_path / "nonexistent"
+    with pytest.raises(SystemExit) as excinfo:
+        _main(["validate", str(invalid_dir)])
+    assert excinfo.value.code != 0
+
+
+def test_purge_command(tmp_path):
+    """Test the purge command."""
+    # Create mock BIDS dataset with .cubids directory
+    bids_dir = tmp_path / "bids_dataset"
+    bids_dir.mkdir()
+    cubids_dir = bids_dir / ".cubids"
+    cubids_dir.mkdir()
+    (cubids_dir / "validation_data.json").touch()
+
+    # Test purge
+    with pytest.raises(SystemExit) as excinfo:
+        _main(["purge", str(bids_dir), str(bids_dir / "scans.txt")])
+    assert excinfo.value.code == 2
+
+
+def test_group_command(tmp_path):
+    """Test the group command."""
+    # Create mock BIDS dataset
+    bids_dir = tmp_path / "bids_dataset"
+    bids_dir.mkdir()
+    (bids_dir / "dataset_description.json").touch()
+
+    # Test grouping
+    output_prefix = tmp_path / "group_output"
+    with pytest.raises(ValueError, match="No objects to concatenate"):
+        _main(["group", str(bids_dir), str(output_prefix)])
+
+
+def test_add_nifti_info_command(tmp_path):
+    """Test the add-nifti-info command."""
+    # Create mock BIDS dataset
+    bids_dir = tmp_path / "bids_dataset"
+    bids_dir.mkdir()
+    (bids_dir / "dataset_description.json").touch()
+
+    # Test add-nifti-info
+    _main(["add-nifti-info", str(bids_dir)])
+
+
+def test_print_metadata_fields_command(tmp_path):
+    """Test the print-metadata-fields command."""
+    # Create mock BIDS dataset
+    bids_dir = tmp_path / "bids_dataset"
+    bids_dir.mkdir()
+    (bids_dir / "dataset_description.json").touch()
+
+    # Test print-metadata-fields
+    _main(["print-metadata-fields", str(bids_dir)])
+
+
+def test_remove_metadata_fields_command(tmp_path):
+    """Test the remove-metadata-fields command."""
+    from json.decoder import JSONDecodeError
+
+    # Create mock BIDS dataset
+    bids_dir = tmp_path / "bids_dataset"
+    bids_dir.mkdir()
+    (bids_dir / "dataset_description.json").touch()
+
+    # Test remove-metadata-fields
+    with pytest.raises(JSONDecodeError):
+        _main(["remove-metadata-fields", str(bids_dir), "--fields", "field1", "field2"])
+
+
+def test_validate_command_with_test_dataset(tmp_path):
+    """Test the validate command with the test BIDS dataset."""
+    # Copy test dataset to temporary directory
+    test_data = TEST_DATA / "BIDS_Dataset"
+    bids_dir = tmp_path / "BIDS_Dataset"
+    shutil.copytree(test_data, bids_dir)
+
+    # Run validation
+    output_prefix = tmp_path / "validation_output"
+    _main(["validate", str(bids_dir), str(output_prefix)])
+
+    # Check that output files were created
+    assert (output_prefix.parent / f"{output_prefix.name}_validation.tsv").exists()
+    assert (output_prefix.parent / f"{output_prefix.name}_validation.json").exists()
+
+
+def test_group_command_with_test_dataset(tmp_path):
+    """Test the group command with the test BIDS dataset."""
+    # Copy test dataset to temporary directory
+    test_data = TEST_DATA / "BIDS_Dataset"
+    bids_dir = tmp_path / "BIDS_Dataset"
+    shutil.copytree(test_data, bids_dir)
+
+    # Run grouping
+    output_prefix = tmp_path / "group_output"
+    _main(["group", str(bids_dir), str(output_prefix)])
+
+    # Check that output files were created
+    assert (output_prefix.parent / f"{output_prefix.name}_summary.tsv").exists()
+    assert (output_prefix.parent / f"{output_prefix.name}_files.tsv").exists()
+    assert (output_prefix.parent / f"{output_prefix.name}_AcqGrouping.tsv").exists()
+
+
+def test_add_nifti_info_command_with_test_dataset(tmp_path):
+    """Test the add-nifti-info command with the test BIDS dataset."""
+    # Copy test dataset to temporary directory
+    test_data = TEST_DATA / "BIDS_Dataset"
+    bids_dir = tmp_path / "BIDS_Dataset"
+    shutil.copytree(test_data, bids_dir)
+
+    # Get a sample NIfTI file and its JSON sidecar
+    nifti_file = next(bids_dir.rglob("*.nii.gz"))
+    json_file = nifti_file.with_suffix("").with_suffix(".json")
+
+    # Store original JSON content
+    with open(json_file) as f:
+        original_json = json.load(f)
+
+    # Run add-nifti-info
+    _main(["add-nifti-info", str(bids_dir)])
+
+    # Check that JSON was modified
+    with open(json_file) as f:
+        modified_json = json.load(f)
+
+    # Verify NIfTI info was added
+    assert len(modified_json) > len(original_json)
+    assert not any(key.startswith("VoxelSize") for key in original_json)
+    assert any(key.startswith("VoxelSize") for key in modified_json)
+
+
+def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys):
+    """Test the print-metadata-fields command with the test BIDS dataset."""
+    # Copy test dataset to temporary directory
+    test_data = TEST_DATA / "BIDS_Dataset"
+    bids_dir = tmp_path / "BIDS_Dataset"
+    shutil.copytree(test_data, bids_dir)
+
+    # Run print-metadata-fields
+    _main(["print-metadata-fields", str(bids_dir)])
+
+    # Check output
+    captured = capsys.readouterr()
+    assert captured.out  # Verify there is output
+    assert "Manufacturer" in captured.out  # Common BIDS metadata field
+
+
+def test_remove_metadata_fields_command_with_test_dataset(tmp_path):
+    """Test the remove-metadata-fields command with the test BIDS dataset."""
+    # Copy test dataset to temporary directory
+    test_data = TEST_DATA / "BIDS_Dataset"
+    bids_dir = tmp_path / "BIDS_Dataset"
+    shutil.copytree(test_data, bids_dir)
+
+    # Get a sample JSON sidecar
+    json_file = next(bids_dir.rglob("*.json"))
+
+    # Store original JSON content
+    with open(json_file) as f:
+        original_json = json.load(f)
+
+    # Choose a field that exists in the JSON
+    field_to_remove = next(iter(original_json.keys()))
+    assert field_to_remove in original_json
+
+    # Run remove-metadata-fields
+    _main(["remove-metadata-fields", str(bids_dir), "--fields", field_to_remove])
+
+    # Check that field was removed
+    with open(json_file) as f:
+        modified_json = json.load(f)
+    assert field_to_remove not in modified_json
+
+
+def test_purge_command_with_test_dataset(tmp_path):
+    """Test the purge command with the test BIDS dataset."""
+    # Copy test dataset to temporary directory
+    test_data = TEST_DATA / "BIDS_Dataset"
+    bids_dir = tmp_path / "BIDS_Dataset"
+    shutil.copytree(test_data, bids_dir)
+
+    # Create .cubids directory and add some files
+    cubids_dir = bids_dir / ".cubids"
+    cubids_dir.mkdir()
+    (cubids_dir / "validation_data.json").touch()
+
+    # Create scans.txt with a list of files to purge
+    scans_file = tmp_path / "scans.txt"
+    dwi_niis = list(bids_dir.rglob("*_dwi.nii.gz"))
+    for dwi_nii in dwi_niis:
+        assert dwi_nii.exists()
+
+    with open(scans_file, "w") as f:
+        f.write("\n".join([str(dwi_nii.relative_to(bids_dir)) for dwi_nii in dwi_niis]))
+
+    # Run purge
+    _main(["purge", str(bids_dir), str(scans_file)])
+
+    # Verify .cubids directory was removed
+    for dwi_nii in dwi_niis:
+        assert not dwi_nii.exists()

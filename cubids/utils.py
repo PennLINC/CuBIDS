@@ -127,8 +127,8 @@ def _entity_set_to_entities(entity_set):
 
     Examples
     --------
-    >>> _entity_set_to_entities("sub-01_ses-02_task-rest")
-    {'sub': '01', 'ses': '02', 'task': 'rest'}
+    >>> _entity_set_to_entities("subject-01_session-02_task-rest")
+    {'subject': '01', 'session': '02', 'task': 'rest'}
     """
     return dict([group.split("-") for group in entity_set.split("_")])
 
@@ -147,8 +147,15 @@ def _entities_to_entity_set(entities):
     str
         A string representing the entity set name, constructed by joining
         the sorted entity keys and their corresponding values, separated by hyphens.
+
+    Notes
+    -----
+    This function relies on the variable NON_KEY_ENTITIES from cubids.constants.
+    This is a set of entities to ignore in the entity set.
+    The constant may be modified by the CuBIDS class, which will remove "session"
+    if is_longitudinal is True and acq_group_level is "session".
     """
-    group_keys = sorted(entities.keys() - NON_KEY_ENTITIES)
+    group_keys = sorted(set(entities.keys()) - NON_KEY_ENTITIES)
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
 
 
@@ -165,10 +172,21 @@ def _file_to_entity_set(filename):
     str
         A set of entities extracted from the filename.
 
+    Notes
+    -----
+    This function relies on the variable NON_KEY_ENTITIES from cubids.constants.
+    This is a set of entities to ignore in the entity set.
+    The constant may be modified by the CuBIDS class, which will remove "session"
+    if is_longitudinal is True and acq_group_level is "session".
+
     Examples
     --------
     >>> _file_to_entity_set("sub-01_ses-01_task-rest_bold.nii.gz")
     'session-01_suffix-bold_task-rest'
+
+    Field maps will have an extraneous "fmap" entity.
+    >>> _file_to_entity_set("sub-01_ses-01_dir-AP_epi.nii.gz")
+    'direction-AP_fmap-epi_session-01_suffix-epi'
     """
     entities = parse_file_entities(str(filename))
     return _entities_to_entity_set(entities)
@@ -522,6 +540,10 @@ def cluster_single_parameters(df, config, modality):
     ``'derived_params'`` is a dictionary of dictionaries, where keys are modalities.
     The modality-wise dictionary's keys are names of BIDS fields to derive from the
     NIfTI header and include in the Parameter Groupings.
+
+    The cluster values assigned by this function are used in variant naming when
+    parameters differ from the dominant group. For example, if EchoTime is clustered
+    and a file is in cluster 2, its variant name will include 'EchoTime2'.
     """
     df = df.copy()  # don't modify DataFrame in place
 
@@ -531,6 +553,12 @@ def cluster_single_parameters(df, config, modality):
     for column_name, column_fmt in to_format.items():
         if column_name not in df:
             continue
+
+        # Check if the column is entirely NaN or blank
+        if df[column_name].isna().all():
+            # If the whole column is NaN, assign a single cluster label (e.g., 0)
+            df[f"Cluster_{column_name}"] = 0
+            continue  # Skip clustering since all values are NaN
 
         if "tolerance" in column_fmt and len(df) > 1:
             column_data = df[column_name].to_numpy()
@@ -566,16 +594,29 @@ def cluster_single_parameters(df, config, modality):
                         df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
                         cluster_idx += 1
             else:
-                array = column_data.reshape(-1, 1)
-                array[np.isnan(array)] = -999
+                array = df[column_name].to_numpy().reshape(-1, 1)
 
-                tolerance = to_format[column_name]["tolerance"]
-                clustering = AgglomerativeClustering(
-                    n_clusters=None, distance_threshold=tolerance, linkage="complete"
-                ).fit(array)
+                # Handle NaNs correctly: Ignore NaNs instead of replacing with -999
+                valid_mask = ~np.isnan(array.flatten())  # Mask of non-NaN values
 
-                # now add clustering_labels as a column
-                df[f"Cluster_{column_name}"] = clustering.labels_
+                if valid_mask.sum() > 1:  # Proceed with clustering only if >1 valid value
+                    valid_array = array[valid_mask].reshape(-1, 1)
+                    tolerance = to_format[column_name]["tolerance"]
+
+                    clustering = AgglomerativeClustering(
+                        n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                    ).fit(valid_array)
+
+                    # Create a full label array and fill only valid entries
+                    cluster_labels = np.full_like(
+                        array.flatten(), fill_value=np.max(clustering.labels_) + 1, dtype=float
+                    )
+                    cluster_labels[valid_mask] = clustering.labels_
+
+                    df[f"Cluster_{column_name}"] = cluster_labels
+                else:
+                    # If there's only one unique non-NaN value, assign it the same cluster
+                    df[f"Cluster_{column_name}"] = 0
 
         else:
             # We can rely on string matching (done separately) for string-type fields,
@@ -814,7 +855,7 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_bold.nii.gz'
 
-    But uncommon (but BIDS-valid) entities, like echo, will work.
+    Uncommon (but BIDS-valid) entities, like echo, will work.
 
     >>> build_path(
     ...    "/input/sub-01/ses-01/func/sub-01_ses-01_task-rest_run-01_bold.nii.gz",
@@ -824,6 +865,17 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     ...    True,
     ... )
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-rest_acq-VAR_echo-1_bold.nii.gz'
+
+    But non-BIDS entities, like fmap, will be ignored.
+
+    >>> build_path(
+    ...    "/input/sub-01/ses-01/fmap/sub-01_ses-01_dir-AP_epi.nii.gz",
+    ...    {"acquisition": "VAR", "direction": "AP", "fmap": "epi", "suffix": "epi"},
+    ...    "/output",
+    ...    schema,
+    ...    True,
+    ... )
+    '/output/sub-01/ses-01/fmap/sub-01_ses-01_acq-VAR_dir-AP_epi.nii.gz'
 
     It can change the datatype, but will warn the user.
 
@@ -950,6 +1002,14 @@ def assign_variants(summary, rename_cols):
     pandas.DataFrame
         The updated summary DataFrame with a new column "RenameEntitySet"
         containing the new entity set names for each file.
+
+    Notes
+    -----
+    Variant names are constructed using the following rules:
+    1. Basic parameters use their actual values (e.g., VARIANTFlipAngle75)
+    2. Clustered parameters use their cluster numbers (e.g., VARIANTEchoTime2)
+    3. Special parameters like HasFieldmap use predefined strings (e.g., VARIANTNoFmap)
+    4. Multiple parameters are concatenated (e.g., VARIANTEchoTime2FlipAngle75)
     """
     # loop through summary tsv and create dom_dict
     dom_dict = {}
@@ -965,6 +1025,8 @@ def assign_variants(summary, rename_cols):
 
                 if f"Cluster_{col}" in summary.columns:
                     val[f"Cluster_{col}"] = summary.loc[row, f"Cluster_{col}"]
+                    if pd.isna(val[f"Cluster_{col}"]):
+                        val[f"Cluster_{col}"] = 0
 
             dom_dict[key] = val
 
@@ -986,8 +1048,16 @@ def assign_variants(summary, rename_cols):
                 summary[col] = summary[col].apply(str)
 
                 if f"Cluster_{col}" in dom_entity_set.keys():
-                    if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
-                        acq_str += col
+                    cluster_val = summary.loc[row, f"Cluster_{col}"]
+                    if pd.isna(cluster_val):
+                        # This should only occur when the entity set does not have the
+                        # cluster column, so concatenation across entity sets will result
+                        # in NaN values in those cells.
+                        cluster_val = 0
+
+                    if cluster_val != dom_entity_set[f"Cluster_{col}"]:
+                        acq_str += f"{col}C{int(cluster_val)}"
+
                 elif summary.loc[row, col] != dom_entity_set[col]:
                     if col == "HasFieldmap":
                         if dom_entity_set[col] == "True":
@@ -1000,17 +1070,22 @@ def assign_variants(summary, rename_cols):
                         else:
                             acq_str += "IsUsed"
                     else:
-                        acq_str += col
+                        val = summary.loc[row, col]
+                        # If the value is a string float (contains decimal point)
+                        if isinstance(val, str) and "." in val:
+                            val = val.replace(".", "p")
+                        # If the value is an actual float
+                        elif isinstance(val, float):
+                            val = str(val).replace(".", "p")
+                        acq_str += f"{col}{val}"
 
             if acq_str == "VARIANT":
                 acq_str += "Other"
 
             if "acquisition" in entities.keys():
                 acq = f"acquisition-{entities['acquisition'] + acq_str}"
-
                 new_name = summary.loc[row, "EntitySet"].replace(
-                    f"acquisition-{entities['acquisition']}",
-                    acq,
+                    f"acquisition-{entities['acquisition']}", acq
                 )
             else:
                 acq = f"acquisition-{acq_str}"

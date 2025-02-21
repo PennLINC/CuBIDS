@@ -1368,7 +1368,7 @@ def _get_parser():
     from cubids import __version__
 
     parser = argparse.ArgumentParser(prog="cubids", allow_abbrev=False)
-    parser.add_argument("-v", "--version", action="version", version=__version__)
+    parser.add_argument("-v", "--version", action="version", version=f"cubids v{__version__}")
     subparsers = parser.add_subparsers(help="CuBIDS commands")
 
     for command, parser_func, run_func in COMMANDS:
