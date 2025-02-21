@@ -30,11 +30,13 @@ def base_df():
     pandas.DataFrame
         A DataFrame with basic structure needed for assign_variants testing
     """
-    return pd.DataFrame({
-        "ParamGroup": ["1", "2", "2"],
-        "EntitySet": ["task-test", "task-test", "task-test"],
-        "RenameEntitySet": ["", "", ""]
-    })
+    return pd.DataFrame(
+        {
+            "ParamGroup": ["1", "2", "2"],
+            "EntitySet": ["task-test", "task-test", "task-test"],
+            "RenameEntitySet": ["", "", ""],
+        }
+    )
 
 
 def test_assign_variants_with_cluster_values(base_df):
@@ -47,8 +49,8 @@ def test_assign_variants_with_cluster_values(base_df):
     result = assign_variants(base_df, ["EchoTime"])
 
     # Check that variant names include cluster values
-    assert "acquisition-VARIANTEchoTime2_" in result.loc[1, "RenameEntitySet"]
-    assert "acquisition-VARIANTEchoTime3_" in result.loc[2, "RenameEntitySet"]
+    assert "acquisition-VARIANTEchoTimeC2_" in result.loc[1, "RenameEntitySet"]
+    assert "acquisition-VARIANTEchoTimeC3_" in result.loc[2, "RenameEntitySet"]
 
 
 def test_assign_variants_mixed_parameters(base_df):
@@ -62,8 +64,8 @@ def test_assign_variants_mixed_parameters(base_df):
     result = assign_variants(base_df, ["EchoTime", "FlipAngle"])
 
     # Check variant names include both cluster values and actual values
-    assert "acquisition-VARIANTEchoTime2FlipAngle75_" in result.loc[1, "RenameEntitySet"]
-    assert "acquisition-VARIANTEchoTime3FlipAngle60_" in result.loc[2, "RenameEntitySet"]
+    assert "acquisition-VARIANTEchoTimeC2FlipAngle75_" in result.loc[1, "RenameEntitySet"]
+    assert "acquisition-VARIANTEchoTimeC3FlipAngle60_" in result.loc[2, "RenameEntitySet"]
 
 
 def test_assign_variants_special_parameters(base_df):
