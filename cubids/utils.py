@@ -497,24 +497,36 @@ def format_params(param_group_df, config, modality):
         if column_name not in param_group_df:
             continue
 
-        if "tolerance" in column_fmt and len(param_group_df) > 1:
+        # Check if the column is entirely NaN or blank
+        if param_group_df[column_name].isna().all():
+            # If the whole column is NaN, assign a single cluster label (e.g., 0)
+            param_group_df[f"Cluster_{column_name}"] = 0
+            continue  # Skip clustering since all values are NaN
+
+        if "tolerance" in column_fmt and param_group_df.shape[0] > 1:
             array = param_group_df[column_name].to_numpy().reshape(-1, 1)
 
-            for i in range(len(array)):
-                if np.isnan(array[i, 0]):
-                    array[i, 0] = -999
+            # Handle NaNs correctly: Ignore NaNs instead of replacing with -999
+            valid_mask = ~np.isnan(array.flatten())  # Mask of non-NaN values
 
-            tolerance = to_format[column_name]["tolerance"]
-            clustering = AgglomerativeClustering(
-                n_clusters=None, distance_threshold=tolerance, linkage="complete"
-            ).fit(array)
+            if valid_mask.sum() > 1:  # Proceed with clustering only if >1 valid value
+                valid_array = array[valid_mask].reshape(-1, 1)
+                tolerance = to_format[column_name]["tolerance"]
 
-            for i in range(len(array)):
-                if array[i, 0] == -999:
-                    array[i, 0] = np.nan
+                clustering = AgglomerativeClustering(
+                    n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                ).fit(valid_array)
 
-            # now add clustering_labels as a column
-            param_group_df[f"Cluster_{column_name}"] = clustering.labels_
+                # Create a full label array and fill only valid entries
+                cluster_labels = np.full_like(
+                    array.flatten(), fill_value=np.max(clustering.labels_) + 1, dtype=float
+                )
+                cluster_labels[valid_mask] = clustering.labels_
+
+                param_group_df[f"Cluster_{column_name}"] = cluster_labels
+            else:
+                # If there's only one unique non-NaN value, assign it the same cluster
+                param_group_df[f"Cluster_{column_name}"] = 0
 
     return param_group_df
 
@@ -908,6 +920,8 @@ def assign_variants(summary, rename_cols):
 
                 if f"Cluster_{col}" in summary.columns:
                     val[f"Cluster_{col}"] = summary.loc[row, f"Cluster_{col}"]
+                    if pd.isna(val[f"Cluster_{col}"]):
+                        val[f"Cluster_{col}"] = 0
 
             dom_dict[key] = val
 
@@ -933,9 +947,16 @@ def assign_variants(summary, rename_cols):
                 summary[col] = summary[col].apply(str)
 
                 if f"Cluster_{col}" in dom_entity_set.keys():
-                    if summary.loc[row, f"Cluster_{col}"] != dom_entity_set[f"Cluster_{col}"]:
-                        cluster_val = summary.loc[row, f"Cluster_{col}"]
-                        acq_str += f"+{col}{int(cluster_val)}"
+                    cluster_val = summary.loc[row, f"Cluster_{col}"]
+                    if pd.isna(cluster_val):
+                        # This should only occur when the entity set does not have the
+                        # cluster column, so concatenation across entity sets will result
+                        # in NaN values in those cells.
+                        cluster_val = 0
+
+                    if cluster_val != dom_entity_set[f"Cluster_{col}"]:
+                        acq_str += f"+{col}C{int(cluster_val)}"
+
                 elif summary.loc[row, col] != dom_entity_set[col]:
                     if col == "HasFieldmap":
                         if dom_entity_set[col] == "True":
