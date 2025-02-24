@@ -184,23 +184,23 @@ CuBIDS populates this column for all Variant Groups
 Specifically, CuBIDS will suggest renaming all non-dominant Parameter Groups to include ``VARIANT*``
 in their acquisition field where ``*`` indicates how the Parameter Group varies from the Dominant Group:
 
-1. For clustered parameters (like EchoTime), the cluster number is used (e.g., ``VARIANTEchoTime2``)
-2. For regular parameters (like FlipAngle), the actual value is used (e.g., ``VARIANTFlipAngle75``)
+1. For clustered parameters (like EchoTime), the cluster number is used (e.g., ``VARIANT+EchoTimeC2``)
+2. For regular parameters (like FlipAngle), the actual value is used (e.g., ``VARIANT+FlipAngle75``)
 3. For special parameters:
    - HasFieldmap variations use ``NoFmap`` or ``HasFmap``
    - UsedAsFieldmap variations use ``Unused`` or ``IsUsed``
 
 For example, when CuBIDS encounters a Parameter Group with a clustered EchoTime that varies from
 the one present in the Dominant Group, it will automatically suggest renaming all scans in that
-Variant Group to include ``acquisition-VARIANTEchoTime2`` in their filenames (if the scan belongs
+Variant Group to include ``acquisition-VARIANT+EchoTimeC2`` in their filenames (if the scan belongs
 to cluster 2).
 
-When multiple parameters vary, their names are concatenated (e.g., ``VARIANTEchoTime2FlipAngle75``).
+When multiple parameters vary, their names are concatenated (e.g., ``VARIANT+EchoTimeC2+FlipAngle75``).
 When the user runs ``cubids apply``, filenames will get renamed according to the auto-generated
 names in the "Rename Entity Set" column in the summary.tsv
 
 .. note::
-   The above behavior is new as of version 1.2.0. Prior to this, the variant name was just ``VARIANT{parameter}``.
+   The above behavior is new as of version 1.2.0. Prior to this, the variant name was just ``VARIANT+{parameter}``.
 
 
 Deleting a mistake

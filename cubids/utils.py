@@ -144,6 +144,10 @@ def _file_to_entity_set(filename):
     Field maps will have an extraneous "fmap" entity.
     >>> _file_to_entity_set("sub-01_ses-01_dir-AP_epi.nii.gz")
     'direction-AP_fmap-epi_session-01_suffix-epi'
+
+    Plus signs are supported.
+    >>> _file_to_entity_set("sub-01_ses-01_acq-VARIANT+EchoTimeC1_epi.nii.gz")
+    'acquisition-VARIANT+EchoTimeC1_session-01_suffix-epi'
     """
     entities = parse_file_entities(str(filename))
     return _entities_to_entity_set(entities)
@@ -934,7 +938,11 @@ def assign_variants(summary, rename_cols):
             renamed = True
 
         if summary.loc[row, "ParamGroup"] != 1 and not renamed:
-            acq_str = "VARIANT"
+            orig_acq = entities.get("acquisition", "")
+            if orig_acq == "":
+                acq_str = "VARIANT"
+            else:
+                acq_str = f"{orig_acq}+VARIANT"
             # now we know we have a deviant param group
             # check if TR is same as param group 1
             entity_set = summary.loc[row, "EntitySet"]
@@ -951,19 +959,19 @@ def assign_variants(summary, rename_cols):
                         cluster_val = 0
 
                     if cluster_val != dom_entity_set[f"Cluster_{col}"]:
-                        acq_str += f"{col}C{int(cluster_val)}"
+                        acq_str += f"+{col}C{int(cluster_val)}"
 
                 elif summary.loc[row, col] != dom_entity_set[col]:
                     if col == "HasFieldmap":
                         if dom_entity_set[col] == "True":
-                            acq_str += "NoFmap"
+                            acq_str += "+NoFmap"
                         else:
-                            acq_str += "HasFmap"
+                            acq_str += "+HasFmap"
                     elif col == "UsedAsFieldmap":
                         if dom_entity_set[col] == "True":
-                            acq_str += "Unused"
+                            acq_str += "+Unused"
                         else:
-                            acq_str += "IsUsed"
+                            acq_str += "+IsUsed"
                     else:
                         val = summary.loc[row, col]
                         # If the value is a string float (contains decimal point)
@@ -972,18 +980,15 @@ def assign_variants(summary, rename_cols):
                         # If the value is an actual float
                         elif isinstance(val, float):
                             val = str(val).replace(".", "p")
-                        acq_str += f"{col}{val}"
+                        acq_str += f"+{col}{val}"
 
             if acq_str == "VARIANT":
-                acq_str += "Other"
+                acq_str += "+Other"
 
+            acq = f"acquisition-{acq_str}"
             if "acquisition" in entities.keys():
-                acq = f"acquisition-{entities['acquisition'] + acq_str}"
-                new_name = summary.loc[row, "EntitySet"].replace(
-                    f"acquisition-{entities['acquisition']}", acq
-                )
+                new_name = summary.loc[row, "EntitySet"].replace(f"acquisition-{orig_acq}", acq)
             else:
-                acq = f"acquisition-{acq_str}"
                 new_name = acq + "_" + summary.loc[row, "EntitySet"]
 
             summary.at[row, "RenameEntitySet"] = new_name
