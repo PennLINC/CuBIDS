@@ -508,43 +508,42 @@ def test_tsv_merge_changes(tmp_path):
             assert str(orig.loc[row, "RenameEntitySet"]) != "nan"
 
     # TESTING RENAMES GOT APPLIED
-    applied = pd.read_table(str(tmp_path / "unmodified_summary.tsv"))
-    applied_f = pd.read_table(str(tmp_path / "unmodified_files.tsv"))
+    applied_summary_df = pd.read_table(str(tmp_path / "unmodified_summary.tsv"))
+    applied_files_df = pd.read_table(str(tmp_path / "unmodified_files.tsv"))
 
     # Check for inconsistencies between FilePath and KeyParamGroup
     odd = []
-    for row in range(len(applied_f)):
-        if (
-            "VARIANT" in applied_f.loc[row, "FilePath"]
-            and "VARIANT" not in applied_f.loc[row, "KeyParamGroup"]
-        ):
-            odd.append((applied_f.loc[row, "FilePath"]))
+    for _, row in applied_files_df.iterrows():
+        if "VARIANT" in row["FilePath"] and "VARIANT" not in row["KeyParamGroup"]:
+            odd.append(row["FilePath"])
 
     # Track KeyParamGroups for files with inconsistencies
     occurrences = {}
-    for row in range(len(applied_f)):
-        if applied_f.loc[row, "FilePath"] in odd:
-            if applied_f.loc[row, "FilePath"] in occurrences.keys():
-                occurrences[applied_f.loc[row, "FilePath"]].append(
-                    applied_f.loc[row, "KeyParamGroup"]
-                )
+    for _, row in applied_files_df.iterrows():
+        fp = row["FilePath"]
+        if fp in odd:
+            if fp in occurrences.keys():
+                occurrences[fp].append(row["KeyParamGroup"])
             else:
-                occurrences[applied_f.loc[row, "FilePath"]] = [applied_f.loc[row, "KeyParamGroup"]]
+                occurrences[fp] = [row["KeyParamGroup"]]
 
     # Ensure no rows were lost
-    assert len(orig) == len(applied)
+    assert len(orig) == len(applied_summary_df)
 
-    # Check for exact matches in EntitySet
+    # Check that all the RenameEntitySet values are in the renamed entity sets
     renamed = True
-    new_keys = applied["EntitySet"].tolist()
-    for row in range(len(orig)):
-        if orig.loc[row, "Modality"] != "fmap":
-            if (
-                str(orig.loc[row, "RenameEntitySet"]) != "nan"
-                and str(orig.loc[row, "RenameEntitySet"]) not in new_keys
-            ):
-                print(orig.loc[row, "RenameEntitySet"])
-                renamed = False
+    new_keys = applied_summary_df["EntitySet"].tolist()
+    for _, row in orig.iterrows():
+        if row["Modality"] == "fmap":
+            # Ignore field map renaming
+            continue
+
+        res = row["RenameEntitySet"]
+        if (res != "nan") and (res not in new_keys):
+            print("HI")
+            print(res)
+            print("DONE")
+            renamed = False
 
     assert renamed, orig["RenameEntitySet"].tolist()
 
