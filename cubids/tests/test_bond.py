@@ -539,7 +539,7 @@ def test_tsv_merge_changes(tmp_path):
             continue
 
         res = row["RenameEntitySet"]
-        if (res != "nan") and (res not in new_keys):
+        if isinstance(res, str) and (res != "nan") and (res not in new_keys):
             print("HI")
             print(res)
             print("DONE")
