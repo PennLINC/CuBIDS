@@ -545,6 +545,9 @@ def test_tsv_merge_changes(tmp_path):
             print("DONE")
             renamed = False
 
+        print("\n".join(new_keys))
+        print("DONE2")
+
     assert renamed, orig["RenameEntitySet"].tolist()
 
     # will no longer be equal because of auto rename!
