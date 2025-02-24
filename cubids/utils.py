@@ -4,6 +4,7 @@ This module provides various utility functions used throughout the CuBIDS packag
 """
 
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -901,8 +902,9 @@ def assign_variants(summary, rename_cols):
     Notes
     -----
     Variant names are constructed using the following rules:
-    1. Basic parameters use their actual values (e.g., VARIANTFlipAngle75)
-    2. Clustered parameters use their cluster numbers (e.g., VARIANTEchoTime2)
+    1. Basic parameters use their actual values (e.g., VARIANTFlipAngle75),
+       with non-alphanumeric characters removed.
+    2. Clustered parameters use their cluster numbers prefixed with "C" (e.g., VARIANTEchoTimeC2)
     3. Special parameters like HasFieldmap use predefined strings (e.g., VARIANTNoFmap)
     4. Multiple parameters are concatenated (e.g., VARIANTEchoTime2FlipAngle75)
     """
@@ -972,6 +974,13 @@ def assign_variants(summary, rename_cols):
                         # If the value is an actual float
                         elif isinstance(val, float):
                             val = str(val).replace(".", "p")
+                            if val.endswith("p0"):
+                                # Remove the trailing "p0"
+                                val = val[:-2]
+
+                        # Filter out non-alphanumeric characters
+                        val = re.sub(r"[^a-zA-Z0-9]", "", val)
+
                         acq_str += f"{col}{val}"
 
             if acq_str == "VARIANT":
