@@ -24,20 +24,18 @@ from cubids.tests.utils import (
     get_data,
 )
 from cubids.validator import (
-    bids_validator_version,
     build_validator_call,
     extract_summary_info,
     get_bids_validator_version,
     parse_validator_output,
     run_validator,
-    update_dataset_description,
 )
 
 COMPLETE_KEY_GROUPS = [
-    "acquisition-HASC55AP_datatype-dwi_suffix-dwi",
-    "acquisition-v4_datatype-fmap_fmap-magnitude1_suffix-magnitude1",
-    "acquisition-v4_datatype-fmap_fmap-magnitude2_suffix-magnitude2",
-    "acquisition-v4_datatype-fmap_fmap-phasediff_suffix-phasediff",
+    "datatype-dwi_suffix-dwi_acquisition-HASC55AP",
+    "datatype-fmap_fmap-magnitude1_suffix-magnitude1_acquisition-v4",
+    "datatype-fmap_fmap-magnitude2_suffix-magnitude2_acquisition-v4",
+    "datatype-fmap_fmap-phasediff_suffix-phasediff_acquisition-v4",
     "datatype-anat_suffix-T1w",
     "datatype-fmap_direction-PA_fmap-epi_suffix-epi",
     "datatype-func_suffix-bold_task-rest",
@@ -440,16 +438,16 @@ def test_tsv_merge_no_datalad(tmp_path):
     summary_df = pd.read_table(original_summary_tsv)
     (fa_nan_dwi_row,) = np.flatnonzero(
         np.isnan(summary_df.FlipAngle)
-        & summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        & summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
     )
     # Find the dwi with and EchoTime ==
     (complete_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime > 0.05)
     )
     (cant_merge_echotime_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime < 0.05)
     )
@@ -555,16 +553,16 @@ def test_tsv_merge_changes(tmp_path):
     summary_df = pd.read_table(original_summary_tsv)
     (fa_nan_dwi_row,) = np.flatnonzero(
         np.isnan(summary_df.FlipAngle)
-        & summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        & summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
     )
     # Find the dwi with and EchoTime ==
     (complete_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime > 0.05)
     )
     (cant_merge_echotime_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime < 0.05)
     )
@@ -635,9 +633,9 @@ def test_merge_without_overwrite():
         "DwellTime": 2.6e-06,
         "EchoTime": 0.03,
         "EffectiveEchoSpacing": 0.000580013,
-        "FieldmapKey00": "acquisition-fMRI_datatype-fmap_direction-AP_fmap-epi_suffix-epi",
-        "FieldmapKey01": "acquisition-fMRI_datatype-fmap_direction-PA_fmap-epi_run-1_suffix-epi",
-        "FieldmapKey02": "acquisition-fMRI_datatype-fmap_direction-PA_fmap-epi_run-2_suffix-epi",
+        "FieldmapKey00": "datatype-fmap_direction-AP_fmap-epi_suffix-epi_acquisition-fMRI",
+        "FieldmapKey01": "datatype-fmap_direction-PA_fmap-epi_run-1_suffix-epi_acquisition-fMRI",
+        "FieldmapKey02": "datatype-fmap_direction-PA_fmap-epi_run-2_suffix-epi_acquisition-fMRI",
         "FieldmapKey03": np.nan,
         "FieldmapKey04": np.nan,
         "FieldmapKey05": np.nan,
