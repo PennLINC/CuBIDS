@@ -144,6 +144,10 @@ def _file_to_entity_set(filename):
     Field maps will have an extraneous "fmap" entity.
     >>> _file_to_entity_set("sub-01_ses-01_dir-AP_epi.nii.gz")
     'direction-AP_fmap-epi_session-01_suffix-epi'
+
+    Plus signs are supported.
+    >>> _file_to_entity_set("sub-01_ses-01_acq-VARIANT+EchoTimeC1_epi.nii.gz")
+    'acquisition-VARIANT+EchoTimeC1_session-01_suffix-epi'
     """
     entities = parse_file_entities(str(filename))
     return _entities_to_entity_set(entities)
