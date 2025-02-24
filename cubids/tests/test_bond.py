@@ -538,13 +538,7 @@ def test_tsv_merge_changes(tmp_path):
 
         res = row["RenameEntitySet"]
         if isinstance(res, str) and (res != "nan") and (res not in new_keys):
-            print("HI")
-            print(res)
-            print("DONE")
             renamed = False
-
-        print("\n".join(new_keys))
-        print("DONE2")
 
     assert renamed, orig["RenameEntitySet"].tolist()
 
@@ -555,16 +549,16 @@ def test_tsv_merge_changes(tmp_path):
     summary_df = pd.read_table(original_summary_tsv)
     (fa_nan_dwi_row,) = np.flatnonzero(
         np.isnan(summary_df.FlipAngle)
-        & summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        & summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
     )
     # Find the dwi with and EchoTime ==
     (complete_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime > 0.05)
     )
     (cant_merge_echotime_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("acquisition-HASC55AP_datatype-dwi_suffix-dwi")
+        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime < 0.05)
     )

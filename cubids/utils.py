@@ -1011,7 +1011,7 @@ def assign_variants(summary, rename_cols):
                 )
             else:
                 acq = f"acquisition-{acq_str}"
-                new_name = acq + "_" + summary.loc[row, "EntitySet"]
+                new_name = summary.loc[row, "EntitySet"] + "_" + acq
 
             summary.at[row, "RenameEntitySet"] = new_name
 
