@@ -546,7 +546,7 @@ def test_tsv_merge_changes(tmp_path):
                 print(orig.loc[row, "RenameEntitySet"])
                 renamed = False
 
-    assert renamed, new_keys
+    assert renamed, orig["RenameEntitySet"].tolist()
 
     # will no longer be equal because of auto rename!
     assert file_hash(original_summary_tsv) != file_hash(tmp_path / "unmodified_summary.tsv")
