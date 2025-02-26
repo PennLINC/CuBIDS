@@ -9,7 +9,7 @@ Glossary
         A set of scans whose filenames share all `BIDS filename key-value pairs`_,
         excluding subject and session.
         The entity set is derived from the common BIDS filename elements.
-        For example, ``acquisition-*_datatype-*_run-*_task-*_suffix``.
+        For example, ``datatype-*_run-*_task-*_suffix-*_acquisition-*``.
 
     Parameter Group
         A set of scans with identical metadata parameters in their sidecars.

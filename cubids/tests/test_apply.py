@@ -212,7 +212,7 @@ def summary_data():
     dict_ = {
         "RenameEntitySet": [
             None,
-            "acquisition-VAR_datatype-dwi_direction-AP_run-01_suffix-dwi",
+            "datatype-dwi_direction-AP_run-01_suffix-dwi_acquisition-VAR",
             None,
             None,
         ],

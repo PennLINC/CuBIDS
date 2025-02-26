@@ -4,6 +4,7 @@ This module provides various utility functions used throughout the CuBIDS packag
 """
 
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -154,8 +155,35 @@ def _entities_to_entity_set(entities):
     This is a set of entities to ignore in the entity set.
     The constant may be modified by the CuBIDS class, which will remove "session"
     if is_longitudinal is True and acq_group_level is "session".
+
+    Examples
+    --------
+    >>> _entities_to_entity_set(
+    ...     {"subject": "01", "session": "02", "task": "rest",
+    ...      "datatype": "fmap", "acquisition": "x"}
+    ... )
+    'datatype-fmap_session-02_task-rest_acquisition-x'
+
+    >>> _entities_to_entity_set(
+    ...     {"subject": "01", "session": "02", "task": "rest", "acquisition": "x"}
+    ... )
+    'session-02_task-rest_acquisition-x'
+
+    >>> _entities_to_entity_set(
+    ...     {"datatype": "fmap", "subject": "01", "session": "02", "task": "rest"}
+    ... )
+    'datatype-fmap_session-02_task-rest'
     """
     group_keys = sorted(set(entities.keys()) - NON_KEY_ENTITIES)
+    # Put datatype at the beginning and acquisition at the end
+    if "datatype" in group_keys:
+        group_keys.remove("datatype")
+        group_keys.insert(0, "datatype")
+
+    if "acquisition" in group_keys:
+        group_keys.remove("acquisition")
+        group_keys.append("acquisition")
+
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
 
 
@@ -1009,8 +1037,9 @@ def assign_variants(summary, rename_cols):
     Notes
     -----
     Variant names are constructed using the following rules:
-    1. Basic parameters use their actual values (e.g., VARIANTFlipAngle75)
-    2. Clustered parameters use their cluster numbers (e.g., VARIANTEchoTime2)
+    1. Basic parameters use their actual values (e.g., VARIANTFlipAngle75),
+       with non-alphanumeric characters removed.
+    2. Clustered parameters use their cluster numbers prefixed with "C" (e.g., VARIANTEchoTimeC2)
     3. Special parameters like HasFieldmap use predefined strings (e.g., VARIANTNoFmap)
     4. Multiple parameters are concatenated (e.g., VARIANTEchoTime2FlipAngle75)
     """
@@ -1080,6 +1109,13 @@ def assign_variants(summary, rename_cols):
                         # If the value is an actual float
                         elif isinstance(val, float):
                             val = str(val).replace(".", "p")
+                            if val.endswith("p0"):
+                                # Remove the trailing "p0"
+                                val = val[:-2]
+
+                        # Filter out non-alphanumeric characters
+                        val = re.sub(r"[^a-zA-Z0-9]", "", val)
+
                         acq_str += f"{col}{val}"
 
             if acq_str == "VARIANT":
@@ -1092,7 +1128,7 @@ def assign_variants(summary, rename_cols):
                 )
             else:
                 acq = f"acquisition-{acq_str}"
-                new_name = acq + "_" + summary.loc[row, "EntitySet"]
+                new_name = summary.loc[row, "EntitySet"] + "_" + acq
 
             summary.at[row, "RenameEntitySet"] = new_name
 
