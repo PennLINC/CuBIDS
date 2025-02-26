@@ -56,15 +56,15 @@ Examples
 Dominant Group resting state BOLD:
 
     *   Example Filename: ``sub-01_ses-A_task-rest_acq-singleband_bold.nii.gz``
-    *   Entity Set: ``acquisition-singleband_datatype-func_suffix-bold_task-rest``
+    *   Entity Set: ``datatype-func_suffix-bold_task-rest_acquisition-singleband``
     *   Param Group: ``1`` (Dominant Group)
 
 Variant Group resting state BOLD (all scans in this Param Group are missing a fieldmap)
 
     *   Example Filename: ``sub-02_ses-A_task-rest_acq-singleband_bold.nii.gz``
-    *   Entity Set: ``acquisition-singleband_datatype-func_suffix-bold_task-rest``
+    *   Entity Set: ``datatype-func_suffix-bold_task-rest_acquisition-singleband``
     *   Param Group: ``2`` (Variant Group)
-    *   Rename Entity Set: ``acquisition-singlebandVARIANTNoFmap_datatype-func_suffix-bold_task-rest``
+    *   Rename Entity Set: ``datatype-func_suffix-bold_task-rest_acquisition-singlebandVARIANTNoFmap``
 
 These definitions are described in more detail in :doc:`glossary` and :doc:`usage`.
 

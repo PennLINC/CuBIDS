@@ -112,8 +112,35 @@ def _entities_to_entity_set(entities):
     This is a set of entities to ignore in the entity set.
     The constant may be modified by the CuBIDS class, which will remove "session"
     if is_longitudinal is True and acq_group_level is "session".
+
+    Examples
+    --------
+    >>> _entities_to_entity_set(
+    ...     {"subject": "01", "session": "02", "task": "rest",
+    ...      "datatype": "fmap", "acquisition": "x"}
+    ... )
+    'datatype-fmap_session-02_task-rest_acquisition-x'
+
+    >>> _entities_to_entity_set(
+    ...     {"subject": "01", "session": "02", "task": "rest", "acquisition": "x"}
+    ... )
+    'session-02_task-rest_acquisition-x'
+
+    >>> _entities_to_entity_set(
+    ...     {"datatype": "fmap", "subject": "01", "session": "02", "task": "rest"}
+    ... )
+    'datatype-fmap_session-02_task-rest'
     """
     group_keys = sorted(set(entities.keys()) - NON_KEY_ENTITIES)
+    # Put datatype at the beginning and acquisition at the end
+    if "datatype" in group_keys:
+        group_keys.remove("datatype")
+        group_keys.insert(0, "datatype")
+
+    if "acquisition" in group_keys:
+        group_keys.remove("acquisition")
+        group_keys.append("acquisition")
+
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
 
 
@@ -993,7 +1020,7 @@ def assign_variants(summary, rename_cols):
                 )
             else:
                 acq = f"acquisition-{acq_str}"
-                new_name = acq + "_" + summary.loc[row, "EntitySet"]
+                new_name = summary.loc[row, "EntitySet"] + "_" + acq
 
             summary.at[row, "RenameEntitySet"] = new_name
 

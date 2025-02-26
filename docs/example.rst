@@ -340,7 +340,7 @@ which may impact successful execution of BIDS Apps.
    :header-rows: 1
 
 Examining ``v0_summary.tsv`` we can see that one DWI Parameter Group —
-``acquisition-HASC55AP_datatype-dwi_suffix-dwi__2`` —
+``datatype-dwi_suffix-dwi_acquisition-HASC55AP__2`` —
 contains only one scan (see "Counts" column) with only 10 volumes
 (see "NumVolumes" column).
 Since the majority of DWI scans in this dataset have 61 volumes,
@@ -351,7 +351,7 @@ with a suggested name.
 .. note::
    CuBIDS now uses a more explicit variant naming format. In this case, since NumVolumes is a regular
    (non-clustered) parameter, the actual value is included in the variant name:
-   ``acquisition-HASC55APVARIANTNumVolumes10_datatype-dwi_suffix-dwi``.
+   ``datatype-dwi_suffix-dwi_acquisition-HASC55APVARIANTNumVolumes10``.
 
 This time, though,
 we elect to remove this scan because it does not have enough volumes to be usable for most analyses.
