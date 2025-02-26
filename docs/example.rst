@@ -173,6 +173,9 @@ Since we ran ``cubids add-nifti-info`` with the ``--use-datalad`` flag set,
 BIDS validation
 ---------------
 
+The next step in the ``CuBIDS`` workflow is to run BIDS validation
+to detect potential curation errors using ``cubids validate``.
+
 .. code-block:: console
 
     $ cubids validate BIDS_Dataset_DataLad v0 --sequential
@@ -190,8 +193,6 @@ BIDS validation
 
     After that, you will need to add ``--local-validator`` option to the command string above.
 
-The next step in the ``CuBIDS`` workflow is to run BIDS validation
-to detect potential curation errors using ``cubids validate``.
 
 This command produces the following tsv:
 
