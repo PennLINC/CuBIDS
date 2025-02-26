@@ -89,7 +89,6 @@ we can view a summary of our dataset's version history by running the following 
 
     $ cd BIDS_Dataset_DataLad
     $ git log --oneline
-    $ cd ..
 
 This command will write the following to the terminal:
 
