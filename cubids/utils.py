@@ -1056,8 +1056,8 @@ def collect_file_collections(layout, base_file):
     file_collection_entities = {
         "echo": "EchoTime",
         "part": None,
-        "mt": "MTState",
-        "inv": "InversionTime",
+        "mtransfer": "MTState",
+        "inversion": "InversionTime",
         "flip": "FlipAngle",
     }
 
@@ -1066,20 +1066,56 @@ def collect_file_collections(layout, base_file):
     query = base_file.get_entities()
     query = {**query, **fc_query}
     files = layout.get(**query)
-    collected_entities = layout.get_entities(files)
+
+    if len(files) <= 1:
+        return files, {}
+
+    # Get list of entities present in any of the files
+    collected_entities = [list(f.get_entities().keys()) for f in files]
+    # Flatten the list
+    collected_entities = [item for sublist in collected_entities for item in sublist]
+    # Remove duplicates
+    collected_entities = sorted(set(collected_entities))
 
     out_metadata = {}
+    # Add metadata field with BIDS URIs to all files in file collection
+    out_metadata["FileCollection"] = [get_bidsuri(f.path, layout.root) for f in files]
+
     files_metadata = [f.get_metadata() for f in files]
     for ent, field in file_collection_entities.items():
         if ent in collected_entities:
             if field is None:
+                # If the entity is not mirrored in the metadata, like part,
+                # just use the entity value from the files.
                 collected_ent = ent + "s"
                 ent_values = [f.get_entities()[ent] for f in files]
                 out_metadata[collected_ent] = ent_values
 
             else:
-                collected_field = field + "s"
+                # If the entity is mirrored in the metadata, like echo,
+                # collect the values from the metadata.
+                collected_field = field.title() + "s"
                 field_values = [meta[field] for meta in files_metadata]
                 out_metadata[collected_field] = field_values
 
     return files, out_metadata
+
+
+def get_bidsuri(filename, dataset_root):
+    """Get the BIDS URI for a given filename.
+
+    Parameters
+    ----------
+    filename : str
+        The filename to get the BIDS URI for.
+    dataset_root : str
+        The root directory of the dataset.
+
+    Returns
+    -------
+    str
+        The BIDS URI for the given filename.
+    """
+    import os
+
+    return f"bids::{os.path.relpath(filename, dataset_root)}"
