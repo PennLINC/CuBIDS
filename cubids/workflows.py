@@ -444,6 +444,29 @@ def add_nifti_info(bids_dir, use_datalad, force_unlock):
     bod.add_nifti_info()
 
 
+def add_file_collections(bids_dir, use_datalad, force_unlock):
+    """Add file collection metadata to the sidecars of each NIfTI file in the BIDS dataset.
+
+    Parameters
+    ----------
+    bids_dir : :obj:`pathlib.Path`
+        Path to the BIDS directory.
+    use_datalad : :obj:`bool`
+        Use datalad to track changes.
+    force_unlock : :obj:`bool`
+        Force unlock the dataset.
+    """
+    bod = CuBIDS(
+        data_root=str(bids_dir),
+        use_datalad=use_datalad,
+        force_unlock=force_unlock,
+    )
+    if use_datalad and not bod.is_datalad_clean():
+        raise Exception(f"Untracked changes in {bids_dir}. Cannot continue.")
+
+    bod.add_file_collections()
+
+
 def purge(bids_dir, use_datalad, scans):
     """Purge scan associations.
 
