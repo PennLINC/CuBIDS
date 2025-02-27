@@ -32,3 +32,22 @@ def test_add_file_collections(tmp_path):
         "Units": "arbitrary",
     }
     assert json.loads(f1.read_text()) == expected
+
+    f2 = bids_dir / "sub-02" / "func" / "sub-02_task-rest_echo-3_part-mag_bold.json"
+    assert f2.exists()
+    expected = {
+        "EchoTime": 0.45,
+        "EchoTimes": [0.15, 0.15, 0.3, 0.3, 0.45, 0.45, 0.6, 0.6],
+        "Parts": ["mag", "phase", "mag", "phase", "mag", "phase", "mag", "phase"],
+        "FileCollection": [
+            "bids::sub-02/func/sub-02_task-rest_echo-1_part-mag_bold.nii.gz",
+            "bids::sub-02/func/sub-02_task-rest_echo-1_part-phase_bold.nii.gz",
+            "bids::sub-02/func/sub-02_task-rest_echo-2_part-mag_bold.nii.gz",
+            "bids::sub-02/func/sub-02_task-rest_echo-2_part-phase_bold.nii.gz",
+            "bids::sub-02/func/sub-02_task-rest_echo-3_part-mag_bold.nii.gz",
+            "bids::sub-02/func/sub-02_task-rest_echo-3_part-phase_bold.nii.gz",
+            "bids::sub-02/func/sub-02_task-rest_echo-4_part-mag_bold.nii.gz",
+            "bids::sub-02/func/sub-02_task-rest_echo-4_part-phase_bold.nii.gz",
+        ],
+    }
+    assert json.loads(f2.read_text()) == expected
