@@ -13,7 +13,7 @@ def test_add_file_collections(tmp_path):
     bids_dir = tmp_path / "add_file_collections"
     dset_yaml = str(TEST_DATA / "skeletons" / "skeleton_file_collection_01.yml")
     generate_bids_skeleton(str(bids_dir), dset_yaml)
-    add_file_collections(tmp_path, use_datalad=False, force_unlock=True)
+    add_file_collections(str(bids_dir), use_datalad=False, force_unlock=True)
 
     # A JSON sidecar that's part of a file collection should be modified.
     f1 = bids_dir / "sub-01" / "func" / "sub-01_task-rest_acq-meepi_echo-3_part-phase_bold.json"

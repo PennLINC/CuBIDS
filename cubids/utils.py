@@ -1090,14 +1090,14 @@ def collect_file_collections(layout, base_file):
             if field is None:
                 # If the entity is not mirrored in the metadata, like part,
                 # just use the entity value from the files.
-                collected_ent = ent + "s"
+                collected_ent = ent.title() + "s"
                 ent_values = [f.get_entities()[ent] for f in files]
                 out_metadata[collected_ent] = ent_values
 
             else:
                 # If the entity is mirrored in the metadata, like echo,
                 # collect the values from the metadata.
-                collected_field = field.title() + "s"
+                collected_field = field + "s"
                 field_values = [meta[field] for meta in files_metadata]
                 out_metadata[collected_field] = field_values
 

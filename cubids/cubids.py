@@ -186,7 +186,7 @@ class CuBIDS(object):
             re.compile(r"/\."),
         ]
 
-        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=False)
+        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=True)
 
         self._layout = bids.BIDSLayout(self.path, validate=validate, indexer=indexer)
 
@@ -397,6 +397,9 @@ class CuBIDS(object):
         This method processes all files in the BIDS directory specified by `self.path`.
         It identifies file collections based on the presence of specific entities in the filenames.
 
+        Notes
+        -----
+        This method requires that the BIDSLayout has been indexed with metadata.
         """
         # check if force_unlock is set
         if self.force_unlock:
@@ -417,17 +420,18 @@ class CuBIDS(object):
             filepaths = [f.path for f in files]
             checked_files.extend(filepaths)
 
-            # Add metadata to the sidecar
-            sidecar = utils.img_to_new_ext(str(path), ".json")
-            if Path(sidecar).exists():
-                with open(sidecar, "r") as f:
-                    data = json.load(f)
-            else:
-                data = {}
+            for collection_path in filepaths:
+                # Add metadata to the sidecar
+                sidecar = utils.img_to_new_ext(str(collection_path), ".json")
+                if Path(sidecar).exists():
+                    with open(sidecar, "r") as f:
+                        data = json.load(f)
+                else:
+                    data = {}
 
-            data.update(collection_metadata)
-            with open(sidecar, "w") as f:
-                json.dump(data, f, sort_keys=True, indent=4)
+                data.update(collection_metadata)
+                with open(sidecar, "w") as f:
+                    json.dump(data, f, sort_keys=True, indent=4)
 
         if self.use_datalad:
             self.datalad_save(message="Added file collection metadata to sidecars")
