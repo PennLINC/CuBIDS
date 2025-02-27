@@ -1058,8 +1058,8 @@ def collect_file_collections(layout, base_file):
     file_collection_entities = {
         "echo": "EchoTime",
         "part": None,
-        "mtransfer": "MTState",
-        "inversion": "InversionTime",
+        "mt": "MTState",
+        "inv": "InversionTime",
         "flip": "FlipAngle",
     }
 
