@@ -1034,3 +1034,30 @@ def assign_variants(summary, rename_cols):
                 summary.at[row, col] = ""
 
     return summary
+
+
+def collect_file_collections(layout, base_file):
+    """Build a list of files in a file collection for a given base file.
+
+    Parameters
+    ----------
+    layout : BIDSLayout
+        The BIDSLayout object.
+    base_file : str
+        The base file to collect file collections for.
+
+    Returns
+    -------
+    list
+        A list of files in the file collection for the given base file.
+    """
+    from bids.layout import Query
+
+    file_collection_entities = ["echo", "part", "mt", "inv", "flip"]
+
+    base_file = layout.get_file(base_file)
+    fc_query = {ent: [Query.ANY, Query.NONE] for ent in file_collection_entities}
+    query = base_file.get_entities()
+    query = {**query, **fc_query}
+    files = layout.get(**query)
+    return files
