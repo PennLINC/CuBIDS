@@ -1048,8 +1048,10 @@ def collect_file_collections(layout, base_file):
 
     Returns
     -------
-    list
+    files : list of BIDSFile
         A list of files in the file collection for the given base file.
+    out_metadata : dict
+        A dictionary of metadata for the file collection, to be added to each file's metadata.
     """
     from bids.layout import Query
 
