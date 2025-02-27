@@ -1084,6 +1084,7 @@ def collect_file_collections(layout, base_file):
     out_metadata["FileCollection"] = [get_bidsuri(f.path, layout.root) for f in files]
 
     files_metadata = [f.get_metadata() for f in files]
+    assert all(bool(meta) for meta in files_metadata), files_metadata
     for ent, field in file_collection_entities.items():
         if ent in collected_entities:
             if field is None:
