@@ -391,6 +391,49 @@ class CuBIDS(object):
 
         self.reset_bids_layout()
 
+    def add_file_collections(self):
+        """Add file collections to the dataset.
+
+        This method processes all files in the BIDS directory specified by `self.path`.
+        It identifies file collections based on the presence of specific entities in the filenames.
+
+        """
+        # check if force_unlock is set
+        if self.force_unlock:
+            # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
+            subprocess.run(["datalad", "unlock"], cwd=self.path)
+
+        checked_files = []
+
+        # loop through all niftis in the bids dir
+        for bids_file in self.layout.get(extension=[".nii", ".nii.gz"]):
+            path = bids_file.path
+
+            if path in checked_files:
+                continue
+
+            # Add file collection metadata to the sidecar
+            files, collection_metadata = utils.collect_file_collections(self.layout, path)
+            filepaths = [f.path for f in files]
+            checked_files.extend(filepaths)
+
+            # Add metadata to the sidecar
+            sidecar = utils.img_to_new_ext(str(path), ".json")
+            if Path(sidecar).exists():
+                with open(sidecar, "r") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+
+            data.update(collection_metadata)
+            with open(sidecar, "w") as f:
+                json.dump(data, f, sort_keys=True, indent=4)
+
+        if self.use_datalad:
+            self.datalad_save(message="Added file collection metadata to sidecars")
+
+        self.reset_bids_layout()
+
     def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True):
         """Apply changes documented in the edited summary tsv and generate the new tsv files.
 
