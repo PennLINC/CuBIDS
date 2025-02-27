@@ -1053,11 +1053,33 @@ def collect_file_collections(layout, base_file):
     """
     from bids.layout import Query
 
-    file_collection_entities = ["echo", "part", "mt", "inv", "flip"]
+    file_collection_entities = {
+        "echo": "EchoTime",
+        "part": None,
+        "mt": "MTState",
+        "inv": "InversionTime",
+        "flip": "FlipAngle",
+    }
 
     base_file = layout.get_file(base_file)
-    fc_query = {ent: [Query.ANY, Query.NONE] for ent in file_collection_entities}
+    fc_query = {ent: [Query.ANY, Query.NONE] for ent in file_collection_entities.keys()}
     query = base_file.get_entities()
     query = {**query, **fc_query}
     files = layout.get(**query)
-    return files
+    collected_entities = layout.get_entities(files)
+
+    out_metadata = {}
+    files_metadata = [f.get_metadata() for f in files]
+    for ent, field in file_collection_entities.items():
+        if ent in collected_entities:
+            if field is None:
+                collected_ent = ent + "s"
+                ent_values = [f.get_entities()[ent] for f in files]
+                out_metadata[collected_ent] = ent_values
+
+            else:
+                collected_field = field + "s"
+                field_values = [meta[field] for meta in files_metadata]
+                out_metadata[collected_field] = field_values
+
+    return files, out_metadata
