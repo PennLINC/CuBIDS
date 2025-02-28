@@ -1052,6 +1052,15 @@ def collect_file_collections(layout, base_file):
         A list of files in the file collection for the given base file.
     out_metadata : dict
         A dictionary of metadata for the file collection, to be added to each file's metadata.
+
+    Notes
+    -----
+    This relies on a hardcoded list of entities that indicate file collections and their
+    corresponding metadata fields. It also does not work for file collections that are encoded
+    with the acq entity or different suffixes, like TB1AFI (which differentiates files with
+    acq-tr1/acq-tr2), MP2RAGE (which has both _MP2RAGE and _UNIT1 images from the same scan),
+    or phase-difference field maps (which have suffixes like magnitude1, magnitude2, phasediff,
+    phase1, and phase2).
     """
     from bids.layout import Query
 
