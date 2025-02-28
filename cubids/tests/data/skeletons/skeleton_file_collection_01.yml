@@ -1,0 +1,120 @@
+"01":
+  - func:
+      - task: rest
+        acq: meepi
+        echo: 1
+        part: mag
+        suffix: bold
+        metadata:
+          EchoTime: 0.15
+      - task: rest
+        acq: meepi
+        echo: 1
+        part: phase
+        suffix: bold
+        metadata:
+          EchoTime: 0.15
+          Units: arbitrary
+      - task: rest
+        acq: meepi
+        echo: 2
+        part: mag
+        suffix: bold
+        metadata:
+          EchoTime: 0.3
+      - task: rest
+        acq: meepi
+        echo: 2
+        part: phase
+        suffix: bold
+        metadata:
+          EchoTime: 0.3
+          Units: arbitrary
+      - task: rest
+        acq: meepi
+        echo: 3
+        part: mag
+        suffix: bold
+        metadata:
+          EchoTime: 0.45
+      - task: rest
+        acq: meepi
+        echo: 3
+        part: phase
+        suffix: bold
+        metadata:
+          EchoTime: 0.45
+          Units: arbitrary
+      - task: rest
+        acq: seepi
+        suffix: bold
+        metadata:
+          EchoTime: 0.35
+
+"02":
+  - func:
+      - task: rest
+        acq: meepi
+        echo: 1
+        part: mag
+        suffix: bold
+        metadata:
+          EchoTime: 0.15
+      - task: rest
+        acq: meepi
+        echo: 1
+        part: phase
+        suffix: bold
+        metadata:
+          EchoTime: 0.15
+          Units: arbitrary
+      - task: rest
+        acq: meepi
+        echo: 2
+        part: mag
+        suffix: bold
+        metadata:
+          EchoTime: 0.3
+      - task: rest
+        acq: meepi
+        echo: 2
+        part: phase
+        suffix: bold
+        metadata:
+          EchoTime: 0.3
+          Units: arbitrary
+      - task: rest
+        acq: meepi
+        echo: 3
+        part: mag
+        suffix: bold
+        metadata:
+          EchoTime: 0.45
+      - task: rest
+        acq: meepi
+        echo: 3
+        part: phase
+        suffix: bold
+        metadata:
+          EchoTime: 0.45
+          Units: arbitrary
+      - task: rest
+        acq: meepi
+        echo: 4
+        part: mag
+        suffix: bold
+        metadata:
+          EchoTime: 0.6
+      - task: rest
+        acq: meepi
+        echo: 4
+        part: phase
+        suffix: bold
+        metadata:
+          EchoTime: 0.6
+          Units: arbitrary
+      - task: rest
+        acq: seepi
+        suffix: bold
+        metadata:
+          EchoTime: 0.35
