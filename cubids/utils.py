@@ -1083,7 +1083,7 @@ def collect_file_collections(layout, base_file):
     # Add metadata field with BIDS URIs to all files in file collection
     out_metadata["FileCollection"] = [get_bidsuri(f.path, layout.root) for f in files]
 
-    files_metadata = [f.get_metadata() for f in files]
+    files_metadata = [get_sidecar_metadata(img_to_new_ext(f.path, ".json")) for f in files]
     assert all(bool(meta) for meta in files_metadata), files
     for ent, field in file_collection_entities.items():
         if ent in collected_entities:

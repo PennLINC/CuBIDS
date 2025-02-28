@@ -186,7 +186,7 @@ class CuBIDS(object):
             re.compile(r"/\."),
         ]
 
-        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=True)
+        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=False)
 
         self._layout = bids.BIDSLayout(self.path, validate=validate, indexer=indexer)
 
