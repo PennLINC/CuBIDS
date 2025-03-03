@@ -1040,6 +1040,63 @@ def _parse_add_nifti_info():
     return parser
 
 
+def _parse_add_file_collections():
+    """Parse command-line arguments for the `cubids add-file-collections` command.
+
+    This function sets up an argument parser for the `cubids add-file-collections` command,
+    which adds file collection metadata to the sidecars of each dataset in a BIDS
+    directory.
+
+    Parameters
+    ----------
+    bids_dir : str
+        Absolute path to the root of a BIDS dataset. It should contain sub-X directories
+        and dataset_description.json.
+    use_datalad : bool, optional
+        Ensure that there are no untracked changes before finding groups (default is False).
+    force_unlock : bool, optional
+        Unlock dataset before adding file collection metadata (default is False).
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser with the defined arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description=(
+            "cubids add-file-collections: Add file collection metadata to the sidecars "
+            "of each NIfTI file in the BIDS dataset"
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
+    )
+    PathExists = partial(_path_exists, parser=parser)
+
+    parser.add_argument(
+        "bids_dir",
+        type=PathExists,
+        action="store",
+        help=(
+            "absolute path to the root of a BIDS dataset. "
+            "It should contain sub-X directories and "
+            "dataset_description.json."
+        ),
+    )
+    parser.add_argument(
+        "--use-datalad",
+        action="store_true",
+        default=False,
+        help="ensure that there are no untracked changes before finding groups",
+    )
+    parser.add_argument(
+        "--force-unlock",
+        action="store_true",
+        default=False,
+        help="unlock dataset before adding file collection metadata",
+    )
+    return parser
+
+
 def _enter_add_nifti_info(argv=None):
     """Entry point for the deprecated `cubids-add-nifti-info` command.
 
@@ -1345,6 +1402,7 @@ COMMANDS = [
     ("apply", _parse_apply, workflows.apply),
     ("purge", _parse_purge, workflows.purge),
     ("add-nifti-info", _parse_add_nifti_info, workflows.add_nifti_info),
+    ("add-file-collections", _parse_add_file_collections, workflows.add_file_collections),
     ("copy-exemplars", _parse_copy_exemplars, workflows.copy_exemplars),
     ("undo", _parse_undo, workflows.undo),
     ("datalad-save", _parse_datalad_save, workflows.datalad_save),
