@@ -1256,14 +1256,12 @@ class CuBIDS(object):
         labeled_files = []
         param_group_summaries = []
         for entity_set in entity_sets:
-            try:
-                (
-                    labeled_file_params,
-                    param_summary,
-                    modality,
-                ) = self.get_param_groups_from_entity_set(entity_set)
-            except Exception:
-                continue
+            (
+                labeled_file_params,
+                param_summary,
+                modality,
+            ) = self.get_param_groups_from_entity_set(entity_set)
+
             if labeled_file_params is None:
                 continue
             param_group_summaries.append(param_summary)
