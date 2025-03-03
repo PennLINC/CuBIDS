@@ -421,7 +421,7 @@ def _get_param_groups(
     except Exception:
         return "erroneous sidecar found"
 
-    print(modality)
+    print(entity_set_name)
     print(check_cols)
     deduped = deduped.drop_duplicates(subset=check_cols, ignore_index=True)
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
