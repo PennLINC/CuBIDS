@@ -1010,6 +1010,8 @@ class CuBIDS(object):
             raise Exception("Fieldmaps must be cached to find parameter groups.")
         key_entities = utils._entity_set_to_entities(entity_set)
         key_entities["extension"] = ".nii[.gz]*"
+        # Account for plus signs in entity values
+        key_entities = {k: v.replace("+", "\\+") for k, v in key_entities.items() if v is not None}
 
         matching_files = self.layout.get(
             return_type="file", scope="self", regex_search=True, **key_entities
