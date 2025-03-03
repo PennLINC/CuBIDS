@@ -625,7 +625,10 @@ def cluster_single_parameters(df, config, modality):
                 array = df[column_name].to_numpy().reshape(-1, 1)
 
                 # Handle NaNs correctly: Ignore NaNs instead of replacing with -999
-                valid_mask = ~np.isnan(array.flatten())  # Mask of non-NaN values
+                try:
+                    valid_mask = ~np.isnan(array.flatten())  # Mask of non-NaN values
+                except Exception:
+                    print(array.flatten())
 
                 if valid_mask.sum() > 1:  # Proceed with clustering only if >1 valid value
                     valid_array = array[valid_mask].reshape(-1, 1)
