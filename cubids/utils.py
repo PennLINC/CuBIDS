@@ -1109,9 +1109,10 @@ def assign_variants(summary, rename_cols):
                         # If the value is an actual float
                         elif isinstance(val, float):
                             val = str(val).replace(".", "p")
-                            if val.endswith("p0"):
-                                # Remove the trailing "p0"
-                                val = val[:-2]
+
+                        if val.endswith("p0"):
+                            # Remove the trailing "p0"
+                            val = val[:-2]
 
                         # Filter out non-alphanumeric characters
                         val = re.sub(r"[^a-zA-Z0-9]", "", val)
