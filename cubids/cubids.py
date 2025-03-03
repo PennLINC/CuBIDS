@@ -1016,6 +1016,8 @@ class CuBIDS(object):
         matching_files = self.layout.get(
             return_type="file", scope="self", regex_search=True, **key_entities
         )
+        if not matching_files:
+            raise Exception(f"No files found for entity set: {key_entities}")
 
         # ensure files who's entities contain key_entities but include other
         # entities do not also get added to matching_files
