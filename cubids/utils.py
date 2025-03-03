@@ -15,6 +15,49 @@ from sklearn.cluster import AgglomerativeClustering
 from cubids.constants import ID_VARS, NON_KEY_ENTITIES
 
 
+def _compress_lists(df):
+    """Compress lists in a DataFrame to strings.
+
+    Used to prepare a DataFrame with cells containing lists for writing to a TSV file.
+
+    Parameters
+    ----------
+    df : :obj:`pandas.DataFrame`
+        The DataFrame to compress.
+
+    Returns
+    -------
+    :obj:`pandas.DataFrame`
+        The compressed DataFrame.
+    """
+    for col in df.columns:
+        if isinstance(df[col].values[0], list):
+            df[col] = df[col].apply(lambda x: "|&|".join(x))
+    return df
+
+
+def _expand_lists(df):
+    """Expand strings in a DataFrame to lists.
+
+    Used to prepare a DataFrame with cells containing strings for querying after loading from a
+    TSV file.
+
+    Parameters
+    ----------
+    df : :obj:`pandas.DataFrame`
+        The DataFrame to expand.
+
+    Returns
+    -------
+    :obj:`pandas.DataFrame`
+        The expanded DataFrame.
+    """
+    for col in df.columns:
+        if isinstance(df[col].values[0], str):
+            df[col] = df[col].apply(lambda x: x.split("|&|"))
+    return df
+
+
 def download_schema(version="latest", out_file=None):
     """Download the BIDS schema as a dereferenced JSON file.
 
@@ -356,22 +399,23 @@ def _get_param_groups(
 
             dfs.append(example_data)
 
-    # Assign each file to a ParamGroup
-
-    # round param groups based on precision
+    # Assign each file to a ParamGroup based on the unique set of parameters
+    # Round numeric parameters based on precision
     df = round_params(pd.DataFrame(dfs), grouping_config, modality)
 
-    # cluster param groups based on tolerance
-    df = format_params(df, grouping_config, modality)
+    # Cluster parameters based on tolerance
+    df = cluster_single_parameters(df, grouping_config, modality)
     # param_group_cols = list(set(df.columns.to_list()) - set(["FilePath"]))
 
-    # get the subset of columns to drop duplicates by
+    # Create parameter group DataFrame (summary_tsv) by removing filenames
+    # and dropping duplicate rows of parameters.
+    # Get the subset of columns to drop duplicates by.
     check_cols = []
     for col in list(df.columns):
         if f"Cluster_{col}" not in list(df.columns) and col != "FilePath":
             check_cols.append(col)
 
-    # Find the unique ParamGroups and assign ID numbers in "ParamGroup"\
+    # Find the unique ParamGroups and assign ID numbers in "ParamGroup"
     try:
         deduped = df.drop("FilePath", axis=1)
     except Exception:
@@ -412,13 +456,13 @@ def _get_param_groups(
     return ordered_labeled_files, param_groups_with_counts
 
 
-def round_params(param_group_df, config, modality):
+def round_params(df, config, modality):
     """Round columns' values in a DataFrame according to requested precision.
 
     Parameters
     ----------
-    param_group_df : pandas.DataFrame
-        DataFrame containing the parameters to be rounded.
+    df : pandas.DataFrame
+        DataFrame containing the parameters to be rounded, with one row per file.
     config : dict
         Configuration dictionary containing rounding precision information.
     modality : str
@@ -427,22 +471,34 @@ def round_params(param_group_df, config, modality):
     Returns
     -------
     pandas.DataFrame
-        DataFrame with the specified columns' values rounded to the requested precision.
+        Modified DataFrame with the specified columns' values rounded to the requested precision.
+
+    Raises
+    ------
+    ValueError
+        If the data type of the column is not supported for rounding, such as strings.
     """
+    df = df.copy()  # don't modify DataFrame in place
+
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
 
     for column_name, column_fmt in to_format.items():
-        if column_name not in param_group_df:
+        if column_name not in df:
             continue
 
         if "precision" in column_fmt:
-            if isinstance(param_group_df[column_name], float):
-                param_group_df[column_name] = param_group_df[column_name].round(
-                    column_fmt["precision"]
+            precision = column_fmt["precision"]
+            if df[column_name].apply(lambda x: isinstance(x, (float, int))).any():
+                df[column_name] = df[column_name].round(precision)
+            elif df[column_name].apply(lambda x: isinstance(x, (list, np.ndarray))).any():
+                df[column_name] = df[column_name].apply(
+                    lambda x: np.round(x, precision) if isinstance(x, (list, np.ndarray)) else x
                 )
+            else:
+                raise ValueError(f"Unsupported data type for rounding in column {column_name}")
 
-    return param_group_df
+    return df
 
 
 def get_sidecar_metadata(json_file):
@@ -475,25 +531,24 @@ def get_sidecar_metadata(json_file):
         return "Erroneous sidecar"
 
 
-def format_params(param_group_df, config, modality):
-    """Run AgglomerativeClustering on param groups and add columns to dataframe.
+def cluster_single_parameters(df, config, modality):
+    """Run agglomerative clustering on individual parameters and add cluster columns to dataframe.
 
     Parameters
     ----------
-    param_group_df : :obj:`pandas.DataFrame`
-        A data frame with one row per file where the ParamGroup column
-        indicates which group each scan is a part of.
+    df : :obj:`pandas.DataFrame`
+        A DataFrame with one row per file and separate columns for parameters to cluster.
     config : :obj:`dict`
-        Configuration for defining parameter groups.
-        This dictionary has two keys: ``'sidecar_params'`` and ``'derived_params'``.
+        Configuration that defines which columns to cluster.
+        This dictionary has two relevant keys: ``'sidecar_params'`` and ``'derived_params'``.
     modality : :obj:`str`
         Modality of the scan.
         This is used to select the correct configuration from the config dict.
 
     Returns
     -------
-    param_group_df : :obj:`pandas.DataFrame`
-        An updated version of the input data frame,
+    df : :obj:`pandas.DataFrame`
+        An updated version of the input DataFrame,
         with a new column added for each element in the modality's
         ``'sidecar_params'`` and ``'derived_params'`` dictionaries.
         The new columns will have the name ``'Cluster_' + column_name``,
@@ -518,45 +573,98 @@ def format_params(param_group_df, config, modality):
     parameters differ from the dominant group. For example, if EchoTime is clustered
     and a file is in cluster 2, its variant name will include 'EchoTime2'.
     """
+    df = df.copy()  # don't modify DataFrame in place
+
     to_format = config["sidecar_params"][modality]
     to_format.update(config["derived_params"][modality])
 
     for column_name, column_fmt in to_format.items():
-        if column_name not in param_group_df:
+        if column_name not in df:
             continue
 
         # Check if the column is entirely NaN or blank
-        if param_group_df[column_name].isna().all():
+        if df[column_name].isna().all():
             # If the whole column is NaN, assign a single cluster label (e.g., 0)
-            param_group_df[f"Cluster_{column_name}"] = 0
+            df[f"Cluster_{column_name}"] = 0
             continue  # Skip clustering since all values are NaN
 
-        if "tolerance" in column_fmt and param_group_df.shape[0] > 1:
-            array = param_group_df[column_name].to_numpy().reshape(-1, 1)
+        if "tolerance" in column_fmt and len(df) > 1:
+            column_data = df[column_name].to_numpy()
 
-            # Handle NaNs correctly: Ignore NaNs instead of replacing with -999
-            valid_mask = ~np.isnan(array.flatten())  # Mask of non-NaN values
+            if any(isinstance(x, (list, np.ndarray)) for x in column_data):
+                # For array/list data, we should first define "clusters" based on the number of
+                # elements, then apply the clustering within each set of lengths.
+                # For example, if there are four runs with five elements and 10 runs with three
+                # elements, we should cluster the five-element runs separately from the
+                # three-element runs, and account for that in the clustering labels.
+                lengths = ["x".join(str(i) for i in np.array(x).shape) for x in column_data]
+                unique_lengths = np.unique(lengths)
+                cluster_idx = 0
+                for unique_length in unique_lengths:
+                    sel_rows = [i for i, x in enumerate(lengths) if x == unique_length]
+                    array = np.array([np.array(x) for x in column_data[sel_rows]])
 
-            if valid_mask.sum() > 1:  # Proceed with clustering only if >1 valid value
-                valid_array = array[valid_mask].reshape(-1, 1)
-                tolerance = to_format[column_name]["tolerance"]
+                    if array.shape[0] > 1:
+                        # clustering requires at least two samples
+                        array[np.isnan(array)] = -999
 
-                clustering = AgglomerativeClustering(
-                    n_clusters=None, distance_threshold=tolerance, linkage="complete"
-                ).fit(valid_array)
+                        tolerance = to_format[column_name]["tolerance"]
+                        clustering = AgglomerativeClustering(
+                            n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                        ).fit(array)
 
-                # Create a full label array and fill only valid entries
-                cluster_labels = np.full_like(
-                    array.flatten(), fill_value=np.max(clustering.labels_) + 1, dtype=float
-                )
-                cluster_labels[valid_mask] = clustering.labels_
-
-                param_group_df[f"Cluster_{column_name}"] = cluster_labels
+                        df.loc[sel_rows, f"Cluster_{column_name}"] = (
+                            clustering.labels_ + cluster_idx
+                        )
+                        cluster_idx += max(clustering.labels_) + 1
+                    else:
+                        # single-file cluster
+                        df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
+                        cluster_idx += 1
             else:
-                # If there's only one unique non-NaN value, assign it the same cluster
-                param_group_df[f"Cluster_{column_name}"] = 0
+                array = df[column_name].to_numpy().reshape(-1, 1)
 
-    return param_group_df
+                # Handle NaNs correctly: Ignore NaNs instead of replacing with -999
+                valid_mask = ~np.isnan(array.flatten())  # Mask of non-NaN values
+
+                if valid_mask.sum() > 1:  # Proceed with clustering only if >1 valid value
+                    valid_array = array[valid_mask].reshape(-1, 1)
+                    tolerance = to_format[column_name]["tolerance"]
+
+                    clustering = AgglomerativeClustering(
+                        n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                    ).fit(valid_array)
+
+                    # Create a full label array and fill only valid entries
+                    cluster_labels = np.full_like(
+                        array.flatten(), fill_value=np.max(clustering.labels_) + 1, dtype=float
+                    )
+                    cluster_labels[valid_mask] = clustering.labels_
+
+                    df[f"Cluster_{column_name}"] = cluster_labels
+                else:
+                    # If there's only one unique non-NaN value,
+                    # define only two clusters (NaN vs. non-NaN)
+                    cluster_labels = np.full_like(array.flatten(), fill_value=1, dtype=float)
+                    cluster_labels[valid_mask] = 0
+                    df[f"Cluster_{column_name}"] = cluster_labels
+
+        else:
+            # We can rely on string matching (done separately) for string-type fields,
+            # but arrays of strings need to be handled differently.
+            column_data = df[column_name].tolist()
+
+            if any(isinstance(x, (list, np.ndarray)) for x in column_data):
+                cluster_idx = 0
+
+                column_data = ["|&|".join(str(val) for val in cell) for cell in column_data]
+                unique_vals = np.unique(column_data)
+                for val in unique_vals:
+                    sel_rows = [i for i, x in enumerate(column_data) if x == val]
+                    df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
+                    cluster_idx += 1
+
+    return df
 
 
 def _order_columns(df):

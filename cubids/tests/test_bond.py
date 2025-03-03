@@ -352,7 +352,6 @@ def test_add_nifti_info_datalad(tmp_path):
     summary_df = pd.read_table(summary_tsv)
     l_cols = summary_df.columns.tolist()
     assert "NumVolumes" not in l_cols
-    assert "Obliquity" not in l_cols
 
     # now add nifti info
     bod.add_nifti_info()
@@ -364,7 +363,6 @@ def test_add_nifti_info_datalad(tmp_path):
                 metadata = json.load(jsonr)
             found_fields.update(metadata.keys())
     assert "NumVolumes" in found_fields
-    assert "Obliquity" in found_fields
     assert "ImageOrientation" in found_fields
 
     # nifti_tsv_prefix = str(tmp_path / "nifti_tsvs")
@@ -373,7 +371,6 @@ def test_add_nifti_info_datalad(tmp_path):
     # nifti_summary_df = pd.read_table(nifti_summary_tsv)
     # nifti_l_cols = nifti_summary_df.columns.tolist()
     # assert 'NumVolumes' in nifti_l_cols
-    # assert 'Obliquity' in nifti_l_cols
     # assert 'ImageOrientation' in nifti_l_cols
 
 
@@ -396,7 +393,6 @@ def test_add_nifti_info_no_datalad(tmp_path):
                 metadata = json.load(jsonr)
             found_fields.update(metadata.keys())
     assert "NumVolumes" in found_fields
-    assert "Obliquity" in found_fields
     assert "ImageOrientation" in found_fields
 
     # tsv_prefix = str(tmp_path / "tsvs")
@@ -405,7 +401,6 @@ def test_add_nifti_info_no_datalad(tmp_path):
     # summary_df = pd.read_table(summary_tsv)
     # l_cols = summary_df.columns.tolist()
     # assert 'NumVolumes' in l_cols
-    # assert 'Obliquity' in l_cols
 
 
 # TODO: add tests that return an error for invalid merge

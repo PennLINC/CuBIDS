@@ -307,7 +307,6 @@ class CuBIDS(object):
         the dataset using `datalad` before processing the files.
 
         Metadata added to the JSON sidecars includes:
-        - Obliquity
         - Voxel sizes (dimensions 1, 2, and 3)
         - Matrix dimensions (sizes of dimensions 1, 2, and 3)
         - Number of volumes (for 4D images)
@@ -346,7 +345,6 @@ class CuBIDS(object):
                     continue
 
                 # get important info from niftis
-                obliquity = np.any(nb.affines.obliquity(img.affine) > 1e-4)
                 voxel_sizes = img.header.get_zooms()
                 matrix_dims = img.shape
                 # add nifti info to corresponding sidecars​
@@ -358,8 +356,6 @@ class CuBIDS(object):
                     except Exception:
                         print("Error parsing this sidecar: ", sidecar)
 
-                    if "Obliquity" not in data.keys():
-                        data["Obliquity"] = str(obliquity)
                     if "VoxelSizeDim1" not in data.keys():
                         data["VoxelSizeDim1"] = float(voxel_sizes[0])
                     if "VoxelSizeDim2" not in data.keys():
