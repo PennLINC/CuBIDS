@@ -345,7 +345,6 @@ class CuBIDS(object):
                     continue
 
                 # get important info from niftis
-                obliquity = np.any(nb.affines.obliquity(img.affine) > 1e-4)
                 voxel_sizes = img.header.get_zooms()
                 matrix_dims = img.shape
                 # add nifti info to corresponding sidecars​
