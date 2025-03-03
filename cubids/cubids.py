@@ -1057,12 +1057,16 @@ class CuBIDS(object):
             raise Exception("Fieldmaps must be cached to find parameter groups.")
         key_entities = utils._entity_set_to_entities(entity_set)
         key_entities["extension"] = ".nii[.gz]*"
+        # Account for plus signs in entity values
+        key_entities = {k: v.replace("+", "\\+") for k, v in key_entities.items() if v is not None}
 
         matching_files = self.layout.get(
             return_type="file", scope="self", regex_search=True, **key_entities
         )
+        if not matching_files:
+            raise Exception(f"No files found for entity set: {key_entities}")
 
-        # ensure files who's entities contain key_entities but include other
+        # ensure files whose entities contain key_entities but include other
         # entities do not also get added to matching_files
         to_include = []
         for filepath in matching_files:
@@ -1256,14 +1260,12 @@ class CuBIDS(object):
         labeled_files = []
         param_group_summaries = []
         for entity_set in entity_sets:
-            try:
-                (
-                    labeled_file_params,
-                    param_summary,
-                    modality,
-                ) = self.get_param_groups_from_entity_set(entity_set)
-            except Exception:
-                continue
+            (
+                labeled_file_params,
+                param_summary,
+                modality,
+            ) = self.get_param_groups_from_entity_set(entity_set)
+
             if labeled_file_params is None:
                 continue
             param_group_summaries.append(param_summary)
