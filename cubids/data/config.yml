@@ -311,6 +311,9 @@ sidecar_params:
       suggest_variant_rename: yes
     FlipAngle:
       suggest_variant_rename: yes
+    ImageOrientationPatientDICOM:
+      tolerance: 0.0001
+      suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
     NumberOfVolumesDiscardedByScanner:
@@ -349,6 +352,9 @@ sidecar_params:
       precision: 6
       suggest_variant_rename: yes
     FlipAngle:
+      suggest_variant_rename: yes
+    ImageOrientationPatientDICOM:
+      tolerance: 0.0001
       suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
@@ -389,6 +395,9 @@ sidecar_params:
       suggest_variant_rename: yes
     FlipAngle:
       suggest_variant_rename: yes
+    ImageOrientationPatientDICOM:
+      tolerance: 0.0001
+      suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
     NumberOfVolumesDiscardedByScanner:
@@ -427,6 +436,9 @@ sidecar_params:
       precision: 5
       suggest_variant_rename: yes
     FlipAngle:
+      suggest_variant_rename: yes
+    ImageOrientationPatientDICOM:
+      tolerance: 0.0001
       suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
@@ -478,6 +490,9 @@ sidecar_params:
       precision: 5
       suggest_variant_rename: yes
     FlipAngle:
+      suggest_variant_rename: yes
+    ImageOrientationPatientDICOM:
+      tolerance: 0.0001
       suggest_variant_rename: yes
     LabelingDistance:
       tolerance: 0.1
@@ -534,6 +549,9 @@ sidecar_params:
       precision: 5
       suggest_variant_rename: yes
     FlipAngle:
+      suggest_variant_rename: yes
+    ImageOrientationPatientDICOM:
+      tolerance: 0.0001
       suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
