@@ -661,12 +661,12 @@ def cluster_single_parameters(df, config, modality):
                     df[f"Cluster_{column_name}"] = cluster_labels
 
         else:
-            print(f"Not clustering {column_name}")
+            print(f"Not clustering {column_name} ({column_fmt})")
             # We can rely on string matching (done separately) for string-type fields,
             # but arrays of strings need to be handled differently.
             column_data = df[column_name].tolist()
 
-            if any(isinstance(x, list) for x in column_data):
+            if any(isinstance(x, (list, np.ndarray)) for x in column_data):
                 cluster_idx = 0
 
                 column_data = ["|&|".join(str(val) for val in cell) for cell in column_data]
