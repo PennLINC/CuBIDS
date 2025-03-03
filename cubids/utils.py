@@ -599,6 +599,7 @@ def cluster_single_parameters(df, config, modality):
                 # For example, if there are four runs with five elements and 10 runs with three
                 # elements, we should cluster the five-element runs separately from the
                 # three-element runs, and account for that in the clustering labels.
+                print(f"Applying array clustering to {column_name}")
                 lengths = ["x".join(str(i) for i in np.array(x).shape) for x in column_data]
                 unique_lengths = np.unique(lengths)
                 cluster_idx = 0
@@ -624,6 +625,7 @@ def cluster_single_parameters(df, config, modality):
                         df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
                         cluster_idx += 1
             else:
+                print(f"Applying non-array clustering to {column_name}")
                 array = df[column_name].to_numpy().reshape(-1, 1)
 
                 # Handle NaNs correctly: Ignore NaNs instead of replacing with -999
@@ -656,6 +658,7 @@ def cluster_single_parameters(df, config, modality):
                     df[f"Cluster_{column_name}"] = cluster_labels
 
         else:
+            print(f"Not clustering {column_name}")
             # We can rely on string matching (done separately) for string-type fields,
             # but arrays of strings need to be handled differently.
             column_data = df[column_name].tolist()
