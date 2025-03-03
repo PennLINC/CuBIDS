@@ -591,7 +591,7 @@ def cluster_single_parameters(df, config, modality):
         if "tolerance" in column_fmt and len(df) > 1:
             column_data = df[column_name].to_numpy()
 
-            if any(isinstance(x, list) for x in column_data):
+            if any(isinstance(x, (list, np.array)) for x in column_data):
                 # For array/list data, we should first define "clusters" based on the number of
                 # elements, then apply the clustering within each set of lengths.
                 # For example, if there are four runs with five elements and 10 runs with three
