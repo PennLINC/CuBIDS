@@ -421,8 +421,6 @@ def _get_param_groups(
     except Exception:
         return "erroneous sidecar found"
 
-    print(entity_set_name)
-    print(check_cols)
     deduped = deduped.drop_duplicates(subset=check_cols, ignore_index=True)
     deduped["ParamGroup"] = np.arange(deduped.shape[0]) + 1
 
@@ -582,18 +580,15 @@ def cluster_single_parameters(df, config, modality):
 
     for column_name, column_fmt in to_format.items():
         if column_name not in df:
-            print(f"Skipping {column_name} because it's not in the dataframe")
             continue
 
         # Check if the column is entirely NaN or blank
         if df[column_name].isna().all():
-            print(f"Skipping {column_name} because it's all NaN")
             # If the whole column is NaN, assign a single cluster label (e.g., 0)
             df[f"Cluster_{column_name}"] = 0
             continue  # Skip clustering since all values are NaN
 
         if "tolerance" in column_fmt and len(df) > 1:
-            print(f"Clustering {column_name}")
             column_data = df[column_name].to_numpy()
 
             if any(isinstance(x, (list, np.ndarray)) for x in column_data):
@@ -602,7 +597,6 @@ def cluster_single_parameters(df, config, modality):
                 # For example, if there are four runs with five elements and 10 runs with three
                 # elements, we should cluster the five-element runs separately from the
                 # three-element runs, and account for that in the clustering labels.
-                print(f"Applying array clustering to {column_name}")
                 lengths = ["x".join(str(i) for i in np.array(x).shape) for x in column_data]
                 unique_lengths = np.unique(lengths)
                 cluster_idx = 0
@@ -628,15 +622,10 @@ def cluster_single_parameters(df, config, modality):
                         df.loc[sel_rows, f"Cluster_{column_name}"] = cluster_idx
                         cluster_idx += 1
             else:
-                print(f"Applying non-array clustering to {column_name}")
                 array = df[column_name].to_numpy().reshape(-1, 1)
 
                 # Handle NaNs correctly: Ignore NaNs instead of replacing with -999
-                try:
-                    valid_mask = ~np.isnan(array.flatten())  # Mask of non-NaN values
-                except Exception:
-                    print(array.flatten())
-                    raise ValueError(f"Error in column {column_name}")
+                valid_mask = ~np.isnan(array.flatten())  # Mask of non-NaN values
 
                 if valid_mask.sum() > 1:  # Proceed with clustering only if >1 valid value
                     valid_array = array[valid_mask].reshape(-1, 1)
@@ -661,7 +650,6 @@ def cluster_single_parameters(df, config, modality):
                     df[f"Cluster_{column_name}"] = cluster_labels
 
         else:
-            print(f"Not clustering {column_name} ({column_fmt})")
             # We can rely on string matching (done separately) for string-type fields,
             # but arrays of strings need to be handled differently.
             column_data = df[column_name].tolist()
