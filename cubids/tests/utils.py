@@ -167,3 +167,56 @@ def chdir(path):
         yield
     finally:
         os.chdir(oldpwd)
+
+
+def compare_group_assignments(list1, list2):
+    """Compare two lists for equality based on group assignments.
+
+    This function checks if two lists can be considered equal based on their group assignments.
+    The actual values in the lists do not matter, only the group assignments do. Each unique value
+    in the first list is mapped to a unique value in the second list, and the function checks if
+    this mapping is consistent throughout the lists.
+
+    Parameters
+    ----------
+    list1 : list
+        The first list to compare.
+    list2 : list
+        The second list to compare.
+
+    Returns
+    -------
+    bool
+        True if the lists are equal based on group assignments, False otherwise.
+
+    Examples
+    --------
+    >>> list1 = [1, 2, 1, 3, 2]
+    >>> list2 = ['a', 'b', 'a', 'c', 'b']
+    >>> compare_group_assignments(list1, list2)
+    True
+
+    >>> list1 = [1, 2, 1, 3, 2]
+    >>> list2 = ['b', 'd', 'b', 'q', 'd']
+    >>> compare_group_assignments(list1, list2)
+    True
+
+    >>> list1 = [1, 2, 1, 3, 2]
+    >>> list2 = ['a', 'b', 'a', 'c', 'd']
+    >>> compare_group_assignments(list1, list2)
+    False
+    """
+    if len(list1) != len(list2):
+        return False
+
+    mapping = {}
+    for a, b in zip(list1, list2):
+        if a in mapping:
+            if mapping[a] != b:
+                return False
+        else:
+            if b in mapping.values():
+                return False
+            mapping[a] = b
+
+    return True
