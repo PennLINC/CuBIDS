@@ -582,15 +582,18 @@ def cluster_single_parameters(df, config, modality):
 
     for column_name, column_fmt in to_format.items():
         if column_name not in df:
+            print(f"Skipping {column_name} because it's not in the dataframe")
             continue
 
         # Check if the column is entirely NaN or blank
         if df[column_name].isna().all():
+            print(f"Skipping {column_name} because it's all NaN")
             # If the whole column is NaN, assign a single cluster label (e.g., 0)
             df[f"Cluster_{column_name}"] = 0
             continue  # Skip clustering since all values are NaN
 
         if "tolerance" in column_fmt and len(df) > 1:
+            print(f"Clustering {column_name}")
             column_data = df[column_name].to_numpy()
 
             if any(isinstance(x, (list, np.ndarray)) for x in column_data):
