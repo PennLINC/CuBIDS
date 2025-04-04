@@ -369,13 +369,32 @@ def mv(source, destination, use_datalad=False, force=False, dry_run=False, verbo
         Do nothing; only show what would happen.
     verbose : :obj:`bool`
         Report the details of the move or rename operation.
+
+    Notes
+    -----
+    This function is similar to git mv. It determines if a path is a BIDS dataset by looking for the
+    dataset_description.json file in the current directory and all parent directories, analogous to
+    how git mv looks for the .git directory.
+
+    If the source is a file, it will be moved to the destination and associated files will be moved
+    with it.
+
+    If the source is a directory, it will be moved to the destination and all files within it will be
+    moved with it. Additionally, if the directory involves changing a subject label, the subject label
+    will be updated in the file names of all associated files. If the directory involves changing a
+    session label, the session label will be updated in the file names of all associated files.
+
+    Raises
+    ------
+    BIDSError
+        If the dataset_description.json file is not found in the current directory or any parent
+        directory.
     """
     # Find the BIDS dataset root. We can do this by looking for the dataset_description.json file.
-    # Similar to git mv, it should look for the dataset_description.json file in the current directory
-    # and all parent directories.
     bids_dir = None
     cwd = Path.cwd()
-    for path in cwd.parents:
+    to_check = [cwd] + list(cwd.parents)
+    for path in to_check:
         if (path / "dataset_description.json").exists():
             bids_dir = path
             break
