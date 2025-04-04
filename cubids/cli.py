@@ -55,6 +55,36 @@ def _path_exists(path, parser):
     return path.absolute()
 
 
+def _path_does_not_exist(path, parser):
+    """Ensure a given path does not exist.
+
+    Parameters
+    ----------
+    path : str or Path
+        The path to check.
+    parser : argparse.ArgumentParser
+        The argument parser instance to use for error reporting.
+
+    Returns
+    -------
+    pathlib.Path
+        The absolute path if it exists.
+
+    Raises
+    ------
+    argparse.ArgumentError
+        If the path exists.
+    """
+    if path is not None:
+        path = Path(path)
+
+    if path.exists():
+        raise parser.error(f"Path already exists: <{path.absolute()}>.")
+    elif path is None:
+        raise parser.error("Path is None.")
+    return path.absolute()
+
+
 def _is_file(path, parser):
     """Ensure a given path exists and it is a file.
 
@@ -1394,6 +1424,80 @@ def _enter_print_metadata_fields(argv=None):
     workflows.print_metadata_fields(**args)
 
 
+def _parse_mv():
+    """Create the parser for the `cubids mv` command.
+
+    This function sets up an argument parser for the `cubids mv` command, which is used
+    to move files between directories in a BIDS dataset. It defines the required
+    arguments and their types, as well as optional arguments.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The argument parser for the `cubids mv` command.
+
+    Notes
+    -----
+    The parser includes the following arguments:
+
+    - bids_dir: The root of a BIDS dataset, which should contain sub-X directories
+        and dataset_description.json.
+    - source: The path to the file or directory to move.
+    - destination: The path to the new location for the file or directory.
+    """
+    parser = argparse.ArgumentParser(
+        description="Move or rename a file, a directory, or a symlink within a BIDS dataset",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
+    )
+    PathExists = partial(_path_exists, parser=parser)
+
+    parser.add_argument(
+        "source",
+        type=PathExists,
+        action="store",
+        help="The path to the file or directory to move.",
+    )
+    parser.add_argument(
+        "destination",
+        type=Path,
+        action="store",
+        help="The path to the new location for the file or directory.",
+    )
+    parser.add_argument(
+        "--use-datalad",
+        action="store_true",
+        default=False,
+        help="Use Datalad to track the move or rename operation.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="Force the move or rename operation.",
+    )
+    parser.add_argument(
+        "-n",
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="Do nothing; only show what would happen.",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="Report the details of the move or rename operation.",
+    )
+
+    return parser
+
+
 COMMANDS = [
     ("validate", _parse_validate, workflows.validate),
     ("bids-version", _parse_bids_version, workflows.bids_version),
@@ -1408,6 +1512,7 @@ COMMANDS = [
     ("datalad-save", _parse_datalad_save, workflows.datalad_save),
     ("print-metadata-fields", _parse_print_metadata_fields, workflows.print_metadata_fields),
     ("remove-metadata-fields", _parse_remove_metadata_fields, workflows.remove_metadata_fields),
+    ("mv", _parse_mv, workflows.mv),
 ]
 
 
