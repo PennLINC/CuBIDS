@@ -774,7 +774,7 @@ class CuBIDS(object):
         exemplars_tsv : :obj:`str`
             path to the .tsv file that lists one subject
             from each Acqusition Group (*_AcqGrouping.tsv
-            from the cubids-group output)
+            from the `cubids group` output)
             example path: /Users/Covitz/tsvs/CCNP_Acq_Grouping.tsv
         min_group_size : :obj:`int`
             Minimum number of subjects in an acq group for it to be included
