@@ -107,7 +107,7 @@ def test_ok_json_merge_cli(tmp_path):
 
     assert os.path.isfile(source_json)
     assert os.path.isfile(dest_json)
-    merge_proc = subprocess.run(["bids-sidecar-merge", str(source_json), str(dest_json)])
+    merge_proc = subprocess.run(["cubids", "bids-sidecar-merge", str(source_json), str(dest_json)])
     assert merge_proc.returncode == 0
     assert not _get_json_string(dest_json) == orig_dest_json_content
 
@@ -331,7 +331,9 @@ def test_bad_json_merge_cli(tmp_path):
         / "sub-01_ses-phdiff_acq-HASC55AP_dwi.json"
     )
 
-    merge_proc = subprocess.run(["bids-sidecar-merge", str(invalid_source_json), str(dest_json)])
+    merge_proc = subprocess.run(
+        ["cubids", "bids-sidecar-merge", str(invalid_source_json), str(dest_json)]
+    )
     assert merge_proc.returncode > 0
     assert _get_json_string(dest_json) == orig_dest_json_content
 

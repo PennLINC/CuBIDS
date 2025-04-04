@@ -490,7 +490,7 @@ class CuBIDS(object):
             for dest_nii in dest_files.FilePath:
                 dest_json = utils.img_to_new_ext(self.path + dest_nii, ".json")
                 if Path(dest_json).exists() and Path(source_json).exists():
-                    merge_commands.append(f"bids-sidecar-merge {source_json} {dest_json}")
+                    merge_commands.append(f"cubids bids-sidecar-merge {source_json} {dest_json}")
 
         # Get the delete commands
         to_remove = []
@@ -774,7 +774,7 @@ class CuBIDS(object):
         exemplars_tsv : :obj:`str`
             path to the .tsv file that lists one subject
             from each Acqusition Group (*_AcqGrouping.tsv
-            from the cubids-group output)
+            from the `cubids group` output)
             example path: /Users/Covitz/tsvs/CCNP_Acq_Grouping.tsv
         min_group_size : :obj:`int`
             Minimum number of subjects in an acq group for it to be included

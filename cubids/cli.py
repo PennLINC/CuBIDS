@@ -6,9 +6,6 @@ validating BIDS datasets, merging sidecar JSON files, grouping acquisition param
 applying changes, purging associations, adding NIfTI information, copying exemplar
 subjects, undoing changes, saving with DataLad, and managing metadata fields.
 
-Each function that serves as an entry point for a CLI command in the format of `cubids-function`
-is marked as deprecated and will be removed in the future. Users are advised to use the
-corresponding `cubids function` commands instead.
 """
 
 import argparse
@@ -192,38 +189,6 @@ def _parse_validate():
     return parser
 
 
-def _enter_validate(argv=None):
-    """Entry point for the `cubids-validate` command.
-
-    This function is deprecated and will be removed in the future.
-    Please use 'cubids validate' instead.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, defaults to sys.argv.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that this function is deprecated.
-
-    Notes
-    -----
-    This function parses the command-line arguments and calls the
-    `workflows.validate` function with the parsed arguments.
-    """
-    warnings.warn(
-        "cubids-validate is deprecated and will be removed in the future. "
-        "Please use cubids validate.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_validate().parse_args(argv)
-    args = vars(options).copy()
-    workflows.validate(**args)
-
-
 def _parse_bids_version():
     """Parse command-line arguments for the `cubids bids-version` command.
 
@@ -290,39 +255,6 @@ def _parse_bids_version():
     return parser
 
 
-def _enter_bids_version(argv=None):
-    """Entry point for the deprecated `cubids-bids-version`.
-
-    This function serves as the entry point for the BIDS version command-line
-    functionality. It parses command-line arguments, issues a deprecation
-    warning, and invokes the corresponding workflow.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, defaults to `sys.argv`.
-
-    Returns
-    -------
-    None
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that the `cubids-bids-version` command is deprecated and
-        will be removed in the future.
-    """
-    warnings.warn(
-        "cubids-bids-version is deprecated and will be removed in the future. "
-        "Please use cubids bids-version.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_bids_version().parse_args(argv)
-    args = vars(options).copy()
-    workflows.bids_version(**args)
-
-
 def _parse_bids_sidecar_merge():
     """Create an argument parser for the `cubids bids-sidecar-merge` command.
 
@@ -365,35 +297,6 @@ def _parse_bids_sidecar_merge():
         help="destination json. This file will have data from `from_json` copied into it.",
     )
     return parser
-
-
-def _enter_bids_sidecar_merge(argv=None):
-    """Entry point for the deprecated `cubids-bids-sidecar-merge command`.
-
-    This function serves as the entry point for the `cubids-bids-sidecar-merge`.
-    It parses command-line arguments, issues a deprecation
-    warning, and invokes the corresponding workflow.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, defaults to `sys.argv`.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that the `bids-sidecar-merge` command is deprecated and
-        will be removed in the future.
-    """
-    warnings.warn(
-        "bids-sidecar-merge is deprecated and will be removed in the future. "
-        "Please use cubids bids-sidecar-merge.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_bids_sidecar_merge().parse_args(argv)
-    args = vars(options).copy()
-    workflows.bids_sidecar_merge(**args)
 
 
 def _parse_group():
@@ -490,39 +393,6 @@ def _parse_group():
         required=False,
     )
     return parser
-
-
-def _enter_group(argv=None):
-    """Entry point for the deprecated `cubids-group` command.
-
-    This function issues a deprecation warning indicating that `cubids-group`
-    is deprecated and will be removed in the future. It then parses the
-    command-line arguments and invokes the `group` workflow with the parsed
-    arguments.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, defaults to sys.argv.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that 'cubids-group' is deprecated and will be removed in
-        the future.
-
-    Returns
-    -------
-    None
-    """
-    warnings.warn(
-        "cubids-group is deprecated and will be removed in the future. Please use cubids group.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_group().parse_args(argv)
-    args = vars(options).copy()
-    workflows.group(**args)
 
 
 def _parse_apply():
@@ -652,33 +522,6 @@ def _parse_apply():
     return parser
 
 
-def _enter_apply(argv=None):
-    """Entry point for the deprecated `cubids-apply` command.
-
-    This function serves as a wrapper for the `cubids-apply` command and issues a
-    deprecation warning. It parses the command-line arguments and invokes the
-    `apply` workflow with the parsed arguments.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, the arguments will be taken from `sys.argv`.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that `cubids-apply` is deprecated and will be removed in the future.
-    """
-    warnings.warn(
-        "cubids-apply is deprecated and will be removed in the future. Please use cubids apply.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_apply().parse_args(argv)
-    args = vars(options).copy()
-    workflows.apply(**args)
-
-
 def _parse_datalad_save():
     """Create an argument parser for the `cubids datalad-save` command.
 
@@ -727,40 +570,6 @@ def _parse_datalad_save():
     return parser
 
 
-def _enter_datalad_save(argv=None):
-    """Entry point for the deprecated `cubids-datalad-save` command.
-
-    This function serves as a warning that the `cubids-datalad-save` command is deprecated
-    and will be removed in the future. It parses the command-line arguments and calls
-    the `datalad_save` workflow with the parsed arguments.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If not provided, defaults to None.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that the `cubids-datalad-save` command is deprecated and
-        will be removed in the future.
-
-    See Also
-    --------
-    _parse_datalad_save : Function to parse command-line arguments for the datalad save operation.
-    workflows.datalad_save : Function to perform the datalad save operation.
-    """
-    warnings.warn(
-        "cubids-datalad-save is deprecated and will be removed in the future. "
-        "Please use cubids datalad-save.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_datalad_save().parse_args(argv)
-    args = vars(options).copy()
-    workflows.datalad_save(**args)
-
-
 def _parse_undo():
     """Create an argument parser for the `cubids undo` command.
 
@@ -805,39 +614,6 @@ def _parse_undo():
     return parser
 
 
-def _enter_undo(argv=None):
-    """Entry point for the deprecated `cubids-undo` command.
-
-    This function is called when the `cubids-undo` command is executed.
-    It displays a deprecation warning and then parses the command-line
-    arguments to execute the undo workflow.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, the arguments from
-        sys.argv are used.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that `cubids-undo` is deprecated and will be removed
-        in the future. Users should use `cubids undo` instead.
-
-    Returns
-    -------
-    None
-    """
-    warnings.warn(
-        "cubids-undo is deprecated and will be removed in the future. Please use cubids undo.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_undo().parse_args(argv)
-    args = vars(options).copy()
-    workflows.undo(**args)
-
-
 def _parse_copy_exemplars():
     """Parse command-line arguments for the `cubids copy-exemplars` script.
 
@@ -856,7 +632,7 @@ def _parse_copy_exemplars():
         directories and dataset_description.json.
     exemplars_tsv : str
         Path to the .tsv file that lists one subject from each Acquisition Group
-        (*_AcqGrouping.tsv from the cubids-group output). If the file is located in
+        (*_AcqGrouping.tsv from the `cubids group` output). If the file is located in
         the code/CuBIDS directory, then users can just pass the .tsv filename instead
         of the full path.
     use_datalad : bool, optional
@@ -913,7 +689,7 @@ def _parse_copy_exemplars():
         help=(
             "path to the .tsv that lists one "
             "subject from each Acquisition Group "
-            "(*_AcqGrouping.tsv from the cubids-group output). "
+            "(*_AcqGrouping.tsv from the `cubids group` output). "
             "If the file is located in the code/CuBIDS "
             "directory, then users can just pass the .tsv "
             "filename instead of the full path "
@@ -951,34 +727,6 @@ def _parse_copy_exemplars():
         help="unlock dataset before adding nifti info ",
     )
     return parser
-
-
-def _enter_copy_exemplars(argv=None):
-    """Entry point for the deprecated `cubids-copy-exemplars` command.
-
-    This function is deprecated and will be removed in the future.
-    It parses command-line arguments and invokes the `copy_exemplars`
-    workflow with the parsed arguments.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, defaults to `sys.argv`.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that this function is deprecated and will be removed in the future.
-    """
-    warnings.warn(
-        "cubids-copy-exemplars is deprecated and will be removed in the future. "
-        "Please use cubids copy-exemplars.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_copy_exemplars().parse_args(argv)
-    args = vars(options).copy()
-    workflows.copy_exemplars(**args)
 
 
 def _parse_add_nifti_info():
@@ -1097,38 +845,6 @@ def _parse_add_file_collections():
     return parser
 
 
-def _enter_add_nifti_info(argv=None):
-    """Entry point for the deprecated `cubids-add-nifti-info` command.
-
-    This function is deprecated and will be removed in the future.
-    Please use `cubids add-nifti-info` instead.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command line arguments. If None, defaults to `sys.argv`.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that this function is deprecated.
-
-    Notes
-    -----
-    This function parses command line arguments and invokes the
-    `add_nifti_info` workflow with the parsed arguments.
-    """
-    warnings.warn(
-        "cubids-add-nifti-info is deprecated and will be removed in the future. "
-        "Please use cubids add-nifti-info.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_add_nifti_info().parse_args(argv)
-    args = vars(options).copy()
-    workflows.add_nifti_info(**args)
-
-
 def _parse_purge():
     """Parse command-line arguments for the `cubids purge` command.
 
@@ -1193,37 +909,6 @@ def _parse_purge():
     return parser
 
 
-def _enter_purge(argv=None):
-    """Entry point for the deprecated `cubids-purge` command.
-
-    This function is deprecated and will be removed in the future.
-    Please use `cubids purge` instead.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, defaults to sys.argv.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that this function is deprecated.
-
-    Notes
-    -----
-    This function parses the command-line arguments and calls the
-    `workflows.purge` function with the parsed arguments.
-    """
-    warnings.warn(
-        "cubids-purge is deprecated and will be removed in the future. Please use cubids purge.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_purge().parse_args(argv)
-    args = vars(options).copy()
-    workflows.purge(**args)
-
-
 def _parse_remove_metadata_fields():
     """Create an argument parser for the `cubids remove-metadata-fields` command.
 
@@ -1279,42 +964,6 @@ def _parse_remove_metadata_fields():
     return parser
 
 
-def _enter_remove_metadata_fields(argv=None):
-    """Entry point for the deprecated `cubids-remove-metadata-fields` command.
-
-    This function serves as the entry point for the deprecated
-    `cubids-remove-metadata-fields` command-line interface (CLI). It issues a
-    deprecation warning and then parses the provided arguments to execute the
-    `remove_metadata_fields` workflow.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, the default arguments will be used.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that the `cubids-remove-metadata-fields` CLI is deprecated and
-        will be removed in the future. Users are advised to use
-        `cubids remove-metadata-fields` instead.
-
-    See Also
-    --------
-    _parse_remove_metadata_fields : Function to parse the command-line arguments.
-    workflows.remove_metadata_fields : Workflow to remove metadata fields.
-    """
-    warnings.warn(
-        "cubids-remove-metadata-fields is deprecated and will be removed in the future. "
-        "Please use cubids remove-metadata-fields.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    options = _parse_remove_metadata_fields().parse_args(argv)
-    args = vars(options).copy()
-    workflows.remove_metadata_fields(**args)
-
-
 def _parse_print_metadata_fields():
     """Create the parser for the `cubids print-metadata-fields` command.
 
@@ -1360,44 +1009,10 @@ def _parse_print_metadata_fields():
     return parser
 
 
-def _enter_print_metadata_fields(argv=None):
-    """Entry point for the deprecated `cubids-print-metadata-fields` command.
-
-    This function parses the command-line arguments for `cubids-print-metadata-fields`,
-    issues a deprecation warning, and then calls the `print_metadata_fields`
-    function from the `workflows` module with the parsed arguments.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments. If None, the arguments will be taken from
-        `sys.argv`.
-
-    Warns
-    -----
-    DeprecationWarning
-        Indicates that the `cubids-print-metadata-fields` command is deprecated
-        and will be removed in the future.
-
-    See Also
-    --------
-    workflows.print_metadata_fields : Function that prints metadata fields.
-    """
-    options = _parse_print_metadata_fields().parse_args(argv)
-    args = vars(options).copy()
-    warnings.warn(
-        "cubids-print-metadata-fields is deprecated and will be removed in the future. "
-        "Please use cubids print-metadata-fields.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    workflows.print_metadata_fields(**args)
-
-
 COMMANDS = [
     ("validate", _parse_validate, workflows.validate),
     ("bids-version", _parse_bids_version, workflows.bids_version),
-    ("sidecar-merge", _parse_bids_sidecar_merge, workflows.bids_sidecar_merge),
+    ("bids-sidecar-merge", _parse_bids_sidecar_merge, workflows.bids_sidecar_merge),
     ("group", _parse_group, workflows.group),
     ("apply", _parse_apply, workflows.apply),
     ("purge", _parse_purge, workflows.purge),
