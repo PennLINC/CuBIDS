@@ -1143,3 +1143,100 @@ def assign_variants(summary, rename_cols):
                 summary.at[row, col] = ""
 
     return summary
+
+
+def collect_file_collections(layout, base_file):
+    """Build a list of files in a file collection for a given base file.
+
+    Parameters
+    ----------
+    layout : BIDSLayout
+        The BIDSLayout object.
+    base_file : str
+        The base file to collect file collections for.
+
+    Returns
+    -------
+    files : list of BIDSFile
+        A list of files in the file collection for the given base file.
+    out_metadata : dict
+        A dictionary of metadata for the file collection, to be added to each file's metadata.
+
+    Notes
+    -----
+    This relies on a hardcoded list of entities that indicate file collections and their
+    corresponding metadata fields. It also does not work for file collections that are encoded
+    with the acq entity or different suffixes, like TB1AFI (which differentiates files with
+    acq-tr1/acq-tr2), MP2RAGE (which has both _MP2RAGE and _UNIT1 images from the same scan),
+    or phase-difference field maps (which have suffixes like magnitude1, magnitude2, phasediff,
+    phase1, and phase2).
+    """
+    from bids.layout import Query
+
+    file_collection_entities = {
+        "echo": "EchoTime",
+        "part": None,
+        "mt": "MTState",
+        "inv": "InversionTime",
+        "flip": "FlipAngle",
+    }
+
+    base_file = layout.get_file(base_file)
+    fc_query = {ent: [Query.ANY, Query.NONE] for ent in file_collection_entities.keys()}
+    query = base_file.get_entities()
+    query = {**query, **fc_query}
+    files = layout.get(**query)
+
+    if len(files) <= 1:
+        return files, {}
+
+    # Get list of entities present in any of the files
+    collected_entities = [list(f.get_entities().keys()) for f in files]
+    # Flatten the list
+    collected_entities = [item for sublist in collected_entities for item in sublist]
+    # Remove duplicates
+    collected_entities = sorted(set(collected_entities))
+
+    out_metadata = {}
+    # Add metadata field with BIDS URIs to all files in file collection
+    out_metadata["FileCollection"] = [get_bidsuri(f.path, layout.root) for f in files]
+
+    files_metadata = [get_sidecar_metadata(img_to_new_ext(f.path, ".json")) for f in files]
+    assert all(bool(meta) for meta in files_metadata), files
+    for ent, field in file_collection_entities.items():
+        if ent in collected_entities:
+            if field is None:
+                # If the entity is not mirrored in the metadata, like part,
+                # just use the entity value from the files.
+                collected_ent = ent.title() + "s"
+                ent_values = [f.get_entities()[ent] for f in files]
+                out_metadata[collected_ent] = ent_values
+
+            else:
+                # If the entity is mirrored in the metadata, like echo,
+                # collect the values from the metadata.
+                collected_field = field + "s"
+                field_values = [meta[field] for meta in files_metadata]
+                out_metadata[collected_field] = field_values
+
+    return files, out_metadata
+
+
+def get_bidsuri(filename, dataset_root):
+    """Get the BIDS URI for a given filename.
+
+    Parameters
+    ----------
+    filename : str
+        The filename to get the BIDS URI for.
+    dataset_root : str
+        The root directory of the dataset.
+
+    Returns
+    -------
+    str
+        The BIDS URI for the given filename.
+    """
+    import os
+
+    return f"bids::{os.path.relpath(filename, dataset_root)}"

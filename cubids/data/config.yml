@@ -34,6 +34,25 @@ derived_params:
       tolerance: 0.001
       precision: 3
       suggest_variant_rename: yes
+    # Array of echo times across file collection
+    EchoTimes:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    # Array of flip angles across file collection
+    FlipAngles:
+      suggest_variant_rename: yes
+    # Array of inversion times across file collection
+    InversionTimes:
+      tolerance: 0.001
+      precision: 5
+      suggest_variant_rename: yes
+    # Array of magnetization transfer states across file collection
+    MTStates:
+      suggest_variant_rename: yes
+    # Array of parts across file collection
+    Parts:
+      suggest_variant_rename: yes
   dwi:
     Dim1Size:
       suggest_variant_rename: yes
@@ -59,6 +78,25 @@ derived_params:
       suggest_variant_rename: yes
     ImageOrientation:
       suggest_variant_rename: yes
+    # Array of echo times across file collection
+    EchoTimes:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    # Array of flip angles across file collection
+    FlipAngles:
+      suggest_variant_rename: yes
+    # Array of inversion times across file collection
+    InversionTimes:
+      tolerance: 0.001
+      precision: 5
+      suggest_variant_rename: yes
+    # Array of magnetization transfer states across file collection
+    MTStates:
+      suggest_variant_rename: yes
+    # Array of parts across file collection
+    Parts:
+      suggest_variant_rename: yes
   fmap:
     Dim1Size:
       suggest_variant_rename: yes
@@ -82,6 +120,25 @@ derived_params:
       precision: 3
       suggest_variant_rename: yes
     ImageOrientation:
+      suggest_variant_rename: yes
+    # Array of echo times across file collection
+    EchoTimes:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    # Array of flip angles across file collection
+    FlipAngles:
+      suggest_variant_rename: yes
+    # Array of inversion times across file collection
+    InversionTimes:
+      tolerance: 0.001
+      precision: 5
+      suggest_variant_rename: yes
+    # Array of magnetization transfer states across file collection
+    MTStates:
+      suggest_variant_rename: yes
+    # Array of parts across file collection
+    Parts:
       suggest_variant_rename: yes
   func:
     Dim1Size:
@@ -108,6 +165,25 @@ derived_params:
       suggest_variant_rename: yes
     ImageOrientation:
       suggest_variant_rename: yes
+    # Array of echo times across file collection
+    EchoTimes:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    # Array of flip angles across file collection
+    FlipAngles:
+      suggest_variant_rename: yes
+    # Array of inversion times across file collection
+    InversionTimes:
+      tolerance: 0.001
+      precision: 5
+      suggest_variant_rename: yes
+    # Array of magnetization transfer states across file collection
+    MTStates:
+      suggest_variant_rename: yes
+    # Array of parts across file collection
+    Parts:
+      suggest_variant_rename: yes
   perf:
     Dim1Size:
       suggest_variant_rename: yes
@@ -133,6 +209,25 @@ derived_params:
       suggest_variant_rename: yes
     ImageOrientation:
       suggest_variant_rename: yes
+    # Array of echo times across file collection
+    EchoTimes:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    # Array of flip angles across file collection
+    FlipAngles:
+      suggest_variant_rename: yes
+    # Array of inversion times across file collection
+    InversionTimes:
+      tolerance: 0.001
+      precision: 5
+      suggest_variant_rename: yes
+    # Array of magnetization transfer states across file collection
+    MTStates:
+      suggest_variant_rename: yes
+    # Array of parts across file collection
+    Parts:
+      suggest_variant_rename: yes
   other:
     Dim1Size:
       suggest_variant_rename: yes
@@ -157,6 +252,25 @@ derived_params:
       precision: 3
       suggest_variant_rename: yes
     ImageOrientation:
+      suggest_variant_rename: yes
+    # Array of echo times across file collection
+    EchoTimes:
+      tolerance: 0.001
+      precision: 3
+      suggest_variant_rename: yes
+    # Array of flip angles across file collection
+    FlipAngles:
+      suggest_variant_rename: yes
+    # Array of inversion times across file collection
+    InversionTimes:
+      tolerance: 0.001
+      precision: 5
+      suggest_variant_rename: yes
+    # Array of magnetization transfer states across file collection
+    MTStates:
+      suggest_variant_rename: yes
+    # Array of parts across file collection
+    Parts:
       suggest_variant_rename: yes
 # These fields reflect relationships between images.
 # Not modality specific
