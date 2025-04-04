@@ -15,6 +15,7 @@ import tqdm
 
 from cubids.cubids import CuBIDS
 from cubids.metadata_merge import merge_json_into_json
+from cubids.utils import BIDSError
 from cubids.validator import (
     bids_validator_version,
     build_first_subject_path,
@@ -349,6 +350,61 @@ def apply(
         str(new_tsv_prefix),
         raise_on_error=False,
     )
+
+
+def mv(source, destination, use_datalad=False, force=False, dry_run=False, verbose=False):
+    """Move or rename a file, a directory, or a symlink within a BIDS dataset.
+
+    Parameters
+    ----------
+    source : :obj:`pathlib.Path`
+        The path to the file or directory to move.
+    destination : :obj:`pathlib.Path`
+        The path to the new location for the file or directory.
+    use_datalad : :obj:`bool`
+        Use Datalad to track the move or rename operation.
+    force : :obj:`bool`
+        Force the move or rename operation.
+    dry_run : :obj:`bool`
+        Do nothing; only show what would happen.
+    verbose : :obj:`bool`
+        Report the details of the move or rename operation.
+
+    Notes
+    -----
+    This function is similar to git mv. It determines if a path is a BIDS dataset by looking for the
+    dataset_description.json file in the current directory and all parent directories, analogous to
+    how git mv looks for the .git directory.
+
+    If the source is a file, it will be moved to the destination and associated files will be moved
+    with it.
+
+    If the source is a directory, it will be moved to the destination and all files within it will be
+    moved with it. Additionally, if the directory involves changing a subject label, the subject label
+    will be updated in the file names of all associated files. If the directory involves changing a
+    session label, the session label will be updated in the file names of all associated files.
+
+    Raises
+    ------
+    BIDSError
+        If the dataset_description.json file is not found in the current directory or any parent
+        directory.
+    """
+    # Find the BIDS dataset root. We can do this by looking for the dataset_description.json file.
+    bids_dir = None
+    cwd = Path.cwd()
+    to_check = [cwd] + list(cwd.parents)
+    for path in to_check:
+        if (path / "dataset_description.json").exists():
+            bids_dir = path
+            break
+
+    if bids_dir is None:
+        raise BIDSError("fatal: not a BIDS dataset (or any of the parent directories)")
+
+    # Run directly from python using
+    bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad)
+    ...
 
 
 def datalad_save(bids_dir, m):

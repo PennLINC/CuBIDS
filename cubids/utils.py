@@ -1240,3 +1240,11 @@ def get_bidsuri(filename, dataset_root):
     import os
 
     return f"bids::{os.path.relpath(filename, dataset_root)}"
+
+
+class BIDSError(Exception):
+    """Exception raised for errors in BIDS operations."""
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
