@@ -1012,7 +1012,7 @@ def _parse_print_metadata_fields():
 COMMANDS = [
     ("validate", _parse_validate, workflows.validate),
     ("bids-version", _parse_bids_version, workflows.bids_version),
-    ("sidecar-merge", _parse_bids_sidecar_merge, workflows.bids_sidecar_merge),
+    ("bids-sidecar-merge", _parse_bids_sidecar_merge, workflows.bids_sidecar_merge),
     ("group", _parse_group, workflows.group),
     ("apply", _parse_apply, workflows.apply),
     ("purge", _parse_purge, workflows.purge),

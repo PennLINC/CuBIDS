@@ -490,7 +490,7 @@ class CuBIDS(object):
             for dest_nii in dest_files.FilePath:
                 dest_json = utils.img_to_new_ext(self.path + dest_nii, ".json")
                 if Path(dest_json).exists() and Path(source_json).exists():
-                    merge_commands.append(f"bids-sidecar-merge {source_json} {dest_json}")
+                    merge_commands.append(f"cubids bids-sidecar-merge {source_json} {dest_json}")
 
         # Get the delete commands
         to_remove = []
