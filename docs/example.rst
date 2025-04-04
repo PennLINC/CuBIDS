@@ -317,7 +317,7 @@ This command will produce four tables that describe the dataset's heterogeneity 
 By first examining ``v0_summary.tsv`` users are given the opportunity to conduct metadata
 quality assurance (QA).
 The file can help identify instances of incomplete, incorrect, or unusable parameter groups,
-based on acquisition fields such as dimension and voxel sizes, number of volumes, obliquity,and more.
+based on acquisition fields such as dimension and voxel sizes, number of volumes, obliquity, and more.
 
 .. warning::
 
