@@ -399,7 +399,8 @@ class CuBIDS(object):
 
         Notes
         -----
-        This method requires that the BIDSLayout has been indexed with metadata.
+        This method uses metadata from direct sidecar JSON files,
+        so it will not work with inherited metadata.
         """
         # check if force_unlock is set
         if self.force_unlock:
