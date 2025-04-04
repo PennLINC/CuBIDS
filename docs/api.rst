@@ -34,6 +34,7 @@ API
    workflows.undo
    workflows.copy_exemplars
    workflows.add_nifti_info
+   workflows.add_file_collections
    workflows.purge
    workflows.remove_metadata_fields
    workflows.print_metadata_fields
