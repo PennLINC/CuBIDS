@@ -407,6 +407,7 @@ def test_add_nifti_info_no_datalad(tmp_path):
     # assert 'NumVolumes' in l_cols
     # assert 'Obliquity' in l_cols
 
+
 # TODO: add tests that return an error for invalid merge
 
 
