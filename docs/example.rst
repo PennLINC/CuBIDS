@@ -152,7 +152,7 @@ Adding NIfTI Information to JSON Sidecars
 
 Next, we seek to add more image parameters to our sidecars so that we can better define our Entity Sets.
 Historically, only a subset of parameters in the NIfTI image header have been included in a BIDS sidecar...
-Parameters such as image dimensions, number of volumes, and voxel sizes —
+Parameters such as image dimensions, number of volumes, image obliquity, and voxel sizes —
 all important data that can change how our pipelines will eventually run!
 
 To add them to the sidecar metadata, run:
@@ -317,7 +317,7 @@ This command will produce four tables that describe the dataset's heterogeneity 
 By first examining ``v0_summary.tsv`` users are given the opportunity to conduct metadata
 quality assurance (QA).
 The file can help identify instances of incomplete, incorrect, or unusable parameter groups,
-based on acquisition fields such as dimension and voxel sizes, number of volumes, and more.
+based on acquisition fields such as dimension and voxel sizes, number of volumes, obliquity,and more.
 
 .. warning::
 

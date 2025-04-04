@@ -16,6 +16,9 @@ derived_params:
     # Number of volumes
     NumVolumes:
       suggest_variant_rename: yes
+    # Boolean indicating oblique acquisition
+    Obliquity:
+      suggest_variant_rename: yes
     # String describing image orientation (e.g., LAS+)
     ImageOrientation:
       suggest_variant_rename: yes
@@ -64,6 +67,8 @@ derived_params:
       suggest_variant_rename: yes
     NumVolumes:
       suggest_variant_rename: yes
+    Obliquity:
+      suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
       precision: 3
@@ -108,6 +113,8 @@ derived_params:
       suggest_variant_rename: yes
     NumVolumes:
       suggest_variant_rename: yes
+    Obliquity:
+      suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
       suggest_variant_rename: yes
@@ -150,6 +157,8 @@ derived_params:
     NSliceTimes:
       suggest_variant_rename: yes
     NumVolumes:
+      suggest_variant_rename: yes
+    Obliquity:
       suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
@@ -195,6 +204,8 @@ derived_params:
       suggest_variant_rename: yes
     NumVolumes:
       suggest_variant_rename: yes
+    Obliquity:
+      suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
       precision: 3
@@ -238,6 +249,8 @@ derived_params:
     NSliceTimes:
       suggest_variant_rename: yes
     NumVolumes:
+      suggest_variant_rename: yes
+    Obliquity:
       suggest_variant_rename: yes
     VoxelSizeDim1:
       tolerance: 0.001
@@ -298,9 +311,6 @@ sidecar_params:
       suggest_variant_rename: yes
     FlipAngle:
       suggest_variant_rename: yes
-    ImageOrientationPatientDICOM:
-      tolerance: 0.0001
-      suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
     NumberOfVolumesDiscardedByScanner:
@@ -339,9 +349,6 @@ sidecar_params:
       precision: 6
       suggest_variant_rename: yes
     FlipAngle:
-      suggest_variant_rename: yes
-    ImageOrientationPatientDICOM:
-      tolerance: 0.0001
       suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
@@ -382,9 +389,6 @@ sidecar_params:
       suggest_variant_rename: yes
     FlipAngle:
       suggest_variant_rename: yes
-    ImageOrientationPatientDICOM:
-      tolerance: 0.0001
-      suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
     NumberOfVolumesDiscardedByScanner:
@@ -423,9 +427,6 @@ sidecar_params:
       precision: 5
       suggest_variant_rename: yes
     FlipAngle:
-      suggest_variant_rename: yes
-    ImageOrientationPatientDICOM:
-      tolerance: 0.0001
       suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
@@ -477,9 +478,6 @@ sidecar_params:
       precision: 5
       suggest_variant_rename: yes
     FlipAngle:
-      suggest_variant_rename: yes
-    ImageOrientationPatientDICOM:
-      tolerance: 0.0001
       suggest_variant_rename: yes
     LabelingDistance:
       tolerance: 0.1
@@ -536,9 +534,6 @@ sidecar_params:
       precision: 5
       suggest_variant_rename: yes
     FlipAngle:
-      suggest_variant_rename: yes
-    ImageOrientationPatientDICOM:
-      tolerance: 0.0001
       suggest_variant_rename: yes
     MultibandAccelerationFactor:
       suggest_variant_rename: yes
