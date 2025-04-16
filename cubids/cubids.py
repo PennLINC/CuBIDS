@@ -439,6 +439,48 @@ class CuBIDS(object):
 
         self.reset_bids_layout()
 
+    def rename_subject(self, old_subject, new_subject):
+        """Rename a subject in the dataset.
+
+        This method renames a subject in the dataset and updates all associated files.
+
+        Parameters
+        ----------
+        old_subject : :obj:`str`
+            The old subject ID.
+        new_subject : :obj:`str`
+            The new subject ID.
+        """
+        # check if force_unlock is set
+        if self.force_unlock:
+            # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
+            subprocess.run(["datalad", "unlock"], cwd=self.path)
+
+        # get all files in the dataset
+        files = self.layout.get(subject=old_subject, extension=[".nii", ".nii.gz"])
+        for file in files:
+            # get the filename
+            filename = file.filename
+            # get the entities
+            entities = file.entities
+            # rename the subject
+            entities["subject"] = new_subject
+            # build the new path
+            new_path = utils.build_path(
+                filepath=filename,
+                out_entities=entities,
+                out_dir=self.path,
+                schema=self.schema,
+            )
+            # rename the file
+            os.rename(file.path, new_path)
+
+        if self.use_datalad:
+            self.datalad_save(message="Renamed subject")
+
+        self.reset_bids_layout()
+
+
     def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True):
         """Apply changes documented in the edited summary tsv and generate the new tsv files.
 
