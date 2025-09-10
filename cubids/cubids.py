@@ -692,19 +692,10 @@ class CuBIDS(object):
                 new_context = new_path.replace(new_scan_end, "_aslcontext.tsv")
                 self.new_filenames.append(new_context)
 
-            old_m0scan = filepath.replace(scan_end, "_m0scan.nii.gz")
-            if Path(old_m0scan).exists():
-                self.old_filenames.append(old_m0scan)
-                new_scan_end = "_" + suffix + old_ext
-                new_m0scan = new_path.replace(new_scan_end, "_m0scan.nii.gz")
-                self.new_filenames.append(new_m0scan)
-
-            old_mjson = filepath.replace(scan_end, "_m0scan.json")
-            if Path(old_mjson).exists():
-                self.old_filenames.append(old_mjson)
-                new_scan_end = "_" + suffix + old_ext
-                new_mjson = new_path.replace(new_scan_end, "_m0scan.json")
-                self.new_filenames.append(new_mjson)
+            # Do NOT rename M0 scans or their JSON sidecars. M0 files should
+            # retain their original filenames to preserve independent variability.
+            # The IntendedFor field in M0 JSONs will be updated below to point
+            # to the newly renamed ASL files.
 
             old_labeling = filepath.replace(scan_end, "_asllabeling.jpg")
             if Path(old_labeling).exists():
