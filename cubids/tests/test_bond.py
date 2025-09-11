@@ -1159,7 +1159,7 @@ def test_validator(tmp_path):
     ret = run_validator(call)
 
     assert (
-        ret.returncode == 1
+        ret.returncode == 16
     ), (
         "Validator was expected to fail after corrupting files, "
         f"but returned code {ret.returncode}.\n"
