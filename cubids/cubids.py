@@ -683,8 +683,8 @@ class CuBIDS(object):
             new_physio = new_path.replace(new_scan_end, "_physio.tsv.gz")
             self.new_filenames.append(new_physio)
 
-        # Update ASL-specific files
-        if "/perf/" in filepath:
+        # Update ASL-specific files only when ASL timeseries is being renamed
+        if "/perf/" in filepath and old_suffix == "asl":
             old_context = filepath.replace(scan_end, "_aslcontext.tsv")
             if Path(old_context).exists():
                 self.old_filenames.append(old_context)
