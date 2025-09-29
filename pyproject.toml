@@ -25,7 +25,7 @@ dependencies = [
     "datalad>=0.13.5,!=0.17.3,!=0.17.0,!=0.16.1",
     "numpy<=2.2.4",
     "pandas<=2.2.3",
-    "pybids<=0.19.0",
+    "pybids<=0.20.0",
     "pyyaml",
     "scikit-learn<=1.6.1",
     "tqdm",
