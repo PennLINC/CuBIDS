@@ -48,11 +48,18 @@ def build_validator_call(path, local_validator=False, ignore_headers=False, sche
         command.append("--ignoreNiftiHeaders")
 
     if schema is None:
-        schema = str(importlib.resources.files("cubids") / "data/schema.json")
+        schema_path = importlib.resources.files("cubids") / "data/schema.json"
+        schema_path = pathlib.Path(schema_path)
     else:
-        schema = str(schema.resolve())
+        schema_path = pathlib.Path(schema).resolve()
 
-    command += ["--schema", schema]
+    # The Deno-based validator expects a URL for --schema; use a file:// URI
+    if not local_validator:
+        schema_arg = schema_path.as_uri()
+    else:
+        schema_arg = str(schema_path)
+
+    command += ["--schema", schema_arg]
 
     return command
 
