@@ -523,7 +523,7 @@ class CuBIDS(object):
 
             for row in range(len(files_df)):
                 file_path = self.path + files_df.loc[row, "FilePath"]
-                if Path(file_path).exists() and "/fmap/" not in file_path:
+                if Path(file_path).exists():
                     key_param_group = files_df.loc[row, "KeyParamGroup"]
 
                     if key_param_group in to_change:
