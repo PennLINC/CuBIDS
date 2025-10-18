@@ -1562,18 +1562,6 @@ class CuBIDS(object):
                             except Exception as e:
                                 warnings.warn(f"Unexpected error with file {json_file}: {e}")
         
-        # Group task events into 'events' modality
-        events_fields = set()
-        root_to_remove = []
-        for cat in root_fields:
-            if '_events.json' in cat:
-                events_fields.update(root_fields[cat])
-                root_to_remove.append(cat)
-        for cat in root_to_remove:
-            del root_fields[cat]
-        if events_fields:
-            modalities['events'] = events_fields
-        
         # Prepare output dictionary with all fields
         result = {}
         
