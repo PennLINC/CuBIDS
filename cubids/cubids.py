@@ -1484,15 +1484,17 @@ class CuBIDS(object):
         """Return unique metadata fields grouped by root JSON files and modalities.
 
         This method collects metadata fields from root JSON files and groups nested
-        JSON files by modality (func, anat, etc.), showing only fields unique to each
-        category. It skips files within any ".git" directory and handles empty files
-        and JSON decoding errors gracefully.
+        JSON files by modality (func, anat, dwi, fmap, etc.). For root JSON files like
+        dataset_description.json and participants.json, all fields are listed. For
+        modalities, all unique fields across all subjects/sessions are listed (avoiding
+        duplication within each modality). It skips files within any ".git" directory 
+        and handles empty files and JSON decoding errors gracefully.
 
         Returns
         -------
         dict
             A dictionary where keys are root JSON filenames or modality names (str) and
-            values are sorted lists of unique metadata fields (list of str) for that category.
+            values are sorted lists of metadata fields (list of str) for that category.
 
         Raises
         ------
@@ -1572,25 +1574,18 @@ class CuBIDS(object):
         if events_fields:
             modalities['events'] = events_fields
         
-        # Find fields unique to each category
-        field_to_categories = defaultdict(list)
-        for cat, fields in root_fields.items():
-            for f in fields:
-                field_to_categories[f].append(cat)
-        for mod, fields in modalities.items():
-            for f in fields:
-                field_to_categories[f].append(mod)
+        # Prepare output dictionary with all fields
+        result = {}
         
-        unique_per_cat = {}
         # For root files, list all fields
         for cat, fields in root_fields.items():
-            unique_per_cat[cat] = sorted(fields)
-        # For modalities, list only unique fields
-        for mod, fields in modalities.items():
-            unique_fields = sorted([f for f in fields if len(field_to_categories[f]) == 1])
-            unique_per_cat[mod] = unique_fields
+            result[cat] = sorted(fields)
         
-        return unique_per_cat
+        # For modalities, list all fields (already unique within each modality)
+        for mod, fields in modalities.items():
+            result[mod] = sorted(fields)
+        
+        return result
 
     def remove_metadata_fields(self, fields_to_remove):
         """Remove specific fields from all metadata files in the directory.
