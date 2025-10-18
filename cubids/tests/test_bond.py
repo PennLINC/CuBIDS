@@ -982,7 +982,7 @@ def test_remove_fields(tmp_path):
         The temporary path where the test data will be copied.
     """
     data_root = get_data(tmp_path)
-    bod = CuBIDS(data_root, use_datalad=False)
+    bod = CuBIDS(data_root / "BIDS_Dataset", use_datalad=False)
 
     # Get the metadata fields
     metadata_fields = bod.get_all_metadata_fields()
