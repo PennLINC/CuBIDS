@@ -1522,22 +1522,43 @@ class CuBIDS(object):
         
         # Collect fields by modality
         modalities = defaultdict(set)
-        for sub_dir in bids_path.glob("sub-*/ses-*/"):
-            for mod_dir in sub_dir.glob("*/"):
-                mod = mod_dir.name
-                for json_file in mod_dir.glob("*.json"):
-                    if ".git" not in str(json_file):
-                        try:
-                            with open(json_file, "r", encoding="utf-8") as jsonr:
-                                content = jsonr.read().strip()
-                                if not content:
-                                    continue
-                                metadata = json.loads(content)
-                            modalities[mod].update(metadata.keys())
-                        except json.JSONDecodeError as e:
-                            warnings.warn(f"Error decoding JSON in {json_file}: {e}")
-                        except Exception as e:
-                            warnings.warn(f"Unexpected error with file {json_file}: {e}")
+        for sub_dir in bids_path.glob("sub-*/"):
+            ses_dirs = list(sub_dir.glob("ses-*/"))
+            if ses_dirs:
+                # Longitudinal dataset: modalities under ses-*/
+                for ses_dir in ses_dirs:
+                    for mod_dir in ses_dir.glob("*/"):
+                        mod = mod_dir.name
+                        for json_file in mod_dir.glob("*.json"):
+                            if ".git" not in str(json_file):
+                                try:
+                                    with open(json_file, "r", encoding="utf-8") as jsonr:
+                                        content = jsonr.read().strip()
+                                        if not content:
+                                            continue
+                                        metadata = json.loads(content)
+                                    modalities[mod].update(metadata.keys())
+                                except json.JSONDecodeError as e:
+                                    warnings.warn(f"Error decoding JSON in {json_file}: {e}")
+                                except Exception as e:
+                                    warnings.warn(f"Unexpected error with file {json_file}: {e}")
+            else:
+                # Cross-sectional dataset: modalities directly under sub-*/
+                for mod_dir in sub_dir.glob("*/"):
+                    mod = mod_dir.name
+                    for json_file in mod_dir.glob("*.json"):
+                        if ".git" not in str(json_file):
+                            try:
+                                with open(json_file, "r", encoding="utf-8") as jsonr:
+                                    content = jsonr.read().strip()
+                                    if not content:
+                                        continue
+                                    metadata = json.loads(content)
+                                modalities[mod].update(metadata.keys())
+                            except json.JSONDecodeError as e:
+                                warnings.warn(f"Error decoding JSON in {json_file}: {e}")
+                            except Exception as e:
+                                warnings.warn(f"Unexpected error with file {json_file}: {e}")
         
         # Group task events into 'events' modality
         events_fields = set()
