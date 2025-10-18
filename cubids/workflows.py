@@ -503,33 +503,31 @@ def remove_metadata_fields(bids_dir, fields):
 
 
 def print_metadata_fields(bids_dir):
-    """Print unique metadata fields from a BIDS dataset.
+    """Print metadata fields from a BIDS dataset grouped by JSON file.
 
-    This function identifies and prints all unique metadata fields from
-    the `dataset_description.json` file in a BIDS directory. It can run
-    either directly in Python or within a specified container (Docker or
-    Singularity).
+    This function identifies and prints all metadata fields from all JSON files
+    in the BIDS directory, grouped by the relative path to each file.
 
     Parameters
     ----------
     bids_dir : :obj:`pathlib.Path`
-        Path to the BIDS directory containing the `dataset_description.json` file.
+        Path to the BIDS directory.
 
     Raises
     ------
     SystemExit
-        Raised in the following cases:
-        - The `dataset_description.json` file is not found in the BIDS directory.
+        Raised if the BIDS directory does not exist or is not a directory.
 
     """
-    # Check if dataset_description.json exists
-    dataset_description = bids_dir / "dataset_description.json"
-    if not dataset_description.exists():
-        logger.error("dataset_description.json not found in the BIDS directory.")
+    if not bids_dir.exists() or not bids_dir.is_dir():
+        logger.error("BIDS directory does not exist or is not a directory.")
         sys.exit(1)
 
     # Run directly from python
     bod = CuBIDS(data_root=str(bids_dir), use_datalad=False)
-    fields = bod.get_all_metadata_fields()
-    print("\n".join(fields))  # logger not printing
-    # logger.info("\n".join(fields))
+    fields_by_file = bod.get_all_metadata_fields()
+    for file_path, fields in sorted(fields_by_file.items()):
+        print(file_path)
+        for field in fields:
+            print(f"   {field}")
+        print()  # blank line between files
