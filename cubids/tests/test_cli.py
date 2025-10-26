@@ -260,9 +260,7 @@ def test_validate_sequential_with_n_cpus(tmp_path):
     output_prefix = tmp_path / "validation_parallel"
 
     # This should complete without error
-    _main(
-        ["validate", str(bids_dir), str(output_prefix), "--sequential", "--n-cpus", "1"]
-    )
+    _main(["validate", str(bids_dir), str(output_prefix), "--sequential", "--n-cpus", "1"])
 
     # Verify the command completed successfully by checking if the output directory exists
     assert (bids_dir / "code" / "CuBIDS").exists()

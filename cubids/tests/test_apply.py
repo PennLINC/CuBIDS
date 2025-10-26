@@ -14,18 +14,14 @@ relpath_intendedfor_long = {
                     "dir": "AP",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": [
-                            "ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"
-                        ],
+                        "IntendedFor": ["ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
                 {
                     "dir": "PA",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": [
-                            "ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"
-                        ],
+                        "IntendedFor": ["ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
             ],
@@ -122,18 +118,14 @@ bidsuri_intendedfor_cs = {
                     "dir": "AP",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": [
-                            "bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"
-                        ],
+                        "IntendedFor": ["bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
                 {
                     "dir": "PA",
                     "suffix": "epi",
                     "metadata": {
-                        "IntendedFor": [
-                            "bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"
-                        ],
+                        "IntendedFor": ["bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
                     },
                 },
             ],

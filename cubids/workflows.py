@@ -170,10 +170,7 @@ def validate(
 
                 else:
                     val_tsv = (
-                        str(bids_dir)
-                        + "/code/CuBIDS/"
-                        + str(output_prefix)
-                        + "_validation.tsv"
+                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
                     )
 
                 parsed.to_csv(val_tsv, sep="\t", index=False)
@@ -226,9 +223,7 @@ def validate(
                 }
 
                 # Process results as they complete with progress bar
-                with tqdm.tqdm(
-                    total=len(validation_args), desc="Validating subjects"
-                ) as pbar:
+                with tqdm.tqdm(total=len(validation_args), desc="Validating subjects") as pbar:
                     for future in as_completed(future_to_subject):
                         try:
                             subject, result = future.result()
@@ -236,9 +231,7 @@ def validate(
                                 parsed.append(result)
                         except Exception as exc:
                             subject = future_to_subject[future]
-                            logger.error(
-                                f"Subject {subject} generated an exception: {exc}"
-                            )
+                            logger.error(f"Subject {subject} generated an exception: {exc}")
                         finally:
                             pbar.update(1)
         else:
@@ -299,10 +292,7 @@ def validate(
                     val_tsv = str(output_prefix) + "_validation.tsv"
                 else:
                     val_tsv = (
-                        str(bids_dir)
-                        + "/code/CuBIDS/"
-                        + str(output_prefix)
-                        + "_validation.tsv"
+                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
                     )
 
                 parsed.to_csv(val_tsv, sep="\t", index=False)
@@ -343,9 +333,7 @@ def bids_version(bids_dir, write=False, schema=None):
             if os.path.isdir(os.path.join(bids_dir, name)) and name.startswith("sub-")
         ]
         if not sub_folders:
-            raise ValueError(
-                "No folders starting with 'sub-' found. Please provide a valid BIDS."
-            )
+            raise ValueError("No folders starting with 'sub-' found. Please provide a valid BIDS.")
         subject = sub_folders[0]
     except FileNotFoundError:
         raise FileNotFoundError(f"The directory {bids_dir} does not exist.")
@@ -525,15 +513,11 @@ def copy_exemplars(
         Force unlock the dataset.
     """
     # Run directly from python using
-    bod = CuBIDS(
-        data_root=str(bids_dir), use_datalad=use_datalad, force_unlock=force_unlock
-    )
+    bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad, force_unlock=force_unlock)
     if use_datalad:
         if not bod.is_datalad_clean():
             raise Exception(
-                "Untracked changes. Need to save "
-                + str(bids_dir)
-                + " before coyping exemplars"
+                "Untracked changes. Need to save " + str(bids_dir) + " before coyping exemplars"
             )
     bod.copy_exemplars(
         str(exemplars_dir),

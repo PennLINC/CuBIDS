@@ -34,6 +34,4 @@ __credits__ = (
 )
 __url__ = "https://github.com/PennLINC/CuBIDS"
 
-DOWNLOAD_URL = (
-    f"https://github.com/PennLINC/{__packagename__}/archive/{__version__}.tar.gz"
-)
+DOWNLOAD_URL = f"https://github.com/PennLINC/{__packagename__}/archive/{__version__}.tar.gz"

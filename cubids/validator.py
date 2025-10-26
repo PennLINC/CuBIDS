@@ -18,9 +18,7 @@ import pandas as pd
 logger = logging.getLogger("cubids-cli")
 
 
-def build_validator_call(
-    path, local_validator=False, ignore_headers=False, schema=None
-):
+def build_validator_call(path, local_validator=False, ignore_headers=False, schema=None):
     """Build a subprocess command to the bids validator.
 
     Parameters
@@ -121,9 +119,7 @@ def build_subject_paths(bids_dir):
     subjects = glob.glob(bids_dir)
 
     if len(subjects) < 1:
-        raise ValueError(
-            "Couldn't find any subjects in the specified directory:\n" + bids_dir
-        )
+        raise ValueError("Couldn't find any subjects in the specified directory:\n" + bids_dir)
 
     subjects_dict = {}
 
