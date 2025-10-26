@@ -1,10 +1,10 @@
 """First order workflows in CuBIDS."""
 
+import errno
 import json
 import logging
 import os
 import shutil
-import errno
 import subprocess
 import sys
 import tempfile
@@ -194,36 +194,42 @@ def validate(
 
         # parse the string output
         parsed = parse_validator_output(ret.stdout.decode("UTF-8"))
+
+        # Determine if issues were found
         if parsed.shape[1] < 1:
             logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
-            return
+            # Create empty DataFrame for consistent behavior with sequential mode
+            parsed = pd.DataFrame()
         else:
             logger.info("BIDS issues/warnings found in the dataset")
 
-            if output_prefix:
-                # check if absolute or relative path
-                if abs_path_output:
-                    # normally, write dataframe to file in CLI
-                    val_tsv = str(output_prefix) + "_validation.tsv"
+        if output_prefix:
+            # check if absolute or relative path
+            if abs_path_output:
+                # normally, write dataframe to file in CLI
+                val_tsv = str(output_prefix) + "_validation.tsv"
 
-                else:
-                    val_tsv = (
-                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
-                    )
-
-                parsed.to_csv(val_tsv, sep="\t", index=False)
-
-                # build validation data dictionary json sidecar
-                val_dict = get_val_dictionary()
-                val_json = val_tsv.replace("tsv", "json")
-                with open(val_json, "w") as outfile:
-                    json.dump(val_dict, outfile, indent=4)
-
-                logger.info("Writing issues out to %s", val_tsv)
-                return
             else:
-                # user may be in python session, return dataframe
-                return parsed
+                val_tsv = (
+                    str(bids_dir)
+                    + "/code/CuBIDS/"
+                    + str(output_prefix)
+                    + "_validation.tsv"
+                )
+
+            parsed.to_csv(val_tsv, sep="\t", index=False)
+
+            # build validation data dictionary json sidecar
+            val_dict = get_val_dictionary()
+            val_json = val_tsv.replace("tsv", "json")
+            with open(val_json, "w") as outfile:
+                json.dump(val_dict, outfile, indent=4)
+
+            logger.info("Writing issues out to %s", val_tsv)
+            return
+        else:
+            # user may be in python session, return dataframe
+            return parsed
     else:
         # logger.info("Prepping sequential validator run...")
 
@@ -251,7 +257,8 @@ def validate(
         # Use parallel processing if more than one worker requested
         if effective_workers > 1:
             logger.info(
-                f"Using up to {effective_workers} parallel workers (n_cpus={n_cpus}) for validation"
+                f"Using up to {effective_workers} parallel workers "
+                f"(n_cpus={n_cpus}) for validation"
             )
             with ProcessPoolExecutor(max_workers=effective_workers) as executor:
                 # Submit all tasks
@@ -274,21 +281,33 @@ def validate(
                             pbar.update(1)
         else:
             # Sequential processing
+            def _link_or_copy(src_path, dst_path):
+                """Materialize src_path at dst_path favoring hardlinks, then symlinks, then copy.
+
+                This minimizes disk I/O and maximizes throughput when many subjects are processed.
+                """
+                # If destination already exists (rare with temp dirs), skip
+                if os.path.exists(dst_path):
+                    return
+                try:
+                    # Prefer hardlink when on the same filesystem
+                    os.link(src_path, dst_path)
+                    return
+                except OSError as e:
+                    # EXDEV: cross-device link; fallback to symlink
+                    if e.errno != errno.EXDEV:
+                        # Other hardlink errors may still allow symlink
+                        pass
+                try:
+                    os.symlink(src_path, dst_path)
+                    return
+                except OSError:
+                    # Fallback to a regular copy as last resort
+                    shutil.copy2(src_path, dst_path)
+
             for subject, files_list in tqdm.tqdm(subjects_dict.items()):
                 # Create a temporary directory and populate with links
                 with tempfile.TemporaryDirectory() as tmpdirname:
-                    def _link_or_copy(src_path, dst_path):
-                        if os.path.exists(dst_path):
-                            return
-                        try:
-                            os.link(src_path, dst_path)
-                        except OSError as e:
-                            if e.errno != errno.EXDEV:
-                                pass
-                            try:
-                                os.symlink(src_path, dst_path)
-                            except OSError:
-                                shutil.copy2(src_path, dst_path)
 
                     for file_path in files_list:
                         bids_start = file_path.find(subject)
@@ -335,7 +354,12 @@ def validate(
             if abs_path_output:
                 val_tsv = str(output_prefix) + "_validation.tsv"
             else:
-                val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
+                val_tsv = (
+                    str(bids_dir)
+                    + "/code/CuBIDS/"
+                    + str(output_prefix)
+                    + "_validation.tsv"
+                )
 
             parsed.to_csv(val_tsv, sep="\t", index=False)
 
