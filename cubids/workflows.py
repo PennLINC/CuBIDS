@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import warnings
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import pandas as pd
@@ -32,6 +33,70 @@ GIT_CONFIG = os.path.join(os.path.expanduser("~"), ".gitconfig")
 logging.getLogger("datalad").setLevel(logging.ERROR)
 
 
+def _validate_single_subject(args):
+    """Validate a single subject in a temporary directory.
+
+    This is a helper function designed to be called in parallel for sequential validation.
+    It processes one subject at a time and returns the validation results.
+
+    Parameters
+    ----------
+    args : tuple
+        A tuple containing:
+        - subject (str): Subject label
+        - files_list (list): List of file paths for this subject
+        - ignore_nifti_headers (bool): Whether to ignore NIfTI headers
+        - local_validator (bool): Whether to use local validator
+        - schema (str or None): Path to schema file as string
+
+    Returns
+    -------
+    tuple
+        A tuple containing (subject, pd.DataFrame) with validation results.
+        Returns (subject, None) if no issues found.
+    """
+    subject, files_list, ignore_nifti_headers, local_validator, schema = args
+
+    # Convert schema string back to Path if it exists
+    schema_path = Path(schema) if schema is not None else None
+
+    # Create temporary directory and copy the data
+    with tempfile.TemporaryDirectory() as tmpdir:
+        for file_path in files_list:
+            # Cut the path down to the subject label
+            bids_start = file_path.find(subject)
+
+            # Maybe it's a single file (root-level file)
+            if bids_start < 1:
+                bids_folder = tmpdir
+                tmp_file_dir = tmpdir
+            else:
+                bids_folder = Path(file_path[bids_start:]).parent
+                tmp_file_dir = os.path.join(tmpdir, str(bids_folder))
+
+            if not os.path.exists(tmp_file_dir):
+                os.makedirs(tmp_file_dir)
+
+            output_path = os.path.join(tmp_file_dir, str(Path(file_path).name))
+            shutil.copy2(file_path, output_path)
+
+        # Run the validator
+        call = build_validator_call(
+            tmpdir, local_validator, ignore_nifti_headers, schema=schema_path
+        )
+        result = run_validator(call)
+
+        # Parse the output and return
+        decoded_output = result.stdout.decode("UTF-8")
+        parsed_output = parse_validator_output(decoded_output)
+
+        if parsed_output.shape[1] > 1:
+            parsed_output["subject"] = subject
+            return (subject, parsed_output)
+        else:
+            return (subject, None)
+
+
 def validate(
     bids_dir,
     output_prefix,
@@ -40,6 +105,7 @@ def validate(
     local_validator,
     ignore_nifti_headers,
     schema,
+    n_cpus=1,
 ):
     """Run the bids validator.
 
@@ -59,7 +125,13 @@ def validate(
         Ignore NIfTI headers when validating.
     schema : :obj:`pathlib.Path` or None
         Path to the BIDS schema file.
+    n_cpus : :obj:`int`
+        Number of CPUs to use for parallel validation (only when sequential=True).
+        Default is 1 (sequential processing).
     """
+    # Ensure n_cpus is at least 1
+    n_cpus = max(1, n_cpus)
+
     # check status of output_prefix, absolute or relative?
     abs_path_output = True
     if "/" not in str(output_prefix):
@@ -98,7 +170,10 @@ def validate(
 
                 else:
                     val_tsv = (
-                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
+                        str(bids_dir)
+                        + "/code/CuBIDS/"
+                        + str(output_prefix)
+                        + "_validation.tsv"
                     )
 
                 parsed.to_csv(val_tsv, sep="\t", index=False)
@@ -126,44 +201,85 @@ def validate(
         parsed = []
 
         if sequential_subjects:
-            subjects_dict = {k: v for k, v in subjects_dict.items() if k in sequential_subjects}
+            subjects_dict = {
+                k: v for k, v in subjects_dict.items() if k in sequential_subjects
+            }
         assert len(list(subjects_dict.keys())) > 1, "No subjects found in filter"
-        for subject, files_list in tqdm.tqdm(subjects_dict.items()):
-            # logger.info(" ".join(["Processing subject:", subject]))
-            # create a temporary directory and symlink the data
-            with tempfile.TemporaryDirectory() as tmpdirname:
-                for fi in files_list:
-                    # cut the path down to the subject label
-                    bids_start = fi.find(subject)
 
-                    # maybe it's a single file
-                    if bids_start < 1:
-                        bids_folder = tmpdirname
-                        fi_tmpdir = tmpdirname
+        # Convert schema Path to string if it exists (for multiprocessing pickling)
+        schema_str = str(schema) if schema is not None else None
 
-                    else:
-                        bids_folder = Path(fi[bids_start:]).parent
-                        fi_tmpdir = tmpdirname + "/" + str(bids_folder)
+        # Prepare arguments for each subject
+        validation_args = [
+            (subject, files_list, ignore_nifti_headers, local_validator, schema_str)
+            for subject, files_list in subjects_dict.items()
+        ]
 
-                    if not os.path.exists(fi_tmpdir):
-                        os.makedirs(fi_tmpdir)
-                    output = fi_tmpdir + "/" + str(Path(fi).name)
-                    shutil.copy2(fi, output)
+        # Use parallel processing if n_cpus > 1
+        if n_cpus > 1:
+            logger.info(f"Using {n_cpus} CPUs for parallel validation")
+            with ProcessPoolExecutor(max_workers=n_cpus) as executor:
+                # Submit all tasks
+                future_to_subject = {
+                    executor.submit(_validate_single_subject, args): args[0]
+                    for args in validation_args
+                }
 
-                # run the validator
-                nifti_head = ignore_nifti_headers
-                call = build_validator_call(tmpdirname, local_validator, nifti_head, schema=schema)
-                ret = run_validator(call)
-                # parse output
-                if ret.returncode != 0:
-                    logger.error("Errors returned from validator run, parsing now")
+                # Process results as they complete with progress bar
+                with tqdm.tqdm(
+                    total=len(validation_args), desc="Validating subjects"
+                ) as pbar:
+                    for future in as_completed(future_to_subject):
+                        try:
+                            subject, result = future.result()
+                            if result is not None and result.shape[1] > 1:
+                                parsed.append(result)
+                        except Exception as exc:
+                            subject = future_to_subject[future]
+                            logger.error(
+                                f"Subject {subject} generated an exception: {exc}"
+                            )
+                        finally:
+                            pbar.update(1)
+        else:
+            # Sequential processing
+            for subject, files_list in tqdm.tqdm(subjects_dict.items()):
+                # logger.info(" ".join(["Processing subject:", subject]))
+                # Create a temporary directory and copy the data
+                with tempfile.TemporaryDirectory() as tmpdirname:
+                    for file_path in files_list:
+                        # Cut the path down to the subject label
+                        bids_start = file_path.find(subject)
 
-                # parse the output and add to list if it returns a df
-                decoded = ret.stdout.decode("UTF-8")
-                tmp_parse = parse_validator_output(decoded)
-                if tmp_parse.shape[1] > 1:
-                    tmp_parse["subject"] = subject
-                    parsed.append(tmp_parse)
+                        # Maybe it's a single file (root-level file)
+                        if bids_start < 1:
+                            bids_folder = tmpdirname
+                            tmp_file_dir = tmpdirname
+                        else:
+                            bids_folder = Path(file_path[bids_start:]).parent
+                            tmp_file_dir = tmpdirname + "/" + str(bids_folder)
+
+                        if not os.path.exists(tmp_file_dir):
+                            os.makedirs(tmp_file_dir)
+                        output = tmp_file_dir + "/" + str(Path(file_path).name)
+                        shutil.copy2(file_path, output)
+
+                    # Run the validator
+                    nifti_head = ignore_nifti_headers
+                    call = build_validator_call(
+                        tmpdirname, local_validator, nifti_head, schema=schema
+                    )
+                    ret = run_validator(call)
+                    # Parse output
+                    if ret.returncode != 0:
+                        logger.error("Errors returned from validator run, parsing now")
+
+                    # Parse the output and add to list if it returns a df
+                    decoded = ret.stdout.decode("UTF-8")
+                    tmp_parse = parse_validator_output(decoded)
+                    if tmp_parse.shape[1] > 1:
+                        tmp_parse["subject"] = subject
+                        parsed.append(tmp_parse)
 
         # concatenate the parsed data and exit
         if len(parsed) < 1:
@@ -183,7 +299,10 @@ def validate(
                     val_tsv = str(output_prefix) + "_validation.tsv"
                 else:
                     val_tsv = (
-                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
+                        str(bids_dir)
+                        + "/code/CuBIDS/"
+                        + str(output_prefix)
+                        + "_validation.tsv"
                     )
 
                 parsed.to_csv(val_tsv, sep="\t", index=False)
@@ -224,7 +343,9 @@ def bids_version(bids_dir, write=False, schema=None):
             if os.path.isdir(os.path.join(bids_dir, name)) and name.startswith("sub-")
         ]
         if not sub_folders:
-            raise ValueError("No folders starting with 'sub-' found. Please provide a valid BIDS.")
+            raise ValueError(
+                "No folders starting with 'sub-' found. Please provide a valid BIDS."
+            )
         subject = sub_folders[0]
     except FileNotFoundError:
         raise FileNotFoundError(f"The directory {bids_dir} does not exist.")
@@ -235,30 +356,29 @@ def bids_version(bids_dir, write=False, schema=None):
     # run first subject only
     subject_dict = build_first_subject_path(bids_dir, subject)
 
-    # iterate over the dictionary
+    # Iterate over the dictionary
     for subject, files_list in subject_dict.items():
         # logger.info(" ".join(["Processing subject:", subject]))
-        # create a temporary directory and symlink the data
+        # Create a temporary directory and copy the data
         with tempfile.TemporaryDirectory() as tmpdirname:
-            for fi in files_list:
-                # cut the path down to the subject label
-                bids_start = fi.find(subject)
+            for file_path in files_list:
+                # Cut the path down to the subject label
+                bids_start = file_path.find(subject)
 
-                # maybe it's a single file
+                # Maybe it's a single file (root-level file)
                 if bids_start < 1:
                     bids_folder = tmpdirname
-                    fi_tmpdir = tmpdirname
-
+                    tmp_file_dir = tmpdirname
                 else:
-                    bids_folder = Path(fi[bids_start:]).parent
-                    fi_tmpdir = tmpdirname + "/" + str(bids_folder)
+                    bids_folder = Path(file_path[bids_start:]).parent
+                    tmp_file_dir = tmpdirname + "/" + str(bids_folder)
 
-                if not os.path.exists(fi_tmpdir):
-                    os.makedirs(fi_tmpdir)
-                output = fi_tmpdir + "/" + str(Path(fi).name)
-                shutil.copy2(fi, output)
+                if not os.path.exists(tmp_file_dir):
+                    os.makedirs(tmp_file_dir)
+                output = tmp_file_dir + "/" + str(Path(file_path).name)
+                shutil.copy2(file_path, output)
 
-            # run the validator
+            # Run the validator
             call = build_validator_call(tmpdirname, schema=schema)
             ret = run_validator(call)
 
@@ -405,11 +525,15 @@ def copy_exemplars(
         Force unlock the dataset.
     """
     # Run directly from python using
-    bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad, force_unlock=force_unlock)
+    bod = CuBIDS(
+        data_root=str(bids_dir), use_datalad=use_datalad, force_unlock=force_unlock
+    )
     if use_datalad:
         if not bod.is_datalad_clean():
             raise Exception(
-                "Untracked changes. Need to save " + str(bids_dir) + " before coyping exemplars"
+                "Untracked changes. Need to save "
+                + str(bids_dir)
+                + " before coyping exemplars"
             )
     bod.copy_exemplars(
         str(exemplars_dir),

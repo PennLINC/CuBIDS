@@ -20,6 +20,7 @@ __url__ : str
 DOWNLOAD_URL : str
     The URL to download the CuBIDS package.
 """
+
 try:
     from cubids._version import __version__
 except ImportError:
@@ -33,4 +34,6 @@ __credits__ = (
 )
 __url__ = "https://github.com/PennLINC/CuBIDS"
 
-DOWNLOAD_URL = f"https://github.com/PennLINC/{__packagename__}/archive/{__version__}.tar.gz"
+DOWNLOAD_URL = (
+    f"https://github.com/PennLINC/{__packagename__}/archive/{__version__}.tar.gz"
+)

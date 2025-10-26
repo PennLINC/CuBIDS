@@ -107,7 +107,9 @@ def test_ok_json_merge_cli(tmp_path):
 
     assert os.path.isfile(source_json)
     assert os.path.isfile(dest_json)
-    merge_proc = subprocess.run(["cubids", "bids-sidecar-merge", str(source_json), str(dest_json)])
+    merge_proc = subprocess.run(
+        ["cubids", "bids-sidecar-merge", str(source_json), str(dest_json)]
+    )
     assert merge_proc.returncode == 0
     assert not _get_json_string(dest_json) == orig_dest_json_content
 
@@ -225,7 +227,10 @@ def test_purge_no_datalad(tmp_path):
 
     assert not Path(data_root / "complete" / scan_name).exists()
     assert not Path(json_name).exists()
-    assert "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz" not in purged_dict.values()
+    assert (
+        "ses-phdiff/dwi/sub-01_ses-phdiff_acq-HASC55AP_dwi.nii.gz"
+        not in purged_dict.values()
+    )
     assert isinstance(purged_dict["IntendedFor"], list)
     assert purged_dict["IntendedFor"] == []
 
@@ -431,41 +436,57 @@ def test_tsv_merge_no_datalad(tmp_path):
     original_files_tsv = tsv_prefix + "_files.tsv"
 
     # give tsv with no changes (make sure it does nothing)
-    bod.apply_tsv_changes(original_summary_tsv, original_files_tsv, str(tmp_path / "unmodified"))
+    bod.apply_tsv_changes(
+        original_summary_tsv, original_files_tsv, str(tmp_path / "unmodified")
+    )
 
     # these will not actually be equivalent because of the auto renames
-    assert file_hash(original_summary_tsv) != file_hash(tmp_path / "unmodified_summary.tsv")
+    assert file_hash(original_summary_tsv) != file_hash(
+        tmp_path / "unmodified_summary.tsv"
+    )
 
     # Find the dwi with no FlipAngle
     summary_df = pd.read_table(original_summary_tsv)
     (fa_nan_dwi_row,) = np.flatnonzero(
         np.isnan(summary_df.FlipAngle)
-        & summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
+        & summary_df.EntitySet.str.fullmatch(
+            "datatype-dwi_suffix-dwi_acquisition-HASC55AP"
+        )
     )
     # Find the dwi with and EchoTime ==
     (complete_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
+        summary_df.EntitySet.str.fullmatch(
+            "datatype-dwi_suffix-dwi_acquisition-HASC55AP"
+        )
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime > 0.05)
     )
     (cant_merge_echotime_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
+        summary_df.EntitySet.str.fullmatch(
+            "datatype-dwi_suffix-dwi_acquisition-HASC55AP"
+        )
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime < 0.05)
     )
 
     # Set a legal MergeInto value. This effectively fills in data
     # where there was previously as missing FlipAngle
-    summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[complete_dwi_row]
+    summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[
+        complete_dwi_row
+    ]
 
     valid_tsv_file = tsv_prefix + "_valid_summary.tsv"
     summary_df.to_csv(valid_tsv_file, sep="\t", index=False)
 
     # about to apply merges!
 
-    bod.apply_tsv_changes(valid_tsv_file, original_files_tsv, str(tmp_path / "ok_modified"))
+    bod.apply_tsv_changes(
+        valid_tsv_file, original_files_tsv, str(tmp_path / "ok_modified")
+    )
 
-    assert not file_hash(original_summary_tsv) == file_hash(tmp_path / "ok_modified_summary.tsv")
+    assert not file_hash(original_summary_tsv) == file_hash(
+        tmp_path / "ok_modified_summary.tsv"
+    )
 
     # Add an illegal merge to MergeInto
     summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
@@ -476,7 +497,9 @@ def test_tsv_merge_no_datalad(tmp_path):
 
     with pytest.raises(Exception):
         bod.apply_tsv_changes(
-            invalid_tsv_file, str(tmp_path / "originals_files.tsv"), str(tmp_path / "ok_modified")
+            invalid_tsv_file,
+            str(tmp_path / "originals_files.tsv"),
+            str(tmp_path / "ok_modified"),
         )
 
 
@@ -500,7 +523,9 @@ def test_tsv_merge_changes(tmp_path):
     original_files_tsv = tsv_prefix + "_files.tsv"
 
     # give tsv with no changes (make sure it does nothing except rename)
-    bod.apply_tsv_changes(original_summary_tsv, original_files_tsv, str(tmp_path / "unmodified"))
+    bod.apply_tsv_changes(
+        original_summary_tsv, original_files_tsv, str(tmp_path / "unmodified")
+    )
     orig = pd.read_table(original_summary_tsv)
     # TEST RenameEntitySet column got populated CORRECTLY
     for row in range(len(orig)):
@@ -545,37 +570,51 @@ def test_tsv_merge_changes(tmp_path):
     assert renamed, orig["RenameEntitySet"].tolist()
 
     # will no longer be equal because of auto rename!
-    assert file_hash(original_summary_tsv) != file_hash(tmp_path / "unmodified_summary.tsv")
+    assert file_hash(original_summary_tsv) != file_hash(
+        tmp_path / "unmodified_summary.tsv"
+    )
 
     # Find the dwi with no FlipAngle
     summary_df = pd.read_table(original_summary_tsv)
     (fa_nan_dwi_row,) = np.flatnonzero(
         np.isnan(summary_df.FlipAngle)
-        & summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
+        & summary_df.EntitySet.str.fullmatch(
+            "datatype-dwi_suffix-dwi_acquisition-HASC55AP"
+        )
     )
     # Find the dwi with and EchoTime ==
     (complete_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
+        summary_df.EntitySet.str.fullmatch(
+            "datatype-dwi_suffix-dwi_acquisition-HASC55AP"
+        )
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime > 0.05)
     )
     (cant_merge_echotime_dwi_row,) = np.flatnonzero(
-        summary_df.EntitySet.str.fullmatch("datatype-dwi_suffix-dwi_acquisition-HASC55AP")
+        summary_df.EntitySet.str.fullmatch(
+            "datatype-dwi_suffix-dwi_acquisition-HASC55AP"
+        )
         & (summary_df.FlipAngle == 90.0)
         & (summary_df.EchoTime < 0.05)
     )
 
     # Set a legal MergeInto value. This effectively fills in data
     # where there was previously as missing FlipAngle
-    summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[complete_dwi_row]
+    summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[
+        complete_dwi_row
+    ]
 
     valid_tsv_file = tsv_prefix + "_valid_summary.tsv"
     summary_df.to_csv(valid_tsv_file, sep="\t", index=False)
 
     # about to merge
-    bod.apply_tsv_changes(valid_tsv_file, original_files_tsv, str(tmp_path / "ok_modified"))
+    bod.apply_tsv_changes(
+        valid_tsv_file, original_files_tsv, str(tmp_path / "ok_modified")
+    )
 
-    assert not file_hash(original_summary_tsv) == file_hash(tmp_path / "ok_modified_summary.tsv")
+    assert not file_hash(original_summary_tsv) == file_hash(
+        tmp_path / "ok_modified_summary.tsv"
+    )
 
     # Add an illegal merge to MergeInto
     summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
@@ -586,7 +625,9 @@ def test_tsv_merge_changes(tmp_path):
 
     with pytest.raises(Exception):
         bod.apply_tsv_changes(
-            invalid_tsv_file, str(tmp_path / "originals_files.tsv"), str(tmp_path / "ok_modified")
+            invalid_tsv_file,
+            str(tmp_path / "originals_files.tsv"),
+            str(tmp_path / "ok_modified"),
         )
 
     # Make sure MergeInto == 0 deletes the param group and all associations
@@ -785,7 +826,10 @@ def test_tsv_creation(tmp_path):
         # if entity sets in rows i and i+1 are the same
         if isummary_df.iloc[i]["EntitySet"] == isummary_df.iloc[i + 1]["EntitySet"]:
             # param group i = param group i+1
-            assert isummary_df.iloc[i]["ParamGroup"] == isummary_df.iloc[i + 1]["ParamGroup"] - 1
+            assert (
+                isummary_df.iloc[i]["ParamGroup"]
+                == isummary_df.iloc[i + 1]["ParamGroup"] - 1
+            )
             # and count i < count i + 1
             assert isummary_df.iloc[i]["Counts"] >= isummary_df.iloc[i + 1]["Counts"]
 
@@ -796,7 +840,9 @@ def test_tsv_creation(tmp_path):
         # if entity sets in rows i and i+1 are the same
         if ifiles_df.iloc[i]["EntitySet"] == ifiles_df.iloc[i + 1]["EntitySet"]:
             # param group i = param group i+1
-            assert ifiles_df.iloc[i]["ParamGroup"] <= ifiles_df.iloc[i + 1]["ParamGroup"]
+            assert (
+                ifiles_df.iloc[i]["ParamGroup"] <= ifiles_df.iloc[i + 1]["ParamGroup"]
+            )
 
 
 def test_apply_tsv_changes(tmp_path):
@@ -865,7 +911,8 @@ def test_apply_tsv_changes(tmp_path):
     #    "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_magnitude1.json"
     # ).exists()
     assert Path(
-        data_root / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.json"
+        data_root
+        / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_magnitude1.json"
     ).exists()
 
     # check that old names are gone!
@@ -873,7 +920,8 @@ def test_apply_tsv_changes(tmp_path):
     #    data_root / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_physio.tsv.gz"
     # ).exists()
     assert Path(
-        data_root / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz"
+        data_root
+        / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz"
     ).exists()
 
     mod2_path = tmp_path / "modified2_summary.tsv"
@@ -1118,9 +1166,7 @@ def test_validator(tmp_path):
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
 
-    assert (
-        ret.returncode == 0
-    ), (
+    assert ret.returncode == 0, (
         "Validator was expected to pass on the clean dataset, "
         f"but returned code {ret.returncode}.\n"
         f"STDOUT:\n{ret.stdout.decode('UTF-8', errors='replace')}\n"
@@ -1158,9 +1204,7 @@ def test_validator(tmp_path):
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
 
-    assert (
-        ret.returncode == 16
-    ), (
+    assert ret.returncode == 16, (
         "Validator was expected to fail after corrupting files, "
         f"but returned code {ret.returncode}.\n"
         "Corrupted files: removed JSON sidecar and modified NIfTI header.\n"
@@ -1204,12 +1248,12 @@ def test_bids_version(tmp_path):
     min_validator_version = Version("2.0.0")
     min_schema_version = Version("0.11.3")
 
-    assert (
-        validator_version >= min_validator_version
-    ), f"Validator version {validator_version} is less than minimum {min_validator_version}"
-    assert (
-        schema_version >= min_schema_version
-    ), f"Schema version {schema_version} is less than minimum {min_schema_version}"
+    assert validator_version >= min_validator_version, (
+        f"Validator version {validator_version} is less than minimum {min_validator_version}"
+    )
+    assert schema_version >= min_schema_version, (
+        f"Schema version {schema_version} is less than minimum {min_schema_version}"
+    )
 
 
 # def test_image(image='pennlinc/bond:latest'):

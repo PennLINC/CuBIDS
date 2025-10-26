@@ -64,8 +64,12 @@ def test_assign_variants_mixed_parameters(base_df):
     result = assign_variants(base_df, ["EchoTime", "FlipAngle"])
 
     # Check variant names include both cluster values and actual values
-    assert result.loc[1, "RenameEntitySet"].endswith("acquisition-VARIANTEchoTimeC2FlipAngle75")
-    assert result.loc[2, "RenameEntitySet"].endswith("acquisition-VARIANTEchoTimeC3FlipAngle60")
+    assert result.loc[1, "RenameEntitySet"].endswith(
+        "acquisition-VARIANTEchoTimeC2FlipAngle75"
+    )
+    assert result.loc[2, "RenameEntitySet"].endswith(
+        "acquisition-VARIANTEchoTimeC3FlipAngle60"
+    )
 
 
 def test_assign_variants_special_parameters(base_df):

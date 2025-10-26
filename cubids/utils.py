@@ -394,8 +394,12 @@ def _get_param_groups(
                     else:
                         example_data["UsedAsFieldmap"] = False
                 else:
-                    for intention_num, intention_entity_set in enumerate(intended_entity_sets):
-                        example_data[f"IntendedForKey{intention_num:02d}"] = intention_entity_set
+                    for intention_num, intention_entity_set in enumerate(
+                        intended_entity_sets
+                    ):
+                        example_data[f"IntendedForKey{intention_num:02d}"] = (
+                            intention_entity_set
+                        )
 
             dfs.append(example_data)
 
@@ -443,7 +447,9 @@ def _get_param_groups(
 
     # Sort by counts and relabel the param groups
     param_groups_with_counts.sort_values(by=["Counts"], inplace=True, ascending=False)
-    param_groups_with_counts["ParamGroup"] = np.arange(param_groups_with_counts.shape[0]) + 1
+    param_groups_with_counts["ParamGroup"] = (
+        np.arange(param_groups_with_counts.shape[0]) + 1
+    )
 
     # Send the new, ordered param group ids to the files list
     ordered_labeled_files = pd.merge(
@@ -491,12 +497,18 @@ def round_params(df, config, modality):
             precision = column_fmt["precision"]
             if df[column_name].apply(lambda x: isinstance(x, (float, int))).any():
                 df[column_name] = df[column_name].round(precision)
-            elif df[column_name].apply(lambda x: isinstance(x, (list, np.ndarray))).any():
+            elif (
+                df[column_name].apply(lambda x: isinstance(x, (list, np.ndarray))).any()
+            ):
                 df[column_name] = df[column_name].apply(
-                    lambda x: np.round(x, precision) if isinstance(x, (list, np.ndarray)) else x
+                    lambda x: np.round(x, precision)
+                    if isinstance(x, (list, np.ndarray))
+                    else x
                 )
             else:
-                raise ValueError(f"Unsupported data type for rounding in column {column_name}")
+                raise ValueError(
+                    f"Unsupported data type for rounding in column {column_name}"
+                )
 
     return df
 
@@ -597,7 +609,9 @@ def cluster_single_parameters(df, config, modality):
                 # For example, if there are four runs with five elements and 10 runs with three
                 # elements, we should cluster the five-element runs separately from the
                 # three-element runs, and account for that in the clustering labels.
-                lengths = ["x".join(str(i) for i in np.array(x).shape) for x in column_data]
+                lengths = [
+                    "x".join(str(i) for i in np.array(x).shape) for x in column_data
+                ]
                 unique_lengths = np.unique(lengths)
                 cluster_idx = 0
                 for unique_length in unique_lengths:
@@ -610,7 +624,9 @@ def cluster_single_parameters(df, config, modality):
 
                         tolerance = to_format[column_name]["tolerance"]
                         clustering = AgglomerativeClustering(
-                            n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                            n_clusters=None,
+                            distance_threshold=tolerance,
+                            linkage="complete",
                         ).fit(array)
 
                         df.loc[sel_rows, f"Cluster_{column_name}"] = (
@@ -627,17 +643,23 @@ def cluster_single_parameters(df, config, modality):
                 # Handle NaNs correctly: Ignore NaNs instead of replacing with -999
                 valid_mask = ~np.isnan(array.flatten())  # Mask of non-NaN values
 
-                if valid_mask.sum() > 1:  # Proceed with clustering only if >1 valid value
+                if (
+                    valid_mask.sum() > 1
+                ):  # Proceed with clustering only if >1 valid value
                     valid_array = array[valid_mask].reshape(-1, 1)
                     tolerance = to_format[column_name]["tolerance"]
 
                     clustering = AgglomerativeClustering(
-                        n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                        n_clusters=None,
+                        distance_threshold=tolerance,
+                        linkage="complete",
                     ).fit(valid_array)
 
                     # Create a full label array and fill only valid entries
                     cluster_labels = np.full_like(
-                        array.flatten(), fill_value=np.max(clustering.labels_) + 1, dtype=float
+                        array.flatten(),
+                        fill_value=np.max(clustering.labels_) + 1,
+                        dtype=float,
                     )
                     cluster_labels[valid_mask] = clustering.labels_
 
@@ -645,7 +667,9 @@ def cluster_single_parameters(df, config, modality):
                 else:
                     # If there's only one unique non-NaN value,
                     # define only two clusters (NaN vs. non-NaN)
-                    cluster_labels = np.full_like(array.flatten(), fill_value=1, dtype=float)
+                    cluster_labels = np.full_like(
+                        array.flatten(), fill_value=1, dtype=float
+                    )
                     cluster_labels[valid_mask] = 0
                     df[f"Cluster_{column_name}"] = cluster_labels
 
@@ -657,7 +681,9 @@ def cluster_single_parameters(df, config, modality):
             if any(isinstance(x, (list, np.ndarray)) for x in column_data):
                 cluster_idx = 0
 
-                column_data = ["|&|".join(str(val) for val in cell) for cell in column_data]
+                column_data = [
+                    "|&|".join(str(val) for val in cell) for cell in column_data
+                ]
                 unique_vals = np.unique(column_data)
                 for val in unique_vals:
                     sel_rows = [i for i, x in enumerate(column_data) if x == val]
@@ -957,7 +983,9 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     valid_datatypes = list(schema["objects"]["datatypes"].keys())
 
     # Remove subject and session from the entities
-    file_entities = {k: v for k, v in out_entities.items() if k not in ["subject", "session"]}
+    file_entities = {
+        k: v for k, v in out_entities.items() if k not in ["subject", "session"]
+    }
     # Limit file entities to valid entities from BIDS (sorted in right order)
     file_entities = {k: out_entities[k] for k in valid_entities if k in file_entities}
     # Replace entity names with keys (e.g., acquisition with acq)
@@ -1201,7 +1229,9 @@ def collect_file_collections(layout, base_file):
     # Add metadata field with BIDS URIs to all files in file collection
     out_metadata["FileCollection"] = [get_bidsuri(f.path, layout.root) for f in files]
 
-    files_metadata = [get_sidecar_metadata(img_to_new_ext(f.path, ".json")) for f in files]
+    files_metadata = [
+        get_sidecar_metadata(img_to_new_ext(f.path, ".json")) for f in files
+    ]
     assert all(bool(meta) for meta in files_metadata), files
     for ent, field in file_collection_entities.items():
         if ent in collected_entities:

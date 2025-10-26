@@ -53,7 +53,9 @@ def _edit_a_nifti(nifti_file):
         The path to the NIfTI file to be edited.
     """
     img = nb.load(nifti_file)
-    new_img = nb.Nifti1Image(np.random.rand(*img.shape), affine=img.affine, header=img.header)
+    new_img = nb.Nifti1Image(
+        np.random.rand(*img.shape), affine=img.affine, header=img.header
+    )
     new_img.to_filename(nifti_file)
 
 

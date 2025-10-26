@@ -54,14 +54,18 @@ def check_merging_operations(action_tsv, raise_on_error=False):
     )
 
     def _check_sdc_cols(meta1, meta2):
-        return {key: meta1[key] for key in sdc_cols} == {key: meta2[key] for key in sdc_cols}
+        return {key: meta1[key] for key in sdc_cols} == {
+            key: meta2[key] for key in sdc_cols
+        }
 
     needs_merge = actions[np.isfinite(actions["MergeInto"])]
     for _, row_needs_merge in needs_merge.iterrows():
         source_param_key = tuple(row_needs_merge[["MergeInto", "EntitySet"]])
         dest_param_key = tuple(row_needs_merge[["ParamGroup", "EntitySet"]])
         dest_metadata = row_needs_merge.to_dict()
-        source_row = actions.loc[(actions[["ParamGroup", "EntitySet"]] == source_param_key).all(1)]
+        source_row = actions.loc[
+            (actions[["ParamGroup", "EntitySet"]] == source_param_key).all(1)
+        ]
 
         if source_param_key[0] == 0:
             print("going to delete ", dest_param_key)
@@ -300,7 +304,9 @@ def get_acq_dictionary(is_longitudinal=False):
     return acq_dict
 
 
-def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level, is_longitudinal=False):
+def group_by_acquisition_sets(
+    files_tsv, output_prefix, acq_group_level, is_longitudinal=False
+):
     """Find unique sets of Key/Param groups across subjects.
 
     This writes out the following files:
@@ -365,15 +371,23 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level, is_long
     acq_group_info = []
     for groupnum, content_id_row in enumerate(descending_order, start=1):
         content_id = content_ids[content_id_row]
-        acq_group_info.append((groupnum, content_id_counts[content_id_row]) + content_id)
+        acq_group_info.append(
+            (groupnum, content_id_counts[content_id_row]) + content_id
+        )
         if is_longitudinal:
             for subject, session in contents_to_subjects[content_id]:
                 grouped_sub_sess.append(
-                    {"subject": "sub-" + subject, "session": session, "AcqGroup": groupnum}
+                    {
+                        "subject": "sub-" + subject,
+                        "session": session,
+                        "AcqGroup": groupnum,
+                    }
                 )
         elif not is_longitudinal:
             for subject in contents_to_subjects[content_id]:
-                grouped_sub_sess.append({"subject": "sub-" + subject, "AcqGroup": groupnum})
+                grouped_sub_sess.append(
+                    {"subject": "sub-" + subject, "AcqGroup": groupnum}
+                )
 
     # Write the mapping of subject/session to
     acq_group_df = pd.DataFrame(grouped_sub_sess)

@@ -123,7 +123,9 @@ class CuBIDS(object):
         self.data_dict = {}  # data dictionary for TSV outputs
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
         self.schema = load_schema(schema_json)
-        self.is_longitudinal = self._infer_longitudinal()  # inferred from dataset structure
+        self.is_longitudinal = (
+            self._infer_longitudinal()
+        )  # inferred from dataset structure
 
         if self.use_datalad:
             self.init_datalad()
@@ -186,7 +188,9 @@ class CuBIDS(object):
             re.compile(r"/\."),
         ]
 
-        indexer = bids.BIDSLayoutIndexer(validate=validate, ignore=ignores, index_metadata=False)
+        indexer = bids.BIDSLayoutIndexer(
+            validate=validate, ignore=ignores, index_metadata=False
+        )
 
         self._layout = bids.BIDSLayout(self.path, validate=validate, indexer=indexer)
 
@@ -293,7 +297,9 @@ class CuBIDS(object):
             If there are untracked changes in the datalad dataset.
         """
         if not self.is_datalad_clean():
-            raise Exception("Untracked changes present. Run clear_untracked_changes first")
+            raise Exception(
+                "Untracked changes present. Run clear_untracked_changes first"
+            )
         reset_proc = subprocess.run(["git", "reset", "--hard", "HEAD~1"], cwd=self.path)
         reset_proc.check_returncode()
 
@@ -417,7 +423,9 @@ class CuBIDS(object):
                 continue
 
             # Add file collection metadata to the sidecar
-            files, collection_metadata = utils.collect_file_collections(self.layout, path)
+            files, collection_metadata = utils.collect_file_collections(
+                self.layout, path
+            )
             filepaths = [f.path for f in files]
             checked_files.extend(filepaths)
 
@@ -439,7 +447,9 @@ class CuBIDS(object):
 
         self.reset_bids_layout()
 
-    def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True):
+    def apply_tsv_changes(
+        self, summary_tsv, files_tsv, new_prefix, raise_on_error=True
+    ):
         """Apply changes documented in the edited summary tsv and generate the new tsv files.
 
         This function looks at the RenameEntitySet and MergeInto
@@ -475,11 +485,15 @@ class CuBIDS(object):
         files_df = pd.read_table(files_tsv)
 
         # Check that the MergeInto column only contains valid merges
-        ok_merges, deletions = check_merging_operations(summary_tsv, raise_on_error=raise_on_error)
+        ok_merges, deletions = check_merging_operations(
+            summary_tsv, raise_on_error=raise_on_error
+        )
 
         merge_commands = []
         for source_id, dest_id in ok_merges:
-            dest_files = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == dest_id).all(1)]
+            dest_files = files_df.loc[
+                (files_df[["ParamGroup", "EntitySet"]] == dest_id).all(1)
+            ]
             source_files = files_df.loc[
                 (files_df[["ParamGroup", "EntitySet"]] == source_id).all(1)
             ]
@@ -490,12 +504,16 @@ class CuBIDS(object):
             for dest_nii in dest_files.FilePath:
                 dest_json = utils.img_to_new_ext(self.path + dest_nii, ".json")
                 if Path(dest_json).exists() and Path(source_json).exists():
-                    merge_commands.append(f"cubids bids-sidecar-merge {source_json} {dest_json}")
+                    merge_commands.append(
+                        f"cubids bids-sidecar-merge {source_json} {dest_json}"
+                    )
 
         # Get the delete commands
         to_remove = []
         for rm_id in deletions:
-            files_to_rm = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)]
+            files_to_rm = files_df.loc[
+                (files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)
+            ]
 
             for rm_me in files_to_rm.FilePath:
                 if Path(self.path + rm_me).exists():
@@ -730,13 +748,17 @@ class CuBIDS(object):
                         # remove old filename
                         data["IntendedFor"].remove(item)
                         # add new filename
-                        data["IntendedFor"].append(utils._get_participant_relative_path(new_path))
+                        data["IntendedFor"].append(
+                            utils._get_participant_relative_path(new_path)
+                        )
 
                     if item == utils._get_bidsuri(filepath, self.path):
                         # remove old filename
                         data["IntendedFor"].remove(item)
                         # add new filename
-                        data["IntendedFor"].append(utils._get_bidsuri(new_path, self.path))
+                        data["IntendedFor"].append(
+                            utils._get_bidsuri(new_path, self.path)
+                        )
 
                 # update the json with the new data dictionary
                 utils._update_json(filename_with_if, data)
@@ -913,7 +935,9 @@ class CuBIDS(object):
 
                 if "/func/" in str(path):
                     # add tsvs
-                    tsv = utils.img_to_new_ext(str(path), ".tsv").replace("_bold", "_events")
+                    tsv = utils.img_to_new_ext(str(path), ".tsv").replace(
+                        "_bold", "_events"
+                    )
                     if Path(tsv).exists():
                         to_remove.append(tsv)
                     # add tsv json (if exists)
@@ -1268,17 +1292,23 @@ class CuBIDS(object):
             long_name = big_df.loc[row, "FilePath"]
             big_df.loc[row, "FilePath"] = long_name.replace(self.path, "")
 
-        summary = utils._order_columns(pd.concat(param_group_summaries, ignore_index=True))
+        summary = utils._order_columns(
+            pd.concat(param_group_summaries, ignore_index=True)
+        )
 
         # create new col that strings key and param group together
-        summary["KeyParamGroup"] = summary["EntitySet"] + "__" + summary["ParamGroup"].map(str)
+        summary["KeyParamGroup"] = (
+            summary["EntitySet"] + "__" + summary["ParamGroup"].map(str)
+        )
 
         # move this column to the front of the dataframe
         key_param_col = summary.pop("KeyParamGroup")
         summary.insert(0, "KeyParamGroup", key_param_col)
 
         # do the same for the files df
-        big_df["KeyParamGroup"] = big_df["EntitySet"] + "__" + big_df["ParamGroup"].map(str)
+        big_df["KeyParamGroup"] = (
+            big_df["EntitySet"] + "__" + big_df["ParamGroup"].map(str)
+        )
 
         # move this column to the front of the dataframe
         key_param_col = big_df.pop("KeyParamGroup")
@@ -1353,8 +1383,12 @@ class CuBIDS(object):
 
         big_df, summary = self.get_param_groups_dataframes()
 
-        summary = summary.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
-        big_df = big_df.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
+        summary = summary.sort_values(
+            by=["Modality", "EntitySetCount"], ascending=[True, False]
+        )
+        big_df = big_df.sort_values(
+            by=["Modality", "EntitySetCount"], ascending=[True, False]
+        )
 
         # Create json dictionaries for summary and files tsvs
         self.create_data_dictionary()

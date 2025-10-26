@@ -18,7 +18,9 @@ import pandas as pd
 logger = logging.getLogger("cubids-cli")
 
 
-def build_validator_call(path, local_validator=False, ignore_headers=False, schema=None):
+def build_validator_call(
+    path, local_validator=False, ignore_headers=False, schema=None
+):
     """Build a subprocess command to the bids validator.
 
     Parameters
@@ -42,7 +44,15 @@ def build_validator_call(path, local_validator=False, ignore_headers=False, sche
     if local_validator:
         command = ["bids-validator", path, "--verbose", "--json"]
     else:
-        command = ["deno", "run", "-A", "jsr:@bids/validator", path, "--verbose", "--json"]
+        command = [
+            "deno",
+            "run",
+            "-A",
+            "jsr:@bids/validator",
+            path,
+            "--verbose",
+            "--json",
+        ]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")
@@ -111,7 +121,9 @@ def build_subject_paths(bids_dir):
     subjects = glob.glob(bids_dir)
 
     if len(subjects) < 1:
-        raise ValueError("Couldn't find any subjects in the specified directory:\n" + bids_dir)
+        raise ValueError(
+            "Couldn't find any subjects in the specified directory:\n" + bids_dir
+        )
 
     subjects_dict = {}
 

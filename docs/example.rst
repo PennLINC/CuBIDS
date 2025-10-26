@@ -181,8 +181,18 @@ BIDS validation
 .. note::
     The use of the ``--sequential`` flag forces the validator to treat each participant as its
     own BIDS dataset.
-    This can be helpful for identifying heterogeneous elements,
-    but can be slowed down by extremely large datasets.
+    This can be helpful for identifying heterogeneous elements, 
+    or validating large datasets that would otherwise result in 
+    "RangeError: Invalid string length" errors when the validator crashes 
+    (producing empty STDOUT) because the JSON output is too large to serialize.
+    
+    But ``--sequential`` can be slowed down by extremely large datasets. 
+    To speed up validation, you can use the ``--n-cpus`` flag to enable parallel processing. 
+    For example, to validate using 4 CPUs:
+    
+    .. code-block:: console
+    
+        $ cubids validate BIDS_Dataset_DataLad v0 --sequential --n-cpus 4
 
 .. warning::
     For internetless use cases, please see dedicated section of the `Installation page

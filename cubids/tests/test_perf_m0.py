@@ -78,4 +78,3 @@ def test_m0_not_renamed_but_aslcontext_is_and_intendedfor_updated(tmp_path):
     assert new_rel in m0_meta["IntendedFor"]
     # Ensure old reference removed
     assert intended_for_rel not in m0_meta["IntendedFor"]
-

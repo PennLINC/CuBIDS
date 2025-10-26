@@ -186,6 +186,17 @@ def _parse_validate():
         ),
         required=False,
     )
+    parser.add_argument(
+        "--n-cpus",
+        type=int,
+        action="store",
+        default=1,
+        help=(
+            "Number of CPUs to use for parallel validation when --sequential is used. "
+            "Defaults to 1 (sequential processing)."
+        ),
+        required=False,
+    )
     return parser
 
 
@@ -278,7 +289,9 @@ def _parse_bids_sidecar_merge():
     The `IsFile` partial function is used to validate that the provided file paths exist.
     """
     parser = argparse.ArgumentParser(
-        description=("bids-sidecar-merge: merge critical keys from one sidecar to another"),
+        description=(
+            "bids-sidecar-merge: merge critical keys from one sidecar to another"
+        ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         allow_abbrev=False,
     )
@@ -369,7 +382,9 @@ def _parse_group():
         default="subject",
         choices=["subject", "session"],
         action="store",
-        help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
+        help=(
+            "Level at which acquisition groups are created options: 'subject' or 'session'"
+        ),
     )
     parser.add_argument(
         "--config",
@@ -431,7 +446,9 @@ def _parse_apply():
         The argument parser with the defined arguments.
     """
     parser = argparse.ArgumentParser(
-        description=("cubids apply: apply the changes specified in a tsv to a BIDS directory"),
+        description=(
+            "cubids apply: apply the changes specified in a tsv to a BIDS directory"
+        ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         allow_abbrev=False,
     )
@@ -495,7 +512,9 @@ def _parse_apply():
         default="subject",
         choices=["subject", "session"],
         action="store",
-        help=("Level at which acquisition groups are created options: 'subject' or 'session'"),
+        help=(
+            "Level at which acquisition groups are created options: 'subject' or 'session'"
+        ),
     )
     parser.add_argument(
         "--config",
@@ -1017,12 +1036,24 @@ COMMANDS = [
     ("apply", _parse_apply, workflows.apply),
     ("purge", _parse_purge, workflows.purge),
     ("add-nifti-info", _parse_add_nifti_info, workflows.add_nifti_info),
-    ("add-file-collections", _parse_add_file_collections, workflows.add_file_collections),
+    (
+        "add-file-collections",
+        _parse_add_file_collections,
+        workflows.add_file_collections,
+    ),
     ("copy-exemplars", _parse_copy_exemplars, workflows.copy_exemplars),
     ("undo", _parse_undo, workflows.undo),
     ("datalad-save", _parse_datalad_save, workflows.datalad_save),
-    ("print-metadata-fields", _parse_print_metadata_fields, workflows.print_metadata_fields),
-    ("remove-metadata-fields", _parse_remove_metadata_fields, workflows.remove_metadata_fields),
+    (
+        "print-metadata-fields",
+        _parse_print_metadata_fields,
+        workflows.print_metadata_fields,
+    ),
+    (
+        "remove-metadata-fields",
+        _parse_remove_metadata_fields,
+        workflows.remove_metadata_fields,
+    ),
 ]
 
 
@@ -1041,7 +1072,9 @@ def _get_parser():
     from cubids import __version__
 
     parser = argparse.ArgumentParser(prog="cubids", allow_abbrev=False)
-    parser.add_argument("-v", "--version", action="version", version=f"cubids v{__version__}")
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"cubids v{__version__}"
+    )
     subparsers = parser.add_subparsers(help="CuBIDS commands")
 
     for command, parser_func, run_func in COMMANDS:

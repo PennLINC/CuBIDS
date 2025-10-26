@@ -16,7 +16,12 @@ def test_add_file_collections(tmp_path):
     add_file_collections(str(bids_dir), use_datalad=False, force_unlock=True)
 
     # A JSON sidecar that's part of a file collection should be modified.
-    f1 = bids_dir / "sub-01" / "func" / "sub-01_task-rest_acq-meepi_echo-3_part-phase_bold.json"
+    f1 = (
+        bids_dir
+        / "sub-01"
+        / "func"
+        / "sub-01_task-rest_acq-meepi_echo-3_part-phase_bold.json"
+    )
     assert f1.exists()
     expected = {
         "EchoTime": 0.45,
@@ -36,7 +41,12 @@ def test_add_file_collections(tmp_path):
 
     # A JSON sidecar that's part of a file collection should be modified.
     # Same as above, but with a different file collection (4-echo).
-    f2 = bids_dir / "sub-02" / "func" / "sub-02_task-rest_acq-meepi_echo-3_part-mag_bold.json"
+    f2 = (
+        bids_dir
+        / "sub-02"
+        / "func"
+        / "sub-02_task-rest_acq-meepi_echo-3_part-mag_bold.json"
+    )
     assert f2.exists()
     expected = {
         "EchoTime": 0.45,
