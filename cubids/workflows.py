@@ -198,9 +198,7 @@ def validate(
         parsed = []
 
         if sequential_subjects:
-            subjects_dict = {
-                k: v for k, v in subjects_dict.items() if k in sequential_subjects
-            }
+            subjects_dict = {k: v for k, v in subjects_dict.items() if k in sequential_subjects}
         assert len(list(subjects_dict.keys())) > 1, "No subjects found in filter"
 
         # Convert schema Path to string if it exists (for multiprocessing pickling)
