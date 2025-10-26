@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import shutil
+import errno
 import subprocess
 import sys
 import tempfile
@@ -60,7 +61,31 @@ def _validate_single_subject(args):
     # Convert schema string back to Path if it exists
     schema_path = Path(schema) if schema is not None else None
 
-    # Create temporary directory and copy the data
+    def _link_or_copy(src_path, dst_path):
+        """Materialize src_path at dst_path favoring hardlinks, then symlinks, then copy.
+
+        This minimizes disk I/O and maximizes throughput when many subjects are processed.
+        """
+        # If destination already exists (rare with temp dirs), skip
+        if os.path.exists(dst_path):
+            return
+        try:
+            # Prefer hardlink when on the same filesystem
+            os.link(src_path, dst_path)
+            return
+        except OSError as e:
+            # EXDEV: cross-device link; fallback to symlink
+            if e.errno != errno.EXDEV:
+                # Other hardlink errors may still allow symlink
+                pass
+        try:
+            os.symlink(src_path, dst_path)
+            return
+        except OSError:
+            # Fallback to a regular copy as last resort
+            shutil.copy2(src_path, dst_path)
+
+    # Create temporary directory and populate with links
     with tempfile.TemporaryDirectory() as tmpdir:
         for file_path in files_list:
             # Cut the path down to the subject label
@@ -68,7 +93,6 @@ def _validate_single_subject(args):
 
             # Maybe it's a single file (root-level file)
             if bids_start < 1:
-                bids_folder = tmpdir
                 tmp_file_dir = tmpdir
             else:
                 bids_folder = Path(file_path[bids_start:]).parent
@@ -78,7 +102,7 @@ def _validate_single_subject(args):
                 os.makedirs(tmp_file_dir)
 
             output_path = os.path.join(tmp_file_dir, str(Path(file_path).name))
-            shutil.copy2(file_path, output_path)
+            _link_or_copy(file_path, output_path)
 
         # Run the validator
         call = build_validator_call(
@@ -106,6 +130,7 @@ def validate(
     ignore_nifti_headers,
     schema,
     n_cpus=1,
+    max_workers=None,
 ):
     """Run the bids validator.
 
@@ -128,9 +153,22 @@ def validate(
     n_cpus : :obj:`int`
         Number of CPUs to use for parallel validation (only when sequential=True).
         Default is 1 (sequential processing).
+    max_workers : :obj:`int` or None
+        Maximum number of parallel workers. If None, automatically optimized
+        using formula: sqrt(n_cpus * 16) to balance I/O throughput. Set explicitly
+        to override (e.g., for I/O-constrained systems).
     """
     # Ensure n_cpus is at least 1
     n_cpus = max(1, n_cpus)
+    # Derive effective worker count: honor explicit max_workers; otherwise use heuristic
+    if max_workers is not None:
+        effective_workers = max(1, int(max_workers))
+    else:
+        # Heuristic tuned for I/O-bound workloads materializing files + validator runs.
+        # sqrt(n_cpus * 16) caps concurrency to avoid disk thrashing while keeping CPU busy.
+        effective_workers = max(1, int((n_cpus * 16) ** 0.5))
+        # Do not exceed n_cpus unless user explicitly asks via --max-workers
+        effective_workers = min(effective_workers, n_cpus)
 
     # check status of output_prefix, absolute or relative?
     abs_path_output = True
@@ -210,10 +248,12 @@ def validate(
             for subject, files_list in subjects_dict.items()
         ]
 
-        # Use parallel processing if n_cpus > 1
-        if n_cpus > 1:
-            logger.info(f"Using {n_cpus} CPUs for parallel validation")
-            with ProcessPoolExecutor(max_workers=n_cpus) as executor:
+        # Use parallel processing if more than one worker requested
+        if effective_workers > 1:
+            logger.info(
+                f"Using up to {effective_workers} parallel workers (n_cpus={n_cpus}) for validation"
+            )
+            with ProcessPoolExecutor(max_workers=effective_workers) as executor:
                 # Submit all tasks
                 future_to_subject = {
                     executor.submit(_validate_single_subject, args): args[0]
@@ -235,25 +275,34 @@ def validate(
         else:
             # Sequential processing
             for subject, files_list in tqdm.tqdm(subjects_dict.items()):
-                # logger.info(" ".join(["Processing subject:", subject]))
-                # Create a temporary directory and copy the data
+                # Create a temporary directory and populate with links
                 with tempfile.TemporaryDirectory() as tmpdirname:
+                    def _link_or_copy(src_path, dst_path):
+                        if os.path.exists(dst_path):
+                            return
+                        try:
+                            os.link(src_path, dst_path)
+                        except OSError as e:
+                            if e.errno != errno.EXDEV:
+                                pass
+                            try:
+                                os.symlink(src_path, dst_path)
+                            except OSError:
+                                shutil.copy2(src_path, dst_path)
+
                     for file_path in files_list:
-                        # Cut the path down to the subject label
                         bids_start = file_path.find(subject)
 
-                        # Maybe it's a single file (root-level file)
                         if bids_start < 1:
-                            bids_folder = tmpdirname
                             tmp_file_dir = tmpdirname
                         else:
                             bids_folder = Path(file_path[bids_start:]).parent
-                            tmp_file_dir = tmpdirname + "/" + str(bids_folder)
+                            tmp_file_dir = os.path.join(tmpdirname, str(bids_folder))
 
                         if not os.path.exists(tmp_file_dir):
                             os.makedirs(tmp_file_dir)
-                        output = tmp_file_dir + "/" + str(Path(file_path).name)
-                        shutil.copy2(file_path, output)
+                        output = os.path.join(tmp_file_dir, str(Path(file_path).name))
+                        _link_or_copy(file_path, output)
 
                     # Run the validator
                     nifti_head = ignore_nifti_headers
@@ -261,11 +310,9 @@ def validate(
                         tmpdirname, local_validator, nifti_head, schema=schema
                     )
                     ret = run_validator(call)
-                    # Parse output
                     if ret.returncode != 0:
                         logger.error("Errors returned from validator run, parsing now")
 
-                    # Parse the output and add to list if it returns a df
                     decoded = ret.stdout.decode("UTF-8")
                     tmp_parse = parse_validator_output(decoded)
                     if tmp_parse.shape[1] > 1:

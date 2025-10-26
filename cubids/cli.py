@@ -188,12 +188,27 @@ def _parse_validate():
     )
     parser.add_argument(
         "--n-cpus",
+        "--n_cpus",
         type=int,
         action="store",
+        dest="n_cpus",
         default=1,
         help=(
             "Number of CPUs to use for parallel validation when --sequential is used. "
             "Defaults to 1 (sequential processing)."
+        ),
+        required=False,
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        action="store",
+        dest="max_workers",
+        default=None,
+        help=(
+            "Maximum number of parallel workers to use for validation. "
+            "If not specified, automatically optimized for I/O-bound workloads. "
+            "Set this to explicitly control parallelism (e.g., to avoid disk I/O contention)."
         ),
         required=False,
     )
