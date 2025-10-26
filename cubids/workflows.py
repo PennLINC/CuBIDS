@@ -275,37 +275,34 @@ def validate(
         # concatenate the parsed data and exit
         if len(parsed) < 1:
             logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
-            return
-
+            # Create empty parsed DataFrame to ensure output files are written
+            parsed = pd.DataFrame()
         else:
             parsed = pd.concat(parsed, axis=0, ignore_index=True)
             subset = parsed.columns.difference(["subject"])
             parsed = parsed.drop_duplicates(subset=subset)
-
             logger.info("BIDS issues/warnings found in the dataset")
 
-            if output_prefix:
-                # normally, write dataframe to file in CLI
-                if abs_path_output:
-                    val_tsv = str(output_prefix) + "_validation.tsv"
-                else:
-                    val_tsv = (
-                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
-                    )
-
-                parsed.to_csv(val_tsv, sep="\t", index=False)
-
-                # build validation data dictionary json sidecar
-                val_dict = get_val_dictionary()
-                val_json = val_tsv.replace("tsv", "json")
-                with open(val_json, "w") as outfile:
-                    json.dump(val_dict, outfile, indent=4)
-
-                logger.info("Writing issues out to file %s", val_tsv)
-                return
+        if output_prefix:
+            # normally, write dataframe to file in CLI
+            if abs_path_output:
+                val_tsv = str(output_prefix) + "_validation.tsv"
             else:
-                # user may be in python session, return dataframe
-                return parsed
+                val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
+
+            parsed.to_csv(val_tsv, sep="\t", index=False)
+
+            # build validation data dictionary json sidecar
+            val_dict = get_val_dictionary()
+            val_json = val_tsv.replace("tsv", "json")
+            with open(val_json, "w") as outfile:
+                json.dump(val_dict, outfile, indent=4)
+
+            logger.info("Writing issues out to file %s", val_tsv)
+            return
+        else:
+            # user may be in python session, return dataframe
+            return parsed
 
 
 def bids_version(bids_dir, write=False, schema=None):

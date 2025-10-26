@@ -262,8 +262,9 @@ def test_validate_sequential_with_n_cpus(tmp_path):
     # This should complete without error
     _main(["validate", str(bids_dir), str(output_prefix), "--sequential", "--n-cpus", "1"])
 
-    # Verify the command completed successfully by checking if the output directory exists
-    assert (bids_dir / "code" / "CuBIDS").exists()
+    # Verify the command completed successfully by checking if the output files exist
+    assert (output_prefix.parent / f"{output_prefix.name}_validation.tsv").exists()
+    assert (output_prefix.parent / f"{output_prefix.name}_validation.json").exists()
 
 
 def test_group_command_with_test_dataset(tmp_path):
