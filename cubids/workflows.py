@@ -210,12 +210,7 @@ def validate(
                 val_tsv = str(output_prefix) + "_validation.tsv"
 
             else:
-                val_tsv = (
-                    str(bids_dir)
-                    + "/code/CuBIDS/"
-                    + str(output_prefix)
-                    + "_validation.tsv"
-                )
+                val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
 
             parsed.to_csv(val_tsv, sep="\t", index=False)
 
@@ -354,12 +349,7 @@ def validate(
             if abs_path_output:
                 val_tsv = str(output_prefix) + "_validation.tsv"
             else:
-                val_tsv = (
-                    str(bids_dir)
-                    + "/code/CuBIDS/"
-                    + str(output_prefix)
-                    + "_validation.tsv"
-                )
+                val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
 
             parsed.to_csv(val_tsv, sep="\t", index=False)
 
