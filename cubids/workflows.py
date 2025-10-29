@@ -127,27 +127,32 @@ def _validate_single_subject(args):
         if not os.path.exists(subject_folder_path):
             os.makedirs(subject_folder_path, exist_ok=True)
 
-        # Ensure participants.tsv is available in temp root
+        # Ensure participants.tsv is available in temp root and is a copy (not a link)
         # Always COPY (never link) to avoid modifying the original file when filtering
         participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
-        if not os.path.exists(participants_tsv_path):
-            # Try to find a source participants.tsv in the provided file list
+        # Always remove existing file first in case it was linked in the earlier loop
+        if os.path.exists(participants_tsv_path):
             try:
-                source_participants_tsv_path = None
-                for candidate_path in files_list:
-                    if os.path.basename(candidate_path) == "participants.tsv":
-                        source_participants_tsv_path = candidate_path
-                        break
-                # If not in file list, try to get it from the original bids_dir
-                if not source_participants_tsv_path and bids_dir:
-                    potential_path = os.path.join(bids_dir, "participants.tsv")
-                    if os.path.exists(potential_path):
-                        source_participants_tsv_path = potential_path
-                if source_participants_tsv_path:
-                    # Always copy (not link) to protect the original file from modification
-                    shutil.copy2(source_participants_tsv_path, participants_tsv_path)
+                os.remove(participants_tsv_path)
             except Exception:  # noqa: BLE001
                 pass
+        # Try to find a source participants.tsv in the provided file list
+        try:
+            source_participants_tsv_path = None
+            for candidate_path in files_list:
+                if os.path.basename(candidate_path) == "participants.tsv":
+                    source_participants_tsv_path = candidate_path
+                    break
+            # If not in file list, try to get it from the original bids_dir
+            if not source_participants_tsv_path and bids_dir:
+                potential_path = os.path.join(bids_dir, "participants.tsv")
+                if os.path.exists(potential_path):
+                    source_participants_tsv_path = potential_path
+            if source_participants_tsv_path:
+                # Always copy (not link) to protect the original file from modification
+                shutil.copy2(source_participants_tsv_path, participants_tsv_path)
+        except Exception:  # noqa: BLE001
+            pass
 
         # If participants.tsv exists in the temp BIDS root, filter to current subject
         if os.path.exists(participants_tsv_path):
@@ -334,125 +339,11 @@ def validate(
                         finally:
                             pbar.update(1)
         else:
-            # Sequential processing
-            def _link_or_copy(src_path, dst_path):
-                """Materialize src_path at dst_path favoring hardlinks, then symlinks, then copy.
-
-                This minimizes disk I/O and maximizes throughput when many subjects are processed.
-                """
-                # If destination already exists (rare with temp dirs), skip
-                if os.path.exists(dst_path):
-                    return
-                try:
-                    # Prefer hardlink when on the same filesystem
-                    os.link(src_path, dst_path)
-                    return
-                except OSError as e:
-                    # EXDEV: cross-device link; fallback to symlink
-                    if e.errno != errno.EXDEV:
-                        # Other hardlink errors may still allow symlink
-                        pass
-                try:
-                    os.symlink(src_path, dst_path)
-                    return
-                except OSError:
-                    # Fallback to a regular copy as last resort
-                    shutil.copy2(src_path, dst_path)
-
-            for subject, files_list in tqdm.tqdm(subjects_dict.items()):
-                # Create a temporary directory and populate with links
-                with tempfile.TemporaryDirectory() as temporary_bids_dir:
-
-                    for file_path in files_list:
-                        bids_start = file_path.find(subject)
-
-                        if bids_start < 1:
-                            tmp_file_dir = temporary_bids_dir
-                        else:
-                            bids_folder = Path(file_path[bids_start:]).parent
-                            tmp_file_dir = os.path.join(temporary_bids_dir, str(bids_folder))
-
-                        if not os.path.exists(tmp_file_dir):
-                            os.makedirs(tmp_file_dir)
-                        output = os.path.join(tmp_file_dir, str(Path(file_path).name))
-                        _link_or_copy(file_path, output)
-
-                    # Ensure dataset_description.json is available in temp root
-                    dataset_description_path = os.path.join(
-                        temporary_bids_dir, "dataset_description.json"
-                    )
-                    if not os.path.exists(dataset_description_path):
-                        # Try to find dataset_description.json in the provided file list first
-                        source_dataset_description_path = None
-                        for candidate_path in files_list:
-                            if os.path.basename(candidate_path) == "dataset_description.json":
-                                source_dataset_description_path = candidate_path
-                                break
-                        # If not in file list, try to get it from the original bids_dir
-                        if not source_dataset_description_path:
-                            potential_path = os.path.join(bids_dir, "dataset_description.json")
-                            if os.path.exists(potential_path):
-                                source_dataset_description_path = potential_path
-                        if source_dataset_description_path:
-                            _link_or_copy(
-                                source_dataset_description_path, dataset_description_path
-                            )
-
-                    # Ensure the subject folder exists as a directory in temp root
-                    subject_folder_path = os.path.join(temporary_bids_dir, subject)
-                    if not os.path.exists(subject_folder_path):
-                        os.makedirs(subject_folder_path, exist_ok=True)
-
-                    # Ensure participants.tsv exists
-                    participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
-                    if not os.path.exists(participants_tsv_path):
-                        try:
-                            source_participants_tsv_path = None
-                            for candidate_path in files_list:
-                                if os.path.basename(candidate_path) == "participants.tsv":
-                                    source_participants_tsv_path = candidate_path
-                                    break
-                            # If not in file list, try to get it from the original bids_dir
-                            if not source_participants_tsv_path:
-                                potential_path = os.path.join(bids_dir, "participants.tsv")
-                                if os.path.exists(potential_path):
-                                    source_participants_tsv_path = potential_path
-                            if source_participants_tsv_path:
-                                # Always copy (not link) to protect original file
-                                shutil.copy2(source_participants_tsv_path, participants_tsv_path)
-                        except Exception:  # noqa: BLE001
-                            pass
-
-                    if os.path.exists(participants_tsv_path):
-                        try:
-                            participants_table = pd.read_csv(participants_tsv_path, sep="\t")
-                            if "participant_id" in participants_table.columns:
-                                participant_ids = participants_table["participant_id"]
-                                is_current_subject = participant_ids.eq(subject)
-                                participants_table = participants_table[is_current_subject]
-                                participants_table.to_csv(
-                                    participants_tsv_path,
-                                    sep="\t",
-                                    index=False,
-                                )
-                        except Exception as e:  # noqa: F841
-                            # Non-fatal: continue validation even if filtering fails
-                            pass
-
-                    # Run the validator
-                    nifti_head = ignore_nifti_headers
-                    call = build_validator_call(
-                        temporary_bids_dir, local_validator, nifti_head, schema=schema
-                    )
-                    ret = run_validator(call)
-                    if ret.returncode != 0:
-                        logger.error("Errors returned from validator run, parsing now")
-
-                    decoded = ret.stdout.decode("UTF-8")
-                    tmp_parse = parse_validator_output(decoded)
-                    if tmp_parse.shape[1] > 1:
-                        tmp_parse["subject"] = subject
-                        parsed.append(tmp_parse)
+            # Sequential processing using the same helper as the parallel path
+            for args in tqdm.tqdm(validation_args, desc="Validating subjects"):
+                subject, result = _validate_single_subject(args)
+                if result is not None and result.shape[1] > 1:
+                    parsed.append(result)
 
         # concatenate the parsed data and exit
         if len(parsed) < 1:
