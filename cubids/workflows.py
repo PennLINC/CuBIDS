@@ -180,7 +180,7 @@ def validate(
         'subject' validates each subject separately.
     participant_label : :obj:`list` of :obj:`str` or None
         Filter the validation to only include the listed subjects.
-        Only applies when validation_scope='subject'. Ignored for dataset-level validation.
+        When provided, validation_scope is automatically set to 'subject' by the CLI.
     local_validator : :obj:`bool`
         Use the local bids validator.
     ignore_nifti_headers : :obj:`bool`
@@ -208,12 +208,7 @@ def validate(
     # Run directly from python using subprocess
     if validation_scope == "dataset":
         # run on full dataset
-        # Note: participant_label is ignored for dataset-level validation
-        if participant_label:
-            logger.warning(
-                "participant_label is ignored when validation_scope='dataset'. "
-                "Use validation_scope='subject' to filter by participant."
-            )
+        # Note: participant_label is automatically ignored for dataset-level validation
         call = build_validator_call(
             str(bids_dir),
             local_validator,
