@@ -37,7 +37,7 @@ logging.getLogger("datalad").setLevel(logging.ERROR)
 def _validate_single_subject(args):
     """Validate a single subject in a temporary directory.
 
-    This is a helper function designed to be called in parallel for sequential validation.
+    This is a helper function designed to be called in parallel for --validation-scope subject.
     It processes one subject at a time and returns the validation results.
 
     Parameters
@@ -192,11 +192,6 @@ def validate(
     """
     # Ensure n_cpus is at least 1
     n_cpus = max(1, n_cpus)
-    # Derive effective worker count using heuristic
-    # Heuristic tuned for I/O-bound workloads materializing files + validator runs.
-    effective_workers = max(1, int((n_cpus * 16) ** 0.5))
-    # Do not exceed n_cpus
-    effective_workers = min(effective_workers, n_cpus)
 
     # check status of output_prefix, absolute or relative?
     abs_path_output = True
@@ -278,12 +273,9 @@ def validate(
         ]
 
         # Use parallel processing if more than one worker requested
-        if effective_workers > 1:
-            logger.info(
-                f"Using up to {effective_workers} parallel workers "
-                f"(n_cpus={n_cpus}) for validation"
-            )
-            with ProcessPoolExecutor(max_workers=effective_workers) as executor:
+        if n_cpus > 1:
+            logger.info(f"Using {n_cpus} parallel CPUs for validation")
+            with ProcessPoolExecutor(n_cpus) as executor:
                 # Submit all tasks
                 future_to_subject = {
                     executor.submit(_validate_single_subject, args): args[0]
