@@ -86,17 +86,17 @@ def _validate_single_subject(args):
             shutil.copy2(src_path, dst_path)
 
     # Create temporary directory and populate with links
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as temporary_bids_dir:
         for file_path in files_list:
             # Cut the path down to the subject label
             bids_start = file_path.find(subject)
 
             # Maybe it's a single file (root-level file)
             if bids_start < 1:
-                tmp_file_dir = tmpdir
+                tmp_file_dir = temporary_bids_dir
             else:
                 bids_folder = Path(file_path[bids_start:]).parent
-                tmp_file_dir = os.path.join(tmpdir, str(bids_folder))
+                tmp_file_dir = os.path.join(temporary_bids_dir, str(bids_folder))
 
             if not os.path.exists(tmp_file_dir):
                 os.makedirs(tmp_file_dir)
@@ -104,9 +104,45 @@ def _validate_single_subject(args):
             output_path = os.path.join(tmp_file_dir, str(Path(file_path).name))
             _link_or_copy(file_path, output_path)
 
+        # Ensure participants.tsv is available in temp root
+        # copy from original file list if missing
+        participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
+        if not os.path.exists(participants_tsv_path):
+            # Try to find a source participants.tsv in the provided file list
+            try:
+                source_participants_tsv_path = None
+                for candidate_path in files_list:
+                    if os.path.basename(candidate_path) == "participants.tsv":
+                        source_participants_tsv_path = candidate_path
+                        break
+                if source_participants_tsv_path:
+                    _link_or_copy(source_participants_tsv_path, participants_tsv_path)
+            except Exception:  # noqa: BLE001
+                pass
+
+        # If participants.tsv exists in the temp BIDS root, filter to current subject
+        if os.path.exists(participants_tsv_path):
+            try:
+                participants_table = pd.read_csv(participants_tsv_path, sep="\t")
+                if "participant_id" in participants_table.columns:
+                    participant_ids = participants_table["participant_id"]
+                    is_current_subject = participant_ids.eq(subject)
+                    participants_table = participants_table[is_current_subject]
+                    participants_table.to_csv(
+                        participants_tsv_path,
+                        sep="\t",
+                        index=False,
+                    )
+            except Exception as e:  # noqa: F841
+                # Non-fatal: continue validation even if filtering fails
+                pass
+
         # Run the validator
         call = build_validator_call(
-            tmpdir, local_validator, ignore_nifti_headers, schema=schema_path
+            temporary_bids_dir,
+            local_validator,
+            ignore_nifti_headers,
+            schema=schema_path,
         )
         result = run_validator(call)
 
@@ -124,13 +160,12 @@ def _validate_single_subject(args):
 def validate(
     bids_dir,
     output_prefix,
-    sequential,
-    sequential_subjects,
+    validation_scope,
+    participant_label,
     local_validator,
     ignore_nifti_headers,
     schema,
     n_cpus=1,
-    max_workers=None,
 ):
     """Run the bids validator.
 
@@ -140,10 +175,11 @@ def validate(
         Path to the BIDS directory.
     output_prefix : :obj:`pathlib.Path`
         Output filename prefix.
-    sequential : :obj:`bool`
-        Run the validator sequentially.
-    sequential_subjects : :obj:`list` of :obj:`str`
-        Filter the sequential run to only include the listed subjects.
+    validation_scope : :obj:`str`
+        Scope of validation: 'dataset' validates the entire dataset,
+        'subject' validates each subject separately.
+    participant_label : :obj:`list` of :obj:`str`
+        Filter the validation to only include the listed subjects.
     local_validator : :obj:`bool`
         Use the local bids validator.
     ignore_nifti_headers : :obj:`bool`
@@ -151,24 +187,16 @@ def validate(
     schema : :obj:`pathlib.Path` or None
         Path to the BIDS schema file.
     n_cpus : :obj:`int`
-        Number of CPUs to use for parallel validation (only when sequential=True).
+        Number of CPUs to use for parallel validation (only when validation_scope='subject').
         Default is 1 (sequential processing).
-    max_workers : :obj:`int` or None
-        Maximum number of parallel workers. If None, automatically optimized
-        using formula: sqrt(n_cpus * 16) to balance I/O throughput. Set explicitly
-        to override (e.g., for I/O-constrained systems).
     """
     # Ensure n_cpus is at least 1
     n_cpus = max(1, n_cpus)
-    # Derive effective worker count: honor explicit max_workers; otherwise use heuristic
-    if max_workers is not None:
-        effective_workers = max(1, int(max_workers))
-    else:
-        # Heuristic tuned for I/O-bound workloads materializing files + validator runs.
-        # sqrt(n_cpus * 16) caps concurrency to avoid disk thrashing while keeping CPU busy.
-        effective_workers = max(1, int((n_cpus * 16) ** 0.5))
-        # Do not exceed n_cpus unless user explicitly asks via --max-workers
-        effective_workers = min(effective_workers, n_cpus)
+    # Derive effective worker count using heuristic
+    # Heuristic tuned for I/O-bound workloads materializing files + validator runs.
+    effective_workers = max(1, int((n_cpus * 16) ** 0.5))
+    # Do not exceed n_cpus
+    effective_workers = min(effective_workers, n_cpus)
 
     # check status of output_prefix, absolute or relative?
     abs_path_output = True
@@ -182,7 +210,7 @@ def validate(
             subprocess.run(["mkdir", str(bids_dir / "code" / "CuBIDS")])
 
     # Run directly from python using subprocess
-    if not sequential:
+    if validation_scope == "dataset":
         # run on full dataset
         call = build_validator_call(
             str(bids_dir),
@@ -236,8 +264,8 @@ def validate(
 
         parsed = []
 
-        if sequential_subjects:
-            subjects_dict = {k: v for k, v in subjects_dict.items() if k in sequential_subjects}
+        if participant_label:
+            subjects_dict = {k: v for k, v in subjects_dict.items() if k in participant_label}
         assert len(list(subjects_dict.keys())) > 1, "No subjects found in filter"
 
         # Convert schema Path to string if it exists (for multiprocessing pickling)
@@ -302,26 +330,56 @@ def validate(
 
             for subject, files_list in tqdm.tqdm(subjects_dict.items()):
                 # Create a temporary directory and populate with links
-                with tempfile.TemporaryDirectory() as tmpdirname:
+                with tempfile.TemporaryDirectory() as temporary_bids_dir:
 
                     for file_path in files_list:
                         bids_start = file_path.find(subject)
 
                         if bids_start < 1:
-                            tmp_file_dir = tmpdirname
+                            tmp_file_dir = temporary_bids_dir
                         else:
                             bids_folder = Path(file_path[bids_start:]).parent
-                            tmp_file_dir = os.path.join(tmpdirname, str(bids_folder))
+                            tmp_file_dir = os.path.join(temporary_bids_dir, str(bids_folder))
 
                         if not os.path.exists(tmp_file_dir):
                             os.makedirs(tmp_file_dir)
                         output = os.path.join(tmp_file_dir, str(Path(file_path).name))
                         _link_or_copy(file_path, output)
 
+                    # Ensure participants.tsv exists; copy if missing, then filter
+                    participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
+                    if not os.path.exists(participants_tsv_path):
+                        try:
+                            source_participants_tsv_path = None
+                            for candidate_path in files_list:
+                                if os.path.basename(candidate_path) == "participants.tsv":
+                                    source_participants_tsv_path = candidate_path
+                                    break
+                            if source_participants_tsv_path:
+                                _link_or_copy(source_participants_tsv_path, participants_tsv_path)
+                        except Exception:  # noqa: BLE001
+                            pass
+
+                    if os.path.exists(participants_tsv_path):
+                        try:
+                            participants_table = pd.read_csv(participants_tsv_path, sep="\t")
+                            if "participant_id" in participants_table.columns:
+                                participant_ids = participants_table["participant_id"]
+                                is_current_subject = participant_ids.eq(subject)
+                                participants_table = participants_table[is_current_subject]
+                                participants_table.to_csv(
+                                    participants_tsv_path,
+                                    sep="\t",
+                                    index=False,
+                                )
+                        except Exception as e:  # noqa: F841
+                            # Non-fatal: continue validation even if filtering fails
+                            pass
+
                     # Run the validator
                     nifti_head = ignore_nifti_headers
                     call = build_validator_call(
-                        tmpdirname, local_validator, nifti_head, schema=schema
+                        temporary_bids_dir, local_validator, nifti_head, schema=schema
                     )
                     ret = run_validator(call)
                     if ret.returncode != 0:
@@ -379,7 +437,7 @@ def bids_version(bids_dir, write=False, schema=None):
         Path to the BIDS schema file.
     """
     # Need to run validator to get output with schema version
-    # Copy code from `validate --sequential`
+    # Copy code from `validate --validation-scope subject`
 
     try:  # return first subject
         # Get all folders that start with "sub-"

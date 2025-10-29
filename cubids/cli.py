@@ -106,11 +106,10 @@ def _parse_validate():
       If a filename prefix is provided, the output will be placed in
       bids_dir/code/CuBIDS. If a full path is provided, the output files will
       go to the specified location.
-    - --sequential: Run the BIDS validator sequentially on each subject.
+    - --validation-scope: Choose between 'dataset' (default) or 'subject' validation.
     - --container: Docker image tag or Singularity image file.
     - --ignore-nifti-headers: Disregard NIfTI header content during validation.
-    - --sequential-subjects: Filter the sequential run to only include the
-      listed subjects.
+    - --participant-label: Filter the validation to only include the listed subjects.
     """
     parser = argparse.ArgumentParser(
         description="cubids validate: Wrapper around the official BIDS Validator",
@@ -143,10 +142,13 @@ def _parse_validate():
         ),
     )
     parser.add_argument(
-        "--sequential",
-        action="store_true",
-        default=False,
-        help="Run the BIDS validator sequentially on each subject.",
+        "--validation-scope",
+        choices=["dataset", "subject"],
+        default="dataset",
+        help=(
+            "Scope of validation. 'dataset' validates the entire dataset (default). "
+            "'subject' validates each subject separately."
+        ),
         required=False,
     )
     parser.add_argument(
@@ -157,12 +159,12 @@ def _parse_validate():
         required=False,
     )
     parser.add_argument(
-        "--sequential-subjects",
+        "--participant-label",
         action="store",
         default=None,
         help=(
-            "List: Filter the sequential run to only include "
-            "the listed subjects. e.g. --sequential-subjects "
+            "List: Filter the validation to only include "
+            "the listed subjects. e.g. --participant-label "
             "sub-01 sub-02 sub-03"
         ),
         nargs="+",
@@ -194,21 +196,9 @@ def _parse_validate():
         dest="n_cpus",
         default=1,
         help=(
-            "Number of CPUs to use for parallel validation when --sequential is used. "
+            "Number of CPUs to use for parallel validation "
+            "when `--validation-scope` is 'subject'. "
             "Defaults to 1 (sequential processing)."
-        ),
-        required=False,
-    )
-    parser.add_argument(
-        "--max-workers",
-        type=int,
-        action="store",
-        dest="max_workers",
-        default=None,
-        help=(
-            "Maximum number of parallel workers to use for validation. "
-            "If not specified, automatically optimized for I/O-bound workloads. "
-            "Set this to explicitly control parallelism (e.g., to avoid disk I/O contention)."
         ),
         required=False,
     )

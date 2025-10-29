@@ -176,23 +176,23 @@ BIDS validation
 
 .. code-block:: console
 
-    $ cubids validate BIDS_Dataset_DataLad v0 --sequential
+    $ cubids validate BIDS_Dataset_DataLad v0 --validation-scope subject
 
 .. note::
-    The use of the ``--sequential`` flag forces the validator to treat each participant as its
+    The use of the ``--validation-scope subject`` flag forces the validator to treat each participant as its
     own BIDS dataset.
     This can be helpful for identifying heterogeneous elements, 
     or validating large datasets that would otherwise result in 
     "RangeError: Invalid string length" errors when the validator crashes 
     (producing empty STDOUT) because the JSON output is too large to serialize.
     
-    But ``--sequential`` can be slowed down by extremely large datasets. 
+    But ``--validation-scope subject`` can be slowed down by large datasets. 
     To speed up validation, you can use the ``--n-cpus`` flag to enable parallel processing. 
     For example, to validate using 4 CPUs:
     
     .. code-block:: console
     
-        $ cubids validate BIDS_Dataset_DataLad v0 --sequential --n-cpus 4
+        $ cubids validate BIDS_Dataset_DataLad v0 --validation-scope subject --n-cpus 4
 
 .. warning::
     For internetless use cases, please see dedicated section of the `Installation page
@@ -285,7 +285,7 @@ To verify that there are no remaining validation errors, we rerun validation wit
 
 .. code-block:: console
 
-    $ cubids validate BIDS_Dataset_DataLad v1 --sequential
+    $ cubids validate BIDS_Dataset_DataLad v1 --validation-scope subject
 
 This command should produce no tsv output, and instead print “No issues/warnings parsed,
 your dataset is BIDS valid” to the terminal,

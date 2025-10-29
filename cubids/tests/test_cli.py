@@ -249,18 +249,18 @@ def test_validate_command_with_test_dataset(tmp_path):
     assert (output_prefix.parent / f"{output_prefix.name}_validation.json").exists()
 
 
-def test_validate_sequential_with_n_cpus(tmp_path):
-    """Test the validate command with sequential flag and n_cpus parallelization."""
+def test_validate_subject_scope_with_n_cpus(tmp_path):
+    """Test the validate command with validation-scope subject and n_cpus parallelization."""
     # Copy test dataset to temporary directory
     test_data = TEST_DATA / "BIDS_Dataset"
     bids_dir = tmp_path / "BIDS_Dataset"
     shutil.copytree(test_data, bids_dir)
 
-    # Run sequential validation with 2 CPUs (parallel processing)
+    # Run subject-level validation with 2 CPUs (parallel processing)
     output_prefix = tmp_path / "validation_parallel"
 
     # This should complete without error
-    _main(["validate", str(bids_dir), str(output_prefix), "--sequential", "--n-cpus", "1"])
+    _main(["validate", str(bids_dir), str(output_prefix), "--validation-scope", "subject", "--n-cpus", "1"])
 
     # Verify the command completed successfully by checking if the output files exist
     assert (output_prefix.parent / f"{output_prefix.name}_validation.tsv").exists()
