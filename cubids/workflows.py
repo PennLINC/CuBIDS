@@ -528,7 +528,7 @@ def apply(
     )
 
 
-def datalad_save(bids_dir, m):
+def datalad_save(bids_dir, m, n_cpus=1):
     """Perform datalad save.
 
     Parameters
@@ -540,7 +540,8 @@ def datalad_save(bids_dir, m):
     """
     # Run directly from python using
     bod = CuBIDS(data_root=str(bids_dir), use_datalad=True)
-    bod.datalad_save(message=m)
+    jobs = n_cpus if n_cpus and n_cpus > 1 else None
+    bod.datalad_save(message=m, jobs=jobs)
 
 
 def undo(bids_dir):
@@ -595,7 +596,7 @@ def copy_exemplars(
     )
 
 
-def add_nifti_info(bids_dir, use_datalad, force_unlock):
+def add_nifti_info(bids_dir, use_datalad, force_unlock, n_cpus=1):
     """Add information from nifti files to the dataset's sidecars.
 
     Parameters
@@ -606,6 +607,11 @@ def add_nifti_info(bids_dir, use_datalad, force_unlock):
         Use datalad to track changes.
     force_unlock : :obj:`bool`
         Force unlock the dataset.
+    Parameters
+    ----------
+    n_cpus : :obj:`int`
+        Number of CPUs to use for parallel metadata extraction. Default is 1.
+
     """
     # Run directly from python using
     bod = CuBIDS(
@@ -618,10 +624,10 @@ def add_nifti_info(bids_dir, use_datalad, force_unlock):
             raise Exception("Untracked change in " + str(bids_dir))
         # if bod.is_datalad_clean() and not force_unlock:
         #     raise Exception("Need to unlock " + str(bids_dir))
-    bod.add_nifti_info()
+    bod.add_nifti_info(n_cpus=n_cpus)
 
 
-def add_file_collections(bids_dir, use_datalad, force_unlock):
+def add_file_collections(bids_dir, use_datalad, force_unlock, n_cpus=1):
     """Add file collection metadata to the sidecars of each NIfTI file in the BIDS dataset.
 
     Parameters
@@ -641,10 +647,10 @@ def add_file_collections(bids_dir, use_datalad, force_unlock):
     if use_datalad and not bod.is_datalad_clean():
         raise Exception(f"Untracked changes in {bids_dir}. Cannot continue.")
 
-    bod.add_file_collections()
+    bod.add_file_collections(n_cpus=n_cpus)
 
 
-def purge(bids_dir, use_datalad, scans):
+def purge(bids_dir, use_datalad, scans, n_cpus=1):
     """Purge scan associations.
 
     Parameters
@@ -661,7 +667,7 @@ def purge(bids_dir, use_datalad, scans):
     if use_datalad:
         if not bod.is_datalad_clean():
             raise Exception("Untracked change in " + str(bids_dir))
-    bod.purge(str(scans))
+    bod.purge(str(scans), n_cpus=n_cpus)
 
 
 def remove_metadata_fields(bids_dir, fields):
