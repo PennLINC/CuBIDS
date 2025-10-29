@@ -30,7 +30,6 @@ from cubids.config import load_config, load_schema
 from cubids.constants import NON_KEY_ENTITIES
 from cubids.metadata_merge import check_merging_operations, group_by_acquisition_sets
 
-
 warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
 
