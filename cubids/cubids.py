@@ -5,13 +5,13 @@ operations for handling BIDS datasets, clustering, and metadata merging.
 """
 
 import csv
-from concurrent.futures import ProcessPoolExecutor
 import json
 import os
 import re
 import subprocess
 import warnings
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from shutil import copyfile, copytree
 
