@@ -128,7 +128,7 @@ def _validate_single_subject(args):
             os.makedirs(subject_folder_path, exist_ok=True)
 
         # Ensure participants.tsv is available in temp root
-        # copy from original file list if missing
+        # Always COPY (never link) to avoid modifying the original file when filtering
         participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
         if not os.path.exists(participants_tsv_path):
             # Try to find a source participants.tsv in the provided file list
@@ -144,7 +144,8 @@ def _validate_single_subject(args):
                     if os.path.exists(potential_path):
                         source_participants_tsv_path = potential_path
                 if source_participants_tsv_path:
-                    _link_or_copy(source_participants_tsv_path, participants_tsv_path)
+                    # Always copy (not link) to protect the original file from modification
+                    shutil.copy2(source_participants_tsv_path, participants_tsv_path)
             except Exception:  # noqa: BLE001
                 pass
 
@@ -402,7 +403,7 @@ def validate(
                     if not os.path.exists(subject_folder_path):
                         os.makedirs(subject_folder_path, exist_ok=True)
 
-                    # Ensure participants.tsv exists; copy if missing, then filter
+                    # Ensure participants.tsv exists
                     participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
                     if not os.path.exists(participants_tsv_path):
                         try:
@@ -417,7 +418,8 @@ def validate(
                                 if os.path.exists(potential_path):
                                     source_participants_tsv_path = potential_path
                             if source_participants_tsv_path:
-                                _link_or_copy(source_participants_tsv_path, participants_tsv_path)
+                                # Always copy (not link) to protect original file
+                                shutil.copy2(source_participants_tsv_path, participants_tsv_path)
                         except Exception:  # noqa: BLE001
                             pass
 
