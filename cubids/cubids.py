@@ -361,7 +361,7 @@ class CuBIDS(object):
             with ProcessPoolExecutor(n_cpus) as executor:
                 list(
                     tqdm(
-                        executor.map(_extract_metadata_single_nifti, nifti_paths),
+                        executor.map(_add_metadata_single_nifti, nifti_paths),
                         total=len(nifti_paths),
                         desc="Processing NIfTI files",
                         unit="file",
@@ -369,12 +369,16 @@ class CuBIDS(object):
                 )
         else:
             for nifti_path in tqdm(nifti_paths, desc="Processing NIfTI files", unit="file"):
-                _extract_metadata_single_nifti(nifti_path)
+                _add_metadata_single_nifti(nifti_path)
 
         if self.use_datalad:
-            # Use parallel jobs for DataLad save only when explicitly requested
-            dl_jobs = n_cpus if n_cpus and n_cpus > 1 else None
-            self.datalad_save(message="Added nifti info to sidecars", jobs=dl_jobs)
+            # Check if there are any changes to save
+            if self.is_datalad_clean():
+                print("nothing to save, working tree clean")
+            else:
+                # Use parallel jobs for DataLad save
+                dl_jobs = n_cpus if n_cpus and n_cpus > 1 else None
+                self.datalad_save(message="Added nifti info to sidecars", jobs=dl_jobs)
 
         self.reset_bids_layout()
 
@@ -1558,7 +1562,7 @@ class CuBIDS(object):
         return self.layout
 
 
-def _extract_metadata_single_nifti(nifti_path):
+def _add_metadata_single_nifti(nifti_path):
     """Extract metadata from a single NIfTI and write to its sidecar JSON.
 
     Parameters
