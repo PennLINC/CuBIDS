@@ -178,8 +178,9 @@ def validate(
     validation_scope : :obj:`str`
         Scope of validation: 'dataset' validates the entire dataset,
         'subject' validates each subject separately.
-    participant_label : :obj:`list` of :obj:`str`
+    participant_label : :obj:`list` of :obj:`str` or None
         Filter the validation to only include the listed subjects.
+        Only applies when validation_scope='subject'. Ignored for dataset-level validation.
     local_validator : :obj:`bool`
         Use the local bids validator.
     ignore_nifti_headers : :obj:`bool`
@@ -207,6 +208,12 @@ def validate(
     # Run directly from python using subprocess
     if validation_scope == "dataset":
         # run on full dataset
+        # Note: participant_label is ignored for dataset-level validation
+        if participant_label:
+            logger.warning(
+                "participant_label is ignored when validation_scope='dataset'. "
+                "Use validation_scope='subject' to filter by participant."
+            )
         call = build_validator_call(
             str(bids_dir),
             local_validator,
@@ -249,19 +256,25 @@ def validate(
             # user may be in python session, return dataframe
             return parsed
     else:
-        # logger.info("Prepping sequential validator run...")
-
         # build a dictionary with {SubjectLabel: [List of files]}
-        subjects_dict = build_subject_paths(bids_dir)
-
-        # logger.info("Running validator sequentially...")
-        # iterate over the dictionary
+        # if participant_label is provided, only build paths for those subjects
+        if participant_label:
+            # Build paths only for requested subjects to avoid scanning entire dataset
+            subjects_dict = {}
+            for subject_label in participant_label:
+                subject_path = os.path.join(bids_dir, subject_label)
+                if os.path.isdir(subject_path):
+                    subject_dict = build_first_subject_path(bids_dir, subject_path)
+                    subjects_dict.update(subject_dict)
+                else:
+                    logger.warning(f"Subject directory not found: {subject_path}")
+        else:
+            # Build paths for all subjects
+            subjects_dict = build_subject_paths(bids_dir)
 
         parsed = []
 
-        if participant_label:
-            subjects_dict = {k: v for k, v in subjects_dict.items() if k in participant_label}
-        assert len(list(subjects_dict.keys())) > 1, "No subjects found in filter"
+        assert len(list(subjects_dict.keys())) >= 1, "No subjects found"
 
         # Convert schema Path to string if it exists (for multiprocessing pickling)
         schema_str = str(schema) if schema is not None else None
