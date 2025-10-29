@@ -184,7 +184,7 @@ def _validate_single_subject(args):
         decoded_output = result.stdout.decode("UTF-8")
         parsed_output = parse_validator_output(decoded_output)
 
-        if parsed_output.shape[1] > 1:
+        if len(parsed_output) > 0:
             parsed_output["subject"] = subject
             return (subject, parsed_output)
         else:
@@ -255,7 +255,7 @@ def validate(
         parsed = parse_validator_output(ret.stdout.decode("UTF-8"))
 
         # Determine if issues were found
-        if parsed.shape[1] < 1:
+        if len(parsed) < 1:
             logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
             # Create empty DataFrame for consistent behavior with sequential mode
             parsed = pd.DataFrame()
@@ -331,7 +331,7 @@ def validate(
                     for future in as_completed(future_to_subject):
                         try:
                             subject, result = future.result()
-                            if result is not None and result.shape[1] > 1:
+                            if result is not None and len(result) > 0:
                                 parsed.append(result)
                         except Exception as exc:
                             subject = future_to_subject[future]
@@ -342,7 +342,7 @@ def validate(
             # Sequential processing using the same helper as the parallel path
             for args in tqdm.tqdm(validation_args, desc="Validating subjects"):
                 subject, result = _validate_single_subject(args)
-                if result is not None and result.shape[1] > 1:
+                if result is not None and len(result) > 0:
                     parsed.append(result)
 
         # concatenate the parsed data and exit
