@@ -1,5 +1,6 @@
 """First order workflows in CuBIDS."""
 
+import errno
 import json
 import logging
 import os
@@ -8,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import warnings
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import pandas as pd
@@ -32,14 +34,172 @@ GIT_CONFIG = os.path.join(os.path.expanduser("~"), ".gitconfig")
 logging.getLogger("datalad").setLevel(logging.ERROR)
 
 
+def _validate_single_subject(args):
+    """Validate a single subject in a temporary directory.
+
+    This is a helper function designed to be called in parallel for --validation-scope subject.
+    It processes one subject at a time and returns the validation results.
+
+    Parameters
+    ----------
+    args : tuple
+        A tuple containing:
+        - subject (str): Subject label
+        - files_list (list): List of file paths for this subject
+        - bids_dir (str): Path to the original BIDS directory
+        - ignore_nifti_headers (bool): Whether to ignore NIfTI headers
+        - local_validator (bool): Whether to use local validator
+        - schema (str or None): Path to schema file as string
+
+    Returns
+    -------
+    tuple
+        A tuple containing (subject, pd.DataFrame) with validation results.
+        Returns (subject, None) if no issues found.
+    """
+    subject, files_list, bids_dir, ignore_nifti_headers, local_validator, schema = args
+
+    # Convert schema string back to Path if it exists
+    schema_path = Path(schema) if schema is not None else None
+
+    def _link_or_copy(src_path, dst_path):
+        """Materialize src_path at dst_path favoring hardlinks, then symlinks, then copy.
+
+        This minimizes disk I/O and maximizes throughput when many subjects are processed.
+        """
+        # If destination already exists (rare with temp dirs), skip
+        if os.path.exists(dst_path):
+            return
+        try:
+            # Prefer hardlink when on the same filesystem
+            os.link(src_path, dst_path)
+            return
+        except OSError as e:
+            # EXDEV: cross-device link; fallback to symlink
+            if e.errno != errno.EXDEV:
+                # Other hardlink errors may still allow symlink
+                pass
+        try:
+            os.symlink(src_path, dst_path)
+            return
+        except OSError:
+            # Fallback to a regular copy as last resort
+            shutil.copy2(src_path, dst_path)
+
+    # Create temporary directory and populate with links
+    with tempfile.TemporaryDirectory() as temporary_bids_dir:
+        for file_path in files_list:
+            # Cut the path down to the subject label
+            bids_start = file_path.find(subject)
+
+            # Maybe it's a single file (root-level file)
+            if bids_start < 1:
+                tmp_file_dir = temporary_bids_dir
+            else:
+                bids_folder = Path(file_path[bids_start:]).parent
+                tmp_file_dir = os.path.join(temporary_bids_dir, str(bids_folder))
+
+            if not os.path.exists(tmp_file_dir):
+                os.makedirs(tmp_file_dir)
+
+            output_path = os.path.join(tmp_file_dir, str(Path(file_path).name))
+            _link_or_copy(file_path, output_path)
+
+        # Ensure dataset_description.json is available in temp root
+        dataset_description_path = os.path.join(temporary_bids_dir, "dataset_description.json")
+        if not os.path.exists(dataset_description_path):
+            # Try to find dataset_description.json in the provided file list first
+            source_dataset_description_path = None
+            for candidate_path in files_list:
+                if os.path.basename(candidate_path) == "dataset_description.json":
+                    source_dataset_description_path = candidate_path
+                    break
+            # If not in file list, try to get it from the original bids_dir
+            if not source_dataset_description_path and bids_dir:
+                potential_path = os.path.join(bids_dir, "dataset_description.json")
+                if os.path.exists(potential_path):
+                    source_dataset_description_path = potential_path
+            if source_dataset_description_path:
+                _link_or_copy(source_dataset_description_path, dataset_description_path)
+
+        # Ensure the subject folder exists as a directory in temp root
+        subject_folder_path = os.path.join(temporary_bids_dir, subject)
+        if not os.path.exists(subject_folder_path):
+            os.makedirs(subject_folder_path, exist_ok=True)
+
+        # Ensure participants.tsv is available in temp root and is a copy (not a link)
+        # Always COPY (never link) to avoid modifying the original file when filtering
+        participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
+        # Always remove existing file first in case it was linked in the earlier loop
+        if os.path.exists(participants_tsv_path):
+            try:
+                os.remove(participants_tsv_path)
+            except Exception:  # noqa: BLE001
+                pass
+        # Try to find a source participants.tsv in the provided file list
+        try:
+            source_participants_tsv_path = None
+            for candidate_path in files_list:
+                if os.path.basename(candidate_path) == "participants.tsv":
+                    source_participants_tsv_path = candidate_path
+                    break
+            # If not in file list, try to get it from the original bids_dir
+            if not source_participants_tsv_path and bids_dir:
+                potential_path = os.path.join(bids_dir, "participants.tsv")
+                if os.path.exists(potential_path):
+                    source_participants_tsv_path = potential_path
+            if source_participants_tsv_path:
+                # Always copy (not link) to protect the original file from modification
+                shutil.copy2(source_participants_tsv_path, participants_tsv_path)
+        except Exception:  # noqa: BLE001
+            pass
+
+        # If participants.tsv exists in the temp BIDS root, filter to current subject
+        if os.path.exists(participants_tsv_path):
+            try:
+                participants_table = pd.read_csv(participants_tsv_path, sep="\t")
+                if "participant_id" in participants_table.columns:
+                    participant_ids = participants_table["participant_id"]
+                    is_current_subject = participant_ids.eq(subject)
+                    participants_table = participants_table[is_current_subject]
+                    participants_table.to_csv(
+                        participants_tsv_path,
+                        sep="\t",
+                        index=False,
+                    )
+            except Exception as e:  # noqa: F841
+                # Non-fatal: continue validation even if filtering fails
+                pass
+
+        # Run the validator
+        call = build_validator_call(
+            temporary_bids_dir,
+            local_validator,
+            ignore_nifti_headers,
+            schema=schema_path,
+        )
+        result = run_validator(call)
+
+        # Parse the output and return
+        decoded_output = result.stdout.decode("UTF-8")
+        parsed_output = parse_validator_output(decoded_output)
+
+        if len(parsed_output) > 0:
+            parsed_output["subject"] = subject
+            return (subject, parsed_output)
+        else:
+            return (subject, None)
+
+
 def validate(
     bids_dir,
     output_prefix,
-    sequential,
-    sequential_subjects,
+    validation_scope,
+    participant_label,
     local_validator,
     ignore_nifti_headers,
     schema,
+    n_cpus=1,
 ):
     """Run the bids validator.
 
@@ -49,17 +209,25 @@ def validate(
         Path to the BIDS directory.
     output_prefix : :obj:`pathlib.Path`
         Output filename prefix.
-    sequential : :obj:`bool`
-        Run the validator sequentially.
-    sequential_subjects : :obj:`list` of :obj:`str`
-        Filter the sequential run to only include the listed subjects.
+    validation_scope : :obj:`str`
+        Scope of validation: 'dataset' validates the entire dataset,
+        'subject' validates each subject separately.
+    participant_label : :obj:`list` of :obj:`str` or None
+        Filter the validation to only include the listed subjects.
+        When provided, validation_scope is automatically set to 'subject' by the CLI.
     local_validator : :obj:`bool`
         Use the local bids validator.
     ignore_nifti_headers : :obj:`bool`
         Ignore NIfTI headers when validating.
     schema : :obj:`pathlib.Path` or None
         Path to the BIDS schema file.
+    n_cpus : :obj:`int`
+        Number of CPUs to use for parallel validation (only when validation_scope='subject').
+        Default is 1 (sequential processing).
     """
+    # Ensure n_cpus is at least 1
+    n_cpus = max(1, n_cpus)
+
     # check status of output_prefix, absolute or relative?
     abs_path_output = True
     if "/" not in str(output_prefix):
@@ -72,8 +240,9 @@ def validate(
             subprocess.run(["mkdir", str(bids_dir / "code" / "CuBIDS")])
 
     # Run directly from python using subprocess
-    if not sequential:
+    if validation_scope == "dataset":
         # run on full dataset
+        # Note: participant_label is automatically ignored for dataset-level validation
         call = build_validator_call(
             str(bids_dir),
             local_validator,
@@ -84,121 +253,129 @@ def validate(
 
         # parse the string output
         parsed = parse_validator_output(ret.stdout.decode("UTF-8"))
-        if parsed.shape[1] < 1:
+
+        # Determine if issues were found
+        if len(parsed) < 1:
             logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
-            return
+            # Create empty DataFrame for consistent behavior with sequential mode
+            parsed = pd.DataFrame()
         else:
             logger.info("BIDS issues/warnings found in the dataset")
 
-            if output_prefix:
-                # check if absolute or relative path
-                if abs_path_output:
-                    # normally, write dataframe to file in CLI
-                    val_tsv = str(output_prefix) + "_validation.tsv"
+        if output_prefix:
+            # check if absolute or relative path
+            if abs_path_output:
+                # normally, write dataframe to file in CLI
+                val_tsv = str(output_prefix) + "_validation.tsv"
 
-                else:
-                    val_tsv = (
-                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
-                    )
-
-                parsed.to_csv(val_tsv, sep="\t", index=False)
-
-                # build validation data dictionary json sidecar
-                val_dict = get_val_dictionary()
-                val_json = val_tsv.replace("tsv", "json")
-                with open(val_json, "w") as outfile:
-                    json.dump(val_dict, outfile, indent=4)
-
-                logger.info("Writing issues out to %s", val_tsv)
-                return
             else:
-                # user may be in python session, return dataframe
-                return parsed
+                val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
+
+            parsed.to_csv(val_tsv, sep="\t", index=False)
+
+            # build validation data dictionary json sidecar
+            val_dict = get_val_dictionary()
+            val_json = val_tsv.replace("tsv", "json")
+            with open(val_json, "w") as outfile:
+                json.dump(val_dict, outfile, indent=4)
+
+            logger.info("Writing issues out to %s", val_tsv)
+            return
+        else:
+            # user may be in python session, return dataframe
+            return parsed
     else:
-        # logger.info("Prepping sequential validator run...")
-
         # build a dictionary with {SubjectLabel: [List of files]}
-        subjects_dict = build_subject_paths(bids_dir)
-
-        # logger.info("Running validator sequentially...")
-        # iterate over the dictionary
+        # if participant_label is provided, only build paths for those subjects
+        if participant_label:
+            # Build paths only for requested subjects to avoid scanning entire dataset
+            subjects_dict = {}
+            for subject_label in participant_label:
+                subject_path = os.path.join(bids_dir, subject_label)
+                if os.path.isdir(subject_path):
+                    subject_dict = build_first_subject_path(bids_dir, subject_path)
+                    subjects_dict.update(subject_dict)
+                else:
+                    logger.warning(f"Subject directory not found: {subject_path}")
+        else:
+            # Build paths for all subjects
+            subjects_dict = build_subject_paths(bids_dir)
 
         parsed = []
 
-        if sequential_subjects:
-            subjects_dict = {k: v for k, v in subjects_dict.items() if k in sequential_subjects}
-        assert len(list(subjects_dict.keys())) > 1, "No subjects found in filter"
-        for subject, files_list in tqdm.tqdm(subjects_dict.items()):
-            # logger.info(" ".join(["Processing subject:", subject]))
-            # create a temporary directory and symlink the data
-            with tempfile.TemporaryDirectory() as tmpdirname:
-                for fi in files_list:
-                    # cut the path down to the subject label
-                    bids_start = fi.find(subject)
+        assert len(list(subjects_dict.keys())) >= 1, "No subjects found"
 
-                    # maybe it's a single file
-                    if bids_start < 1:
-                        bids_folder = tmpdirname
-                        fi_tmpdir = tmpdirname
+        # Convert schema Path to string if it exists (for multiprocessing pickling)
+        schema_str = str(schema) if schema is not None else None
+        # Convert bids_dir to string for multiprocessing pickling
+        bids_dir_str = str(bids_dir)
 
-                    else:
-                        bids_folder = Path(fi[bids_start:]).parent
-                        fi_tmpdir = tmpdirname + "/" + str(bids_folder)
+        # Prepare arguments for each subject
+        validation_args = [
+            (subject, files_list, bids_dir_str, ignore_nifti_headers, local_validator, schema_str)
+            for subject, files_list in subjects_dict.items()
+        ]
 
-                    if not os.path.exists(fi_tmpdir):
-                        os.makedirs(fi_tmpdir)
-                    output = fi_tmpdir + "/" + str(Path(fi).name)
-                    shutil.copy2(fi, output)
+        # Use parallel processing if more than one worker requested
+        if n_cpus > 1:
+            logger.info(f"Using {n_cpus} parallel CPUs for validation")
+            with ProcessPoolExecutor(n_cpus) as executor:
+                # Submit all tasks
+                future_to_subject = {
+                    executor.submit(_validate_single_subject, args): args[0]
+                    for args in validation_args
+                }
 
-                # run the validator
-                nifti_head = ignore_nifti_headers
-                call = build_validator_call(tmpdirname, local_validator, nifti_head, schema=schema)
-                ret = run_validator(call)
-                # parse output
-                if ret.returncode != 0:
-                    logger.error("Errors returned from validator run, parsing now")
-
-                # parse the output and add to list if it returns a df
-                decoded = ret.stdout.decode("UTF-8")
-                tmp_parse = parse_validator_output(decoded)
-                if tmp_parse.shape[1] > 1:
-                    tmp_parse["subject"] = subject
-                    parsed.append(tmp_parse)
+                # Process results as they complete with progress bar
+                with tqdm.tqdm(total=len(validation_args), desc="Validating subjects") as pbar:
+                    for future in as_completed(future_to_subject):
+                        try:
+                            subject, result = future.result()
+                            if result is not None and len(result) > 0:
+                                parsed.append(result)
+                        except Exception as exc:
+                            subject = future_to_subject[future]
+                            logger.error(f"Subject {subject} generated an exception: {exc}")
+                        finally:
+                            pbar.update(1)
+        else:
+            # Sequential processing using the same helper as the parallel path
+            for args in tqdm.tqdm(validation_args, desc="Validating subjects"):
+                subject, result = _validate_single_subject(args)
+                if result is not None and len(result) > 0:
+                    parsed.append(result)
 
         # concatenate the parsed data and exit
         if len(parsed) < 1:
             logger.info("No issues/warnings parsed, your dataset is BIDS valid.")
-            return
-
+            # Create empty parsed DataFrame to ensure output files are written
+            parsed = pd.DataFrame()
         else:
             parsed = pd.concat(parsed, axis=0, ignore_index=True)
             subset = parsed.columns.difference(["subject"])
             parsed = parsed.drop_duplicates(subset=subset)
-
             logger.info("BIDS issues/warnings found in the dataset")
 
-            if output_prefix:
-                # normally, write dataframe to file in CLI
-                if abs_path_output:
-                    val_tsv = str(output_prefix) + "_validation.tsv"
-                else:
-                    val_tsv = (
-                        str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
-                    )
-
-                parsed.to_csv(val_tsv, sep="\t", index=False)
-
-                # build validation data dictionary json sidecar
-                val_dict = get_val_dictionary()
-                val_json = val_tsv.replace("tsv", "json")
-                with open(val_json, "w") as outfile:
-                    json.dump(val_dict, outfile, indent=4)
-
-                logger.info("Writing issues out to file %s", val_tsv)
-                return
+        if output_prefix:
+            # normally, write dataframe to file in CLI
+            if abs_path_output:
+                val_tsv = str(output_prefix) + "_validation.tsv"
             else:
-                # user may be in python session, return dataframe
-                return parsed
+                val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
+
+            parsed.to_csv(val_tsv, sep="\t", index=False)
+
+            # build validation data dictionary json sidecar
+            val_dict = get_val_dictionary()
+            val_json = val_tsv.replace("tsv", "json")
+            with open(val_json, "w") as outfile:
+                json.dump(val_dict, outfile, indent=4)
+
+            logger.info("Writing issues out to file %s", val_tsv)
+            return
+        else:
+            # user may be in python session, return dataframe
+            return parsed
 
 
 def bids_version(bids_dir, write=False, schema=None):
@@ -214,7 +391,7 @@ def bids_version(bids_dir, write=False, schema=None):
         Path to the BIDS schema file.
     """
     # Need to run validator to get output with schema version
-    # Copy code from `validate --sequential`
+    # Copy code from `validate --validation-scope subject`
 
     try:  # return first subject
         # Get all folders that start with "sub-"
@@ -233,32 +410,32 @@ def bids_version(bids_dir, write=False, schema=None):
 
     # build a dictionary with {SubjectLabel: [List of files]}
     # run first subject only
-    subject_dict = build_first_subject_path(bids_dir, subject)
+    subject_path = os.path.join(bids_dir, subject)
+    subject_dict = build_first_subject_path(bids_dir, subject_path)
 
-    # iterate over the dictionary
+    # Iterate over the dictionary
     for subject, files_list in subject_dict.items():
         # logger.info(" ".join(["Processing subject:", subject]))
-        # create a temporary directory and symlink the data
+        # Create a temporary directory and copy the data
         with tempfile.TemporaryDirectory() as tmpdirname:
-            for fi in files_list:
-                # cut the path down to the subject label
-                bids_start = fi.find(subject)
+            for file_path in files_list:
+                # Cut the path down to the subject label
+                bids_start = file_path.find(subject)
 
-                # maybe it's a single file
+                # Maybe it's a single file (root-level file)
                 if bids_start < 1:
                     bids_folder = tmpdirname
-                    fi_tmpdir = tmpdirname
-
+                    tmp_file_dir = tmpdirname
                 else:
-                    bids_folder = Path(fi[bids_start:]).parent
-                    fi_tmpdir = tmpdirname + "/" + str(bids_folder)
+                    bids_folder = Path(file_path[bids_start:]).parent
+                    tmp_file_dir = tmpdirname + "/" + str(bids_folder)
 
-                if not os.path.exists(fi_tmpdir):
-                    os.makedirs(fi_tmpdir)
-                output = fi_tmpdir + "/" + str(Path(fi).name)
-                shutil.copy2(fi, output)
+                if not os.path.exists(tmp_file_dir):
+                    os.makedirs(tmp_file_dir)
+                output = tmp_file_dir + "/" + str(Path(file_path).name)
+                shutil.copy2(file_path, output)
 
-            # run the validator
+            # Run the validator
             call = build_validator_call(tmpdirname, schema=schema)
             ret = run_validator(call)
 

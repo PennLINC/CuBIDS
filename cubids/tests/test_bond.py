@@ -476,7 +476,9 @@ def test_tsv_merge_no_datalad(tmp_path):
 
     with pytest.raises(Exception):
         bod.apply_tsv_changes(
-            invalid_tsv_file, str(tmp_path / "originals_files.tsv"), str(tmp_path / "ok_modified")
+            invalid_tsv_file,
+            str(tmp_path / "originals_files.tsv"),
+            str(tmp_path / "ok_modified"),
         )
 
 
@@ -586,7 +588,9 @@ def test_tsv_merge_changes(tmp_path):
 
     with pytest.raises(Exception):
         bod.apply_tsv_changes(
-            invalid_tsv_file, str(tmp_path / "originals_files.tsv"), str(tmp_path / "ok_modified")
+            invalid_tsv_file,
+            str(tmp_path / "originals_files.tsv"),
+            str(tmp_path / "ok_modified"),
         )
 
     # Make sure MergeInto == 0 deletes the param group and all associations
@@ -1118,9 +1122,7 @@ def test_validator(tmp_path):
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
 
-    assert (
-        ret.returncode == 0
-    ), (
+    assert ret.returncode == 0, (
         "Validator was expected to pass on the clean dataset, "
         f"but returned code {ret.returncode}.\n"
         f"STDOUT:\n{ret.stdout.decode('UTF-8', errors='replace')}\n"
@@ -1158,9 +1160,7 @@ def test_validator(tmp_path):
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
 
-    assert (
-        ret.returncode == 16
-    ), (
+    assert ret.returncode == 16, (
         "Validator was expected to fail after corrupting files, "
         f"but returned code {ret.returncode}.\n"
         "Corrupted files: removed JSON sidecar and modified NIfTI header.\n"

@@ -369,7 +369,11 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level, is_long
         if is_longitudinal:
             for subject, session in contents_to_subjects[content_id]:
                 grouped_sub_sess.append(
-                    {"subject": "sub-" + subject, "session": session, "AcqGroup": groupnum}
+                    {
+                        "subject": "sub-" + subject,
+                        "session": session,
+                        "AcqGroup": groupnum,
+                    }
                 )
         elif not is_longitudinal:
             for subject in contents_to_subjects[content_id]:

@@ -42,7 +42,15 @@ def build_validator_call(path, local_validator=False, ignore_headers=False, sche
     if local_validator:
         command = ["bids-validator", path, "--verbose", "--json"]
     else:
-        command = ["deno", "run", "-A", "jsr:@bids/validator", path, "--verbose", "--json"]
+        command = [
+            "deno",
+            "run",
+            "-A",
+            "jsr:@bids/validator",
+            path,
+            "--verbose",
+            "--json",
+        ]
 
     if ignore_headers:
         command.append("--ignoreNiftiHeaders")

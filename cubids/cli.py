@@ -106,11 +106,10 @@ def _parse_validate():
       If a filename prefix is provided, the output will be placed in
       bids_dir/code/CuBIDS. If a full path is provided, the output files will
       go to the specified location.
-    - --sequential: Run the BIDS validator sequentially on each subject.
+    - --validation-scope: Choose between 'dataset' (default) or 'subject' validation.
     - --container: Docker image tag or Singularity image file.
     - --ignore-nifti-headers: Disregard NIfTI header content during validation.
-    - --sequential-subjects: Filter the sequential run to only include the
-      listed subjects.
+    - --participant-label: Filter the validation to only include the listed subjects.
     """
     parser = argparse.ArgumentParser(
         description="cubids validate: Wrapper around the official BIDS Validator",
@@ -143,10 +142,13 @@ def _parse_validate():
         ),
     )
     parser.add_argument(
-        "--sequential",
-        action="store_true",
-        default=False,
-        help="Run the BIDS validator sequentially on each subject.",
+        "--validation-scope",
+        choices=["dataset", "subject"],
+        default="dataset",
+        help=(
+            "Scope of validation. 'dataset' validates the entire dataset (default). "
+            "'subject' validates each subject separately."
+        ),
         required=False,
     )
     parser.add_argument(
@@ -157,12 +159,12 @@ def _parse_validate():
         required=False,
     )
     parser.add_argument(
-        "--sequential-subjects",
+        "--participant-label",
         action="store",
         default=None,
         help=(
-            "List: Filter the sequential run to only include "
-            "the listed subjects. e.g. --sequential-subjects "
+            "List: Filter the validation to only include "
+            "the listed subjects. e.g. --participant-label "
             "sub-01 sub-02 sub-03"
         ),
         nargs="+",
@@ -183,6 +185,20 @@ def _parse_validate():
         help=(
             "Path to a BIDS schema JSON file. "
             "Default is None, which uses the latest schema available to the validator."
+        ),
+        required=False,
+    )
+    parser.add_argument(
+        "--n-cpus",
+        "--n_cpus",
+        type=int,
+        action="store",
+        dest="n_cpus",
+        default=1,
+        help=(
+            "Number of CPUs to use for parallel validation "
+            "when `--validation-scope` is 'subject'. "
+            "Defaults to 1 (sequential processing)."
         ),
         required=False,
     )
@@ -1017,12 +1033,24 @@ COMMANDS = [
     ("apply", _parse_apply, workflows.apply),
     ("purge", _parse_purge, workflows.purge),
     ("add-nifti-info", _parse_add_nifti_info, workflows.add_nifti_info),
-    ("add-file-collections", _parse_add_file_collections, workflows.add_file_collections),
+    (
+        "add-file-collections",
+        _parse_add_file_collections,
+        workflows.add_file_collections,
+    ),
     ("copy-exemplars", _parse_copy_exemplars, workflows.copy_exemplars),
     ("undo", _parse_undo, workflows.undo),
     ("datalad-save", _parse_datalad_save, workflows.datalad_save),
-    ("print-metadata-fields", _parse_print_metadata_fields, workflows.print_metadata_fields),
-    ("remove-metadata-fields", _parse_remove_metadata_fields, workflows.remove_metadata_fields),
+    (
+        "print-metadata-fields",
+        _parse_print_metadata_fields,
+        workflows.print_metadata_fields,
+    ),
+    (
+        "remove-metadata-fields",
+        _parse_remove_metadata_fields,
+        workflows.remove_metadata_fields,
+    ),
 ]
 
 
@@ -1073,4 +1101,10 @@ def _main(argv=None):
     options = _get_parser().parse_args(argv)
     args = vars(options).copy()
     args.pop("func")
+
+    # Automatically set validation_scope='subject' when --participant-label is provided
+    if "participant_label" in args and "validation_scope" in args:
+        if args["participant_label"]:
+            args["validation_scope"] = "subject"
+
     options.func(**args)

@@ -20,6 +20,7 @@ __url__ : str
 DOWNLOAD_URL : str
     The URL to download the CuBIDS package.
 """
+
 try:
     from cubids._version import __version__
 except ImportError:

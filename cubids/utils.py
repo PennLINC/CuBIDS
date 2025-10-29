@@ -610,7 +610,9 @@ def cluster_single_parameters(df, config, modality):
 
                         tolerance = to_format[column_name]["tolerance"]
                         clustering = AgglomerativeClustering(
-                            n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                            n_clusters=None,
+                            distance_threshold=tolerance,
+                            linkage="complete",
                         ).fit(array)
 
                         df.loc[sel_rows, f"Cluster_{column_name}"] = (
@@ -632,12 +634,16 @@ def cluster_single_parameters(df, config, modality):
                     tolerance = to_format[column_name]["tolerance"]
 
                     clustering = AgglomerativeClustering(
-                        n_clusters=None, distance_threshold=tolerance, linkage="complete"
+                        n_clusters=None,
+                        distance_threshold=tolerance,
+                        linkage="complete",
                     ).fit(valid_array)
 
                     # Create a full label array and fill only valid entries
                     cluster_labels = np.full_like(
-                        array.flatten(), fill_value=np.max(clustering.labels_) + 1, dtype=float
+                        array.flatten(),
+                        fill_value=np.max(clustering.labels_) + 1,
+                        dtype=float,
                     )
                     cluster_labels[valid_mask] = clustering.labels_
 
