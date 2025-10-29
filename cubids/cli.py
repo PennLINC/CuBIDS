@@ -1101,10 +1101,10 @@ def _main(argv=None):
     options = _get_parser().parse_args(argv)
     args = vars(options).copy()
     args.pop("func")
-    
+
     # Automatically set validation_scope='subject' when --participant-label is provided
     if "participant_label" in args and "validation_scope" in args:
         if args["participant_label"]:
             args["validation_scope"] = "subject"
-    
+
     options.func(**args)

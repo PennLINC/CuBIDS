@@ -46,6 +46,7 @@ def _validate_single_subject(args):
         A tuple containing:
         - subject (str): Subject label
         - files_list (list): List of file paths for this subject
+        - bids_dir (str): Path to the original BIDS directory
         - ignore_nifti_headers (bool): Whether to ignore NIfTI headers
         - local_validator (bool): Whether to use local validator
         - schema (str or None): Path to schema file as string
@@ -56,7 +57,7 @@ def _validate_single_subject(args):
         A tuple containing (subject, pd.DataFrame) with validation results.
         Returns (subject, None) if no issues found.
     """
-    subject, files_list, ignore_nifti_headers, local_validator, schema = args
+    subject, files_list, bids_dir, ignore_nifti_headers, local_validator, schema = args
 
     # Convert schema string back to Path if it exists
     schema_path = Path(schema) if schema is not None else None
@@ -104,6 +105,28 @@ def _validate_single_subject(args):
             output_path = os.path.join(tmp_file_dir, str(Path(file_path).name))
             _link_or_copy(file_path, output_path)
 
+        # Ensure dataset_description.json is available in temp root
+        dataset_description_path = os.path.join(temporary_bids_dir, "dataset_description.json")
+        if not os.path.exists(dataset_description_path):
+            # Try to find dataset_description.json in the provided file list first
+            source_dataset_description_path = None
+            for candidate_path in files_list:
+                if os.path.basename(candidate_path) == "dataset_description.json":
+                    source_dataset_description_path = candidate_path
+                    break
+            # If not in file list, try to get it from the original bids_dir
+            if not source_dataset_description_path and bids_dir:
+                potential_path = os.path.join(bids_dir, "dataset_description.json")
+                if os.path.exists(potential_path):
+                    source_dataset_description_path = potential_path
+            if source_dataset_description_path:
+                _link_or_copy(source_dataset_description_path, dataset_description_path)
+
+        # Ensure the subject folder exists as a directory in temp root
+        subject_folder_path = os.path.join(temporary_bids_dir, subject)
+        if not os.path.exists(subject_folder_path):
+            os.makedirs(subject_folder_path, exist_ok=True)
+
         # Ensure participants.tsv is available in temp root
         # copy from original file list if missing
         participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
@@ -115,6 +138,11 @@ def _validate_single_subject(args):
                     if os.path.basename(candidate_path) == "participants.tsv":
                         source_participants_tsv_path = candidate_path
                         break
+                # If not in file list, try to get it from the original bids_dir
+                if not source_participants_tsv_path and bids_dir:
+                    potential_path = os.path.join(bids_dir, "participants.tsv")
+                    if os.path.exists(potential_path):
+                        source_participants_tsv_path = potential_path
                 if source_participants_tsv_path:
                     _link_or_copy(source_participants_tsv_path, participants_tsv_path)
             except Exception:  # noqa: BLE001
@@ -273,10 +301,12 @@ def validate(
 
         # Convert schema Path to string if it exists (for multiprocessing pickling)
         schema_str = str(schema) if schema is not None else None
+        # Convert bids_dir to string for multiprocessing pickling
+        bids_dir_str = str(bids_dir)
 
         # Prepare arguments for each subject
         validation_args = [
-            (subject, files_list, ignore_nifti_headers, local_validator, schema_str)
+            (subject, files_list, bids_dir_str, ignore_nifti_headers, local_validator, schema_str)
             for subject, files_list in subjects_dict.items()
         ]
 
@@ -346,6 +376,32 @@ def validate(
                         output = os.path.join(tmp_file_dir, str(Path(file_path).name))
                         _link_or_copy(file_path, output)
 
+                    # Ensure dataset_description.json is available in temp root
+                    dataset_description_path = os.path.join(
+                        temporary_bids_dir, "dataset_description.json"
+                    )
+                    if not os.path.exists(dataset_description_path):
+                        # Try to find dataset_description.json in the provided file list first
+                        source_dataset_description_path = None
+                        for candidate_path in files_list:
+                            if os.path.basename(candidate_path) == "dataset_description.json":
+                                source_dataset_description_path = candidate_path
+                                break
+                        # If not in file list, try to get it from the original bids_dir
+                        if not source_dataset_description_path:
+                            potential_path = os.path.join(bids_dir, "dataset_description.json")
+                            if os.path.exists(potential_path):
+                                source_dataset_description_path = potential_path
+                        if source_dataset_description_path:
+                            _link_or_copy(
+                                source_dataset_description_path, dataset_description_path
+                            )
+
+                    # Ensure the subject folder exists as a directory in temp root
+                    subject_folder_path = os.path.join(temporary_bids_dir, subject)
+                    if not os.path.exists(subject_folder_path):
+                        os.makedirs(subject_folder_path, exist_ok=True)
+
                     # Ensure participants.tsv exists; copy if missing, then filter
                     participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
                     if not os.path.exists(participants_tsv_path):
@@ -355,6 +411,11 @@ def validate(
                                 if os.path.basename(candidate_path) == "participants.tsv":
                                     source_participants_tsv_path = candidate_path
                                     break
+                            # If not in file list, try to get it from the original bids_dir
+                            if not source_participants_tsv_path:
+                                potential_path = os.path.join(bids_dir, "participants.tsv")
+                                if os.path.exists(potential_path):
+                                    source_participants_tsv_path = potential_path
                             if source_participants_tsv_path:
                                 _link_or_copy(source_participants_tsv_path, participants_tsv_path)
                         except Exception:  # noqa: BLE001
@@ -456,7 +517,8 @@ def bids_version(bids_dir, write=False, schema=None):
 
     # build a dictionary with {SubjectLabel: [List of files]}
     # run first subject only
-    subject_dict = build_first_subject_path(bids_dir, subject)
+    subject_path = os.path.join(bids_dir, subject)
+    subject_dict = build_first_subject_path(bids_dir, subject_path)
 
     # Iterate over the dictionary
     for subject, files_list in subject_dict.items():
