@@ -31,63 +31,6 @@ from cubids.constants import NON_KEY_ENTITIES
 from cubids.metadata_merge import check_merging_operations, group_by_acquisition_sets
 
 
-def _extract_metadata_single_nifti(nifti_path):
-    """Extract metadata from a single NIfTI and write to its sidecar JSON.
-
-    Parameters
-    ----------
-    nifti_path : :obj:`str`
-        Path to a NIfTI file.
-    """
-    try:
-        img = nb.load(str(nifti_path))
-    except Exception:
-        print("Empty Nifti File: ", str(nifti_path))
-        return
-
-    # get important info from niftis
-    obliquity = np.any(nb.affines.obliquity(img.affine) > 1e-4)
-    voxel_sizes = img.header.get_zooms()
-    matrix_dims = img.shape
-    # add nifti info to corresponding sidecars
-    sidecar = utils.img_to_new_ext(str(nifti_path), ".json")
-    if Path(sidecar).exists():
-        try:
-            with open(sidecar) as f:
-                data = json.load(f)
-        except Exception:
-            print("Error parsing this sidecar: ", sidecar)
-            return
-
-        if "Obliquity" not in data.keys():
-            data["Obliquity"] = str(obliquity)
-        if "VoxelSizeDim1" not in data.keys():
-            data["VoxelSizeDim1"] = float(voxel_sizes[0])
-        if "VoxelSizeDim2" not in data.keys():
-            data["VoxelSizeDim2"] = float(voxel_sizes[1])
-        if "VoxelSizeDim3" not in data.keys():
-            data["VoxelSizeDim3"] = float(voxel_sizes[2])
-        if "Dim1Size" not in data.keys():
-            data["Dim1Size"] = matrix_dims[0]
-        if "Dim2Size" not in data.keys():
-            data["Dim2Size"] = matrix_dims[1]
-        if "Dim3Size" not in data.keys():
-            data["Dim3Size"] = matrix_dims[2]
-        if "NumVolumes" not in data.keys():
-            if img.ndim == 4:
-                data["NumVolumes"] = matrix_dims[3]
-            elif img.ndim == 3:
-                data["NumVolumes"] = 1
-        if "ImageOrientation" not in data.keys():
-            orient = nb.orientations.aff2axcodes(img.affine)
-            orient = [str(orientation) for orientation in orient]
-            joined = "".join(orient) + "+"
-            data["ImageOrientation"] = joined
-
-        with open(sidecar, "w") as file:
-            json.dump(data, file, indent=4)
-
-
 warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
 
@@ -417,9 +360,16 @@ class CuBIDS(object):
 
         if n_cpus > 1 and len(nifti_paths) > 0:
             with ProcessPoolExecutor(n_cpus) as executor:
-                list(executor.map(_extract_metadata_single_nifti, nifti_paths))
+                list(
+                    tqdm(
+                        executor.map(_extract_metadata_single_nifti, nifti_paths),
+                        total=len(nifti_paths),
+                        desc="Processing NIfTI files",
+                        unit="file",
+                    )
+                )
         else:
-            for nifti_path in nifti_paths:
+            for nifti_path in tqdm(nifti_paths, desc="Processing NIfTI files", unit="file"):
                 _extract_metadata_single_nifti(nifti_path)
 
         if self.use_datalad:
@@ -1607,3 +1557,60 @@ class CuBIDS(object):
     def get_layout(self):
         """Get layout."""
         return self.layout
+
+
+def _extract_metadata_single_nifti(nifti_path):
+    """Extract metadata from a single NIfTI and write to its sidecar JSON.
+
+    Parameters
+    ----------
+    nifti_path : :obj:`str`
+        Path to a NIfTI file.
+    """
+    try:
+        img = nb.load(str(nifti_path))
+    except Exception:
+        print("Empty Nifti File: ", str(nifti_path))
+        return
+
+    # get important info from niftis
+    obliquity = np.any(nb.affines.obliquity(img.affine) > 1e-4)
+    voxel_sizes = img.header.get_zooms()
+    matrix_dims = img.shape
+    # add nifti info to corresponding sidecars
+    sidecar = utils.img_to_new_ext(str(nifti_path), ".json")
+    if Path(sidecar).exists():
+        try:
+            with open(sidecar) as f:
+                data = json.load(f)
+        except Exception:
+            print("Error parsing this sidecar: ", sidecar)
+            return
+
+        if "Obliquity" not in data.keys():
+            data["Obliquity"] = str(obliquity)
+        if "VoxelSizeDim1" not in data.keys():
+            data["VoxelSizeDim1"] = float(voxel_sizes[0])
+        if "VoxelSizeDim2" not in data.keys():
+            data["VoxelSizeDim2"] = float(voxel_sizes[1])
+        if "VoxelSizeDim3" not in data.keys():
+            data["VoxelSizeDim3"] = float(voxel_sizes[2])
+        if "Dim1Size" not in data.keys():
+            data["Dim1Size"] = matrix_dims[0]
+        if "Dim2Size" not in data.keys():
+            data["Dim2Size"] = matrix_dims[1]
+        if "Dim3Size" not in data.keys():
+            data["Dim3Size"] = matrix_dims[2]
+        if "NumVolumes" not in data.keys():
+            if img.ndim == 4:
+                data["NumVolumes"] = matrix_dims[3]
+            elif img.ndim == 3:
+                data["NumVolumes"] = 1
+        if "ImageOrientation" not in data.keys():
+            orient = nb.orientations.aff2axcodes(img.affine)
+            orient = [str(orientation) for orientation in orient]
+            joined = "".join(orient) + "+"
+            data["ImageOrientation"] = joined
+
+        with open(sidecar, "w") as file:
+            json.dump(data, file, indent=4)
