@@ -1107,6 +1107,12 @@ def assign_variants(summary, rename_cols):
                             acq_str += "Unused"
                         else:
                             acq_str += "IsUsed"
+                    elif col == "Obliquity":
+                        val = summary.loc[row, col]
+                        if val == "True":
+                            acq_str += "Oblique"
+                        elif val == "False":
+                            acq_str += "Plumb"
                     else:
                         val = summary.loc[row, col]
                         # If the value is a string float (contains decimal point)
