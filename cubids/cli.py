@@ -582,6 +582,16 @@ def _parse_datalad_save():
         action="store",
         help="message for this commit",
     )
+    parser.add_argument(
+        "--n-cpus",
+        "--n_cpus",
+        type=int,
+        action="store",
+        dest="n_cpus",
+        default=1,
+        help="Number of CPUs (jobs) to use for `datalad save --jobs`. Defaults to 1.",
+        required=False,
+    )
 
     return parser
 
@@ -801,6 +811,20 @@ def _parse_add_nifti_info():
         default=False,
         help="unlock dataset before adding nifti info ",
     )
+    parser.add_argument(
+        "--n-cpus",
+        "--n_cpus",
+        type=int,
+        action="store",
+        dest="n_cpus",
+        default=1,
+        help=(
+            "Number of CPUs to use for parallel add-nifti-info. "
+            "Defaults to 1 (sequential processing). When --use-datalad is set, "
+            "this will set parallel jobs for `datalad save -J <n-cpus>`."
+        ),
+        required=False,
+    )
     return parser
 
 
@@ -857,6 +881,19 @@ def _parse_add_file_collections():
         action="store_true",
         default=False,
         help="unlock dataset before adding file collection metadata",
+    )
+    parser.add_argument(
+        "--n-cpus",
+        "--n_cpus",
+        type=int,
+        action="store",
+        dest="n_cpus",
+        default=1,
+        help=(
+            "Number of CPUs to use for `datalad save --jobs`. "
+            "Defaults to 1 (sequential processing)."
+        ),
+        required=False,
     )
     return parser
 
@@ -921,6 +958,19 @@ def _parse_purge():
         action="store_true",
         default=False,
         help="ensure that there are no untracked changes before finding groups",
+    )
+    parser.add_argument(
+        "--n-cpus",
+        "--n_cpus",
+        type=int,
+        action="store",
+        dest="n_cpus",
+        default=1,
+        help=(
+            "Number of CPUs to use for `datalad save --jobs`. "
+            "Defaults to 1 (sequential processing)."
+        ),
+        required=False,
     )
     return parser
 

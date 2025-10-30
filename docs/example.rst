@@ -170,6 +170,15 @@ Since we ran ``cubids add-nifti-info`` with the ``--use-datalad`` flag set,
 
 .. image:: _static/screenshot_4.png
 
+.. note::
+    For large datasets, you can speed up the metadata extraction process using the ``--n-cpus`` flag
+    to enable parallel processing. For example, to use 4 CPUs:
+
+    .. code-block:: console
+
+        $ cubids add-nifti-info BIDS_Dataset_DataLad --use-datalad --n-cpus 4
+
+    This will also use parallel jobs for DataLad save operations when ``--use-datalad`` is set.
 
 BIDS validation
 ---------------
