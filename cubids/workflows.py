@@ -540,7 +540,7 @@ def datalad_save(bids_dir, m, n_cpus=1):
     """
     # Run directly from python using
     bod = CuBIDS(data_root=str(bids_dir), use_datalad=True)
-    jobs = n_cpus if n_cpus and n_cpus > 1 else None
+    jobs = n_cpus if n_cpus and n_cpus > 1 else 1
     bod.datalad_save(message=m, jobs=jobs)
 
 
