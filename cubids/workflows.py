@@ -610,7 +610,7 @@ def add_nifti_info(bids_dir, use_datalad, force_unlock, n_cpus=1):
     Parameters
     ----------
     n_cpus : :obj:`int`
-        Number of CPUs to use for parallel metadata extraction. Default is 1.
+        Number of CPUs to use for parallel add-nifti-info. Default is 1.
 
     """
     # Run directly from python using

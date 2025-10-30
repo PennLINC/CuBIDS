@@ -333,7 +333,7 @@ class CuBIDS(object):
         Parameters
         ----------
         n_cpus : :obj:`int`
-            Number of CPUs to use for parallel extraction. Default is 1 (sequential).
+            Number of CPUs to use for parallel add-nifti-info. Default is 1 (sequential).
 
         """
         # check if force_unlock is set

@@ -589,7 +589,7 @@ def _parse_datalad_save():
         action="store",
         dest="n_cpus",
         default=1,
-        help="Number of CPUs (jobs) to use for DataLad save (-J). Defaults to 1.",
+        help="Number of CPUs (jobs) to use for `datalad save --jobs`. Defaults to 1.",
         required=False,
     )
 
@@ -819,8 +819,9 @@ def _parse_add_nifti_info():
         dest="n_cpus",
         default=1,
         help=(
-            "Number of CPUs to use for parallel metadata extraction. "
-            "Defaults to 1 (sequential processing)."
+            "Number of CPUs to use for parallel add-nifti-info. "
+            "Defaults to 1 (sequential processing). When --use-datalad is set, "
+            "this will set parallel jobs for `datalad save -J <n-cpus>`."
         ),
         required=False,
     )
@@ -889,8 +890,8 @@ def _parse_add_file_collections():
         dest="n_cpus",
         default=1,
         help=(
-            "Number of CPUs to use for DataLad save jobs (-J). "
-            "Defaults to 1 (no parallel jobs)."
+            "Number of CPUs to use for `datalad save --jobs`. "
+            "Defaults to 1 (sequential processing)."
         ),
         required=False,
     )
@@ -965,7 +966,10 @@ def _parse_purge():
         action="store",
         dest="n_cpus",
         default=1,
-        help="Number of CPUs (jobs) to use for DataLad save (-J). Defaults to 1.",
+        help=(
+            "Number of CPUs to use for `datalad save --jobs`. "
+            "Defaults to 1 (sequential processing)."
+        ),
         required=False,
     )
     return parser
