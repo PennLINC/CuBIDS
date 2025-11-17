@@ -413,6 +413,14 @@ We can execute ``cubids apply`` with the following command:
 
     $ cubids apply BIDS_Dataset_DataLad v0_edited_summary.tsv v0_files.tsv v1 --use-datalad
 
+.. note::
+    For large datasets, you can speed up DataLad operations by using the ``--n-cpus`` flag
+    to enable parallel jobs for ``datalad save`` and ``datalad run`` operations. For example, to use 4 CPUs:
+
+    .. code-block:: console
+
+        $ cubids apply BIDS_Dataset_DataLad v0_edited_summary.tsv v0_files.tsv v1 --use-datalad --n-cpus 4
+
 Checking our git log, we can see that our changes from apply have been saved.
 
 .. image:: _static/screenshot_7.png

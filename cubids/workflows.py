@@ -487,6 +487,7 @@ def apply(
     edited_summary_tsv,
     files_tsv,
     new_tsv_prefix,
+    n_cpus=1,
 ):
     """Apply the tsv changes.
 
@@ -525,6 +526,7 @@ def apply(
         str(files_tsv),
         str(new_tsv_prefix),
         raise_on_error=False,
+        n_cpus=n_cpus,
     )
 
 
