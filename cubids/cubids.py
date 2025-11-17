@@ -715,7 +715,7 @@ class CuBIDS(object):
 
         # RENAME INTENDED FORS using prebuilt index when available
         if intended_for_index is None:
-            intended_for_index = {}
+            intended_for_index = self._build_intendedfor_index()
 
         old_rel = utils._get_participant_relative_path(filepath)
         old_bidsuri = utils._get_bidsuri(filepath, self.path)
@@ -738,6 +738,9 @@ class CuBIDS(object):
                 continue
             items = listify(data["IntendedFor"]) or []
             changed = False
+            # Track which format was present to preserve it
+            had_rel = old_rel in items
+            had_bidsuri = old_bidsuri in items
             # Remove old references (both styles)
             while old_rel in items:
                 items.remove(old_rel)
@@ -745,11 +748,11 @@ class CuBIDS(object):
             while old_bidsuri in items:
                 items.remove(old_bidsuri)
                 changed = True
-            # Append new references if not present
-            if new_rel not in items:
+            # Append new references in the same format(s) that were originally present
+            if had_rel and new_rel not in items:
                 items.append(new_rel)
                 changed = True
-            if new_bidsuri not in items:
+            if had_bidsuri and new_bidsuri not in items:
                 items.append(new_bidsuri)
                 changed = True
             if changed:

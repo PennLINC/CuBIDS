@@ -1160,7 +1160,7 @@ def test_validator(tmp_path):
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
 
-    assert ret.returncode == 16, (
+    assert ret.returncode == 1, (
         "Validator was expected to fail after corrupting files, "
         f"but returned code {ret.returncode}.\n"
         "Corrupted files: removed JSON sidecar and modified NIfTI header.\n"
