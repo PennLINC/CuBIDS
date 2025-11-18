@@ -127,34 +127,37 @@ def _validate_single_subject(args):
         if not os.path.exists(subject_folder_path):
             os.makedirs(subject_folder_path, exist_ok=True)
 
-        # Ensure participants.tsv is available in temp root and is a copy (not a link)
-        # Always COPY (never link) to avoid modifying the original file when filtering
-        participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
-        # Always remove existing file first in case it was linked in the earlier loop
-        if os.path.exists(participants_tsv_path):
+        # Ensure participants.tsv and participants.json are available in temp root
+        # Always COPY (never link) to avoid modifying the original files when filtering
+        participants_files = ["participants.tsv", "participants.json"]
+        for filename in participants_files:
+            dest_path = os.path.join(temporary_bids_dir, filename)
+            # Always remove existing file first in case it was linked in the earlier loop
+            if os.path.exists(dest_path):
+                try:
+                    os.remove(dest_path)
+                except Exception:  # noqa: BLE001
+                    pass
+            # Try to find source file in the provided file list
             try:
-                os.remove(participants_tsv_path)
+                source_path = None
+                for candidate_path in files_list:
+                    if os.path.basename(candidate_path) == filename:
+                        source_path = candidate_path
+                        break
+                # If not in file list, try to get it from the original bids_dir
+                if not source_path and bids_dir:
+                    potential_path = os.path.join(bids_dir, filename)
+                    if os.path.exists(potential_path):
+                        source_path = potential_path
+                if source_path:
+                    # Always copy (not link) to protect the original file from modification
+                    shutil.copy2(source_path, dest_path)
             except Exception:  # noqa: BLE001
                 pass
-        # Try to find a source participants.tsv in the provided file list
-        try:
-            source_participants_tsv_path = None
-            for candidate_path in files_list:
-                if os.path.basename(candidate_path) == "participants.tsv":
-                    source_participants_tsv_path = candidate_path
-                    break
-            # If not in file list, try to get it from the original bids_dir
-            if not source_participants_tsv_path and bids_dir:
-                potential_path = os.path.join(bids_dir, "participants.tsv")
-                if os.path.exists(potential_path):
-                    source_participants_tsv_path = potential_path
-            if source_participants_tsv_path:
-                # Always copy (not link) to protect the original file from modification
-                shutil.copy2(source_participants_tsv_path, participants_tsv_path)
-        except Exception:  # noqa: BLE001
-            pass
 
         # If participants.tsv exists in the temp BIDS root, filter to current subject
+        participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")
         if os.path.exists(participants_tsv_path):
             try:
                 participants_table = pd.read_csv(participants_tsv_path, sep="\t")
