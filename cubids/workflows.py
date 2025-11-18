@@ -136,8 +136,11 @@ def _validate_single_subject(args):
             if os.path.exists(dest_path):
                 try:
                     os.remove(dest_path)
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to remove existing file '{dest_path}': {e}. "
+                        "The file may be overwritten or cause conflicts."
+                    )
             # Try to find source file in the provided file list
             try:
                 source_path = None
@@ -153,8 +156,12 @@ def _validate_single_subject(args):
                 if source_path:
                     # Always copy (not link) to protect the original file from modification
                     shutil.copy2(source_path, dest_path)
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as e:
+                source_info = source_path if source_path else "unknown location"
+                logger.warning(
+                    f"Failed to copy '{filename}' from '{source_info}' to '{dest_path}': {e}. "
+                    "The file may be missing or inaccessible."
+                )
 
         # If participants.tsv exists in the temp BIDS root, filter to current subject
         participants_tsv_path = os.path.join(temporary_bids_dir, "participants.tsv")

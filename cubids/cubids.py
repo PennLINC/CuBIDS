@@ -1083,6 +1083,7 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/**/fmap/*.json"):
             metadata = utils.get_sidecar_metadata(str(path))
             if metadata == "Erroneous sidecar":
+                print(f"Warning: Failed to parse sidecar metadata from '{path}'.")
                 continue
             if_list = metadata.get("IntendedFor")
             items = listify(if_list)
@@ -1094,6 +1095,7 @@ class CuBIDS(object):
         for path in Path(self.path).rglob("sub-*/**/perf/*_m0scan.json"):
             metadata = utils.get_sidecar_metadata(str(path))
             if metadata == "Erroneous sidecar":
+                print(f"Warning: Failed to parse sidecar metadata from '{path}'.")
                 continue
             if_list = metadata.get("IntendedFor")
             items = listify(if_list)
