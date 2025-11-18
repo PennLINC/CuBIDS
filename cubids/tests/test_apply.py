@@ -323,12 +323,12 @@ def test_cubids_apply_intendedfor(
     # Create a CuBIDS summary tsv
     summary_tsv = tmpdir / "summary.tsv"
     df = pd.DataFrame(summary_data)
-    df.to_csv(summary_tsv, sep="\t", index=False)
+    df.to_csv(summary_tsv, sep="\t", index=False, na_rep="n/a")
 
     # Create a CuBIDS files tsv
     files_tsv = tmpdir / "files.tsv"
     df = pd.DataFrame(fdata)
-    df.to_csv(files_tsv, sep="\t", index=False)
+    df.to_csv(files_tsv, sep="\t", index=False, na_rep="n/a")
 
     # Run cubids apply
     if isinstance(expected, str):

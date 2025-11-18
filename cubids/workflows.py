@@ -176,10 +176,13 @@ def _validate_single_subject(args):
                         participants_tsv_path,
                         sep="\t",
                         index=False,
+                        na_rep="n/a",
                     )
-            except Exception as e:  # noqa: F841
-                # Non-fatal: continue validation even if filtering fails
-                pass
+            except Exception as e:
+                logger.warning(
+                    f"Failed to filter participants.tsv for subject {subject}: {e}. "
+                    "Continuing validation without filtering."
+                )
 
         # Run the validator
         call = build_validator_call(
@@ -281,7 +284,7 @@ def validate(
             else:
                 val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
 
-            parsed.to_csv(val_tsv, sep="\t", index=False)
+            parsed.to_csv(val_tsv, sep="\t", index=False, na_rep="n/a")
 
             # build validation data dictionary json sidecar
             val_dict = get_val_dictionary()
@@ -373,7 +376,7 @@ def validate(
             else:
                 val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
 
-            parsed.to_csv(val_tsv, sep="\t", index=False)
+            parsed.to_csv(val_tsv, sep="\t", index=False, na_rep="n/a")
 
             # build validation data dictionary json sidecar
             val_dict = get_val_dictionary()
