@@ -381,7 +381,7 @@ def group_by_acquisition_sets(files_tsv, output_prefix, acq_group_level, is_long
 
     # Write the mapping of subject/session to
     acq_group_df = pd.DataFrame(grouped_sub_sess)
-    acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t", index=False)
+    acq_group_df.to_csv(output_prefix + "_AcqGrouping.tsv", sep="\t", index=False, na_rep="n/a")
 
     # Create data dictionary for acq group tsv
     acq_dict = get_acq_dictionary(is_longitudinal)

@@ -535,6 +535,20 @@ def _parse_apply():
         required=False,
     )
 
+    parser.add_argument(
+        "--n-cpus",
+        "--n_cpus",
+        type=int,
+        action="store",
+        dest="n_cpus",
+        default=1,
+        help=(
+            "Number of CPUs to use for datalad jobs. "
+            "Used as --jobs for datalad save and datalad run."
+        ),
+        required=False,
+    )
+
     return parser
 
 
