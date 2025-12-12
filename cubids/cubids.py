@@ -655,7 +655,7 @@ class CuBIDS(object):
         old_suffix = parse_file_entities(filepath)["suffix"]
         scan_end = "_" + old_suffix + old_ext
 
-        if "_task-" in filepath:
+        if "/func/" in filepath:
             old_events = filepath.replace(scan_end, "_events.tsv")
             if Path(old_events).exists():
                 self.old_filenames.append(old_events)
@@ -685,12 +685,14 @@ class CuBIDS(object):
                 new_sbref_json = new_path.replace(new_scan_end, "_sbref.json")
                 self.new_filenames.append(new_sbref_json)
 
-        old_physio = filepath.replace(scan_end, "_physio.tsv.gz")
-        if Path(old_physio).exists():
-            self.old_filenames.append(old_physio)
-            new_scan_end = "_" + suffix + old_ext
-            new_physio = new_path.replace(new_scan_end, "_physio.tsv.gz")
-            self.new_filenames.append(new_physio)
+            # Handle physio files (.tsv.gz and .json)
+            for physio_ext in ["_physio.tsv.gz", "_physio.json"]:
+                old_physio = filepath.replace(scan_end, physio_ext)
+                if Path(old_physio).exists():
+                    self.old_filenames.append(old_physio)
+                    new_scan_end = "_" + suffix + old_ext
+                    new_physio = new_path.replace(new_scan_end, physio_ext)
+                    self.new_filenames.append(new_physio)
 
         # Update ASL-specific files only when ASL timeseries is being renamed
         if "/perf/" in filepath and old_suffix == "asl":
@@ -933,12 +935,21 @@ class CuBIDS(object):
 
             # FUNC-specific
             if "/func/" in str(scan):
-                tsv = utils.img_to_new_ext(str(scan), ".tsv").replace("_bold", "_events")
-                if Path(tsv).exists():
-                    to_remove.append(tsv)
-                tsv_json = tsv.replace(".tsv", ".json")
-                if Path(tsv_json).exists():
-                    to_remove.append(tsv_json)
+                # Event files
+                event_tsv = utils.img_to_new_ext(str(scan), ".tsv").replace("_bold", "_events")
+                if Path(event_tsv).exists():
+                    to_remove.append(event_tsv)
+                event_json = event_tsv.replace(".tsv", ".json")
+                if Path(event_json).exists():
+                    to_remove.append(event_json)
+                # Physio files
+                old_suffix = parse_file_entities(str(scan))["suffix"]
+                old_ext = "".join(Path(scan).suffixes)
+                scan_end = "_" + old_suffix + old_ext
+                for physio_ext in ["_physio.tsv.gz", "_physio.json"]:
+                    physio_file = str(scan).replace(scan_end, physio_ext)
+                    if Path(physio_file).exists():
+                        to_remove.append(physio_file)
                 # Handle _sbref.nii.gz and _sbref.json files
                 old_suffix = parse_file_entities(str(scan))["suffix"]
                 old_ext = "".join(Path(scan).suffixes)

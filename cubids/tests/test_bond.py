@@ -873,12 +873,7 @@ def test_apply_tsv_changes(tmp_path):
     ).exists()
 
     # check that old names are gone!
-    # assert Path(
-    #    data_root / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v5_physio.tsv.gz"
-    # ).exists()
-    assert Path(
-        data_root / "complete/sub-01/ses-phdiff/fmap/sub-01_ses-phdiff_acq-v4_physio.tsv.gz"
-    ).exists()
+    # Note: physio files are func-specific, so fmap scans don't have them
 
     mod2_path = tmp_path / "modified2_summary.tsv"
     with mod2_path.open("r") as f:
@@ -928,8 +923,20 @@ def test_apply_tsv_changes(tmp_path):
 
     # make sure deleted files are gone
     for f in deleted_f:
-        assert not Path(f).exists()
-        assert not Path(f.replace("nii.gz", "json")).exists()
+        full_path = Path(str(data_root / "complete") + f)
+        assert not full_path.exists()
+        assert not Path(str(full_path).replace("nii.gz", "json")).exists()
+        # check that physio files are also deleted (only for func scans)
+        if "/func/" in str(full_path):
+            # Construct physio file paths by replacing the scan suffix with _physio
+            from bids.layout import parse_file_entities
+            old_suffix = parse_file_entities(str(full_path))["suffix"]
+            old_ext = "".join(full_path.suffixes)
+            scan_end = "_" + old_suffix + old_ext
+            physio_tsv = str(full_path).replace(scan_end, "_physio.tsv.gz")
+            physio_json = str(full_path).replace(scan_end, "_physio.json")
+            assert not Path(physio_tsv).exists()
+            assert not Path(physio_json).exists()
 
 
 def test_session_apply(tmp_path):

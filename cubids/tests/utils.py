@@ -122,11 +122,6 @@ def _add_ext_files(img_path):
     """
     dwi_exts = [".bval", ".bvec"]
 
-    # everyone gets a physio file
-    no_suffix = img_path.rpartition("_")[0]
-    physio_file = no_suffix + "_physio" + ".tsv.gz"
-    # save ext file in img_path's parent dir
-    Path(physio_file).touch()
 
     if "/dwi/" in img_path:
         # add bval and bvec
@@ -137,6 +132,15 @@ def _add_ext_files(img_path):
         no_suffix = img_path.rpartition("_")[0]
         bold_ext_file = no_suffix + "_events" + ".tsv"
         Path(bold_ext_file).touch()
+        
+        # physio files
+        no_suffix = img_path.rpartition("_")[0]
+        physio_file = no_suffix + "_physio" + ".tsv.gz"
+        # save ext file in img_path's parent dir
+        Path(physio_file).touch()
+        # also create physio.json file
+        physio_json = no_suffix + "_physio" + ".json"
+        Path(physio_json).touch()
 
 
 def _edit_a_json(json_file):
