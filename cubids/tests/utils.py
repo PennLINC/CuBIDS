@@ -108,7 +108,7 @@ def _add_deletion(summary_tsv):
     """
     df = pd.read_table(summary_tsv)
     df.loc[3, "MergeInto"] = 0
-    df.to_csv(summary_tsv, sep="\t", index=False, na_rep="n/a")
+    df.to_csv(summary_tsv, sep="\t", index=False)
     return df.loc[3, "KeyParamGroup"]
 
 

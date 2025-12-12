@@ -284,7 +284,7 @@ def validate(
             else:
                 val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
 
-            parsed.to_csv(val_tsv, sep="\t", index=False, na_rep="n/a")
+            parsed.to_csv(val_tsv, sep="\t", index=False)
 
             # build validation data dictionary json sidecar
             val_dict = get_val_dictionary()
@@ -376,7 +376,7 @@ def validate(
             else:
                 val_tsv = str(bids_dir) + "/code/CuBIDS/" + str(output_prefix) + "_validation.tsv"
 
-            parsed.to_csv(val_tsv, sep="\t", index=False, na_rep="n/a")
+            parsed.to_csv(val_tsv, sep="\t", index=False)
 
             # build validation data dictionary json sidecar
             val_dict = get_val_dictionary()
