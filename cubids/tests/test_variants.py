@@ -16,8 +16,9 @@ where:
 - {value} is either the cluster number or actual value
 """
 
-import pytest
 import pandas as pd
+import pytest
+
 from cubids.utils import assign_variants
 
 

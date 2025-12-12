@@ -8,13 +8,13 @@ Each test case includes assertions to verify the expected behavior of the corres
 """
 
 import argparse
-from functools import partial
 import json
 import shutil
+from functools import partial
 
 import pytest
 
-from cubids.cli import _main, _path_exists, _is_file
+from cubids.cli import _is_file, _main, _path_exists
 from cubids.tests.utils import TEST_DATA, chdir
 
 

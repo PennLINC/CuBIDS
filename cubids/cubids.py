@@ -650,40 +650,29 @@ class CuBIDS(object):
                 self.old_filenames.append(bvec_old)
                 self.new_filenames.append(bvec_new)
 
-        # Update func-specific files
+        # Update bold-specific files
         # now rename _events, _sbref, and _physio files!
         old_suffix = parse_file_entities(filepath)["suffix"]
         scan_end = "_" + old_suffix + old_ext
 
-        if "/func/" in filepath:
-            old_events = filepath.replace(scan_end, "_events.tsv")
-            if Path(old_events).exists():
-                self.old_filenames.append(old_events)
-                new_scan_end = "_" + suffix + old_ext
-                new_events = new_path.replace(new_scan_end, "_events.tsv")
-                self.new_filenames.append(new_events)
+        if "bold" in filepath:
+            # Handle event files (.tsv and .json)
+            for event_ext in ["_events.tsv", "_events.json"]:
+                old_events = filepath.replace(scan_end, event_ext)
+                if Path(old_events).exists():
+                    self.old_filenames.append(old_events)
+                    new_scan_end = "_" + suffix + old_ext
+                    new_events = new_path.replace(new_scan_end, event_ext)
+                    self.new_filenames.append(new_events)
 
-            old_ejson = filepath.replace(scan_end, "_events.json")
-            if Path(old_ejson).exists():
-                self.old_filenames.append(old_ejson)
-                new_scan_end = "_" + suffix + old_ext
-                new_ejson = new_path.replace(new_scan_end, "_events.json")
-                self.new_filenames.append(new_ejson)
-
-            # Handle _sbref.nii.gz and _sbref.json files
-            old_sbref_nii = filepath.replace(scan_end, "_sbref.nii.gz")
-            if Path(old_sbref_nii).exists():
-                self.old_filenames.append(old_sbref_nii)
-                new_scan_end = "_" + suffix + old_ext
-                new_sbref_nii = new_path.replace(new_scan_end, "_sbref.nii.gz")
-                self.new_filenames.append(new_sbref_nii)
-
-            old_sbref_json = filepath.replace(scan_end, "_sbref.json")
-            if Path(old_sbref_json).exists():
-                self.old_filenames.append(old_sbref_json)
-                new_scan_end = "_" + suffix + old_ext
-                new_sbref_json = new_path.replace(new_scan_end, "_sbref.json")
-                self.new_filenames.append(new_sbref_json)
+            # Handle sbref files (.nii.gz and .json)
+            for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
+                old_sbref = filepath.replace(scan_end, sbref_ext)
+                if Path(old_sbref).exists():
+                    self.old_filenames.append(old_sbref)
+                    new_scan_end = "_" + suffix + old_ext
+                    new_sbref = new_path.replace(new_scan_end, sbref_ext)
+                    self.new_filenames.append(new_sbref)
 
             # Handle physio files (.tsv.gz and .json)
             for physio_ext in ["_physio.tsv.gz", "_physio.json"]:
@@ -933,33 +922,26 @@ class CuBIDS(object):
                 if Path(bvec).exists():
                     to_remove.append(bvec)
 
-            # FUNC-specific
-            if "/func/" in str(scan):
-                # Event files
-                event_tsv = utils.img_to_new_ext(str(scan), ".tsv").replace("_bold", "_events")
-                if Path(event_tsv).exists():
-                    to_remove.append(event_tsv)
-                event_json = event_tsv.replace(".tsv", ".json")
-                if Path(event_json).exists():
-                    to_remove.append(event_json)
-                # Physio files
+            # BOLD-specific
+            if "bold" in str(scan):
                 old_suffix = parse_file_entities(str(scan))["suffix"]
                 old_ext = "".join(Path(scan).suffixes)
                 scan_end = "_" + old_suffix + old_ext
+                # Event files
+                for event_ext in ["_events.tsv", "_events.json"]:
+                    event_file = str(scan).replace(scan_end, event_ext)
+                    if Path(event_file).exists():
+                        to_remove.append(event_file)
+                # Physio files
                 for physio_ext in ["_physio.tsv.gz", "_physio.json"]:
                     physio_file = str(scan).replace(scan_end, physio_ext)
                     if Path(physio_file).exists():
                         to_remove.append(physio_file)
-                # Handle _sbref.nii.gz and _sbref.json files
-                old_suffix = parse_file_entities(str(scan))["suffix"]
-                old_ext = "".join(Path(scan).suffixes)
-                scan_end = "_" + old_suffix + old_ext
-                sbref_nii = str(scan).replace(scan_end, "_sbref.nii.gz")
-                if Path(sbref_nii).exists():
-                    to_remove.append(sbref_nii)
-                sbref_json = str(scan).replace(scan_end, "_sbref.json")
-                if Path(sbref_json).exists():
-                    to_remove.append(sbref_json)
+                # Handle sbref files (.nii.gz and .json)
+                for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
+                    sbref_file = str(scan).replace(scan_end, sbref_ext)
+                    if Path(sbref_file).exists():
+                        to_remove.append(sbref_file)
 
             # PERF-specific
             if "/perf/" in str(scan):

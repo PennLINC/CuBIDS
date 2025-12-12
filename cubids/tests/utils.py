@@ -130,17 +130,18 @@ def _add_ext_files(img_path):
             Path(dwi_ext_file).touch()
     if "bold" in img_path:
         no_suffix = img_path.rpartition("_")[0]
-        bold_ext_file = no_suffix + "_events" + ".tsv"
-        Path(bold_ext_file).touch()
-        
-        # physio files
-        no_suffix = img_path.rpartition("_")[0]
-        physio_file = no_suffix + "_physio" + ".tsv.gz"
-        # save ext file in img_path's parent dir
-        Path(physio_file).touch()
-        # also create physio.json file
-        physio_json = no_suffix + "_physio" + ".json"
-        Path(physio_json).touch()
+        # Event files (.tsv and .json)
+        for event_ext in ["_events.tsv", "_events.json"]:
+            event_file = no_suffix + event_ext
+            Path(event_file).touch()
+        # Physio files (.tsv.gz and .json)
+        for physio_ext in ["_physio.tsv.gz", "_physio.json"]:
+            physio_file = no_suffix + physio_ext
+            Path(physio_file).touch()
+        # sbref files (.nii.gz and .json)
+        for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
+            sbref_file = no_suffix + sbref_ext
+            Path(sbref_file).touch()
 
 
 def _edit_a_json(json_file):
