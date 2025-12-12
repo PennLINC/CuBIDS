@@ -459,7 +459,7 @@ def test_tsv_merge_no_datalad(tmp_path):
     summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[complete_dwi_row]
 
     valid_tsv_file = tsv_prefix + "_valid_summary.tsv"
-    summary_df.to_csv(valid_tsv_file, sep="\t", index=False, na_rep="n/a")
+    summary_df.to_csv(valid_tsv_file, sep="\t", index=False)
 
     # about to apply merges!
 
@@ -472,7 +472,7 @@ def test_tsv_merge_no_datalad(tmp_path):
         complete_dwi_row
     ]
     invalid_tsv_file = tsv_prefix + "_invalid_summary.tsv"
-    summary_df.to_csv(invalid_tsv_file, sep="\t", index=False, na_rep="n/a")
+    summary_df.to_csv(invalid_tsv_file, sep="\t", index=False)
 
     with pytest.raises(Exception):
         bod.apply_tsv_changes(
@@ -572,7 +572,7 @@ def test_tsv_merge_changes(tmp_path):
     summary_df.loc[fa_nan_dwi_row, "MergeInto"] = summary_df.ParamGroup[complete_dwi_row]
 
     valid_tsv_file = tsv_prefix + "_valid_summary.tsv"
-    summary_df.to_csv(valid_tsv_file, sep="\t", index=False, na_rep="n/a")
+    summary_df.to_csv(valid_tsv_file, sep="\t", index=False)
 
     # about to merge
     bod.apply_tsv_changes(valid_tsv_file, original_files_tsv, str(tmp_path / "ok_modified"))
@@ -584,7 +584,7 @@ def test_tsv_merge_changes(tmp_path):
         complete_dwi_row
     ]
     invalid_tsv_file = tsv_prefix + "_invalid_summary.tsv"
-    summary_df.to_csv(invalid_tsv_file, sep="\t", index=False, na_rep="n/a")
+    summary_df.to_csv(invalid_tsv_file, sep="\t", index=False)
 
     with pytest.raises(Exception):
         bod.apply_tsv_changes(

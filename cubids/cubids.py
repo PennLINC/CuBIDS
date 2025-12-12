@@ -1449,9 +1449,9 @@ class CuBIDS(object):
         with open(summary_json, "w") as outfile:
             json.dump(summary_dict, outfile, indent=4)
 
-        big_df.to_csv(files_tsv, sep="\t", index=False, na_rep="n/a")
+        big_df.to_csv(files_tsv, sep="\t", index=False)
 
-        summary.to_csv(summary_tsv, sep="\t", index=False, na_rep="n/a")
+        summary.to_csv(summary_tsv, sep="\t", index=False)
 
         # Calculate the acq groups
         group_by_acquisition_sets(files_tsv, path_prefix, self.acq_group_level)
