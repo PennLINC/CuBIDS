@@ -638,17 +638,22 @@ class CuBIDS(object):
         # Update DWI-specific files
         if "/dwi/" in filepath:
             # add the bval and bvec if there
-            bval_old = utils.img_to_new_ext(filepath, ".bval")
-            bval_new = utils.img_to_new_ext(new_path, ".bval")
-            if Path(bval_old).exists() and bval_old not in self.old_filenames:
-                self.old_filenames.append(bval_old)
-                self.new_filenames.append(bval_new)
-
-            bvec_old = utils.img_to_new_ext(filepath, ".bvec")
-            bvec_new = utils.img_to_new_ext(new_path, ".bvec")
-            if Path(bvec_old).exists() and bvec_old not in self.old_filenames:
-                self.old_filenames.append(bvec_old)
-                self.new_filenames.append(bvec_new)
+            for ext in [".bval", ".bvec"]:
+                assoc_old = utils.img_to_new_ext(filepath, ext)
+                assoc_new = utils.img_to_new_ext(new_path, ext)
+                if Path(assoc_old).exists() and assoc_old not in self.old_filenames:
+                    self.old_filenames.append(assoc_old)
+                    self.new_filenames.append(assoc_new)
+            # Handle sbref files
+            old_suffix = parse_file_entities(filepath)["suffix"]
+            scan_end = "_" + old_suffix + old_ext
+            for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
+                old_sbref = filepath.replace(scan_end, sbref_ext)
+                if Path(old_sbref).exists():
+                    self.old_filenames.append(old_sbref)
+                    new_scan_end = "_" + suffix + old_ext
+                    new_sbref = new_path.replace(new_scan_end, sbref_ext)
+                    self.new_filenames.append(new_sbref)
 
         # Update bold-specific files
         # now rename _events, _sbref, and _physio files!
@@ -915,12 +920,18 @@ class CuBIDS(object):
 
             # DWI-specific
             if "/dwi/" in str(scan):
-                bval = utils.img_to_new_ext(str(scan), ".bval")
-                bvec = utils.img_to_new_ext(str(scan), ".bvec")
-                if Path(bval).exists():
-                    to_remove.append(bval)
-                if Path(bvec).exists():
-                    to_remove.append(bvec)
+                for ext in [".bval", ".bvec"]:
+                    assoc_file = utils.img_to_new_ext(str(scan), ext)
+                    if Path(assoc_file).exists():
+                        to_remove.append(assoc_file)
+                # Handle sbref files
+                old_suffix = parse_file_entities(str(scan))["suffix"]
+                old_ext = "".join(Path(scan).suffixes)
+                scan_end = "_" + old_suffix + old_ext
+                for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
+                    sbref_file = str(scan).replace(scan_end, sbref_ext)
+                    if Path(sbref_file).exists():
+                        to_remove.append(sbref_file)
 
             # BOLD-specific
             if "bold" in str(scan):

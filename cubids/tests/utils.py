@@ -122,12 +122,16 @@ def _add_ext_files(img_path):
     """
     dwi_exts = [".bval", ".bvec"]
 
-
     if "/dwi/" in img_path:
         # add bval and bvec
         for ext in dwi_exts:
             dwi_ext_file = img_path.replace(".nii.gz", "").replace(".nii", "") + ext
             Path(dwi_ext_file).touch()
+        # sbref files (.nii.gz and .json)
+        no_suffix = img_path.rpartition("_")[0]
+        for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
+            sbref_file = no_suffix + sbref_ext
+            Path(sbref_file).touch()
     if "bold" in img_path:
         no_suffix = img_path.rpartition("_")[0]
         # Event files (.tsv and .json)
