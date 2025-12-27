@@ -89,7 +89,6 @@ we can view a summary of our dataset's version history by running the following 
 
     $ cd BIDS_Dataset_DataLad
     $ git log --oneline
-    $ cd ..
 
 This command will write the following to the terminal:
 
@@ -183,6 +182,9 @@ Since we ran ``cubids add-nifti-info`` with the ``--use-datalad`` flag set,
 BIDS validation
 ---------------
 
+The next step in the ``CuBIDS`` workflow is to run BIDS validation
+to detect potential curation errors using ``cubids validate``.
+
 .. code-block:: console
 
     $ cubids validate BIDS_Dataset_DataLad v0 --validation-scope subject
@@ -210,8 +212,6 @@ BIDS validation
 
     After that, you will need to add ``--local-validator`` option to the command string above.
 
-The next step in the ``CuBIDS`` workflow is to run BIDS validation
-to detect potential curation errors using ``cubids validate``.
 
 This command produces the following tsv:
 
