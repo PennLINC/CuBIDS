@@ -2,6 +2,40 @@
 History
 =======
 
+1.2.1 (2026-01-22)
+------------------
+
+🎉 Exciting New Features
+```````````````````````
+
+* Add parallel processing to `cubids apply` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/481
+* Add parallelization to `cubids add-nifti-info` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/479
+* Add `--n-cpus` to parallelize `cubids validate --validation-scope subject` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/476
+* Support array-type metadata fields in `cubids group` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/407
+* Add file collection metadata as array-type fields to JSONs by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/445
+* Add DWI sbref to cubids apply by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/486
+
+🐛 Bug Fixes
+````````````
+
+* Fix df created by `cubids group` and `cubids validate` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/483
+* Fix M0 scan variant name inheritance by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/466
+* Fix PARTICIPANT_ID_MISMATCH in `cubids validate` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/476
+
+Other Changes
+`````````````
+
+* Refactor: Standardize bold-specific file handling for events, sbref, and physio by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/484
+* Change variant renaming from "ObliquityTrue" -> "Oblique" and "ObliquityFalse" -> "Plumb" by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/480
+* Remove deprecated CLIs by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/454
+* Update pybids requirement from <=0.19.0 to <=0.20.0 by @dependabot in https://github.com/PennLINC/CuBIDS/pull/468
+* Update pandas requirement from <=2.2.3 to <=2.3.3 by @dependabot in https://github.com/PennLINC/CuBIDS/pull/469
+* Update numpy requirement from <=2.2.3 to <=2.2.4 by @dependabot in https://github.com/PennLINC/CuBIDS/pull/453
+* Update pybids requirement from <=0.18.1 to <=0.19.0 by @dependabot in https://github.com/PennLINC/CuBIDS/pull/451
+* Update various GitHub Actions dependencies
+
+**Full Changelog**: https://github.com/PennLINC/CuBIDS/compare/1.2.0...1.2.1
+
 1.1.0 (2024-04-02)
 ------------------
 
