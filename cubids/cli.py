@@ -348,6 +348,8 @@ def _parse_group():
     --config : str, optional
         Path to a config file for grouping. If not provided, the default config file from
         CuBIDS will be used.
+    --ignore-entity : str, optional
+        One or more BIDS entities to ignore when creating entity sets.
     """
     parser = argparse.ArgumentParser(
         description="cubids group: find key and parameter groups in BIDS",
@@ -395,6 +397,16 @@ def _parse_group():
         help=(
             "Path to a config file for grouping. "
             "If not provided, then the default config file from CuBIDS will be used."
+        ),
+    )
+    parser.add_argument(
+        "--ignore-entity",
+        nargs="+",
+        action="store",
+        default=None,
+        help=(
+            "One or more BIDS entities to ignore when creating entity sets. "
+            "Example: --ignore-entity task run direction"
         ),
     )
     parser.add_argument(
