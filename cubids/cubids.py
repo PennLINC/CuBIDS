@@ -55,6 +55,8 @@ class CuBIDS(object):
     schema_json : :obj:`str`, optional
         Path to a BIDS schema JSON file.
         Default is None, in which case the default schema in CuBIDS is used.
+    ignore_entities : list[str] or None, optional
+        BIDS entities to ignore when creating entity sets. Default is None.
 
     Attributes
     ----------
@@ -106,6 +108,7 @@ class CuBIDS(object):
         grouping_config=None,
         force_unlock=False,
         schema_json=None,
+        ignore_entities=None,
     ):
         self.path = os.path.abspath(data_root)
         self._layout = None
@@ -125,9 +128,13 @@ class CuBIDS(object):
         self.use_datalad = use_datalad  # True if flag set, False if flag unset
         self.schema = load_schema(schema_json)
         self.is_longitudinal = self._infer_longitudinal()  # inferred from dataset structure
+        self.ignore_entities = set(ignore_entities or [])
 
         if self.use_datalad:
             self.init_datalad()
+
+        if self.ignore_entities:
+            NON_KEY_ENTITIES.update(self.ignore_entities)
 
         if self.is_longitudinal and self.acq_group_level == "session":
             NON_KEY_ENTITIES.remove("session")

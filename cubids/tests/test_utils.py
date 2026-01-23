@@ -3,6 +3,8 @@
 import pandas as pd
 
 from cubids import utils
+from cubids.constants import NON_KEY_ENTITIES
+from cubids.cubids import CuBIDS
 from cubids.tests.utils import compare_group_assignments
 
 
@@ -154,6 +156,7 @@ def test_cluster_single_parameters():
         [0, 0, 0, 0, 0, 0, 1, 2],
     )
 
+
     # Change the tolerance for SliceTiming
     config["sidecar_params"]["func"]["SliceTiming"]["tolerance"] = 0.5
     out_df = utils.cluster_single_parameters(
@@ -182,3 +185,19 @@ def test_cluster_single_parameters():
         out_df["Cluster_ImageType"].values.astype(int),
         [0, 0, 0, 0, 0, 0, 1, 2],
     )
+
+
+def test_ignore_entities_in_entity_set(tmp_path):
+    """Test that ignore_entities updates NON_KEY_ENTITIES."""
+    original_non_key = NON_KEY_ENTITIES.copy()
+    try:
+        CuBIDS(tmp_path, ignore_entities=["task", "run"])
+        entity_set = utils._entities_to_entity_set(
+            {"subject": "01", "task": "rest", "run": "01", "acquisition": "x"}
+        )
+        assert "task-" not in entity_set
+        assert "run-" not in entity_set
+        assert "acquisition-x" in entity_set
+    finally:
+        NON_KEY_ENTITIES.clear()
+        NON_KEY_ENTITIES.update(original_non_key)

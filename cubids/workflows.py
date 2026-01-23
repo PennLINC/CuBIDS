@@ -463,7 +463,7 @@ def bids_sidecar_merge(from_json, to_json):
     sys.exit(merge_status)
 
 
-def group(bids_dir, acq_group_level, config, schema, output_prefix):
+def group(bids_dir, acq_group_level, config, schema, output_prefix, ignore_entity):
     """Find key and param groups.
 
     Parameters
@@ -478,6 +478,8 @@ def group(bids_dir, acq_group_level, config, schema, output_prefix):
         Path to the BIDS schema file.
     output_prefix : :obj:`pathlib.Path`
         Output filename prefix.
+    ignore_entity : list[str] or None
+        BIDS entities to ignore when creating entity sets.
     """
     # Run directly from python using
     bod = CuBIDS(
@@ -485,6 +487,7 @@ def group(bids_dir, acq_group_level, config, schema, output_prefix):
         acq_group_level=acq_group_level,
         grouping_config=config,
         schema_json=schema,
+        ignore_entities=ignore_entity,
     )
     bod.get_tsvs(
         str(output_prefix),
