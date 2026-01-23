@@ -325,6 +325,13 @@ An example command for running the grouping function as follows:
 
     $ cubids group BIDS_Dataset_DataLad v0
 
+You can also specify one or more entities to ignore when creating entity sets using the
+``--ignore-entity`` flag. For example, to ignore ``task`` entity:
+
+.. code-block:: console
+
+    $ cubids group BIDS_Dataset_DataLad v0 --ignore-entity task
+
 This command will produce four tables that describe the dataset's heterogeneity in different ways.
 
 #.  ``v0_summary.tsv`` contains all detected Key and Parameter groups and provides a high-level

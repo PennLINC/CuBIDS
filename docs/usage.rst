@@ -158,6 +158,19 @@ Use ``cubids group`` to generate your dataset's Entity Sets and Parameter Groups
 This will output four files, including the summary and files tsvs described above,
 prefixed by the second argument ``v0``.
 
+You can optionally specify additional BIDS entities to ignore when creating entity sets
+using the ``--ignore-entity`` flag. This is useful when you want to exclude certain entities
+from grouping, such as ``task``, ``run``, or ``direction``. For example:
+
+.. code-block:: console
+
+    $ cubids group FULL/PATH/TO/BIDS/DIR FULL/PATH/TO/v0 --ignore-entity task run direction
+
+This will exclude ``task``, ``run``, and ``direction`` entities from entity set names,
+in addition to the default excluded entities (subject, session, extension).
+Note that when using ``--acq-group-level session`` on longitudinal datasets,
+the ``session`` entity will be included in entity sets (and thus not ignored).
+
 
 Applying changes
 ----------------
