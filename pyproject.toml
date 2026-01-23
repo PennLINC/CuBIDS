@@ -43,7 +43,7 @@ doc = [
     "nbsphinx",
     "packaging",
     "recommonmark",
-    "sphinx >= 2.2",
+    "sphinx >= 2.2, < 9.0",
     "sphinx-argparse",
     "sphinx-copybutton",
     "sphinx_gallery",
