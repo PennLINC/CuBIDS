@@ -1568,17 +1568,20 @@ class CuBIDS(object):
                 utils._update_json(json_file.path, sidecar)
 
     def get_all_metadata_fields(self):
-        """Return all metadata fields in a BIDS directory.
+        """Return unique metadata fields grouped by root JSON files and modalities.
 
-        This method searches through all JSON files in the specified BIDS directory
-        and collects all unique metadata fields present in those files. It skips
-        files within any ".git" directory and handles empty files and JSON decoding
-        errors gracefully.
+        This method collects metadata fields from root JSON files and groups nested
+        JSON files by modality (func, anat, dwi, fmap, etc.). For root JSON files like
+        dataset_description.json and participants.json, all fields are listed. For
+        modalities, all unique fields across all subjects/sessions are listed (avoiding
+        duplication within each modality). It skips files within any ".git" directory 
+        and handles empty files and JSON decoding errors gracefully.
 
         Returns
         -------
-        list of str
-            A sorted list of all unique metadata fields found in the BIDS directory.
+        dict
+            A dictionary where keys are root JSON filenames or modality names (str) and
+            values are sorted lists of metadata fields (list of str) for that category.
 
         Raises
         ------
@@ -1586,24 +1589,78 @@ class CuBIDS(object):
             If there is an error decoding a JSON file or any unexpected error occurs
             while processing a file.
         """
-        found_fields = set()
-        for json_file in Path(self.path).rglob("*.json"):
-            if ".git" not in str(json_file):
-                # add this in case `print-metadata-fields` is run before validate
+        import re
+        from collections import defaultdict
+        bids_path = Path(self.path)
+        
+        # Collect root JSON files
+        root_fields = {}
+        for json_file in bids_path.glob("*.json"):
+            if ".git" not in str(json_file) and not json_file.name.startswith('.'):
                 try:
                     with open(json_file, "r", encoding="utf-8") as jsonr:
                         content = jsonr.read().strip()
                         if not content:
-                            print(f"Empty file: {json_file}")
                             continue
                         metadata = json.loads(content)
-                    found_fields.update(metadata.keys())
+                    root_fields[json_file.name] = set(metadata.keys())
                 except json.JSONDecodeError as e:
                     warnings.warn(f"Error decoding JSON in {json_file}: {e}")
                 except Exception as e:
                     warnings.warn(f"Unexpected error with file {json_file}: {e}")
-
-        return sorted(found_fields)
+        
+        # Collect fields by modality
+        modalities = defaultdict(set)
+        for sub_dir in bids_path.glob("sub-*/"):
+            ses_dirs = list(sub_dir.glob("ses-*/"))
+            if ses_dirs:
+                # Longitudinal dataset: modalities under ses-*/
+                for ses_dir in ses_dirs:
+                    for mod_dir in ses_dir.glob("*/"):
+                        mod = mod_dir.name
+                        for json_file in mod_dir.glob("*.json"):
+                            if ".git" not in str(json_file):
+                                try:
+                                    with open(json_file, "r", encoding="utf-8") as jsonr:
+                                        content = jsonr.read().strip()
+                                        if not content:
+                                            continue
+                                        metadata = json.loads(content)
+                                    modalities[mod].update(metadata.keys())
+                                except json.JSONDecodeError as e:
+                                    warnings.warn(f"Error decoding JSON in {json_file}: {e}")
+                                except Exception as e:
+                                    warnings.warn(f"Unexpected error with file {json_file}: {e}")
+            else:
+                # Cross-sectional dataset: modalities directly under sub-*/
+                for mod_dir in sub_dir.glob("*/"):
+                    mod = mod_dir.name
+                    for json_file in mod_dir.glob("*.json"):
+                        if ".git" not in str(json_file):
+                            try:
+                                with open(json_file, "r", encoding="utf-8") as jsonr:
+                                    content = jsonr.read().strip()
+                                    if not content:
+                                        continue
+                                    metadata = json.loads(content)
+                                modalities[mod].update(metadata.keys())
+                            except json.JSONDecodeError as e:
+                                warnings.warn(f"Error decoding JSON in {json_file}: {e}")
+                            except Exception as e:
+                                warnings.warn(f"Unexpected error with file {json_file}: {e}")
+        
+        # Prepare output dictionary with all fields
+        result = {}
+        
+        # For root files, list all fields
+        for cat, fields in root_fields.items():
+            result[cat] = sorted(fields)
+        
+        # For modalities, list all fields (already unique within each modality)
+        for mod, fields in modalities.items():
+            result[mod] = sorted(fields)
+        
+        return result
 
     def remove_metadata_fields(self, fields_to_remove):
         """Remove specific fields from all metadata files in the directory.
