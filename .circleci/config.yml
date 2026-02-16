@@ -63,6 +63,11 @@ jobs:
             conda create -n cov python=3.12 pip coverage
             source activate cov
 
+            # We need curl for the codecov upload
+            apt-get update
+            apt-get install -y -qq curl
+            apt-get install -y gnupg
+
             # Generate XML from the checked-out repository path so Codecov can
             # resolve file paths against the commit contents.
             cp /home/circleci/src/coverage/.coverage.* /home/circleci/src/CuBIDS/
