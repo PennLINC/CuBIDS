@@ -5,6 +5,7 @@ This module provides various utility functions used throughout the CuBIDS packag
 
 import json
 import re
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -501,10 +502,12 @@ def round_params(df, config, modality):
     return df
 
 
+@lru_cache(maxsize=16384)
 def get_sidecar_metadata(json_file):
     """Get all metadata values in a file's sidecar.
 
     Transform JSON dictionary to Python dictionary.
+    Results are cached (LRU) to avoid redundant disk reads.
 
     Parameters
     ----------
@@ -521,13 +524,17 @@ def get_sidecar_metadata(json_file):
     ------
     Exception
         If there is an error loading the JSON file.
+
+    Notes
+    -----
+    The return dict is cached; callers must NOT mutate the returned dict.
+    Call ``get_sidecar_metadata.cache_clear()`` after writing to sidecars.
     """
     try:
-        with open(json_file) as json_file:
-            data = json.load(json_file)
+        with open(json_file) as f:
+            data = json.load(f)
             return data
     except Exception:
-        # print("Error loading sidecar: ", json_filename)
         return "Erroneous sidecar"
 
 
@@ -1049,6 +1056,10 @@ def assign_variants(summary, rename_cols):
     3. Special parameters like HasFieldmap use predefined strings (e.g., VARIANTNoFmap)
     4. Multiple parameters are concatenated (e.g., VARIANTEchoTime2FlipAngle75)
     """
+    # Pre-cast rename_cols to string once instead of per-row
+    for col in rename_cols:
+        summary[col] = summary[col].astype(str)
+
     # loop through summary tsv and create dom_dict
     dom_dict = {}
     for row in range(len(summary)):
@@ -1058,7 +1069,6 @@ def assign_variants(summary, rename_cols):
             # grab col, all vals send to dict
             key = summary.loc[row, "EntitySet"]
             for col in rename_cols:
-                summary[col] = summary[col].apply(str)
                 val[col] = summary.loc[row, col]
 
                 if f"Cluster_{col}" in summary.columns:
@@ -1083,7 +1093,6 @@ def assign_variants(summary, rename_cols):
             entity_set = summary.loc[row, "EntitySet"]
             for col in rename_cols:
                 dom_entity_set = dom_dict[entity_set]
-                summary[col] = summary[col].apply(str)
 
                 if f"Cluster_{col}" in dom_entity_set.keys():
                     cluster_val = summary.loc[row, f"Cluster_{col}"]

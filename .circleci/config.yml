@@ -68,13 +68,16 @@ jobs:
             apt-get install -y -qq curl
             apt-get install -y gnupg
 
-            cd /home/circleci/src/coverage
-            coverage combine
-            coverage xml
+            # Generate XML from the checked-out repository path so Codecov can
+            # resolve file paths against the commit contents.
+            cp /home/circleci/src/coverage/.coverage.* /home/circleci/src/CuBIDS/
+            cd /home/circleci/src/CuBIDS
+            coverage combine .coverage.*
+            coverage xml -o coverage.xml
       - store_artifacts:
-          path: /home/circleci/src/coverage
+          path: /home/circleci/src/CuBIDS/coverage.xml
       - codecov/upload:
-          file: /home/circleci/src/coverage/coverage.xml
+          file: /home/circleci/src/CuBIDS/coverage.xml
 
   deployable:
     docker:

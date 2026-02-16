@@ -25,10 +25,14 @@ from bids.layout import parse_file_entities
 from bids.utils import listify
 from tqdm import tqdm
 
-from cubids import utils
+from cubids import indexing, utils
 from cubids.config import load_config, load_schema
 from cubids.constants import NON_KEY_ENTITIES
-from cubids.metadata_merge import check_merging_operations, group_by_acquisition_sets
+from cubids.metadata_merge import (
+    check_merging_operations,
+    group_by_acquisition_sets,
+    merge_json_into_json,
+)
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
@@ -112,6 +116,7 @@ class CuBIDS(object):
     ):
         self.path = os.path.abspath(data_root)
         self._layout = None
+        self._index = None  # Arrow table: entities + metadata (lazy)
         self.keys_files = {}
         self.fieldmaps_cached = False
         self.datalad_ready = False
@@ -153,17 +158,47 @@ class CuBIDS(object):
             The BIDSLayout object associated with the current instance.
         """
         if self._layout is None:
-            # print("SETTING LAYOUT OBJECT")
             self.reset_bids_layout()
-            # print("LAYOUT OBJECT SET")
         return self._layout
+
+    @property
+    def index(self):
+        """Return the Arrow index table (entities + metadata).
+
+        The index is lazily built on first access and cached as Parquet.
+        Subsequent accesses return the cached table. When datalad is active,
+        disk caching is disabled to avoid creating untracked files.
+
+        Returns
+        -------
+        pyarrow.Table
+            Full dataset index with entity columns and metadata columns.
+        """
+        if self._index is None:
+            self._index = indexing.load_or_build_index(
+                self.path,
+                bids_schema=self.schema,
+                grouping_config=self.grouping_config,
+                use_cache=not self.use_datalad,
+            )
+        return self._index
+
+    def _invalidate_index(self):
+        """Invalidate the Arrow index and its Parquet cache.
+
+        Call this after any mutation (rename, merge, purge) so that the
+        index is rebuilt on next access.
+        """
+        self._index = None
+        if not self.use_datalad:
+            indexing.invalidate_cache(self.path)
+        self._layout = None
 
     def _infer_longitudinal(self):
         """Infer if the dataset is longitudinal based on its structure.
 
-        This method checks if any file or directory within the dataset path
-        contains the substring "ses-" in its name, which is a common convention
-        used to denote session identifiers in longitudinal datasets.
+        Checks only the first level of subject directories for session
+        subdirectories (``ses-*``), avoiding a full recursive scan.
 
         Returns
         -------
@@ -171,7 +206,12 @@ class CuBIDS(object):
             True if the dataset is longitudinal (i.e., contains session identifiers),
             False otherwise.
         """
-        return any("ses-" in str(f) for f in Path(self.path).rglob("*"))
+        for entry in os.scandir(self.path):
+            if entry.name.startswith("sub-") and entry.is_dir():
+                for sub_entry in os.scandir(entry.path):
+                    if sub_entry.name.startswith("ses-") and sub_entry.is_dir():
+                        return True
+        return False
 
     def reset_bids_layout(self, validate=False):
         """Reset the BIDS layout.
@@ -207,15 +247,9 @@ class CuBIDS(object):
         -------
         :obj:`str`
             Path to the CuBIDS code directory.
-
-        Notes
-        -----
-        Why not use ``os.makedirs``?
         """
-        # check if BIDS_ROOT/code/CuBIDS exists
         if not self.cubids_code_dir:
-            subprocess.run(["mkdir", self.path + "/code"])
-            subprocess.run(["mkdir", self.path + "/code/CuBIDS/"])
+            os.makedirs(os.path.join(self.path, "code", "CuBIDS"), exist_ok=True)
             self.cubids_code_dir = True
         return self.cubids_code_dir
 
@@ -343,19 +377,16 @@ class CuBIDS(object):
             Number of CPUs to use for parallel add-nifti-info. Default is 1 (sequential).
 
         """
-        # check if force_unlock is set
-        if self.force_unlock:
-            # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
-            subprocess.run(["datalad", "unlock"], cwd=self.path)
+        # Build list of NIfTI paths from the Arrow index (instant)
+        nifti_rel_paths = indexing.get_nifti_paths(self.index)
+        nifti_paths = [os.path.join(self.path, p) for p in nifti_rel_paths]
 
-        # build list of nifti paths in the bids dir
-        nifti_paths = []
-        for path in Path(self.path).rglob("sub-*/**/*.*"):
-            # ignore all dot directories
-            if "/." in str(path):
-                continue
-            if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
-                nifti_paths.append(str(path))
+        # Unlock only the JSON sidecars that will be modified
+        if self.force_unlock and nifti_paths:
+            json_paths = [utils.img_to_new_ext(p, ".json") for p in nifti_paths]
+            json_paths = [p for p in json_paths if os.path.exists(p)]
+            if json_paths:
+                subprocess.run(["datalad", "unlock"] + json_paths, cwd=self.path)
 
         # Ensure n_cpus is at least 1
         try:
@@ -379,15 +410,13 @@ class CuBIDS(object):
                 _add_metadata_single_nifti(nifti_path)
 
         if self.use_datalad:
-            # Check if there are any changes to save
             if self.is_datalad_clean():
                 print("nothing to save, working tree clean")
             else:
-                # Use parallel jobs for DataLad save
                 dl_jobs = n_cpus if n_cpus and n_cpus > 1 else 1
                 self.datalad_save(message="Added nifti info to sidecars", jobs=dl_jobs)
 
-        self.reset_bids_layout()
+        self._invalidate_index()
 
     def add_file_collections(self, n_cpus=1):
         """Add file collections to the dataset.
@@ -400,12 +429,14 @@ class CuBIDS(object):
         This method uses metadata from direct sidecar JSON files,
         so it will not work with inherited metadata.
         """
-        # check if force_unlock is set
+        # Targeted unlock: only unlock JSON sidecars
         if self.force_unlock:
-            # CHANGE TO SUBPROCESS.CALL IF NOT BLOCKING
-            subprocess.run(["datalad", "unlock"], cwd=self.path)
+            json_rel_paths = indexing.get_json_paths(self.index)
+            json_abs_paths = [os.path.join(self.path, p) for p in json_rel_paths]
+            if json_abs_paths:
+                subprocess.run(["datalad", "unlock"] + json_abs_paths, cwd=self.path)
 
-        checked_files = []
+        checked_files = set()
 
         # loop through all niftis in the bids dir
         for bids_file in self.layout.get(extension=[".nii", ".nii.gz"]):
@@ -417,7 +448,7 @@ class CuBIDS(object):
             # Add file collection metadata to the sidecar
             files, collection_metadata = utils.collect_file_collections(self.layout, path)
             filepaths = [f.path for f in files]
-            checked_files.extend(filepaths)
+            checked_files.update(filepaths)
 
             for collection_path in filepaths:
                 # Add metadata to the sidecar
@@ -436,7 +467,7 @@ class CuBIDS(object):
             dl_jobs = n_cpus if n_cpus and n_cpus > 1 else 1
             self.datalad_save(message="Added file collection metadata to sidecars", jobs=dl_jobs)
 
-        self.reset_bids_layout()
+        self._invalidate_index()
 
     def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True, n_cpus=1):
         """Apply changes documented in the edited summary tsv and generate the new tsv files.
@@ -477,6 +508,7 @@ class CuBIDS(object):
         ok_merges, deletions = check_merging_operations(summary_tsv, raise_on_error=raise_on_error)
 
         merge_commands = []
+        merge_pairs = []
         for source_id, dest_id in ok_merges:
             dest_files = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == dest_id).all(1)]
             source_files = files_df.loc[
@@ -489,7 +521,12 @@ class CuBIDS(object):
             for dest_nii in dest_files.FilePath:
                 dest_json = utils.img_to_new_ext(self.path + dest_nii, ".json")
                 if Path(dest_json).exists() and Path(source_json).exists():
-                    merge_commands.append(f"cubids bids-sidecar-merge {source_json} {dest_json}")
+                    merge_pairs.append((source_json, dest_json))
+
+        # Perform merges in-process (no subprocess spawning)
+        for source_json, dest_json in merge_pairs:
+            merge_json_into_json(source_json, dest_json)
+            merge_commands.append(f"# merged {source_json} -> {dest_json}")
 
         # Get the delete commands
         to_remove = []
@@ -594,11 +631,12 @@ class CuBIDS(object):
         else:
             print("Not running any commands")
 
-        self.reset_bids_layout()
+        self._invalidate_index()
         self.get_tsvs(new_prefix)
 
-        # remove renames file that gets created under the hood
-        subprocess.run(["rm", "-rf", "renames"])
+        # Remove the shell script created above
+        if full_cmd:
+            Path(renames).unlink(missing_ok=True)
 
     def change_filename(self, filepath, entities, intended_for_index=None):
         """Apply changes to a filename based on the renamed entity sets.
@@ -733,13 +771,15 @@ class CuBIDS(object):
 
         for jf in jsons_to_update:
             self.IF_rename_paths.append(jf)
-            data = utils.get_sidecar_metadata(jf)
-            if data == "Erroneous sidecar":
+            cached = utils.get_sidecar_metadata(jf)
+            if cached == "Erroneous sidecar":
                 print("Error parsing sidecar: ", jf)
                 continue
-            if "IntendedFor" not in data:
+            if "IntendedFor" not in cached:
                 continue
-            items = listify(data["IntendedFor"]) or []
+            # Work on a copy to avoid mutating the lru_cache entry
+            data = dict(cached)
+            items = list(listify(data["IntendedFor"]) or [])
             changed = False
             # Track which format was present to preserve it
             had_rel = old_rel in items
@@ -761,6 +801,7 @@ class CuBIDS(object):
             if changed:
                 data["IntendedFor"] = items
                 utils._update_json(jf, data)
+                utils.get_sidecar_metadata.cache_clear()
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -815,11 +856,8 @@ class CuBIDS(object):
 
         # if min group size flag set, drop acq groups with less than min
         if min_group_size > 1:
-            for row in range(len(subs)):
-                acq_group = subs.loc[row, "AcqGroup"]
-                size = int(subs["AcqGroup"].value_counts()[acq_group])
-                if size < min_group_size:
-                    subs = subs.drop([row])
+            group_counts = subs["AcqGroup"].map(subs["AcqGroup"].value_counts())
+            subs = subs[group_counts >= min_group_size]
 
         # get one sub from each acq group
         unique = subs.drop_duplicates(subset=["AcqGroup"])
@@ -886,13 +924,15 @@ class CuBIDS(object):
                 for jf in intended_index.get(key, []):
                     jsons_to_update.add(jf)
             for jf in jsons_to_update:
-                data = utils.get_sidecar_metadata(jf)
-                if data == "Erroneous sidecar":
+                cached = utils.get_sidecar_metadata(jf)
+                if cached == "Erroneous sidecar":
                     print("Error parsing sidecar: ", jf)
                     continue
-                if "IntendedFor" not in data:
+                if "IntendedFor" not in cached:
                     continue
-                items = listify(data["IntendedFor"]) or []
+                # Work on a copy to avoid mutating the lru_cache entry
+                data = dict(cached)
+                items = list(listify(data["IntendedFor"]) or [])
                 changed = False
                 while old_rel in items:
                     items.remove(old_rel)
@@ -903,6 +943,7 @@ class CuBIDS(object):
                 if changed:
                     data["IntendedFor"] = items
                     utils._update_json(jf, data)
+                    utils.get_sidecar_metadata.cache_clear()
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -913,7 +954,7 @@ class CuBIDS(object):
                 message = s1 + s2
                 dl_jobs = n_cpus if n_cpus and n_cpus > 1 else 1
                 self.datalad_save(message=message, jobs=dl_jobs)
-                self.reset_bids_layout()
+                self._invalidate_index()
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
 
@@ -1006,7 +1047,7 @@ class CuBIDS(object):
                     cwd=path_prefix,
                 )
 
-            self.reset_bids_layout()
+            self._invalidate_index()
 
         else:
             print("Not running any association removals")
@@ -1025,14 +1066,14 @@ class CuBIDS(object):
             A list of paths to files associated with the given NIfTI file, excluding
             the NIfTI file itself.
         """
-        # get all assocation files of a nifti image
-        no_ext_file = str(nifti).split("/")[-1].split(".")[0]
+        nifti = Path(nifti)
+        stem = nifti.name.split(".")[0]
+        parent = nifti.parent
         associations = []
-        for path in Path(self.path).rglob(f"sub-*/**/{no_ext_file}.*"):
-            if ".nii.gz" not in str(path):
-                associations.append(str(path))
-
-        return associations
+        for f in parent.iterdir():
+            if f.name.startswith(stem + ".") and not f.name.endswith((".nii", ".nii.gz")):
+                associations.append(str(f))
+        return sorted(associations)
 
     def _cache_fieldmaps(self):
         """Search all fieldmaps and create a lookup for each file.
@@ -1084,38 +1125,20 @@ class CuBIDS(object):
     def _build_intendedfor_index(self):
         """Build an index from IntendedFor entries to JSON files that declare them.
 
+        Uses the Arrow index to read IntendedFor metadata directly,
+        avoiding per-file JSON reads and rglob scans.
+
         Returns
         -------
         dict
             Mapping: IntendedFor entry (str) -> list of JSON file paths that include it.
         """
-        index = defaultdict(set)
-        # Fieldmap JSONs
-        for path in Path(self.path).rglob("sub-*/**/fmap/*.json"):
-            metadata = utils.get_sidecar_metadata(str(path))
-            if metadata == "Erroneous sidecar":
-                print(f"Warning: Failed to parse sidecar metadata from '{path}'.")
-                continue
-            if_list = metadata.get("IntendedFor")
-            items = listify(if_list)
-            if items is None:
-                continue
-            for item in items:
-                index[str(item)].add(str(path))
-        # ASL M0 JSONs may also include IntendedFor
-        for path in Path(self.path).rglob("sub-*/**/perf/*_m0scan.json"):
-            metadata = utils.get_sidecar_metadata(str(path))
-            if metadata == "Erroneous sidecar":
-                print(f"Warning: Failed to parse sidecar metadata from '{path}'.")
-                continue
-            if_list = metadata.get("IntendedFor")
-            items = listify(if_list)
-            if items is None:
-                continue
-            for item in items:
-                index[str(item)].add(str(path))
-        # Convert sets to sorted lists for stable behavior
-        return {k: sorted(v) for k, v in index.items()}
+        raw = indexing.get_fieldmap_intended_for(self.index)
+        # Convert relative paths to absolute
+        return {
+            k: [os.path.join(self.path, p) for p in v]
+            for k, v in raw.items()
+        }
 
     def get_param_groups_from_entity_set(self, entity_set):
         """Split entity sets into param groups based on json metadata.
@@ -1350,10 +1373,8 @@ class CuBIDS(object):
 
         big_df = utils._order_columns(pd.concat(labeled_files, ignore_index=True))
 
-        # make Filepaths relative to bids dir
-        for row in range(len(big_df)):
-            long_name = big_df.loc[row, "FilePath"]
-            big_df.loc[row, "FilePath"] = long_name.replace(self.path, "")
+        # make Filepaths relative to bids dir (vectorized)
+        big_df["FilePath"] = big_df["FilePath"].str.replace(self.path, "", regex=False)
 
         summary = utils._order_columns(pd.concat(param_group_summaries, ignore_index=True))
 
@@ -1482,38 +1503,28 @@ class CuBIDS(object):
     def get_entity_sets(self):
         """Identify the entity sets for the BIDS dataset.
 
-        This method scans the dataset directory for files matching the BIDS
-        specification and identifies unique entity sets based on the filenames.
-        It also populates a dictionary mapping each entity set to a list of
-        corresponding file paths.
+        Uses the Arrow index for instant entity set computation instead
+        of scanning the filesystem with ``rglob``.
 
         Returns
         -------
         list of str
             A sorted list of unique entity sets found in the dataset.
         """
-        # reset self.keys_files
         self.keys_files = {}
 
-        entity_sets = set()
+        # Use Arrow index for fast NIfTI file discovery
+        nifti_rel_paths = indexing.get_nifti_paths(self.index)
 
-        for path in Path(self.path).rglob("sub-*/**/*.*"):
-            # ignore all dot directories
-            if "/." in str(path):
-                continue
+        for rel_path in nifti_rel_paths:
+            abs_path = Path(os.path.join(self.path, rel_path))
+            entity_set = utils._file_to_entity_set(abs_path)
 
-            if str(path).endswith(".nii") or str(path).endswith(".nii.gz"):
-                entity_sets.update((utils._file_to_entity_set(path),))
+            if entity_set not in self.keys_files:
+                self.keys_files[entity_set] = []
+            self.keys_files[entity_set].append(abs_path)
 
-                # Fill the dictionary of entity set, list of filenames pairrs
-                ret = utils._file_to_entity_set(path)
-
-                if ret not in self.keys_files.keys():
-                    self.keys_files[ret] = []
-
-                self.keys_files[ret].append(path)
-
-        return sorted(entity_sets)
+        return sorted(self.keys_files.keys())
 
     def change_metadata(self, filters, metadata):
         """Change metadata of BIDS files based on provided filters.
@@ -1589,7 +1600,6 @@ class CuBIDS(object):
         found_fields = set()
         for json_file in Path(self.path).rglob("*.json"):
             if ".git" not in str(json_file):
-                # add this in case `print-metadata-fields` is run before validate
                 try:
                     with open(json_file, "r", encoding="utf-8") as jsonr:
                         content = jsonr.read().strip()
@@ -1625,22 +1635,20 @@ class CuBIDS(object):
             return
 
         for json_file in tqdm(Path(self.path).rglob("*.json")):
-            # Check for offending keys in the json file
             if ".git" not in str(json_file):
                 with open(json_file, "r") as jsonr:
                     metadata = json.load(jsonr)
 
                 offending_keys = remove_fields.intersection(metadata.keys())
-                # Quit if there are none in there
                 if not offending_keys:
                     continue
 
-                # Remove the offending keys
                 for key in offending_keys:
                     del metadata[key]
-                # Write the cleaned output
                 with open(json_file, "w") as jsonr:
                     json.dump(metadata, jsonr, indent=4)
+
+        self._invalidate_index()
 
     # # # # FOR TESTING # # # #
     def get_filenames(self):
@@ -1665,7 +1673,7 @@ def _add_metadata_single_nifti(nifti_path):
         Path to a NIfTI file.
     """
     try:
-        img = nb.load(str(nifti_path))
+        img = nb.load(str(nifti_path), mmap=False)
     except Exception:
         print("Empty Nifti File: ", str(nifti_path))
         return
