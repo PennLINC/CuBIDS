@@ -1135,10 +1135,7 @@ class CuBIDS(object):
         """
         raw = indexing.get_fieldmap_intended_for(self.index)
         # Convert relative paths to absolute
-        return {
-            k: [os.path.join(self.path, p) for p in v]
-            for k, v in raw.items()
-        }
+        return {k: [os.path.join(self.path, p) for p in v] for k, v in raw.items()}
 
     def get_param_groups_from_entity_set(self, entity_set):
         """Split entity sets into param groups based on json metadata.

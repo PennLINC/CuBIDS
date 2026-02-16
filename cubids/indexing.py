@@ -23,7 +23,6 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-
 CACHE_FILENAME = ".cubids_index.parquet"
 
 # Directories to skip during os.walk
@@ -215,9 +214,7 @@ def build_metadata_type_map(bids_schema, grouping_config):
         if name not in type_map:
             if name in schema_metadata:
                 # IntendedFor and SliceTiming are always stored as lists
-                type_map[name] = _schema_def_to_arrow(
-                    schema_metadata[name], prefer_scalar=False
-                )
+                type_map[name] = _schema_def_to_arrow(schema_metadata[name], prefer_scalar=False)
             else:
                 type_map[name] = pa.string()
 
@@ -363,9 +360,7 @@ def scan_dataset(root, arrow_schema):
 
     for dirpath, dirnames, filenames in os.walk(root):
         # Prune hidden and non-BIDS directories in-place
-        dirnames[:] = [
-            d for d in dirnames if not d.startswith(".") and d not in _SKIP_DIRS
-        ]
+        dirnames[:] = [d for d in dirnames if not d.startswith(".") and d not in _SKIP_DIRS]
 
         rel_dir = os.path.relpath(dirpath, root)
         if rel_dir == ".":
@@ -580,16 +575,10 @@ def load_or_build_index(root, bids_schema, grouping_config, cache_dir=None, use_
                     break
         if not stale:
             table = pq.read_table(cache_path)
-            print(
-                f"Loaded CuBIDS index from cache ({len(table)} files). "
-                f"Cache: {cache_path}"
-            )
+            print(f"Loaded CuBIDS index from cache ({len(table)} files). " f"Cache: {cache_path}")
             return table
         else:
-            print(
-                "CuBIDS index cache is stale (dataset has been modified). "
-                "Rebuilding..."
-            )
+            print("CuBIDS index cache is stale (dataset has been modified). " "Rebuilding...")
     else:
         print("No CuBIDS index cache found. Building index...")
 
