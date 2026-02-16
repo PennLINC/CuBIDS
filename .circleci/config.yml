@@ -77,6 +77,7 @@ jobs:
       - store_artifacts:
           path: /home/circleci/src/CuBIDS/coverage.xml
       - codecov/upload:
+          service: github
           files: /home/circleci/src/CuBIDS/coverage.xml
 
   deployable:
