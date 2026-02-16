@@ -24,11 +24,13 @@ However, it does rely on non-Python dependencies, particularly `datalad` and `de
 - Always plan first.
 - Think harder in the planning phase.
 - When proposing tasks, highlight potential critical points that could lead to side effects.
+- When making a change, update the documentation and the README as necessary.
 
 ## Testing
 
 - Use pytest for testing.
 - Tests should be organized by module and function/class.
+- Create simulated datasets as necessary to test the code.
 
 ## Linting
 
