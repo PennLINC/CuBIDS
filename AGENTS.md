@@ -1,12 +1,13 @@
 # Project Instructions
 
-CuBIDS is a Python package for modifying Brain Imaging Data Structure (BIDS) datasets.
+CuBIDS is a Python package for curating Brain Imaging Data Structure (BIDS) datasets.
 The input dataset is assumed to be valid BIDS, and the primary goals of CuBIDS are to
 (1) identify and summarize the heterogeneity in the dataset,
 (2) apply groupings to the dataset to facilitate downstream analysis,
 and (3) anonymize the dataset in preparation for open sharing.
 
 The package is designed to be used as a command-line tool, but it can also be used as a Python library.
+However, it does rely on non-Python dependencies, particularly `datalad` and `deno`.
 
 ## Code Style
 
