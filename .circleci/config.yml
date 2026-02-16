@@ -76,9 +76,13 @@ jobs:
             coverage xml -o coverage.xml
       - store_artifacts:
           path: /home/circleci/src/CuBIDS/coverage.xml
+      # Requires CODECOV_TOKEN in CircleCI Project Settings → Environment Variables
+      # Get token: https://app.codecov.io/gh/PennLINC/CuBIDS/settings
       - codecov/upload:
-          service: github
           files: /home/circleci/src/CuBIDS/coverage.xml
+          git_service: github
+          fail_on_error: true
+          verbose: true
 
   deployable:
     docker:
