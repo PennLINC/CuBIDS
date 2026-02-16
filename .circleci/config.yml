@@ -30,7 +30,7 @@ jobs:
             mamba install -c conda-forge -y datalad
 
             # Add deno to run the schema validator
-            mamba install -y deno
+            mamba install -c conda-forge -y deno
 
             # Install CuBIDS
             pip install -e .[tests]
@@ -41,9 +41,12 @@ jobs:
               --cov-branch \
               --cov-report term-missing \
               --cov=cubids \
+              --junitxml=/home/circleci/src/CuBIDS/junit.xml \
               cubids
             mkdir /home/circleci/src/coverage
             mv /home/circleci/src/CuBIDS/.coverage /home/circleci/src/coverage/.coverage.<< parameters.python_version >>
+      - store_test_results:
+          path: /home/circleci/src/CuBIDS/junit.xml
       - persist_to_workspace:
           root: /home/circleci/src/coverage
           paths:
@@ -78,10 +81,12 @@ jobs:
           path: /home/circleci/src/CuBIDS/coverage.xml
       # Requires CODECOV_TOKEN in CircleCI Project Settings → Environment Variables
       # Get token: https://app.codecov.io/gh/PennLINC/CuBIDS/settings
+      # Slug must match the repo in Codecov (fixes 404 "Repository not found")
       - codecov/upload:
           files: /home/circleci/src/CuBIDS/coverage.xml
           git_service: github
-          fail_on_error: true
+          slug: PennLINC/CuBIDS
+          fail_on_error: false
           verbose: true
 
   deployable:
