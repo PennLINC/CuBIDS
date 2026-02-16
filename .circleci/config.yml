@@ -79,13 +79,11 @@ jobs:
             coverage xml -o coverage.xml
       - store_artifacts:
           path: /home/circleci/src/CuBIDS/coverage.xml
-      # Requires CODECOV_TOKEN in CircleCI Project Settings → Environment Variables
-      # Get token: https://app.codecov.io/gh/PennLINC/CuBIDS/settings
-      # Slug must match the repo in Codecov (fixes 404 "Repository not found")
+      # Requires CODECOV_TOKEN in CircleCI (Repository Token from repo settings).
+      # https://app.codecov.io/gh/PennLINC/CuBIDS/settings
       - codecov/upload:
           files: /home/circleci/src/CuBIDS/coverage.xml
           git_service: github
-          slug: PennLINC/CuBIDS
           fail_on_error: false
           verbose: true
 
