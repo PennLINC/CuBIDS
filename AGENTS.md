@@ -11,7 +11,7 @@ However, it does rely on non-Python dependencies, particularly `datalad` and `de
 
 ## Code Style
 
-- Follow the PEP 8 style guide and the Black code formatter.
+- Follow the PEP 8 style guide using the Black code formatter.
 - Follow the Numpydoc style guide for docstrings.
 - Emphasize performance and readability over brevity.
 - Use meaningful variable and function names.
@@ -34,4 +34,4 @@ However, it does rely on non-Python dependencies, particularly `datalad` and `de
 
 ## Linting
 
-The repository is linted with `pipx run black`.
+The repository is linted with `python -m flake8 cubids`. Black is used for code formatting and can be run with `pipx run black`.
