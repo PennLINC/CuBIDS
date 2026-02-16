@@ -159,6 +159,8 @@ per-file-ignores = [
 addopts = ["--doctest-modules"]
 
 [tool.coverage.run]
+source = ["cubids/"]
+branch = true
 parallel = true
 relative_files = true
 omit = [
