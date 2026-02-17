@@ -96,6 +96,7 @@ jobs:
           git_service: github
           token: CUBIDS_CODECOV_TOKEN
           disable_search: true
+          legacy: true
           fail_on_error: false
           verbose: true
 
