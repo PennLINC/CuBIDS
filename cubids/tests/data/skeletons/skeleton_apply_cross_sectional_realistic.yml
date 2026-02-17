@@ -1,0 +1,72 @@
+"01":
+  anat:
+    - suffix: "T1w"
+      metadata:
+        EchoTime: 1
+    - suffix: "T2w"
+      metadata:
+        EchoTime: 1.2
+  dwi:
+    - dir: "AP"
+      run: "01"
+      suffix: "dwi"
+      metadata:
+        RepetitionTime: 0.8
+        TotalReadoutTime: 0.5
+        PhaseEncodingDirection: "j"
+    - dir: "AP"
+      run: "02"
+      suffix: "dwi"
+      metadata:
+        RepetitionTime: 0.8
+        TotalReadoutTime: 0.5
+        PhaseEncodingDirection: "j"
+  fmap:
+    - dir: "AP"
+      suffix: "epi"
+      metadata:
+        IntendedFor:
+          - "dwi/sub-01_dir-AP_run-01_dwi.nii.gz"
+    - dir: "PA"
+      suffix: "epi"
+      metadata:
+        IntendedFor:
+          - "dwi/sub-01_dir-AP_run-01_dwi.nii.gz"
+  func:
+    - task: "rest"
+      run: "01"
+      suffix: "bold"
+      metadata:
+        EchoTime: 0.03
+"ABC":
+  anat:
+    - suffix: "T1w"
+      metadata:
+        EchoTime: 1
+  dwi:
+    - dir: "AP"
+      run: "01"
+      suffix: "dwi"
+      metadata:
+        RepetitionTime: 0.8
+        TotalReadoutTime: 0.5
+        PhaseEncodingDirection: "j"
+  fmap:
+    - dir: "AP"
+      suffix: "epi"
+      metadata:
+        IntendedFor:
+          - "dwi/sub-ABC_dir-AP_run-01_dwi.nii.gz"
+"03X":
+  anat:
+    - suffix: "T1w"
+      metadata:
+        EchoTime: 1.1
+  dwi:
+    - dir: "AP"
+      run: "01"
+      suffix: "dwi"
+      metadata:
+        RepetitionTime: 0.85
+        TotalReadoutTime: 0.52
+        PhaseEncodingDirection: "j-"

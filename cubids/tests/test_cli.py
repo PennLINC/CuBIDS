@@ -18,6 +18,15 @@ from cubids.cli import _is_file, _main, _path_exists
 from cubids.tests.utils import TEST_DATA, chdir
 
 
+def _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="bids_dataset"):
+    """Build a skeleton-backed CLI test dataset."""
+    return build_bids_dataset(
+        tmp_path=tmp_path,
+        dataset_name=dataset_name,
+        skeleton_name="skeleton_cli_commands.yml",
+    )
+
+
 def test_path_exists(tmp_path):
     """Test whether a given path exists or not.
 
@@ -233,12 +242,9 @@ def test_remove_metadata_fields_command(tmp_path):
         _main(["remove-metadata-fields", str(bids_dir), "--fields", "field1", "field2"])
 
 
-def test_validate_command_with_test_dataset(tmp_path):
+def test_validate_command_with_test_dataset(tmp_path, build_bids_dataset):
     """Test the validate command with the test BIDS dataset."""
-    # Copy test dataset to temporary directory
-    test_data = TEST_DATA / "BIDS_Dataset"
-    bids_dir = tmp_path / "BIDS_Dataset"
-    shutil.copytree(test_data, bids_dir)
+    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="validate_dataset")
 
     # Run validation
     output_prefix = tmp_path / "validation_output"
@@ -249,12 +255,9 @@ def test_validate_command_with_test_dataset(tmp_path):
     assert (output_prefix.parent / f"{output_prefix.name}_validation.json").exists()
 
 
-def test_validate_subject_scope_with_n_cpus(tmp_path):
+def test_validate_subject_scope_with_n_cpus(tmp_path, build_bids_dataset):
     """Test the validate command with validation-scope subject and n_cpus parallelization."""
-    # Copy test dataset to temporary directory
-    test_data = TEST_DATA / "BIDS_Dataset"
-    bids_dir = tmp_path / "BIDS_Dataset"
-    shutil.copytree(test_data, bids_dir)
+    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="validate_parallel")
 
     # Run subject-level validation with 2 CPUs (parallel processing)
     output_prefix = tmp_path / "validation_parallel"
@@ -267,12 +270,9 @@ def test_validate_subject_scope_with_n_cpus(tmp_path):
     assert (output_prefix.parent / f"{output_prefix.name}_validation.json").exists()
 
 
-def test_group_command_with_test_dataset(tmp_path):
+def test_group_command_with_test_dataset(tmp_path, build_bids_dataset):
     """Test the group command with the test BIDS dataset."""
-    # Copy test dataset to temporary directory
-    test_data = TEST_DATA / "BIDS_Dataset"
-    bids_dir = tmp_path / "BIDS_Dataset"
-    shutil.copytree(test_data, bids_dir)
+    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="group_dataset")
 
     # Run grouping
     output_prefix = tmp_path / "group_output"
@@ -312,12 +312,9 @@ def test_add_nifti_info_command_with_test_dataset(tmp_path):
     assert any(key.startswith("VoxelSize") for key in modified_json)
 
 
-def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys):
+def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys, build_bids_dataset):
     """Test the print-metadata-fields command with the test BIDS dataset."""
-    # Copy test dataset to temporary directory
-    test_data = TEST_DATA / "BIDS_Dataset"
-    bids_dir = tmp_path / "BIDS_Dataset"
-    shutil.copytree(test_data, bids_dir)
+    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="metadata_fields_dataset")
 
     # Run print-metadata-fields
     _main(["print-metadata-fields", str(bids_dir)])
@@ -328,12 +325,9 @@ def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys):
     assert "Manufacturer" in captured.out  # Common BIDS metadata field
 
 
-def test_remove_metadata_fields_command_with_test_dataset(tmp_path):
+def test_remove_metadata_fields_command_with_test_dataset(tmp_path, build_bids_dataset):
     """Test the remove-metadata-fields command with the test BIDS dataset."""
-    # Copy test dataset to temporary directory
-    test_data = TEST_DATA / "BIDS_Dataset"
-    bids_dir = tmp_path / "BIDS_Dataset"
-    shutil.copytree(test_data, bids_dir)
+    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="remove_metadata_dataset")
 
     # Get a sample JSON sidecar
     json_file = next(bids_dir.rglob("*.json"))
@@ -355,12 +349,9 @@ def test_remove_metadata_fields_command_with_test_dataset(tmp_path):
     assert field_to_remove not in modified_json
 
 
-def test_purge_command_with_test_dataset(tmp_path):
+def test_purge_command_with_test_dataset(tmp_path, build_bids_dataset):
     """Test the purge command with the test BIDS dataset."""
-    # Copy test dataset to temporary directory
-    test_data = TEST_DATA / "BIDS_Dataset"
-    bids_dir = tmp_path / "BIDS_Dataset"
-    shutil.copytree(test_data, bids_dir)
+    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="purge_dataset")
 
     # Create .cubids directory and add some files
     cubids_dir = bids_dir / ".cubids"

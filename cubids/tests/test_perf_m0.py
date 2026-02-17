@@ -17,31 +17,29 @@ def _write(path: Path, content: str = ""):
     path.write_text(content)
 
 
-def test_m0_not_renamed_but_aslcontext_is_and_intendedfor_updated(tmp_path):
-    bids_root = tmp_path / "bids"
+def test_m0_not_renamed_but_aslcontext_is_and_intendedfor_updated(tmp_path, build_bids_dataset):
+    bids_root = build_bids_dataset(
+        tmp_path=tmp_path,
+        dataset_name="perf_m0_dataset",
+        skeleton_name="skeleton_perf_m0.yml",
+    )
     sub = "sub-01"
     ses = "ses-01"
 
-    # Create minimal perf files
     perf_dir = bids_root / sub / ses / "perf"
-    perf_dir.mkdir(parents=True, exist_ok=True)
 
     asl_base = perf_dir / f"{sub}_{ses}_asl.nii.gz"
-    asl_json = perf_dir / f"{sub}_{ses}_asl.json"
     m0_base = perf_dir / f"{sub}_{ses}_m0scan.nii.gz"
     m0_json = perf_dir / f"{sub}_{ses}_m0scan.json"
     aslcontext = perf_dir / f"{sub}_{ses}_aslcontext.tsv"
 
-    # Touch NIfTIs (empty is fine for this test) and sidecars
-    asl_base.write_bytes(b"")
-    m0_base.write_bytes(b"")
+    # Generate_bids_skeleton creates empty files and sidecars from the YAML skeleton.
+    assert asl_base.exists()
+    assert m0_base.exists()
+    assert m0_json.exists()
 
-    _write(asl_json, json.dumps({}))
-
-    # M0 IntendedFor should reference the ASL time series (participant-relative path)
+    # Add ASL context file to ensure companion rename behavior is exercised.
     intended_for_rel = f"{ses}/perf/{sub}_{ses}_asl.nii.gz"
-    _write(m0_json, json.dumps({"IntendedFor": [intended_for_rel]}))
-
     _write(aslcontext, "label\ncontrol\nlabel\ncontrol\n")
 
     c = CuBIDS(str(bids_root))

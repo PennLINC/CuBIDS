@@ -2,146 +2,6 @@
 
 import pandas as pd
 import pytest
-from niworkflows.utils.testing import generate_bids_skeleton
-
-relpath_intendedfor_long = {
-    "01": [
-        {
-            "session": "01",
-            "anat": [{"suffix": "T1w", "metadata": {"EchoTime": 1}}],
-            "fmap": [
-                {
-                    "dir": "AP",
-                    "suffix": "epi",
-                    "metadata": {
-                        "IntendedFor": ["ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"],
-                    },
-                },
-                {
-                    "dir": "PA",
-                    "suffix": "epi",
-                    "metadata": {
-                        "IntendedFor": ["ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"],
-                    },
-                },
-            ],
-            "dwi": [
-                {
-                    "dir": "AP",
-                    "run": "01",
-                    "suffix": "dwi",
-                    "metadata": {
-                        "RepetitionTime": 0.8,
-                    },
-                }
-            ],
-        },
-    ],
-}
-bidsuri_intendedfor_long = {
-    "01": [
-        {
-            "session": "01",
-            "anat": [{"suffix": "T1w", "metadata": {"EchoTime": 1}}],
-            "fmap": [
-                {
-                    "dir": "AP",
-                    "suffix": "epi",
-                    "metadata": {
-                        "IntendedFor": [
-                            "bids::sub-01/ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"
-                        ],
-                    },
-                },
-                {
-                    "dir": "PA",
-                    "suffix": "epi",
-                    "metadata": {
-                        "IntendedFor": [
-                            "bids::sub-01/ses-01/dwi/sub-01_ses-01_dir-AP_run-01_dwi.nii.gz"
-                        ],
-                    },
-                },
-            ],
-            "dwi": [
-                {
-                    "dir": "AP",
-                    "run": "01",
-                    "suffix": "dwi",
-                    "metadata": {
-                        "RepetitionTime": 0.8,
-                    },
-                }
-            ],
-        },
-    ],
-}
-relpath_intendedfor_cs = {
-    "01": [
-        {
-            "anat": [{"suffix": "T1w", "metadata": {"EchoTime": 1}}],
-            "fmap": [
-                {
-                    "dir": "AP",
-                    "suffix": "epi",
-                    "metadata": {
-                        "IntendedFor": ["dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
-                    },
-                },
-                {
-                    "dir": "PA",
-                    "suffix": "epi",
-                    "metadata": {
-                        "IntendedFor": ["dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
-                    },
-                },
-            ],
-            "dwi": [
-                {
-                    "dir": "AP",
-                    "run": "01",
-                    "suffix": "dwi",
-                    "metadata": {
-                        "RepetitionTime": 0.8,
-                    },
-                }
-            ],
-        },
-    ],
-}
-bidsuri_intendedfor_cs = {
-    "01": [
-        {
-            "anat": [{"suffix": "T1w", "metadata": {"EchoTime": 1}}],
-            "fmap": [
-                {
-                    "dir": "AP",
-                    "suffix": "epi",
-                    "metadata": {
-                        "IntendedFor": ["bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
-                    },
-                },
-                {
-                    "dir": "PA",
-                    "suffix": "epi",
-                    "metadata": {
-                        "IntendedFor": ["bids::sub-01/dwi/sub-01_dir-AP_run-01_dwi.nii.gz"],
-                    },
-                },
-            ],
-            "dwi": [
-                {
-                    "dir": "AP",
-                    "run": "01",
-                    "suffix": "dwi",
-                    "metadata": {
-                        "RepetitionTime": 0.8,
-                    },
-                }
-            ],
-        },
-    ],
-}
 
 
 @pytest.fixture(scope="module")
@@ -237,47 +97,48 @@ def summary_data():
 
 
 @pytest.mark.parametrize(
-    ("name", "skeleton", "intended_for", "is_longitudinal", "expected"),
+    ("name", "skeleton_name", "intended_for_mode", "intended_for", "is_longitudinal"),
     [
         (
             "relpath_long",
-            relpath_intendedfor_long,
+            "skeleton_apply_longitudinal_realistic.yml",
+            "relative_path",
             "ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
             True,
-            "pass",
         ),
         (
             "bidsuri_long",
-            bidsuri_intendedfor_long,
+            "skeleton_apply_longitudinal_realistic.yml",
+            "bids_uri",
             "bids::sub-01/ses-01/dwi/sub-01_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
             True,
-            "pass",
         ),
         (
             "relpath_cs",
-            relpath_intendedfor_cs,
+            "skeleton_apply_cross_sectional_realistic.yml",
+            "relative_path",
             "dwi/sub-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
             False,
-            "pass",
         ),
         (
             "bidsuri_cs",
-            bidsuri_intendedfor_cs,
+            "skeleton_apply_cross_sectional_realistic.yml",
+            "bids_uri",
             "bids::sub-01/dwi/sub-01_acq-VAR_dir-AP_run-01_dwi.nii.gz",
             False,
-            "pass",
         ),
     ],
 )
 def test_cubids_apply_intendedfor(
-    tmpdir,
+    tmp_path,
+    build_bids_dataset,
     summary_data,
     files_data,
     name,
-    skeleton,
+    skeleton_name,
+    intended_for_mode,
     intended_for,
     is_longitudinal,
-    expected,
 ):
     """Test cubids apply with different IntendedFor types.
 
@@ -291,27 +152,26 @@ def test_cubids_apply_intendedfor(
         Files data fixture.
     name : str
         Name of the test case.
-    skeleton : dict
-        BIDS skeleton structure.
+    skeleton_name : str
+        Name of the BIDS skeleton YAML file.
+    intended_for_mode : {"relative_path", "bids_uri"}
+        IntendedFor value format.
     intended_for : str
         IntendedFor field value.
     is_longitudinal : bool
         Indicate whether the data structure is longitudinal or cross-sectional.
-    expected : str or Exception
-        Expected result or exception.
-
-    Raises
-    ------
-    ValueError
-        If the test case is expected to raise an error.
     """
     import json
 
     from cubids.workflows import apply
 
     # Generate a BIDS dataset
-    bids_dir = tmpdir / name
-    generate_bids_skeleton(str(bids_dir), skeleton)
+    bids_dir = build_bids_dataset(
+        tmp_path=tmp_path,
+        dataset_name=name,
+        skeleton_name=skeleton_name,
+        intended_for_mode=intended_for_mode,
+    )
 
     if is_longitudinal:
         fdata = files_data["longitudinal"]
@@ -321,41 +181,81 @@ def test_cubids_apply_intendedfor(
         fmap_json = bids_dir / "sub-01/fmap/sub-01_dir-AP_epi.json"
 
     # Create a CuBIDS summary tsv
-    summary_tsv = tmpdir / "summary.tsv"
+    summary_tsv = tmp_path / "summary.tsv"
     df = pd.DataFrame(summary_data)
     df.to_csv(summary_tsv, sep="\t", index=False)
 
     # Create a CuBIDS files tsv
-    files_tsv = tmpdir / "files.tsv"
+    files_tsv = tmp_path / "files.tsv"
     df = pd.DataFrame(fdata)
     df.to_csv(files_tsv, sep="\t", index=False)
 
     # Run cubids apply
-    if isinstance(expected, str):
-        apply(
-            bids_dir=str(bids_dir),
-            use_datalad=False,
-            acq_group_level="subject",
-            config=None,
-            schema=None,
-            edited_summary_tsv=summary_tsv,
-            files_tsv=files_tsv,
-            new_tsv_prefix=None,
-        )
+    apply(
+        bids_dir=str(bids_dir),
+        use_datalad=False,
+        acq_group_level="subject",
+        config=None,
+        schema=None,
+        edited_summary_tsv=summary_tsv,
+        files_tsv=files_tsv,
+        new_tsv_prefix=None,
+    )
 
-        with open(fmap_json) as f:
-            metadata = json.load(f)
+    with open(fmap_json) as f:
+        metadata = json.load(f)
 
-        assert metadata["IntendedFor"] == [intended_for]
-    else:
-        with pytest.raises(expected):
-            apply(
-                bids_dir=str(bids_dir),
-                use_datalad=False,
-                acq_group_level="subject",
-                config=None,
-                schema=None,
-                edited_summary_tsv=summary_tsv,
-                files_tsv=files_tsv,
-                new_tsv_prefix=None,
-            )
+    assert metadata["IntendedFor"] == [intended_for]
+
+
+def test_cubids_apply_intendedfor_large_dataset(tmp_path, build_bids_dataset, summary_data):
+    """Ensure IntendedFor rewriting still works in a larger realistic dataset."""
+    import json
+
+    from cubids.workflows import apply
+
+    bids_dir = build_bids_dataset(
+        tmp_path=tmp_path,
+        dataset_name="large_realistic",
+        skeleton_name="skeleton_apply_longitudinal_realistic.yml",
+        intended_for_mode="relative_path",
+    )
+
+    # Only one subset is renamed; additional dataset content is retained.
+    files_data = {
+        "ParamGroup": [1],
+        "EntitySet": ["datatype-dwi_direction-AP_run-01_suffix-dwi"],
+        "FilePath": ["/sub-ABC/ses-01/dwi/sub-ABC_ses-01_dir-AP_run-01_dwi.nii.gz"],
+        "KeyParamGroup": ["datatype-dwi_direction-AP_run-01_suffix-dwi__1"],
+    }
+    summary_data_large = pd.DataFrame(summary_data).copy()
+    summary_data_large = summary_data_large[
+        summary_data_large["EntitySet"] == "datatype-dwi_direction-AP_run-01_suffix-dwi"
+    ]
+
+    summary_data_large.loc[:, "RenameEntitySet"] = (
+        "datatype-dwi_direction-AP_run-01_suffix-dwi_acquisition-VAR"
+    )
+
+    summary_tsv = tmp_path / "summary.tsv"
+    summary_data_large.to_csv(summary_tsv, sep="\t", index=False)
+
+    files_tsv = tmp_path / "files.tsv"
+    pd.DataFrame(files_data).to_csv(files_tsv, sep="\t", index=False)
+
+    apply(
+        bids_dir=str(bids_dir),
+        use_datalad=False,
+        acq_group_level="subject",
+        config=None,
+        schema=None,
+        edited_summary_tsv=summary_tsv,
+        files_tsv=files_tsv,
+        new_tsv_prefix=None,
+    )
+
+    fmap_json = bids_dir / "sub-ABC/ses-01/fmap/sub-ABC_ses-01_dir-AP_epi.json"
+    with open(fmap_json) as f:
+        metadata = json.load(f)
+
+    assert metadata["IntendedFor"] == ["ses-01/dwi/sub-ABC_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz"]

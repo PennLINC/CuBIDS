@@ -1,0 +1,44 @@
+"01":
+  - session: "01"
+    anat:
+      - suffix: "T1w"
+        metadata:
+          Manufacturer: "MockScannerCo"
+          EchoTime: 1.0
+    dwi:
+      - dir: "AP"
+        run: "01"
+        suffix: "dwi"
+        metadata:
+          RepetitionTime: 0.8
+          TotalReadoutTime: 0.5
+          PhaseEncodingDirection: "j"
+  - session: "02"
+    anat:
+      - suffix: "T1w"
+        metadata:
+          Manufacturer: "MockScannerCo"
+          EchoTime: 1.1
+    dwi:
+      - dir: "AP"
+        run: "01"
+        suffix: "dwi"
+        metadata:
+          RepetitionTime: 0.85
+          TotalReadoutTime: 0.51
+          PhaseEncodingDirection: "j-"
+
+"02":
+  anat:
+    - suffix: "T1w"
+      metadata:
+        Manufacturer: "MockScannerCo"
+        EchoTime: 1.2
+  dwi:
+    - dir: "AP"
+      run: "01"
+      suffix: "dwi"
+      metadata:
+        RepetitionTime: 0.9
+        TotalReadoutTime: 0.55
+        PhaseEncodingDirection: "j"
