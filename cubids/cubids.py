@@ -1475,7 +1475,6 @@ class CuBIDS(object):
   * {files_json}
   * {summary_tsv}
   * {summary_json}
-
 """
         )
 
