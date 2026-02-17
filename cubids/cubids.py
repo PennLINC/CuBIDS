@@ -1469,13 +1469,11 @@ class CuBIDS(object):
 
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
         print(
-            f"""Groupings info is available in
-
-  * {files_tsv}
-  * {files_json}
-  * {summary_tsv}
-  * {summary_json}
-"""
+            "Groupings info is available in\n\n"
+            f"  * {files_tsv}\n"
+            f"  * {files_json}\n"
+            f"  * {summary_tsv}\n"
+            f"  * {summary_json}\n"
         )
 
     def get_entity_sets(self):
