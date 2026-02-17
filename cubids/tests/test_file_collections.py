@@ -2,17 +2,22 @@
 
 import json
 
-from niworkflows.utils.testing import generate_bids_skeleton
+import pytest
 
-from cubids.tests.utils import TEST_DATA
 from cubids.workflows import add_file_collections
 
 
-def test_add_file_collections(tmp_path):
+@pytest.mark.parametrize(
+    "skeleton_name",
+    ["skeleton_file_collection_01.yml", "skeleton_file_collection_02.yml"],
+)
+def test_add_file_collections(tmp_path, build_bids_dataset, skeleton_name):
     """Test adding file collections to a BIDS dataset."""
-    bids_dir = tmp_path / "add_file_collections"
-    dset_yaml = str(TEST_DATA / "skeletons" / "skeleton_file_collection_01.yml")
-    generate_bids_skeleton(str(bids_dir), dset_yaml)
+    bids_dir = build_bids_dataset(
+        tmp_path=tmp_path,
+        dataset_name=f"add_file_collections_{skeleton_name.replace('.yml', '')}",
+        skeleton_name=skeleton_name,
+    )
     add_file_collections(str(bids_dir), use_datalad=False, force_unlock=True)
 
     # A JSON sidecar that's part of a file collection should be modified.

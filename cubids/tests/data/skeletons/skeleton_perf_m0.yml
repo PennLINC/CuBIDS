@@ -1,0 +1,9 @@
+"01":
+  - session: "01"
+    perf:
+      - suffix: "asl"
+        metadata: {}
+      - suffix: "m0scan"
+        metadata:
+          IntendedFor:
+            - "ses-01/perf/sub-01_ses-01_asl.nii.gz"
