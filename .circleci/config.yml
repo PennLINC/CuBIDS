@@ -90,15 +90,15 @@ jobs:
       - run:
           name: Validate Codecov token format
           command: |
-            python -c "import os; t=os.getenv('CUBIDS_CODECOV_TOKEN',''); print(f'CUBIDS_CODECOV_TOKEN length: {len(t)}'); print(f'CUBIDS_CODECOV_TOKEN has_whitespace: {any(ch.isspace() for ch in t)}')"
-      # Use a repo-specific token env var to avoid picking up an org/context token.
-      # Set CUBIDS_CODECOV_TOKEN in CircleCI project settings using the repository token from:
+            python -c "import os; t=os.getenv('CODECOV_TOKEN',''); print(f'CODECOV_TOKEN length: {len(t)}'); print(f'CODECOV_TOKEN has_whitespace: {any(ch.isspace() for ch in t)}')"
+      # Set CODECOV_TOKEN in CircleCI project settings using the repository upload token from:
       # https://app.codecov.io/gh/PennLINC/CuBIDS/settings
       - codecov/upload:
           files: /home/circleci/src/CuBIDS/coverage.xml
           dir: /home/circleci/src/CuBIDS
           git_service: github
-          token: CUBIDS_CODECOV_TOKEN
+          slug: PennLINC/CuBIDS
+          token: CODECOV_TOKEN
           disable_search: true
           fail_on_error: false
           verbose: true
