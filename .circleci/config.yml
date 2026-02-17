@@ -90,12 +90,7 @@ jobs:
       - run:
           name: Validate Codecov token format
           command: |
-            python - <<'PY'
-            import os
-            token = os.getenv("CUBIDS_CODECOV_TOKEN", "")
-            print(f"CUBIDS_CODECOV_TOKEN length: {len(token)}")
-            print(f"CUBIDS_CODECOV_TOKEN has_whitespace: {any(ch.isspace() for ch in token)}")
-            PY
+            python -c "import os; t=os.getenv('CUBIDS_CODECOV_TOKEN',''); print(f'CUBIDS_CODECOV_TOKEN length: {len(t)}'); print(f'CUBIDS_CODECOV_TOKEN has_whitespace: {any(ch.isspace() for ch in t)}')"
       # Use a repo-specific token env var to avoid picking up an org/context token.
       # Set CUBIDS_CODECOV_TOKEN in CircleCI project settings using the repository token from:
       # https://app.codecov.io/gh/PennLINC/CuBIDS/settings
