@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 import warnings
@@ -248,9 +247,7 @@ def validate(
         abs_path_output = False
         # check if code/CuBIDS dir exists
         if not (bids_dir / "code" / "CuBIDS").is_dir():
-            # if not, create it
-            subprocess.run(["mkdir", str(bids_dir / "code")])
-            subprocess.run(["mkdir", str(bids_dir / "code" / "CuBIDS")])
+            os.makedirs(str(bids_dir / "code" / "CuBIDS"), exist_ok=True)
 
     # Run directly from python using subprocess
     if validation_scope == "dataset":

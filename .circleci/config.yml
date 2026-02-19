@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  codecov: codecov/codecov@3.2.4
+  codecov: codecov/codecov@5.2.1
 
 jobs:
   run_pytests:
@@ -30,7 +30,7 @@ jobs:
             mamba install -c conda-forge -y datalad
 
             # Add deno to run the schema validator
-            mamba install -y deno
+            mamba install -c conda-forge -y deno
 
             # Install CuBIDS
             pip install -e .[tests]
@@ -41,9 +41,12 @@ jobs:
               --cov-branch \
               --cov-report term-missing \
               --cov=cubids \
+              --junitxml=/home/circleci/src/CuBIDS/junit.xml \
               cubids
             mkdir /home/circleci/src/coverage
             mv /home/circleci/src/CuBIDS/.coverage /home/circleci/src/coverage/.coverage.<< parameters.python_version >>
+      - store_test_results:
+          path: /home/circleci/src/CuBIDS/junit.xml
       - persist_to_workspace:
           root: /home/circleci/src/coverage
           paths:
@@ -52,6 +55,7 @@ jobs:
   merge_coverage:
     docker:
         - image: continuumio/miniconda3
+    working_directory: /home/circleci/src/CuBIDS
     steps:
       - checkout:
           path: /home/circleci/src/CuBIDS
@@ -68,13 +72,36 @@ jobs:
             apt-get install -y -qq curl
             apt-get install -y gnupg
 
-            cd /home/circleci/src/coverage
-            coverage combine
-            coverage xml
+            # Generate XML from the checked-out repository path so Codecov can
+            # resolve file paths against the commit contents.
+            cp /home/circleci/src/coverage/.coverage.* /home/circleci/src/CuBIDS/
+            coverage combine .coverage.*
+            coverage xml -o coverage.xml
+      - run:
+          name: Debug Codecov context
+          command: |
+            echo "pwd: $(pwd)"
+            echo "CIRCLE_PROJECT_USERNAME=${CIRCLE_PROJECT_USERNAME}"
+            echo "CIRCLE_PROJECT_REPONAME=${CIRCLE_PROJECT_REPONAME}"
+            git rev-parse --is-inside-work-tree
+            git remote -v
       - store_artifacts:
-          path: /home/circleci/src/coverage
+          path: /home/circleci/src/CuBIDS/coverage.xml
+      - run:
+          name: Validate Codecov token format
+          command: |
+            python -c "import os; t=os.getenv('CODECOV_TOKEN',''); print(f'CODECOV_TOKEN length: {len(t)}'); print(f'CODECOV_TOKEN has_whitespace: {any(ch.isspace() for ch in t)}')"
+      # Set CODECOV_TOKEN in CircleCI project settings using the repository upload token from:
+      # https://app.codecov.io/gh/PennLINC/CuBIDS/settings
       - codecov/upload:
-          file: /home/circleci/src/coverage/coverage.xml
+          files: /home/circleci/src/CuBIDS/coverage.xml
+          dir: /home/circleci/src/CuBIDS
+          git_service: github
+          slug: PennLINC/CuBIDS
+          token: CODECOV_TOKEN
+          disable_search: true
+          fail_on_error: false
+          verbose: true
 
   deployable:
     docker:
