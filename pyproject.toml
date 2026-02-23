@@ -25,7 +25,7 @@ dependencies = [
     "numpy<=2.2.4",
     "pandas<=2.3.3",
     "pyarrow>=14.0",
-    "pybids<=0.20.0",
+    "pybids<=0.21.0",
     "pyyaml",
     "scikit-learn<=1.6.1",
     "tqdm",
