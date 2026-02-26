@@ -11,15 +11,15 @@ History
 * Add parallel processing to `cubids apply` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/481
 * Add parallelization to `cubids add-nifti-info` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/479
 * Add `--n-cpus` to parallelize `cubids validate --validation-scope subject` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/476
-* Support array-type metadata fields in `cubids group` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/407
-* Add file collection metadata as array-type fields to JSONs by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/445
+* Support array-type metadata fields in `cubids group` by @tsalo in https://github.com/PennLINC/CuBIDS/pull/407
+* Add file collection metadata as array-type fields to JSONs by @tsalo in https://github.com/PennLINC/CuBIDS/pull/445
 * Add DWI sbref to cubids apply by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/486
 
 🐛 Bug Fixes
 ````````````
 
 * Fix df created by `cubids group` and `cubids validate` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/483
-* Fix M0 scan variant name inheritance by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/466
+* Fix M0 scan variant name inheritance by @singlesp in https://github.com/PennLINC/CuBIDS/pull/466
 * Fix PARTICIPANT_ID_MISMATCH in `cubids validate` by @tientong98 in https://github.com/PennLINC/CuBIDS/pull/476
 
 Other Changes
