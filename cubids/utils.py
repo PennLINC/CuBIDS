@@ -766,18 +766,6 @@ def remove_empty_dirs_after_purge(removed_paths, bids_root):
         Paths to files that were removed by purge.
     bids_root : Path or str
         Root of the BIDS dataset; directories are only removed inside this tree.
-
-    Examples
-    --------
-    >>> import tempfile
-    >>> from pathlib import Path
-    >>> with tempfile.TemporaryDirectory() as tmp:
-    ...     root = Path(tmp)
-    ...     (root / "sub-01" / "ses-01" / "func").mkdir(parents=True)
-    ...     removed = [str(root / "sub-01" / "ses-01" / "func" / "file.nii.gz")]
-    ...     remove_empty_dirs_after_purge(removed, root)
-    ...     (root / "sub-01").exists()
-    False
     """
     bids_root = Path(bids_root).resolve()
     directories_to_check = set()

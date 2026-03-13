@@ -263,7 +263,17 @@ def test_validate_subject_scope_with_n_cpus(tmp_path, build_bids_dataset):
     output_prefix = tmp_path / "validation_parallel"
 
     # This should complete without error
-    _main(["validate", str(bids_dir), str(output_prefix), "--validation-scope", "subject", "--n-cpus", "1"])
+    _main(
+        [
+            "validate",
+            str(bids_dir),
+            str(output_prefix),
+            "--validation-scope",
+            "subject",
+            "--n-cpus",
+            "1",
+        ]
+    )
 
     # Verify the command completed successfully by checking if the output files exist
     assert (output_prefix.parent / f"{output_prefix.name}_validation.tsv").exists()
@@ -314,7 +324,9 @@ def test_add_nifti_info_command_with_test_dataset(tmp_path):
 
 def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys, build_bids_dataset):
     """Test the print-metadata-fields command with the test BIDS dataset."""
-    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="metadata_fields_dataset")
+    bids_dir = _build_cli_dataset(
+        tmp_path, build_bids_dataset, dataset_name="metadata_fields_dataset"
+    )
 
     # Run print-metadata-fields
     _main(["print-metadata-fields", str(bids_dir)])
@@ -327,7 +339,9 @@ def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys, build
 
 def test_remove_metadata_fields_command_with_test_dataset(tmp_path, build_bids_dataset):
     """Test the remove-metadata-fields command with the test BIDS dataset."""
-    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="remove_metadata_dataset")
+    bids_dir = _build_cli_dataset(
+        tmp_path, build_bids_dataset, dataset_name="remove_metadata_dataset"
+    )
 
     # Get a sample JSON sidecar
     json_file = next(bids_dir.rglob("*.json"))

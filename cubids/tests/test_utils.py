@@ -1,5 +1,8 @@
 """Tests for the utils module."""
 
+from pathlib import Path
+from unittest.mock import patch
+
 import pandas as pd
 
 from cubids import utils
@@ -156,7 +159,6 @@ def test_cluster_single_parameters():
         [0, 0, 0, 0, 0, 0, 1, 2],
     )
 
-
     # Change the tolerance for SliceTiming
     config["sidecar_params"]["func"]["SliceTiming"]["tolerance"] = 0.5
     out_df = utils.cluster_single_parameters(
@@ -201,3 +203,33 @@ def test_ignore_entities_in_entity_set(tmp_path):
     finally:
         NON_KEY_ENTITIES.clear()
         NON_KEY_ENTITIES.update(original_non_key)
+
+
+def test_remove_empty_dirs_after_purge_removes_empty_dirs(tmp_path):
+    """Test that remove_empty_dirs_after_purge removes empty parent dirs up to BIDS root."""
+    bids_root = tmp_path / "bids"
+    func_dir = bids_root / "sub-01" / "ses-01" / "func"
+    func_dir.mkdir(parents=True)
+    removed_file = func_dir / "file.nii.gz"
+    removed_file.touch()
+    removed_file.unlink()  # File already removed; dirs are now empty
+    utils.remove_empty_dirs_after_purge([str(removed_file)], bids_root)
+    assert not (bids_root / "sub-01").exists()
+    assert not (bids_root / "sub-01" / "ses-01").exists()
+    assert not func_dir.exists()
+
+
+def test_remove_empty_dirs_after_purge_handles_rmdir_error(tmp_path, capsys):
+    """Test that remove_empty_dirs_after_purge catches OSError on rmdir and prints message."""
+    bids_root = tmp_path / "bids"
+    (bids_root / "sub-01" / "ses-01" / "func").mkdir(parents=True)
+    removed_file = bids_root / "sub-01" / "ses-01" / "func" / "file.nii.gz"
+    removed_file.touch()
+    removed_file.unlink()
+    removed_paths = [str(removed_file)]
+
+    with patch.object(Path, "rmdir", side_effect=OSError(39, "Directory not empty")):
+        utils.remove_empty_dirs_after_purge(removed_paths, bids_root)
+
+    out, _ = capsys.readouterr()
+    assert "Failed to remove directory" in out

@@ -258,4 +258,6 @@ def test_cubids_apply_intendedfor_large_dataset(tmp_path, build_bids_dataset, su
     with open(fmap_json) as f:
         metadata = json.load(f)
 
-    assert metadata["IntendedFor"] == ["ses-01/dwi/sub-ABC_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz"]
+    assert metadata["IntendedFor"] == [
+        "ses-01/dwi/sub-ABC_ses-01_acq-VAR_dir-AP_run-01_dwi.nii.gz"
+    ]
