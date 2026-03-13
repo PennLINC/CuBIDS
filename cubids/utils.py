@@ -754,6 +754,49 @@ def img_to_new_ext(img_path, new_ext):
         return img_path.replace(".nii.gz", "").replace(".nii", "") + new_ext
 
 
+def remove_empty_dirs_after_purge(removed_paths, bids_root):
+    """Remove directories that are empty after purging the given files.
+
+    Walks from the deepest directory up toward the BIDS root and removes
+    any directory that is empty.
+
+    Parameters
+    ----------
+    removed_paths : list of str or Path
+        Paths to files that were removed by purge.
+    bids_root : Path or str
+        Root of the BIDS dataset; directories are only removed inside this tree.
+
+    Examples
+    --------
+    >>> import tempfile
+    >>> from pathlib import Path
+    >>> with tempfile.TemporaryDirectory() as tmp:
+    ...     root = Path(tmp)
+    ...     (root / "sub-01" / "ses-01" / "func").mkdir(parents=True)
+    ...     removed = [str(root / "sub-01" / "ses-01" / "func" / "file.nii.gz")]
+    ...     remove_empty_dirs_after_purge(removed, root)
+    ...     (root / "sub-01").exists()
+    False
+    """
+    bids_root = Path(bids_root).resolve()
+    directories_to_check = set()
+    for removed_path in removed_paths:
+        parent_dir = Path(removed_path).resolve().parent
+        while parent_dir != bids_root and bids_root in parent_dir.parents:
+            directories_to_check.add(parent_dir)
+            parent_dir = parent_dir.parent
+    # Process deepest dirs first so parent can become empty after child is removed
+    for directory in sorted(
+        directories_to_check, key=lambda dir_path: len(dir_path.parts), reverse=True
+    ):
+        if directory.exists() and directory.is_dir() and not any(directory.iterdir()):
+            try:
+                directory.rmdir()
+            except OSError as e:
+                print(f"Failed to remove directory {directory}: {e}")
+
+
 def get_entity_value(path, key):
     """Given a filepath and BIDS key name, return the value associated with the key.
 
