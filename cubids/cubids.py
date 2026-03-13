@@ -1045,7 +1045,7 @@ class CuBIDS(object):
                     cwd=path_prefix,
                 )
 
-            # Remove empty directories (e.g. empty perf/) left after purge
+            # Remove empty directories left after purge
             utils.remove_empty_dirs_after_purge(to_remove, Path(self.path))
 
             self._invalidate_index()
