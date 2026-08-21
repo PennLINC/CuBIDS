@@ -37,6 +37,49 @@ that differ in a set of important acquisition parameters.
 The subsets of consistent acquisition parameter sets within a Entity Set are called a :ref:`paramgroup`.
 
 
+Date/time anonymization before DataLad
+--------------------------------------
+
+Run ``cubids date-time-shift`` before your BIDS dataset is checked into DataLad. The command updates acquisition metadata in
+place, so running it before the first DataLad commit prevents identifiable dates
+and precise acquisition times from being recorded in the dataset history.
+
+Start with a dry run:
+
+.. code-block:: console
+
+    $ cubids date-time-shift /path/to/bids --dry-run
+
+To apply the anonymization, run:
+
+.. code-block:: console
+
+    $ cubids date-time-shift /path/to/bids
+
+For larger datasets, use ``--n-cpus`` to read and plan independent file
+updates in parallel. Files are still written only after the preflight phase
+has completed successfully:
+
+.. code-block:: console
+
+    $ cubids date-time-shift /path/to/bids --n-cpus 4
+
+For each subject, CuBIDS sets the earliest rounded acquisition date in
+subject-level or session-level ``*_scans.tsv`` files to ``1800-01-01`` and
+preserves calendar-day intervals between acquisitions. It rounds ``acq_time``
+values in those tables and the following JSON fields to the nearest hour:
+``AcquisitionTime``,
+``time.samples.AcquisitionTime``, ``time.samples.ContentTime``,
+``global.const.PerformedProcedureStepStartTime``, ``global.const.SeriesTime``,
+and ``global.const.StudyTime``. Thirty minutes rounds up, and times at 23:30 or
+later wrap to ``00:00:00``. No other metadata values are changed.
+
+The command validates all readable scans tables and JSON files before writing any
+changes. It reports unparseable acquisition-time values as warnings and leaves
+those individual values unchanged. Use ``--dry-run`` to review every planned
+change before running the command without that option.
+
+
 .. _paramgroup:
 
 Parameter Group

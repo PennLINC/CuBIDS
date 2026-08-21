@@ -80,6 +80,16 @@ def _is_file(path, parser):
     return path
 
 
+def _is_dir(path, parser):
+    """Ensure a given path exists and is a directory."""
+    path = _path_exists(path, parser)
+    if not path.is_dir():
+        raise parser.error(
+            f"Path should point to a directory (or symlink of directory): <{path.absolute()}>."
+        )
+    return path
+
+
 def _parse_validate():
     """Create and configure the argument parser for the `cubids validate` command.
 
@@ -1101,6 +1111,70 @@ def _parse_print_metadata_fields():
     return parser
 
 
+def _parse_date_time_shift():
+    """Create the parser for the ``cubids date-time-shift`` command.
+
+    This function configures the command that de-identifies BIDS acquisition
+    dates and rounds acquisition times. It shifts each subject's earliest
+    rounded date in subject- and session-level ``*_scans.tsv`` files to
+    ``1800-01-01`` while preserving calendar-day intervals, and rounds
+    acquisition times in scans tables and JSON sidecars to the nearest hour.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The configured argument parser for the ``cubids date-time-shift``
+        command.
+
+    Notes
+    -----
+    The parser accepts the following arguments:
+
+    - bids_dir: Root of the BIDS dataset to update in place.
+    - --dry-run: Report planned changes without writing files.
+    - --n-cpus: Number of workers used to read and plan independent updates.
+    """
+    parser = argparse.ArgumentParser(
+        description=(
+            "cubids date-time-shift: de-identify scans.tsv acquisition dates and round "
+            "acquisition times"
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        allow_abbrev=False,
+    )
+    IsDir = partial(_is_dir, parser=parser)
+
+    parser.add_argument(
+        "bids_dir",
+        type=IsDir,
+        action="store",
+        help=(
+            "The root of the BIDS dataset to update in place. Run this before checking "
+            "the dataset into DataLad."
+        ),
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="Report planned changes without modifying files.",
+    )
+    parser.add_argument(
+        "--n-cpus",
+        "--n_cpus",
+        type=int,
+        action="store",
+        dest="n_cpus",
+        default=1,
+        help="Number of workers used to read and plan independent file updates.",
+    )
+    return parser
+
+
 COMMANDS = [
     ("validate", _parse_validate, workflows.validate),
     ("bids-version", _parse_bids_version, workflows.bids_version),
@@ -1127,6 +1201,7 @@ COMMANDS = [
         _parse_remove_metadata_fields,
         workflows.remove_metadata_fields,
     ),
+    ("date-time-shift", _parse_date_time_shift, workflows.date_time_shift),
 ]
 
 
@@ -1179,8 +1254,8 @@ def _main(argv=None):
     args.pop("func")
 
     # Automatically set validation_scope='subject' when --participant-label is provided
-    if "participant_label" in args and "validation_scope" in args:
-        if args["participant_label"]:
-            args["validation_scope"] = "subject"
+    if "participant_label" in args and "validation_scope" in args and args["participant_label"]:
+        args["validation_scope"] = "subject"
 
-    options.func(**args)
+    result = options.func(**args)
+    return result if isinstance(result, int) else None

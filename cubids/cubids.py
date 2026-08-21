@@ -38,7 +38,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
 
 
-class CuBIDS(object):
+class CuBIDS:
     """The main CuBIDS class.
 
     Parameters
@@ -305,8 +305,8 @@ class CuBIDS(object):
             raise Exception("DataLad has not been initialized. use datalad_init()")
 
         statuses = self.datalad_handle.save(message=message or "CuBIDS Save", jobs=jobs)
-        saved_status = set([status["status"] for status in statuses])
-        if not saved_status == set(["ok"]):
+        saved_status = {status["status"] for status in statuses}
+        if not saved_status == {"ok"}:
             raise Exception("Failed to save in DataLad")
 
     def is_datalad_clean(self):
@@ -324,8 +324,8 @@ class CuBIDS(object):
         """
         if not self.datalad_ready:
             raise Exception("Datalad not initialized, can't determine status")
-        statuses = set([status["state"] for status in self.datalad_handle.status()])
-        return statuses == set(["clean"])
+        statuses = {status["state"] for status in self.datalad_handle.status()}
+        return statuses == {"clean"}
 
     def datalad_undo_last_commit(self):
         """Revert the most recent commit, remove it from history.
@@ -947,14 +947,13 @@ class CuBIDS(object):
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
-        if self.use_datalad:
-            if not self.is_datalad_clean():
-                s1 = "Purged IntendedFor references to files "
-                s2 = "requested for removal"
-                message = s1 + s2
-                dl_jobs = n_cpus if n_cpus and n_cpus > 1 else 1
-                self.datalad_save(message=message, jobs=dl_jobs)
-                self._invalidate_index()
+        if self.use_datalad and not self.is_datalad_clean():
+            s1 = "Purged IntendedFor references to files "
+            s2 = "requested for removal"
+            message = s1 + s2
+            dl_jobs = n_cpus if n_cpus and n_cpus > 1 else 1
+            self.datalad_save(message=message, jobs=dl_jobs)
+            self._invalidate_index()
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
 
@@ -1240,22 +1239,22 @@ class CuBIDS(object):
             underscore.
         """
         sidecar_params = self.grouping_config.get("sidecar_params")
-        for mod in sidecar_params.keys():
+        for mod in sidecar_params:
             mod_dict = sidecar_params[mod]
-            for s_param in mod_dict.keys():
-                if s_param not in self.data_dict.keys():
+            for s_param in mod_dict:
+                if s_param not in self.data_dict:
                     self.data_dict[s_param] = {"Description": "Scanning Parameter"}
 
         relational_params = self.grouping_config.get("relational_params")
-        for r_param in relational_params.keys():
-            if r_param not in self.data_dict.keys():
+        for r_param in relational_params:
+            if r_param not in self.data_dict:
                 self.data_dict[r_param] = {"Description": "Scanning Parameter"}
 
         derived_params = self.grouping_config.get("derived_params")
-        for mod in derived_params.keys():
+        for mod in derived_params:
             mod_dict = derived_params[mod]
-            for d_param in mod_dict.keys():
-                if d_param not in self.data_dict.keys():
+            for d_param in mod_dict:
+                if d_param not in self.data_dict:
                     self.data_dict[d_param] = {"Description": "NIfTI Header Parameter"}
 
         # Manually add non-sidecar columns/descriptions to data_dict
@@ -1407,16 +1406,16 @@ class CuBIDS(object):
 
         rename_cols = []
         tolerance_cols = []
-        for col in sidecar.keys():
-            if "suggest_variant_rename" in sidecar[col].keys():
+        for col in sidecar:
+            if "suggest_variant_rename" in sidecar[col]:
                 if sidecar[col]["suggest_variant_rename"] and col in summary.columns:
                     rename_cols.append(col)
-                    if "tolerance" in sidecar[col].keys():
+                    if "tolerance" in sidecar[col]:
                         tolerance_cols.append(col)
 
         # deal with Fmap!
         if "FieldmapKey" in relational:
-            if "suggest_variant_rename" in relational["FieldmapKey"].keys():
+            if "suggest_variant_rename" in relational["FieldmapKey"]:
                 if relational["FieldmapKey"]["suggest_variant_rename"]:
                     # check if 'bool' or 'columns'
                     if relational["FieldmapKey"]["display_mode"] == "bool":
@@ -1424,7 +1423,7 @@ class CuBIDS(object):
 
         # deal with IntendedFor Key!
         if "IntendedForKey" in relational:
-            if "suggest_variant_rename" in relational["IntendedForKey"].keys():
+            if "suggest_variant_rename" in relational["IntendedForKey"]:
                 if relational["FieldmapKey"]["suggest_variant_rename"]:
                     # check if 'bool' or 'columns'
                     if relational["IntendedForKey"]["display_mode"] == "bool":
@@ -1559,7 +1558,7 @@ class CuBIDS(object):
                 continue
 
             json_file = [x for x in bidsjson_file if "json" in x.filename]
-            if not len(json_file) == 1:
+            if len(json_file) != 1:
                 print("FOUND IRREGULAR ASSOCIATIONS")
 
             else:
@@ -1592,20 +1591,19 @@ class CuBIDS(object):
             while processing a file.
         """
         found_fields = set()
-        for json_file in Path(self.path).rglob("*.json"):
-            if ".git" not in str(json_file):
-                try:
-                    with open(json_file, "r", encoding="utf-8") as jsonr:
-                        content = jsonr.read().strip()
-                        if not content:
-                            print(f"Empty file: {json_file}")
-                            continue
-                        metadata = json.loads(content)
-                    found_fields.update(metadata.keys())
-                except json.JSONDecodeError as e:
-                    warnings.warn(f"Error decoding JSON in {json_file}: {e}")
-                except Exception as e:
-                    warnings.warn(f"Unexpected error with file {json_file}: {e}")
+        for json_file in utils.find_json_files(self.path):
+            try:
+                with open(json_file, "r", encoding="utf-8") as jsonr:
+                    content = jsonr.read().strip()
+                    if not content:
+                        print(f"Empty file: {json_file}")
+                        continue
+                    metadata = json.loads(content)
+                found_fields.update(metadata.keys())
+            except json.JSONDecodeError as e:
+                warnings.warn(f"Error decoding JSON in {json_file}: {e}")
+            except Exception as e:
+                warnings.warn(f"Unexpected error with file {json_file}: {e}")
 
         return sorted(found_fields)
 
@@ -1628,19 +1626,18 @@ class CuBIDS(object):
         if not remove_fields:
             return
 
-        for json_file in tqdm(Path(self.path).rglob("*.json")):
-            if ".git" not in str(json_file):
-                with open(json_file, "r") as jsonr:
-                    metadata = json.load(jsonr)
+        for json_file in tqdm(utils.find_json_files(self.path)):
+            with open(json_file, "r") as jsonr:
+                metadata = json.load(jsonr)
 
-                offending_keys = remove_fields.intersection(metadata.keys())
-                if not offending_keys:
-                    continue
+            offending_keys = remove_fields.intersection(metadata.keys())
+            if not offending_keys:
+                continue
 
-                for key in offending_keys:
-                    del metadata[key]
-                with open(json_file, "w") as jsonr:
-                    json.dump(metadata, jsonr, indent=4)
+            for key in offending_keys:
+                del metadata[key]
+            with open(json_file, "w") as jsonr:
+                json.dump(metadata, jsonr, indent=4)
 
         self._invalidate_index()
 
@@ -1686,26 +1683,26 @@ def _add_metadata_single_nifti(nifti_path):
             print("Error parsing this sidecar: ", sidecar)
             return
 
-        if "Obliquity" not in data.keys():
+        if "Obliquity" not in data:
             data["Obliquity"] = str(obliquity)
-        if "VoxelSizeDim1" not in data.keys():
+        if "VoxelSizeDim1" not in data:
             data["VoxelSizeDim1"] = float(voxel_sizes[0])
-        if "VoxelSizeDim2" not in data.keys():
+        if "VoxelSizeDim2" not in data:
             data["VoxelSizeDim2"] = float(voxel_sizes[1])
-        if "VoxelSizeDim3" not in data.keys():
+        if "VoxelSizeDim3" not in data:
             data["VoxelSizeDim3"] = float(voxel_sizes[2])
-        if "Dim1Size" not in data.keys():
+        if "Dim1Size" not in data:
             data["Dim1Size"] = matrix_dims[0]
-        if "Dim2Size" not in data.keys():
+        if "Dim2Size" not in data:
             data["Dim2Size"] = matrix_dims[1]
-        if "Dim3Size" not in data.keys():
+        if "Dim3Size" not in data:
             data["Dim3Size"] = matrix_dims[2]
-        if "NumVolumes" not in data.keys():
+        if "NumVolumes" not in data:
             if img.ndim == 4:
                 data["NumVolumes"] = matrix_dims[3]
             elif img.ndim == 3:
                 data["NumVolumes"] = 1
-        if "ImageOrientation" not in data.keys():
+        if "ImageOrientation" not in data:
             orient = nb.orientations.aff2axcodes(img.affine)
             orient = [str(orientation) for orientation in orient]
             joined = "".join(orient) + "+"

@@ -73,7 +73,7 @@ def test_ok_json_merge(tmp_path):
 
     merge_return = merge_json_into_json(source_json, dest_json)
     assert merge_return == 0
-    assert not _get_json_string(dest_json) == orig_dest_json_content
+    assert _get_json_string(dest_json) != orig_dest_json_content
 
 
 def test_ok_json_merge_cli(tmp_path):
@@ -109,7 +109,7 @@ def test_ok_json_merge_cli(tmp_path):
     assert os.path.isfile(dest_json)
     merge_proc = subprocess.run(["cubids", "bids-sidecar-merge", str(source_json), str(dest_json)])
     assert merge_proc.returncode == 0
-    assert not _get_json_string(dest_json) == orig_dest_json_content
+    assert _get_json_string(dest_json) != orig_dest_json_content
 
 
 def test_get_param_groups(tmp_path):
@@ -185,8 +185,7 @@ def test_purge_no_datalad(tmp_path):
     # create and save .txt with list of scans
     purge_path = str(tmp_path / "purge_scans.txt")
     with open(purge_path, "w") as filehandle:
-        for listitem in scans:
-            filehandle.write(f"{listitem}\n")
+        filehandle.writelines(f"{listitem}\n" for listitem in scans)
 
     bod = CuBIDS(data_root / "complete", use_datalad=False)
 
@@ -253,8 +252,7 @@ def test_purge(tmp_path):
     purge_path = str(tmp_path / "purge_scans.txt")
 
     with open(purge_path, "w") as filehandle:
-        for listitem in scans:
-            filehandle.write(f"{listitem}\n")
+        filehandle.writelines(f"{listitem}\n" for listitem in scans)
     bod = CuBIDS(data_root / "complete", use_datalad=True)
     bod.datalad_save()
 
@@ -465,7 +463,7 @@ def test_tsv_merge_no_datalad(tmp_path):
 
     bod.apply_tsv_changes(valid_tsv_file, original_files_tsv, str(tmp_path / "ok_modified"))
 
-    assert not file_hash(original_summary_tsv) == file_hash(tmp_path / "ok_modified_summary.tsv")
+    assert file_hash(original_summary_tsv) != file_hash(tmp_path / "ok_modified_summary.tsv")
 
     # Add an illegal merge to MergeInto
     summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
@@ -524,7 +522,7 @@ def test_tsv_merge_changes(tmp_path):
     for _, row in applied_files_df.iterrows():
         fp = row["FilePath"]
         if fp in odd:
-            if fp in occurrences.keys():
+            if fp in occurrences:
                 occurrences[fp].append(row["KeyParamGroup"])
             else:
                 occurrences[fp] = [row["KeyParamGroup"]]
@@ -577,7 +575,7 @@ def test_tsv_merge_changes(tmp_path):
     # about to merge
     bod.apply_tsv_changes(valid_tsv_file, original_files_tsv, str(tmp_path / "ok_modified"))
 
-    assert not file_hash(original_summary_tsv) == file_hash(tmp_path / "ok_modified_summary.tsv")
+    assert file_hash(original_summary_tsv) != file_hash(tmp_path / "ok_modified_summary.tsv")
 
     # Add an illegal merge to MergeInto
     summary_df.loc[cant_merge_echotime_dwi_row, "MergeInto"] = summary_df.ParamGroup[
@@ -929,6 +927,7 @@ def test_apply_tsv_changes(tmp_path):
         if "bold" in str(full_path):
             # Construct physio file paths by replacing the scan suffix with _physio
             from bids.layout import parse_file_entities
+
             old_suffix = parse_file_entities(str(full_path))["suffix"]
             old_ext = "".join(full_path.suffixes)
             scan_end = "_" + old_suffix + old_ext
@@ -1083,8 +1082,8 @@ def test_datalad_integration(tmp_path):
     edited_binary_content = file_hash(test_binary)
 
     # Check that the file content has changed
-    assert not original_content == edited_content
-    assert not original_binary_content == edited_binary_content
+    assert original_content != edited_content
+    assert original_binary_content != edited_binary_content
 
     # Check that datalad knows something has changed
     assert not uninit_cubids.is_datalad_clean()
@@ -1210,12 +1209,12 @@ def test_bids_version(tmp_path):
     min_validator_version = Version("2.0.0")
     min_schema_version = Version("0.11.3")
 
-    assert (
-        validator_version >= min_validator_version
-    ), f"Validator version {validator_version} is less than minimum {min_validator_version}"
-    assert (
-        schema_version >= min_schema_version
-    ), f"Schema version {schema_version} is less than minimum {min_schema_version}"
+    assert validator_version >= min_validator_version, (
+        f"Validator version {validator_version} is less than minimum {min_validator_version}"
+    )
+    assert schema_version >= min_schema_version, (
+        f"Schema version {schema_version} is less than minimum {min_schema_version}"
+    )
 
 
 # def test_image(image='pennlinc/bond:latest'):

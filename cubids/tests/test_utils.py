@@ -8,6 +8,22 @@ from cubids.cubids import CuBIDS
 from cubids.tests.utils import compare_group_assignments
 
 
+def test_find_json_files_excludes_git_metadata(tmp_path):
+    """Find JSON files in a dataset without traversing its Git metadata."""
+    dataset_json = tmp_path / "sub-01" / "metadata.json"
+    dataset_json.parent.mkdir()
+    dataset_json.write_text("{}")
+    (tmp_path / "dataset_description.json").write_text("{}")
+    (tmp_path / ".git").mkdir()
+    (tmp_path / ".git" / "ignored.json").write_text("{}")
+    (tmp_path / "directory.json").mkdir()
+
+    assert utils.find_json_files(tmp_path) == [
+        tmp_path / "dataset_description.json",
+        dataset_json,
+    ]
+
+
 def test_round_params():
     """Test the cubids.utils.round_params function."""
     # Example DataFrame
@@ -155,7 +171,6 @@ def test_cluster_single_parameters():
         out_df["Cluster_ImageType"].values.astype(int),
         [0, 0, 0, 0, 0, 0, 1, 2],
     )
-
 
     # Change the tolerance for SliceTiming
     config["sidecar_params"]["func"]["SliceTiming"]["tolerance"] = 0.5
