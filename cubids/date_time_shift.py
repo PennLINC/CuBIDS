@@ -10,7 +10,9 @@ from __future__ import annotations
 import io
 import json
 import logging
+import os
 import re
+import stat
 from collections import defaultdict
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -489,7 +491,14 @@ def _log_changes(
 
 def _write_updates(scans_updates: list[_ScansUpdate], json_updates: list[_JSONUpdate]) -> None:
     """Write validated output after preflight has completed successfully."""
-    for update in [*scans_updates, *json_updates]:
+    updates = [*scans_updates, *json_updates]
+    for update in updates:
+        if os.access(update.path, os.W_OK):
+            continue
+        update.path.chmod(update.path.stat().st_mode | stat.S_IWUSR)
+        logger.info("Made file writable: %s", update.path)
+
+    for update in updates:
         update.path.write_text(update.contents, encoding="utf-8")
 
 

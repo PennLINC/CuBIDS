@@ -10,6 +10,7 @@ Each test case includes assertions to verify the expected behavior of the corres
 import argparse
 import json
 import shutil
+import stat
 from functools import partial
 
 import pandas as pd
@@ -278,6 +279,18 @@ def test_date_time_shift_includes_subject_level_scans_tables(tmp_path):
     for scans_file in scans_files:
         scans_table = pd.read_csv(scans_file, sep="\t", keep_default_na=False)
         assert scans_table["acq_time"].tolist() == ["1800-01-01T14:00:00"]
+
+
+def test_date_time_shift_makes_updated_files_writable(tmp_path, caplog):
+    """Add owner-write permission before updating a read-only metadata file."""
+    bids_dir, acquisition_json, _ = _create_date_time_shift_dataset(tmp_path)
+    acquisition_json.chmod(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+
+    assert _main(["date-time-shift", str(bids_dir)]) == 0
+
+    assert acquisition_json.stat().st_mode & stat.S_IWUSR
+    assert json.loads(acquisition_json.read_text())["AcquisitionTime"] == "00:00:00"
+    assert f"Made file writable: {acquisition_json}" in caplog.text
 
 
 def test_date_time_shift_dry_run_does_not_modify_files(tmp_path, caplog):
