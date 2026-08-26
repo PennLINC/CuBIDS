@@ -81,7 +81,7 @@ def get_bids_validator_version():
         Version of the BIDS validator.
     """
     command = ["deno", "run", "-A", "jsr:@bids/validator", "--version"]
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(command, capture_output=True)
     output = result.stdout.decode("utf-8").strip()
     version = output.split()[-1]
     # Remove ANSI color codes
@@ -185,7 +185,7 @@ def run_validator(call):
     #     logger.info("Running the validator with call:")
     #     logger.info('\"' + ' '.join(call) + '\"')
 
-    ret = subprocess.run(call, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ret = subprocess.run(call, capture_output=True)
     return ret
 
 

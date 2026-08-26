@@ -14,7 +14,7 @@ import pandas as pd
 
 from cubids.constants import IMAGING_PARAMS
 
-DIRECT_IMAGING_PARAMS = IMAGING_PARAMS - set(["NSliceTimes"])
+DIRECT_IMAGING_PARAMS = IMAGING_PARAMS - {"NSliceTimes"}
 
 
 def check_merging_operations(action_tsv, raise_on_error=False):
@@ -45,13 +45,9 @@ def check_merging_operations(action_tsv, raise_on_error=False):
     overwrite_merges = []
     sdc_incompatible = []
 
-    sdc_cols = set(
-        [
-            col
-            for col in actions.columns
-            if col.startswith("IntendedForKey") or col.startswith("FieldmapKey")
-        ]
-    )
+    sdc_cols = {
+        col for col in actions.columns if col.startswith(("IntendedForKey", "FieldmapKey"))
+    }
 
     def _check_sdc_cols(meta1, meta2):
         return {key: meta1[key] for key in sdc_cols} == {key: meta2[key] for key in sdc_cols}
@@ -149,7 +145,7 @@ def merge_without_overwrite(source_meta, dest_meta_orig, raise_on_error=False):
     # copy the original json params
     dest_meta = deepcopy(dest_meta_orig)
 
-    if not source_meta.get("NSliceTimes") == dest_meta.get("NSliceTimes"):
+    if source_meta.get("NSliceTimes") != dest_meta.get("NSliceTimes"):
         if raise_on_error:
             raise Exception(
                 "Value for NSliceTimes is %d in destination "
@@ -268,7 +264,7 @@ def merge_json_into_json(from_file, to_file, raise_on_error=False):
         return 255
 
     # Only write if the data has changed
-    if not merged_metadata == orig_dest_metadata:
+    if merged_metadata != orig_dest_metadata:
         print("OVERWRITING", to_file)
         with open(to_file, "w") as tofw:
             json.dump(merged_metadata, tofw, indent=4)

@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-  codecov: codecov/codecov@5.2.1
 
 jobs:
   run_pytests:
@@ -66,11 +64,7 @@ jobs:
           command: |
             conda create -n cov python=3.12 pip coverage
             source activate cov
-
-            # We need curl for the codecov upload
-            apt-get update
-            apt-get install -y -qq curl
-            apt-get install -y gnupg
+            pip install --disable-pip-version-check codecov-cli==11.3.1
 
             # Generate XML from the checked-out repository path so Codecov can
             # resolve file paths against the commit contents.
@@ -91,17 +85,17 @@ jobs:
           name: Validate Codecov token format
           command: |
             python -c "import os; t=os.getenv('CODECOV_TOKEN',''); print(f'CODECOV_TOKEN length: {len(t)}'); print(f'CODECOV_TOKEN has_whitespace: {any(ch.isspace() for ch in t)}')"
-      # Set CODECOV_TOKEN in CircleCI project settings using the repository upload token from:
-      # https://app.codecov.io/gh/PennLINC/CuBIDS/settings
-      - codecov/upload:
-          files: /home/circleci/src/CuBIDS/coverage.xml
-          dir: /home/circleci/src/CuBIDS
-          git_service: github
-          slug: PennLINC/CuBIDS
-          token: CODECOV_TOKEN
-          disable_search: true
-          fail_on_error: false
-          verbose: true
+      - run:
+          name: Upload coverage to Codecov
+          command: |
+            source activate cov
+            # CODECOV_TOKEN is the repository upload token stored in CircleCI project settings.
+            codecovcli --verbose upload-process \
+              --disable-search \
+              --git-service github \
+              --slug PennLINC/CuBIDS \
+              --token "$CODECOV_TOKEN" \
+              --file /home/circleci/src/CuBIDS/coverage.xml
 
   deployable:
     docker:
@@ -134,7 +128,6 @@ workflows:
           matrix:
             parameters:
               python_version:
-                - "3.10"
                 - "3.11"
                 - "3.12"
                 - "3.13"

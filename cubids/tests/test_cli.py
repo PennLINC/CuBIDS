@@ -10,8 +10,10 @@ Each test case includes assertions to verify the expected behavior of the corres
 import argparse
 import json
 import shutil
+import stat
 from functools import partial
 
+import pandas as pd
 import pytest
 
 from cubids.cli import _is_file, _main, _path_exists
@@ -153,6 +155,214 @@ def test_main_help(capsys):
     assert "CuBIDS commands" in captured.out
 
 
+def _create_date_time_shift_dataset(tmp_path):
+    """Create a small dataset containing all date/time metadata handled by the command."""
+    bids_dir = tmp_path / "date_time_shift_dataset"
+    scans_dir = bids_dir / "sub-01" / "ses-01"
+    later_scans_dir = bids_dir / "sub-01" / "ses-02"
+    sidecar_dir = scans_dir / "func"
+    scans_dir.mkdir(parents=True)
+    later_scans_dir.mkdir(parents=True)
+    sidecar_dir.mkdir()
+    (bids_dir / "dataset_description.json").write_text('{"Name": "test"}\n')
+    git_dir = bids_dir / ".git"
+    git_dir.mkdir()
+    (git_dir / "ignored.json").write_text("not BIDS metadata")
+
+    (scans_dir / "sub-01_ses-01_scans.tsv").write_text(
+        "filename\tacq_time\tnote\n"
+        "func/sub-01_task-rest_bold.nii.gz\t2024-01-10T13:43:04\tkeep\n"
+        "func/sub-01_task-other_bold.nii.gz\t2024-01-10T23:45:00\tkeep\n"
+        "func/sub-01_task-na_bold.nii.gz\tn/a\tkeep\n"
+        "func/sub-01_task-invalid_bold.nii.gz\tnot-a-date\tkeep\n"
+    )
+    (later_scans_dir / "sub-01_ses-02_scans.tsv").write_text(
+        "filename\tacq_time\tnote\n"
+        'func/sub-01_task-rest_bold.nii.gz\t2024-01-24T09:12:20\tsay "hi"\n'
+    )
+
+    acquisition_json = sidecar_dir / "sub-01_task-rest_bold.json"
+    acquisition_json.write_text(
+        json.dumps(
+            {
+                "AcquisitionTime": "23:30:00.123",
+                "AcquisitionDateTime": "2024-01-10T23:30:00",
+                "RepetitionTime": 2.0,
+                "Nested": {"Unchanged": True},
+                "global": {
+                    "const": {
+                        "PerformedProcedureStepStartTime": "151258.640000",
+                        "SeriesTime": "154553.343000",
+                        "StudyTime": 91258.562,
+                    }
+                },
+                "time": {
+                    "samples": {
+                        "AcquisitionTime": ["154550.195000", "152958.000000"],
+                        "ContentTime": ["154553.359000", "152958.000000"],
+                    }
+                },
+            }
+        )
+    )
+    untouched_json = sidecar_dir / "sub-01_task-other_bold.json"
+    untouched_json.write_text('{"RepetitionTime": 3.0}\n')
+    return bids_dir, acquisition_json, untouched_json
+
+
+def test_date_time_shift_command(tmp_path, caplog):
+    """Shift scans dates, round acquisition times, and retain unrelated metadata."""
+    bids_dir, acquisition_json, untouched_json = _create_date_time_shift_dataset(tmp_path)
+    untouched_contents = untouched_json.read_text()
+
+    assert _main(["date-time-shift", str(bids_dir), "--n-cpus", "2"]) == 0
+
+    first_table = pd.read_csv(
+        bids_dir / "sub-01" / "ses-01" / "sub-01_ses-01_scans.tsv",
+        sep="\t",
+        keep_default_na=False,
+    )
+    later_table = pd.read_csv(
+        bids_dir / "sub-01" / "ses-02" / "sub-01_ses-02_scans.tsv",
+        sep="\t",
+        keep_default_na=False,
+    )
+    assert first_table["acq_time"].tolist() == [
+        "1800-01-01T14:00:00",
+        "1800-01-02T00:00:00",
+        "n/a",
+        "not-a-date",
+    ]
+    assert later_table["acq_time"].tolist() == ["1800-01-15T09:00:00"]
+    # Quote characters in untouched columns survive the rewrite verbatim.
+    later_scans_file = bids_dir / "sub-01" / "ses-02" / "sub-01_ses-02_scans.tsv"
+    assert 'say "hi"' in later_scans_file.read_text()
+
+    metadata = json.loads(acquisition_json.read_text())
+    assert metadata == {
+        "AcquisitionTime": "00:00:00",
+        "AcquisitionDateTime": "2024-01-10T23:30:00",
+        "RepetitionTime": 2.0,
+        "Nested": {"Unchanged": True},
+        "global": {
+            "const": {
+                "PerformedProcedureStepStartTime": "15:00:00",
+                "SeriesTime": "16:00:00",
+                "StudyTime": "09:00:00",
+            }
+        },
+        "time": {
+            "samples": {
+                "AcquisitionTime": ["16:00:00", "15:00:00"],
+                "ContentTime": ["16:00:00", "15:00:00"],
+            }
+        },
+    }
+    assert untouched_json.read_text() == untouched_contents
+    assert "Processed 2 scans.tsv files and 3 JSON files" in caplog.text
+    assert "Unparseable acq_time" in caplog.text
+    assert "Date field AcquisitionDateTime is not de-identified" in caplog.text
+
+
+def test_date_time_shift_includes_subject_level_scans_tables(tmp_path):
+    """Shift subject-level scans tables independently when no sessions exist."""
+    bids_dir = tmp_path / "cross_sectional_dataset"
+    (bids_dir / "dataset_description.json").parent.mkdir()
+    (bids_dir / "dataset_description.json").write_text('{"Name": "test"}\n')
+    scans_files = []
+    for subject, acquisition_time in (
+        ("sub-01", "2024-01-10T13:43:04"),
+        ("sub-02", "2024-02-10T13:43:04"),
+    ):
+        scans_file = bids_dir / subject / f"{subject}_scans.tsv"
+        scans_file.parent.mkdir()
+        scans_file.write_text(
+            f"filename\tacq_time\nfunc/{subject}_task-rest_bold.nii.gz\t{acquisition_time}\n"
+        )
+        scans_files.append(scans_file)
+
+    assert _main(["date-time-shift", str(bids_dir)]) == 0
+
+    for scans_file in scans_files:
+        scans_table = pd.read_csv(scans_file, sep="\t", keep_default_na=False)
+        assert scans_table["acq_time"].tolist() == ["1800-01-01T14:00:00"]
+
+
+def test_date_time_shift_warns_for_subject_without_parseable_dates(tmp_path, caplog):
+    """Warn about unparseable acq_time values even when a subject has no valid dates."""
+    bids_dir = tmp_path / "unparseable_dataset"
+    scans_file = bids_dir / "sub-01" / "sub-01_scans.tsv"
+    scans_file.parent.mkdir(parents=True)
+    scans_file.write_text("filename\tacq_time\nfunc/sub-01_task-rest_bold.nii.gz\tJan 10 2024\n")
+    original_scans = scans_file.read_text()
+
+    assert _main(["date-time-shift", str(bids_dir)]) == 0
+
+    assert "Unparseable acq_time" in caplog.text
+    assert scans_file.read_text() == original_scans
+
+
+def test_date_time_shift_makes_updated_files_writable(tmp_path, caplog):
+    """Add owner-write permission before updating a read-only metadata file."""
+    bids_dir, acquisition_json, _ = _create_date_time_shift_dataset(tmp_path)
+    acquisition_json.chmod(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+
+    assert _main(["date-time-shift", str(bids_dir)]) == 0
+
+    assert acquisition_json.stat().st_mode & stat.S_IWUSR
+    assert json.loads(acquisition_json.read_text())["AcquisitionTime"] == "00:00:00"
+    assert f"Made file writable: {acquisition_json}" in caplog.text
+
+
+def test_date_time_shift_dry_run_does_not_modify_files(tmp_path, caplog):
+    """Report planned date/time anonymization without writing to the dataset."""
+    bids_dir, acquisition_json, _ = _create_date_time_shift_dataset(tmp_path)
+    scans_file = bids_dir / "sub-01" / "ses-01" / "sub-01_ses-01_scans.tsv"
+    original_scans = scans_file.read_text()
+    original_json = acquisition_json.read_text()
+
+    assert _main(["date-time-shift", str(bids_dir), "--dry-run"]) == 0
+
+    assert scans_file.read_text() == original_scans
+    assert acquisition_json.read_text() == original_json
+    assert "WOULD CHANGE" in caplog.text
+    assert "Checked 2 scans.tsv files and 3 JSON files" in caplog.text
+
+
+def test_date_time_shift_validates_all_metadata_before_writing(tmp_path, caplog):
+    """Do not change valid metadata when another JSON file cannot be read."""
+    bids_dir, acquisition_json, _ = _create_date_time_shift_dataset(tmp_path)
+    scans_file = bids_dir / "sub-01" / "ses-01" / "sub-01_ses-01_scans.tsv"
+    original_scans = scans_file.read_text()
+    original_json = acquisition_json.read_text()
+    (bids_dir / "invalid.json").write_text("not valid JSON")
+
+    assert _main(["date-time-shift", str(bids_dir)]) == 1
+
+    assert scans_file.read_text() == original_scans
+    assert acquisition_json.read_text() == original_json
+    assert "validation failed; no files were modified" in caplog.text
+
+
+def test_date_time_shift_help_and_input_validation(tmp_path, capsys):
+    """Expose command help and reject a file path in place of a BIDS directory."""
+    with pytest.raises(SystemExit) as excinfo:
+        _main(["date-time-shift", "--help"])
+    assert excinfo.value.code == 0
+    help_output = capsys.readouterr().out
+    assert "before" in help_output
+    assert "DataLad" in help_output
+    assert "--n-cpus" in help_output
+
+    path_file = tmp_path / "not_a_directory"
+    path_file.touch()
+    with pytest.raises(SystemExit) as excinfo:
+        _main(["date-time-shift", str(path_file)])
+    assert excinfo.value.code == 2
+
+    assert _main(["date-time-shift", str(tmp_path), "--n-cpus", "0"]) == 2
+
+
 def test_validate_command(tmp_path):
     """Test the validate command."""
     # Create mock BIDS dataset
@@ -263,7 +473,17 @@ def test_validate_subject_scope_with_n_cpus(tmp_path, build_bids_dataset):
     output_prefix = tmp_path / "validation_parallel"
 
     # This should complete without error
-    _main(["validate", str(bids_dir), str(output_prefix), "--validation-scope", "subject", "--n-cpus", "1"])
+    _main(
+        [
+            "validate",
+            str(bids_dir),
+            str(output_prefix),
+            "--validation-scope",
+            "subject",
+            "--n-cpus",
+            "1",
+        ]
+    )
 
     # Verify the command completed successfully by checking if the output files exist
     assert (output_prefix.parent / f"{output_prefix.name}_validation.tsv").exists()
@@ -314,7 +534,9 @@ def test_add_nifti_info_command_with_test_dataset(tmp_path):
 
 def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys, build_bids_dataset):
     """Test the print-metadata-fields command with the test BIDS dataset."""
-    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="metadata_fields_dataset")
+    bids_dir = _build_cli_dataset(
+        tmp_path, build_bids_dataset, dataset_name="metadata_fields_dataset"
+    )
 
     # Run print-metadata-fields
     _main(["print-metadata-fields", str(bids_dir)])
@@ -327,7 +549,9 @@ def test_print_metadata_fields_command_with_test_dataset(tmp_path, capsys, build
 
 def test_remove_metadata_fields_command_with_test_dataset(tmp_path, build_bids_dataset):
     """Test the remove-metadata-fields command with the test BIDS dataset."""
-    bids_dir = _build_cli_dataset(tmp_path, build_bids_dataset, dataset_name="remove_metadata_dataset")
+    bids_dir = _build_cli_dataset(
+        tmp_path, build_bids_dataset, dataset_name="remove_metadata_dataset"
+    )
 
     # Get a sample JSON sidecar
     json_file = next(bids_dir.rglob("*.json"))
