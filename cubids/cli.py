@@ -1258,4 +1258,6 @@ def _main(argv=None):
         args["validation_scope"] = "subject"
 
     result = options.func(**args)
-    return result if isinstance(result, int) else None
+    # The console script exits with _main's return value; only genuine int exit
+    # codes may propagate (bool is an int subclass, so True would exit 1).
+    return result if isinstance(result, int) and not isinstance(result, bool) else None

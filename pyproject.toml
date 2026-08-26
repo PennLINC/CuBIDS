@@ -112,7 +112,7 @@ version-file = "cubids/_version.py"
 
 [tool.ruff]
 line-length = 99
-target-version = "py38"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]

@@ -114,9 +114,17 @@ def _update_json(json_file, metadata):
 
 
 def find_json_files(root):
-    """Return regular JSON files below ``root``, excluding Git metadata."""
+    """Return regular JSON files below ``root``, excluding hidden paths like ``.git``.
+
+    BIDS ignores hidden files and directories, so anything below a dot-prefixed
+    path component (``.git``, ``.github``, ``.datalad``, ...) is skipped.
+    """
+    root = Path(root)
     return sorted(
-        path for path in Path(root).rglob("*.json") if path.is_file() and ".git" not in path.parts
+        path
+        for path in root.rglob("*.json")
+        if path.is_file()
+        and not any(part.startswith(".") for part in path.relative_to(root).parts)
     )
 
 

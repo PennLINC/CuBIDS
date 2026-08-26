@@ -7,6 +7,7 @@ sidecars.
 
 from __future__ import annotations
 
+import csv
 import io
 import json
 import logging
@@ -41,6 +42,16 @@ _JSON_SCALAR_TIME_PATHS = (
 _JSON_TIME_ARRAY_PATHS = (
     ("time", "samples", "AcquisitionTime"),
     ("time", "samples", "ContentTime"),
+)
+# Date-bearing sidecar fields this command does not rewrite. Their presence is
+# surfaced as a warning so identifiable dates are not silently left behind.
+_JSON_DATE_FIELD_PATHS = (
+    ("AcquisitionDateTime",),
+    ("global", "const", "AcquisitionDate"),
+    ("global", "const", "AcquisitionDateTime"),
+    ("global", "const", "ContentDate"),
+    ("global", "const", "SeriesDate"),
+    ("global", "const", "StudyDate"),
 )
 
 _Input = TypeVar("_Input")
@@ -103,6 +114,15 @@ def parse_iso_datetime(value: str) -> datetime | None:
     if value.endswith("Z"):
         value = value[:-1] + "+00:00"
 
+    # Python < 3.11 only accepts fractional seconds with exactly 3 or 6 digits,
+    # so normalize the fraction to 6 digits before parsing.
+    value = re.sub(
+        r"\.(\d+)",
+        lambda match: "." + match.group(1)[:6].ljust(6, "0"),
+        value,
+        count=1,
+    )
+
     try:
         return datetime.fromisoformat(value)
     except ValueError:
@@ -146,6 +166,11 @@ def parse_time_string(value: str) -> time | None:
         if 0 <= hour <= 23 and 0 <= minute <= 59 and 0 <= second <= 59:
             return time(hour=hour, minute=minute, second=second, microsecond=microsecond)
         return None
+
+    # DICOM times stored as JSON numbers lose their leading zero (e.g. 91530.0
+    # for 09:15:30); restore it so morning times parse like afternoon times.
+    if re.match(r"^\d{5}(?:\.\d+)?$", value):
+        value = "0" + value
 
     compact_time = re.match(_COMPACT_TIME_PATTERN, value)
     if compact_time:
@@ -201,6 +226,9 @@ def _read_scans_table(scans_file: Path) -> tuple[_ScansTable | None, str | None]
             sep="\t",
             dtype=str,
             keep_default_na=False,
+            # BIDS TSVs do not use quoting; QUOTE_NONE keeps quote characters
+            # in untouched columns byte-identical through the rewrite.
+            quoting=csv.QUOTE_NONE,
         )
     except (
         OSError,
@@ -260,8 +288,6 @@ def _plan_scans_update(
         return None, []
 
     subject_anchor = subject_anchors.get(_subject_from_scans_path(table.path))
-    if subject_anchor is None:
-        return None, []
 
     updated_times = table.data["acq_time"].copy()
     changes = []
@@ -274,6 +300,11 @@ def _plan_scans_update(
                 warnings.append(
                     f"Unparseable acq_time in {table.path}, row {index + 2}: {original_value}"
                 )
+            continue
+
+        # A parseable value implies the subject has an anchor; this guard only
+        # keeps the unparseable-value warnings above flowing when it does not.
+        if subject_anchor is None:
             continue
 
         rounded_datetime = round_datetime_to_nearest_hour(acquisition_datetime)
@@ -300,7 +331,7 @@ def _plan_scans_update(
     updated_data = table.data.copy()
     updated_data["acq_time"] = updated_times
     contents = io.StringIO()
-    updated_data.to_csv(contents, sep="\t", index=False)
+    updated_data.to_csv(contents, sep="\t", index=False, quoting=csv.QUOTE_NONE)
     return (
         _ScansUpdate(path=table.path, contents=contents.getvalue(), changes=changes),
         warnings,
@@ -430,6 +461,14 @@ def _plan_json_update(
         field_changes, field_warnings = _plan_json_time_array(data, field_path)
         changes.extend(field_changes)
         warnings.extend(field_warnings)
+    for field_path in _JSON_DATE_FIELD_PATHS:
+        parent = _get_json_parent(data, field_path)
+        if parent is not None and field_path[-1] in parent:
+            warnings.append(
+                f"Date field {'.'.join(field_path)} is not de-identified by this command"
+            )
+
+    warnings = [f"{json_file}: {warning}" for warning in warnings]
 
     if not changes:
         return None, "\n".join(warnings) if warnings else None, None
@@ -489,7 +528,11 @@ def _log_changes(
             logger.info("    %s: %s -> %s", change.field_path, change.before, change.after)
 
 
-def _write_updates(scans_updates: list[_ScansUpdate], json_updates: list[_JSONUpdate]) -> None:
+def _write_updates(
+    scans_updates: list[_ScansUpdate],
+    json_updates: list[_JSONUpdate],
+    written: list[_ScansUpdate | _JSONUpdate],
+) -> None:
     """Write validated output after preflight has completed successfully."""
     updates = [*scans_updates, *json_updates]
     for update in updates:
@@ -500,6 +543,7 @@ def _write_updates(scans_updates: list[_ScansUpdate], json_updates: list[_JSONUp
 
     for update in updates:
         update.path.write_text(update.contents, encoding="utf-8")
+        written.append(update)
 
 
 def date_time_shift(bids_dir: Path, dry_run: bool = False, n_cpus: int = 1) -> int:
@@ -558,10 +602,15 @@ def date_time_shift(bids_dir: Path, dry_run: bool = False, n_cpus: int = 1) -> i
     if dry_run:
         _log_changes(scans_updates, json_updates, dry_run=True)
     else:
+        written: list[_ScansUpdate | _JSONUpdate] = []
         try:
-            _write_updates(scans_updates, json_updates)
+            _write_updates(scans_updates, json_updates, written)
         except OSError as error:
             logger.error("Could not write date/time shift updates: %s", error)
+            if written:
+                logger.error("%d files were already updated before the failure:", len(written))
+                for update in written:
+                    logger.error("    %s", update.path)
             return 1
         _log_changes(scans_updates, json_updates, dry_run=False)
 

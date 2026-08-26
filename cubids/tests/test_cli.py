@@ -177,7 +177,8 @@ def _create_date_time_shift_dataset(tmp_path):
         "func/sub-01_task-invalid_bold.nii.gz\tnot-a-date\tkeep\n"
     )
     (later_scans_dir / "sub-01_ses-02_scans.tsv").write_text(
-        "filename\tacq_time\tnote\nfunc/sub-01_task-rest_bold.nii.gz\t2024-01-24T09:12:20\tkeep\n"
+        "filename\tacq_time\tnote\n"
+        'func/sub-01_task-rest_bold.nii.gz\t2024-01-24T09:12:20\tsay "hi"\n'
     )
 
     acquisition_json = sidecar_dir / "sub-01_task-rest_bold.json"
@@ -185,13 +186,14 @@ def _create_date_time_shift_dataset(tmp_path):
         json.dumps(
             {
                 "AcquisitionTime": "23:30:00.123",
+                "AcquisitionDateTime": "2024-01-10T23:30:00",
                 "RepetitionTime": 2.0,
                 "Nested": {"Unchanged": True},
                 "global": {
                     "const": {
                         "PerformedProcedureStepStartTime": "151258.640000",
                         "SeriesTime": "154553.343000",
-                        "StudyTime": "151258.562000",
+                        "StudyTime": 91258.562,
                     }
                 },
                 "time": {
@@ -232,17 +234,21 @@ def test_date_time_shift_command(tmp_path, caplog):
         "not-a-date",
     ]
     assert later_table["acq_time"].tolist() == ["1800-01-15T09:00:00"]
+    # Quote characters in untouched columns survive the rewrite verbatim.
+    later_scans_file = bids_dir / "sub-01" / "ses-02" / "sub-01_ses-02_scans.tsv"
+    assert 'say "hi"' in later_scans_file.read_text()
 
     metadata = json.loads(acquisition_json.read_text())
     assert metadata == {
         "AcquisitionTime": "00:00:00",
+        "AcquisitionDateTime": "2024-01-10T23:30:00",
         "RepetitionTime": 2.0,
         "Nested": {"Unchanged": True},
         "global": {
             "const": {
                 "PerformedProcedureStepStartTime": "15:00:00",
                 "SeriesTime": "16:00:00",
-                "StudyTime": "15:00:00",
+                "StudyTime": "09:00:00",
             }
         },
         "time": {
@@ -255,6 +261,7 @@ def test_date_time_shift_command(tmp_path, caplog):
     assert untouched_json.read_text() == untouched_contents
     assert "Processed 2 scans.tsv files and 3 JSON files" in caplog.text
     assert "Unparseable acq_time" in caplog.text
+    assert "Date field AcquisitionDateTime is not de-identified" in caplog.text
 
 
 def test_date_time_shift_includes_subject_level_scans_tables(tmp_path):
@@ -279,6 +286,20 @@ def test_date_time_shift_includes_subject_level_scans_tables(tmp_path):
     for scans_file in scans_files:
         scans_table = pd.read_csv(scans_file, sep="\t", keep_default_na=False)
         assert scans_table["acq_time"].tolist() == ["1800-01-01T14:00:00"]
+
+
+def test_date_time_shift_warns_for_subject_without_parseable_dates(tmp_path, caplog):
+    """Warn about unparseable acq_time values even when a subject has no valid dates."""
+    bids_dir = tmp_path / "unparseable_dataset"
+    scans_file = bids_dir / "sub-01" / "sub-01_scans.tsv"
+    scans_file.parent.mkdir(parents=True)
+    scans_file.write_text("filename\tacq_time\nfunc/sub-01_task-rest_bold.nii.gz\tJan 10 2024\n")
+    original_scans = scans_file.read_text()
+
+    assert _main(["date-time-shift", str(bids_dir)]) == 0
+
+    assert "Unparseable acq_time" in caplog.text
+    assert scans_file.read_text() == original_scans
 
 
 def test_date_time_shift_makes_updated_files_writable(tmp_path, caplog):

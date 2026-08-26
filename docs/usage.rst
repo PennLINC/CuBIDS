@@ -74,6 +74,12 @@ values in those tables and the following JSON fields to the nearest hour:
 and ``global.const.StudyTime``. Thirty minutes rounds up, and times at 23:30 or
 later wrap to ``00:00:00``. No other metadata values are changed.
 
+Date-bearing JSON fields such as ``AcquisitionDateTime`` and the dcmmeta
+``global.const`` date fields (``StudyDate``, ``SeriesDate``, ``AcquisitionDate``,
+``ContentDate``) are not rewritten; the command reports them as warnings so
+they can be removed or de-identified before the dataset enters version
+control.
+
 The command validates all readable scans tables and JSON files before writing any
 changes. It reports unparseable acquisition-time values as warnings and leaves
 those individual values unchanged. Use ``--dry-run`` to review every planned

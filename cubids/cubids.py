@@ -1424,7 +1424,7 @@ class CuBIDS:
         # deal with IntendedFor Key!
         if "IntendedForKey" in relational:
             if "suggest_variant_rename" in relational["IntendedForKey"]:
-                if relational["FieldmapKey"]["suggest_variant_rename"]:
+                if relational["IntendedForKey"]["suggest_variant_rename"]:
                     # check if 'bool' or 'columns'
                     if relational["IntendedForKey"]["display_mode"] == "bool":
                         rename_cols.append("UsedAsFieldmap")
