@@ -114,9 +114,7 @@ def _anyof_to_arrow(branches, prefer_scalar):
             scalar = pa.float64()
         elif btype == "integer":
             scalar = pa.int32()
-        elif btype == "string":
-            scalar = pa.string()
-        elif btype == "boolean":
+        elif btype == "string" or btype == "boolean":
             scalar = pa.string()
 
     if prefer_scalar and scalar is not None:
@@ -192,7 +190,7 @@ def build_metadata_type_map(bids_schema, grouping_config):
     type_map = {}
 
     for section in ("sidecar_params", "derived_params"):
-        for _modality, params in grouping_config.get(section, {}).items():
+        for params in grouping_config.get(section, {}).values():
             for param_name, param_props in params.items():
                 if param_name in type_map:
                     continue
@@ -575,10 +573,10 @@ def load_or_build_index(root, bids_schema, grouping_config, cache_dir=None, use_
                     break
         if not stale:
             table = pq.read_table(cache_path)
-            print(f"Loaded CuBIDS index from cache ({len(table)} files). " f"Cache: {cache_path}")
+            print(f"Loaded CuBIDS index from cache ({len(table)} files). Cache: {cache_path}")
             return table
         else:
-            print("CuBIDS index cache is stale (dataset has been modified). " "Rebuilding...")
+            print("CuBIDS index cache is stale (dataset has been modified). Rebuilding...")
     else:
         print("No CuBIDS index cache found. Building index...")
 
@@ -718,9 +716,8 @@ def compute_entity_sets(table, non_key_entities, entity_column_names=None):
     for name in niftis.column_names:
         if name in skip:
             continue
-        if entity_column_names is not None:
-            if name not in entity_column_names:
-                continue
+        if entity_column_names is not None and name not in entity_column_names:
+            continue
         entity_cols.append(name)
 
     paths = niftis.column("path").to_pylist()
