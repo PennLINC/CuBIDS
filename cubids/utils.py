@@ -113,6 +113,21 @@ def _update_json(json_file, metadata):
         json.dump(metadata, f, ensure_ascii=False, indent=4)
 
 
+def find_json_files(root):
+    """Return regular JSON files below ``root``, excluding hidden paths like ``.git``.
+
+    BIDS ignores hidden files and directories, so anything below a dot-prefixed
+    path component (``.git``, ``.github``, ``.datalad``, ...) is skipped.
+    """
+    root = Path(root)
+    return sorted(
+        path
+        for path in root.rglob("*.json")
+        if path.is_file()
+        and not any(part.startswith(".") for part in path.relative_to(root).parts)
+    )
+
+
 def _entity_set_to_entities(entity_set):
     """Split an entity_set name into a pybids dictionary of entities.
 
@@ -615,7 +630,7 @@ def cluster_single_parameters(df, config, modality):
                         # clustering requires at least two samples
                         array[np.isnan(array)] = -999
 
-                        tolerance = to_format[column_name]["tolerance"]
+                        tolerance = column_fmt["tolerance"]
                         clustering = AgglomerativeClustering(
                             n_clusters=None,
                             distance_threshold=tolerance,
@@ -638,7 +653,7 @@ def cluster_single_parameters(df, config, modality):
 
                 if valid_mask.sum() > 1:  # Proceed with clustering only if >1 valid value
                     valid_array = array[valid_mask].reshape(-1, 1)
-                    tolerance = to_format[column_name]["tolerance"]
+                    tolerance = column_fmt["tolerance"]
 
                     clustering = AgglomerativeClustering(
                         n_clusters=None,
@@ -987,7 +1002,7 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
 
     # Add leading zeros to run entity if it's an integer.
     # If it's a string, respect the value provided.
-    if "run" in file_entities.keys() and isinstance(file_entities["run"], int):
+    if "run" in file_entities and isinstance(file_entities["run"], int):
         # Infer the number of leading zeros needed from the original filename
         n_leading = 2  # default to 1 leading zero
         if "_run-" in filepath:
@@ -1094,7 +1109,7 @@ def assign_variants(summary, rename_cols):
             for col in rename_cols:
                 dom_entity_set = dom_dict[entity_set]
 
-                if f"Cluster_{col}" in dom_entity_set.keys():
+                if f"Cluster_{col}" in dom_entity_set:
                     cluster_val = summary.loc[row, f"Cluster_{col}"]
                     if pd.isna(cluster_val):
                         # This should only occur when the entity set does not have the
@@ -1131,9 +1146,7 @@ def assign_variants(summary, rename_cols):
                         elif isinstance(val, float):
                             val = str(val).replace(".", "p")
 
-                        if val.endswith("p0"):
-                            # Remove the trailing "p0"
-                            val = val[:-2]
+                        val = val.removesuffix("p0")
 
                         # Filter out non-alphanumeric characters
                         val = re.sub(r"[^a-zA-Z0-9]", "", val)
@@ -1143,7 +1156,7 @@ def assign_variants(summary, rename_cols):
             if acq_str == "VARIANT":
                 acq_str += "Other"
 
-            if "acquisition" in entities.keys():
+            if "acquisition" in entities:
                 acq = f"acquisition-{entities['acquisition'] + acq_str}"
                 new_name = summary.loc[row, "EntitySet"].replace(
                     f"acquisition-{entities['acquisition']}", acq
@@ -1203,7 +1216,7 @@ def collect_file_collections(layout, base_file):
     }
 
     base_file = layout.get_file(base_file)
-    fc_query = {ent: [Query.ANY, Query.NONE] for ent in file_collection_entities.keys()}
+    fc_query = {ent: [Query.ANY, Query.NONE] for ent in file_collection_entities}
     query = base_file.get_entities()
     query = {**query, **fc_query}
     files = layout.get(**query)

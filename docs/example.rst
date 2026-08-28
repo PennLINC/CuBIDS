@@ -66,11 +66,35 @@ To remove the `PatientName` field from the sidecars, we can use the command:
 
 This command should succeed silently.
 
+Before placing the dataset under version control, we also de-identify its
+acquisition dates and reduce the precision of acquisition times. We first
+review the planned changes without modifying the dataset:
+
+.. code-block:: console
+
+    $ cubids date-time-shift BIDS_Dataset --dry-run
+
+After confirming the output, apply the changes:
+
+.. code-block:: console
+
+    $ cubids date-time-shift BIDS_Dataset
+
+This sets each subject's earliest rounded acquisition date in subject-level or
+session-level ``*_scans.tsv`` files to ``1800-01-01``, preserves the
+calendar-day intervals between acquisitions, and rounds ``acq_time`` plus JSON
+``AcquisitionTime`` fields to the nearest hour. This includes dcmmeta-derived values in
+``time.samples`` and ``global.const``. This must occur before the first DataLad
+commit so that identifiable dates and precise acquisition times are never
+stored in the dataset history. For a large dataset, add ``--n-cpus 4`` to read
+and plan updates in parallel.
+
 
 Checking the BIDS dataset into DataLad
 --------------------------------------
 
-Now that all PHI has been removed from the metadata, we are ready to check our dataset into ``datalad``.
+Now that PHI has been removed from the metadata and acquisition times have been
+de-identified, we are ready to check our dataset into ``datalad``.
 To do this, we run the following command:
 
 .. code-block:: console

@@ -15,6 +15,7 @@ import pandas as pd
 import tqdm
 
 from cubids.cubids import CuBIDS
+from cubids.date_time_shift import date_time_shift as _date_time_shift
 from cubids.metadata_merge import merge_json_into_json
 from cubids.validator import (
     bids_validator_version,
@@ -322,7 +323,14 @@ def validate(
 
         # Prepare arguments for each subject
         validation_args = [
-            (subject, files_list, bids_dir_str, ignore_nifti_headers, local_validator, schema_str)
+            (
+                subject,
+                files_list,
+                bids_dir_str,
+                ignore_nifti_headers,
+                local_validator,
+                schema_str,
+            )
             for subject, files_list in subjects_dict.items()
         ]
 
@@ -388,6 +396,26 @@ def validate(
             return parsed
 
 
+def date_time_shift(bids_dir, dry_run=False, n_cpus=1):
+    """De-identify BIDS acquisition dates and round acquisition times.
+
+    Parameters
+    ----------
+    bids_dir : :obj:`pathlib.Path`
+        Root of the BIDS dataset to process.
+    dry_run : :obj:`bool`
+        Report planned changes without writing files.
+    n_cpus : :obj:`int`
+        Number of workers used to read and plan independent file updates.
+
+    Returns
+    -------
+    int
+        Exit status returned by the date/time-shift workflow.
+    """
+    return _date_time_shift(bids_dir=bids_dir, dry_run=dry_run, n_cpus=n_cpus)
+
+
 def bids_version(bids_dir, write=False, schema=None):
     """Get BIDS validator and schema version.
 
@@ -415,8 +443,8 @@ def bids_version(bids_dir, write=False, schema=None):
         subject = sub_folders[0]
     except FileNotFoundError:
         raise FileNotFoundError(f"The directory {bids_dir} does not exist.")
-    except ValueError as ve:
-        raise ve
+    except ValueError:
+        raise
 
     # build a dictionary with {SubjectLabel: [List of files]}
     # run first subject only
@@ -531,9 +559,8 @@ def apply(
         grouping_config=config,
         schema_json=schema,
     )
-    if use_datalad:
-        if not bod.is_datalad_clean():
-            raise Exception("Untracked change in " + str(bids_dir))
+    if use_datalad and not bod.is_datalad_clean():
+        raise Exception("Untracked change in " + str(bids_dir))
     bod.apply_tsv_changes(
         str(edited_summary_tsv),
         str(files_tsv),
@@ -599,11 +626,10 @@ def copy_exemplars(
     """
     # Run directly from python using
     bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad, force_unlock=force_unlock)
-    if use_datalad:
-        if not bod.is_datalad_clean():
-            raise Exception(
-                "Untracked changes. Need to save " + str(bids_dir) + " before coyping exemplars"
-            )
+    if use_datalad and not bod.is_datalad_clean():
+        raise Exception(
+            "Untracked changes. Need to save " + str(bids_dir) + " before coyping exemplars"
+        )
     bod.copy_exemplars(
         str(exemplars_dir),
         str(exemplars_tsv),
@@ -634,9 +660,8 @@ def add_nifti_info(bids_dir, use_datalad, force_unlock, n_cpus=1):
         use_datalad=use_datalad,
         force_unlock=force_unlock,
     )
-    if use_datalad:
-        if not bod.is_datalad_clean():
-            raise Exception("Untracked change in " + str(bids_dir))
+    if use_datalad and not bod.is_datalad_clean():
+        raise Exception("Untracked change in " + str(bids_dir))
         # if bod.is_datalad_clean() and not force_unlock:
         #     raise Exception("Need to unlock " + str(bids_dir))
     bod.add_nifti_info(n_cpus=n_cpus)
@@ -679,9 +704,8 @@ def purge(bids_dir, use_datalad, scans, n_cpus=1):
     """
     # Run directly from python using
     bod = CuBIDS(data_root=str(bids_dir), use_datalad=use_datalad)
-    if use_datalad:
-        if not bod.is_datalad_clean():
-            raise Exception("Untracked change in " + str(bids_dir))
+    if use_datalad and not bod.is_datalad_clean():
+        raise Exception("Untracked change in " + str(bids_dir))
     bod.purge(str(scans), n_cpus=n_cpus)
 
 
