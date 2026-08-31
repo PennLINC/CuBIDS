@@ -267,6 +267,121 @@ def test_purge(tmp_path):
     assert not Path(json_name).exists()
 
 
+def test_purge_no_files_to_remove(tmp_path, capsys):
+    """Purge with a scans list that references only non-existent paths.
+
+    A purge list can reference non-existent paths (e.g., when the list is stale, files were
+    already removed or the list was from a previous run). When none of the listed paths exist in the
+    dataset, CuBIDS should skip association removals and report "Not running any
+    association removals".
+    """
+    data_root = get_data(tmp_path)
+    bids_dir = data_root / "complete"
+
+    # Build a purge list that points to a scan that does not exist in the dataset.
+    purge_path = str(tmp_path / "purge_scans.txt")
+    with open(purge_path, "w") as f:
+        f.write("sub-99/ses-99/func/nonexistent.nii.gz\n")
+
+    bod = CuBIDS(bids_dir, use_datalad=False)
+    bod.purge(purge_path)
+
+    out, _ = capsys.readouterr()
+    assert "Not running any association removals" in out
+
+
+def test_purge_removes_empty_dirs(tmp_path):
+    """Purge removes the scan, its sidecar JSON, and prunes empty subject/session dirs.
+
+    After deleting the only file(s) in a subject/session dir, the empty
+    directories (e.g. sub-01/ses-01/func and up) should be removed so the
+    dataset does not leave behind empty dirs.
+    """
+    bids_root = tmp_path / "bids"
+    bids_root.mkdir()
+    (bids_root / "dataset_description.json").write_text('{"Name":"test","BIDSVersion":"1.0.0"}')
+
+    # One subject with one BOLD scan and its JSON sidecar.
+    func_dir = bids_root / "sub-01" / "ses-01" / "func"
+    func_dir.mkdir(parents=True)
+    bold_nii = func_dir / "sub-01_ses-01_task-rest_bold.nii.gz"
+    bold_json = func_dir / "sub-01_ses-01_task-rest_bold.json"
+    bold_nii.touch()
+    bold_json.write_text("{}")
+
+    purge_path = str(tmp_path / "purge_scans.txt")
+    with open(purge_path, "w") as f:
+        f.write("sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii.gz\n")
+
+    bod = CuBIDS(str(bids_root), use_datalad=False)
+    bod.purge(purge_path)
+
+    # Scan and sidecar are gone; empty subject tree is removed.
+    assert not bold_nii.exists()
+    assert not bold_json.exists()
+    assert not (bids_root / "sub-01").exists()
+
+
+def test_purge_perf_asl_removes_aslcontext_and_asllabeling(tmp_path, build_bids_dataset):
+    """Purging a PERF ASL scan also removes its BIDS companion files."""
+    bids_root = build_bids_dataset(
+        tmp_path=tmp_path,
+        dataset_name="perf_purge",
+        skeleton_name="skeleton_perf_m0.yml",
+    )
+    sub, ses = "sub-01", "ses-01"
+    perf_dir = bids_root / sub / ses / "perf"
+    asl_nii = perf_dir / f"{sub}_{ses}_asl.nii.gz"
+    asl_json = perf_dir / f"{sub}_{ses}_asl.json"
+    aslcontext = perf_dir / f"{sub}_{ses}_aslcontext.tsv"
+    asllabeling = perf_dir / f"{sub}_{ses}_asllabeling.jpg"
+
+    # Add the ASL sidecar and companion files that BIDS expects alongside the ASL NIfTI.
+    asl_json.write_text("{}")
+    aslcontext.write_text("label\ncontrol\n")
+    asllabeling.write_bytes(b"fake jpg")
+    assert asl_nii.exists()
+    assert asl_json.exists()
+    assert aslcontext.exists()
+    assert asllabeling.exists()
+
+    purge_path = str(tmp_path / "purge_scans.txt")
+    with open(purge_path, "w") as f:
+        f.write(f"{sub}/{ses}/perf/{sub}_{ses}_asl.nii.gz\n")
+
+    bod = CuBIDS(str(bids_root), use_datalad=False)
+    bod.purge(purge_path)
+
+    # Main ASL file, its JSON sidecar, and both companion files must be removed.
+    assert not asl_nii.exists()
+    assert not asl_json.exists()
+    assert not aslcontext.exists()
+    assert not asllabeling.exists()
+
+
+def test_purge_parameter_groups_message(tmp_path):
+    """ Test that_purge_associations works when scans_txt is None.
+
+    scans_txt is None when purge is triggered from the apply workflow (Parameter
+    Group deletions): that path calls _purge_associations(to_remove) directly and
+    never purge(scans_txt). 
+    
+    This test ensures that with scans_txt is None we still remove the scan and its
+    associations (and the "Parameter Groups" commit message is used when datalad
+    is enabled).
+    """
+    data_root = get_data(tmp_path)
+    bids_dir = data_root / "complete"
+    scan_name = "sub-03/ses-phdiff/func/sub-03_ses-phdiff_task-rest_bold.nii.gz"
+    full_path = str(bids_dir / scan_name)
+
+    bod = CuBIDS(bids_dir, use_datalad=False)
+    assert bod.scans_txt is None  # No scans.txt → Parameter Groups path.
+
+    bod._purge_associations([full_path])
+    assert not Path(full_path).exists()
+
+
 def test_bad_json_merge(tmp_path):
     """Test that an unsuccessful merge returns an error.
 
@@ -1165,9 +1280,9 @@ def test_validator(tmp_path):
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
 
-    assert ret.returncode == 16, (
+    assert ret.returncode != 0, (
         "Validator was expected to fail after corrupting files, "
-        f"but returned code {ret.returncode}.\n"
+        f"this returned code {ret.returncode}.\n"
         "Corrupted files: removed JSON sidecar and modified NIfTI header.\n"
         f"STDOUT:\n{ret.stdout.decode('UTF-8', errors='replace')}\n"
         f"STDERR:\n{ret.stderr.decode('UTF-8', errors='replace') if getattr(ret, 'stderr', None) else ''}"

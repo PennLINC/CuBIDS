@@ -1002,14 +1002,12 @@ class CuBIDS:
                         to_remove.append(sbref_file)
 
             # PERF-specific
-            if "/perf/" in str(scan):
-                if parse_file_entities(str(scan))["suffix"] == "asl":
-                    context = utils.img_to_new_ext(str(scan), "_aslcontext.tsv")
-                    if Path(context).exists():
-                        to_remove.append(context)
-                    labeling = utils.img_to_new_ext(str(scan), "_asllabeling.jpg")
-                    if Path(labeling).exists():
-                        to_remove.append(labeling)
+            if "/perf/" in str(scan) and parse_file_entities(str(scan)).get("suffix") == "asl":
+                scan_end = "_asl" + "".join(Path(scan).suffixes)
+                for associated_suffix in ("_aslcontext.tsv", "_asllabeling.jpg"):
+                    path = str(scan).replace(scan_end, associated_suffix)
+                    if Path(path).exists():
+                        to_remove.append(path)
 
         to_remove += list(scans)
 
@@ -1045,6 +1043,9 @@ class CuBIDS:
                     stdout=subprocess.PIPE,
                     cwd=path_prefix,
                 )
+
+            # Remove empty directories left after purge
+            utils.remove_empty_dirs_after_purge(to_remove, Path(self.path))
 
             self._invalidate_index()
 
