@@ -26,7 +26,7 @@ dependencies = [
     "pyarrow>=14.0",
     "pybids<=0.22.0",
     "pyyaml",
-    "scikit-learn<=1.7.2",
+    "scikit-learn<=1.9.0",
     "tqdm",
 ]
 dynamic = ["version"]
