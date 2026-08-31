@@ -21,12 +21,12 @@ license = {file = "LICENSE"}
 requires-python = ">=3.11"
 dependencies = [
     "datalad>=0.13.5,!=0.17.3,!=0.17.0,!=0.16.1",
-    "numpy<=2.2.6",
-    "pandas<=2.3.3",
+    "numpy<=2.4.6",
+    "pandas<=3.0.5",
     "pyarrow>=14.0",
     "pybids<=0.22.0",
     "pyyaml",
-    "scikit-learn<=1.7.2",
+    "scikit-learn<=1.9.0",
     "tqdm",
 ]
 dynamic = ["version"]
