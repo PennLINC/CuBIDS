@@ -1120,9 +1120,10 @@ def assign_variants(summary, rename_cols):
                     if cluster_val != dom_entity_set[f"Cluster_{col}"]:
                         acq_str += f"{col}C{int(cluster_val)}"
 
-                elif not (
-                    pd.isna(summary.loc[row, col]) and pd.isna(dom_entity_set[col])
-                ) and summary.loc[row, col] != dom_entity_set[col]:
+                elif (
+                    not (pd.isna(summary.loc[row, col]) and pd.isna(dom_entity_set[col]))
+                    and summary.loc[row, col] != dom_entity_set[col]
+                ):
                     if col == "HasFieldmap":
                         if dom_entity_set[col] == "True":
                             acq_str += "NoFmap"
