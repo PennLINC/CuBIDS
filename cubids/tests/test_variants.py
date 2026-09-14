@@ -82,3 +82,46 @@ def test_assign_variants_special_parameters(base_df):
     assert result.loc[0, "RenameEntitySet"].endswith("acquisition-VARIANTOther")
     assert result.loc[1, "RenameEntitySet"].endswith("acquisition-VARIANTNoFmapIsUsed")
     assert result.loc[2, "RenameEntitySet"].endswith("acquisition-VARIANTNoFmap")
+
+
+def test_assign_variants_ignores_matching_missing_values():
+    """Test that missing values shared with the dominant group are not variants."""
+    summary = pd.DataFrame(
+        {
+            "ParamGroup": [1, 2],
+            "Counts": [2, 1],
+            "EntitySet": [
+                "datatype-anat_reconstruction-RMS_suffix-T1w_acquisition-MEMPRAGE",
+                "datatype-anat_reconstruction-RMS_suffix-T1w_acquisition-MEMPRAGE",
+            ],
+            "RenameEntitySet": ["", ""],
+            "PhaseEncodingDirection": [float("nan"), float("nan")],
+            "Dim1Size": [160, 155],
+        }
+    )
+
+    result = assign_variants(summary, ["PhaseEncodingDirection", "Dim1Size"])
+
+    assert result.loc[1, "RenameEntitySet"].endswith(
+        "acquisition-MEMPRAGEVARIANTDim1Size155"
+    )
+    assert "PhaseEncodingDirection" not in result.loc[1, "RenameEntitySet"]
+
+
+def test_assign_variants_labels_missing_value_that_differs_from_dominant():
+    """Test that a missing variant value is named when the dominant value is set."""
+    summary = pd.DataFrame(
+        {
+            "ParamGroup": [1, 2],
+            "Counts": [2, 1],
+            "EntitySet": ["datatype-anat_suffix-T1w", "datatype-anat_suffix-T1w"],
+            "RenameEntitySet": ["", ""],
+            "PhaseEncodingDirection": ["j", float("nan")],
+        }
+    )
+
+    result = assign_variants(summary, ["PhaseEncodingDirection"])
+
+    assert result.loc[1, "RenameEntitySet"].endswith(
+        "acquisition-VARIANTPhaseEncodingDirectionnan"
+    )
