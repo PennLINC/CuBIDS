@@ -152,7 +152,6 @@ exclude = [
     "cubids/_warnings.py",
     "cubids/config.py",
     "cubids/data/",
-    "cubids/tests/",
 ]
 ignore = ["D107", "E203", "E402", "E722", "W503", "N803", "N806", "N815"]
 per-file-ignores = [

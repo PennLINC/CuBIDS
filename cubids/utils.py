@@ -1071,7 +1071,7 @@ def assign_variants(summary, rename_cols):
     3. Special parameters like HasFieldmap use predefined strings (e.g., VARIANTNoFmap)
     4. Multiple parameters are concatenated (e.g., VARIANTEchoTime2FlipAngle75)
     """
-    # Pre-cast rename_cols to string once instead of per-row
+    # Pre-cast rename_cols to string once instead of per-row.
     for col in rename_cols:
         summary[col] = summary[col].astype(str)
 
@@ -1120,7 +1120,10 @@ def assign_variants(summary, rename_cols):
                     if cluster_val != dom_entity_set[f"Cluster_{col}"]:
                         acq_str += f"{col}C{int(cluster_val)}"
 
-                elif summary.loc[row, col] != dom_entity_set[col]:
+                elif (
+                    not (pd.isna(summary.loc[row, col]) and pd.isna(dom_entity_set[col]))
+                    and summary.loc[row, col] != dom_entity_set[col]
+                ):
                     if col == "HasFieldmap":
                         if dom_entity_set[col] == "True":
                             acq_str += "NoFmap"
@@ -1167,14 +1170,12 @@ def assign_variants(summary, rename_cols):
 
             summary.at[row, "RenameEntitySet"] = new_name
 
-        # convert all "nan" to empty str
-        # so they don't show up in the summary tsv
-        if summary.loc[row, "RenameEntitySet"] == "nan":
-            summary.at[row, "RenameEntitySet"] = ""
-
-        for col in rename_cols:
-            if summary.loc[row, col] == "nan":
-                summary.at[row, col] = ""
+    # Convert all "nan" values to empty strings so they don't appear in the
+    # summary TSV. This must happen after variant comparisons: changing the
+    # dominant group's missing values during the loop makes matching missing
+    # values in later groups appear different.
+    summary["RenameEntitySet"] = summary["RenameEntitySet"].replace("nan", "")
+    summary[rename_cols] = summary[rename_cols].replace("nan", "")
 
     return summary
 
