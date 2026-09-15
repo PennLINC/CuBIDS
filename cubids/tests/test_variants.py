@@ -102,9 +102,7 @@ def test_assign_variants_ignores_matching_missing_values():
 
     result = assign_variants(summary, ["PhaseEncodingDirection", "Dim1Size"])
 
-    assert result.loc[1, "RenameEntitySet"].endswith(
-        "acquisition-MEMPRAGEVARIANTDim1Size155"
-    )
+    assert result.loc[1, "RenameEntitySet"].endswith("acquisition-MEMPRAGEVARIANTDim1Size155")
     assert "PhaseEncodingDirection" not in result.loc[1, "RenameEntitySet"]
 
 

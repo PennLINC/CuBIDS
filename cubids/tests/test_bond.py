@@ -1126,12 +1126,13 @@ def test_validator(tmp_path):
     # test the validator in valid dataset
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
+    stderr = ret.stderr.decode("UTF-8", errors="replace") if getattr(ret, "stderr", None) else ""
 
     assert ret.returncode == 0, (
         "Validator was expected to pass on the clean dataset, "
         f"but returned code {ret.returncode}.\n"
         f"STDOUT:\n{ret.stdout.decode('UTF-8', errors='replace')}\n"
-        f"STDERR:\n{ret.stderr.decode('UTF-8', errors='replace') if getattr(ret, 'stderr', None) else ''}"
+        f"STDERR:\n{stderr}"
     )
     parsed = parse_validator_output(ret.stdout.decode("UTF-8"))
 
@@ -1164,13 +1165,14 @@ def test_validator(tmp_path):
 
     call = build_validator_call(str(data_root) + "/complete")
     ret = run_validator(call)
+    stderr = ret.stderr.decode("UTF-8", errors="replace") if getattr(ret, "stderr", None) else ""
 
     assert ret.returncode == 16, (
         "Validator was expected to fail after corrupting files, "
         f"but returned code {ret.returncode}.\n"
         "Corrupted files: removed JSON sidecar and modified NIfTI header.\n"
         f"STDOUT:\n{ret.stdout.decode('UTF-8', errors='replace')}\n"
-        f"STDERR:\n{ret.stderr.decode('UTF-8', errors='replace') if getattr(ret, 'stderr', None) else ''}"
+        f"STDERR:\n{stderr}"
     )
 
     parsed = parse_validator_output(ret.stdout.decode("UTF-8"))
@@ -1209,12 +1211,12 @@ def test_bids_version(tmp_path):
     min_validator_version = Version("2.0.0")
     min_schema_version = Version("0.11.3")
 
-    assert validator_version >= min_validator_version, (
-        f"Validator version {validator_version} is less than minimum {min_validator_version}"
-    )
-    assert schema_version >= min_schema_version, (
-        f"Schema version {schema_version} is less than minimum {min_schema_version}"
-    )
+    assert (
+        validator_version >= min_validator_version
+    ), f"Validator version {validator_version} is less than minimum {min_validator_version}"
+    assert (
+        schema_version >= min_schema_version
+    ), f"Schema version {schema_version} is less than minimum {min_schema_version}"
 
 
 # def test_image(image='pennlinc/bond:latest'):

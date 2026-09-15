@@ -13,11 +13,13 @@ from cubids.cubids import CuBIDS
 
 
 def _write(path: Path, content: str = ""):
+    """Write text content, creating the parent directory if needed."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content)
 
 
 def test_m0_not_renamed_but_aslcontext_is_and_intendedfor_updated(tmp_path, build_bids_dataset):
+    """Test that ASL companion files are renamed without renaming M0 scans."""
     bids_root = build_bids_dataset(
         tmp_path=tmp_path,
         dataset_name="perf_m0_dataset",

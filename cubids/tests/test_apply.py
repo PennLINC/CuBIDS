@@ -6,7 +6,7 @@ import pytest
 
 @pytest.fixture(scope="module")
 def files_data():
-    """A dictionary describing a CuBIDS files tsv file for testing.
+    """Return data for a CuBIDS files TSV test.
 
     Returns
     -------
@@ -62,7 +62,7 @@ def files_data():
 
 @pytest.fixture(scope="module")
 def summary_data():
-    """A dictionary describing a CuBIDS summary tsv file for testing.
+    """Return data for a CuBIDS summary TSV test.
 
     Returns
     -------
