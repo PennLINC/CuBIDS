@@ -547,6 +547,9 @@ def test_group_command_with_test_dataset(tmp_path, build_bids_dataset):
     # Check that output files were created
     assert (output_prefix.parent / f"{output_prefix.name}_summary.tsv").exists()
     assert (output_prefix.parent / f"{output_prefix.name}_files.tsv").exists()
+    assert (
+        output_prefix.parent / f"{output_prefix.name}_file_collection_variant_report.tsv"
+    ).exists()
     assert (output_prefix.parent / f"{output_prefix.name}_AcqGrouping.tsv").exists()
 
 

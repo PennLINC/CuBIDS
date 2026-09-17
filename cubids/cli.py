@@ -526,7 +526,7 @@ def _parse_apply():
         help=(
             "file prefix for writing the post-apply grouping "
             "outputs. If users pass in just a filename prefix "
-            "e.g. V2, then CuBIDS will put the four grouping "
+            "e.g. V2, then CuBIDS will put the grouping "
             "outputs in bids_dir/code/CuBIDS. If the user "
             "specifies a path (e.g. /Users/scovitz/BIDS/V2 "
             "then output files will go to the specified location."
@@ -587,8 +587,8 @@ def _parse_apply():
         dest="allow_fmap_renames",
         default=False,
         help=(
-            "allow fieldmap renames after validating all BIDS B0 fieldmap "
-            "collections (phase-difference, two-phase, direct, and PEPOLAR); "
+            "allow fieldmap renames after validating all fieldmap collections "
+            "(phase-difference, two-phase, direct, PEPOLAR, and RF field maps); "
             "fieldmaps remain excluded by default"
         ),
     )

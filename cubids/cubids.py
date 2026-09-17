@@ -38,7 +38,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
 
 
-FMAP_REPORT_COLUMNS = [
+FILE_COLLECTION_REPORT_COLUMNS = [
     "CollectionID",
     "Case",
     "FilePaths",
@@ -50,21 +50,17 @@ FMAP_REPORT_COLUMNS = [
     "ProposedRenameEntitySets",
 ]
 
-# Suffixes of the BIDS B0 fieldmap types, whose files only make sense as whole
-# collections. Every other suffix under fmap/ (TB1TFL, TB1map, RB1map, M0scan,
-# ...) is a standalone image with no collection to keep consistent.
-B0_FMAP_SUFFIXES = frozenset(
-    {
-        "phasediff",
-        "magnitude1",
-        "magnitude2",
-        "phase1",
-        "phase2",
-        "fieldmap",
-        "magnitude",
-        "epi",
-    }
-)
+
+def _split_variant(acquisition):
+    """Split an acquisition label into the part before its variant and the variant.
+
+    Both are empty strings when the label holds no variant.
+    """
+    base, marker, variant = str(acquisition or "").partition("VARIANT")
+    if not marker:
+        return "", ""
+
+    return base, marker + variant
 
 
 class CuBIDS:
@@ -146,6 +142,7 @@ class CuBIDS:
         self.path = os.path.abspath(data_root)
         self._layout = None
         self._index = None  # Arrow table: entities + metadata (lazy)
+        self._collection_rules = None  # file collection rules from the schema (lazy)
         self.keys_files = {}
         self.fieldmaps_cached = False
         self.datalad_ready = False
@@ -452,7 +449,8 @@ class CuBIDS:
         """Add file collections to the dataset.
 
         This method processes all files in the BIDS directory specified by `self.path`.
-        It identifies file collections based on the presence of specific entities in the filenames.
+        It identifies file collections with :attr:`collection_rules`, so members can
+        be distinguished by entity values, by suffix, or by acquisition label.
 
         Notes
         -----
@@ -476,7 +474,9 @@ class CuBIDS:
                 continue
 
             # Add file collection metadata to the sidecar
-            files, collection_metadata = utils.collect_file_collections(self.layout, path)
+            files, collection_metadata = utils.collect_file_collections(
+                self.layout, path, self.collection_rules
+            )
             filepaths = [f.path for f in files]
             checked_files.update(filepaths)
 
@@ -820,19 +820,33 @@ class CuBIDS:
                 utils._update_json(json_file, data)
                 utils.get_sidecar_metadata.cache_clear()
 
-    def analyze_fmap_variant_consistency(self, files_df, summary, rename_cols=()):
-        """Inspect BIDS B0 fieldmap collections and propose aligned variants.
+    @property
+    def collection_rules(self):
+        """Return the dataset's file collection rules, built from its BIDS schema.
+
+        Returns
+        -------
+        :obj:`dict`
+            Rules from :func:`~cubids.utils.get_collection_rules`.
+        """
+        if getattr(self, "_collection_rules", None) is None:
+            self._collection_rules = utils.get_collection_rules(self.schema)
+        return self._collection_rules
+
+    def analyze_collection_variant_consistency(self, files_df, summary, rename_cols=()):
+        """Inspect file collections and propose aligned variants.
 
         The pairing key is constructed from each individual NIfTI path. This is
         intentionally stricter than summary-level matching: subject, session,
-        run, chunk, and every other filename entity must already agree before
-        two files can be treated as one fieldmap collection.
+        run, chunk, and every other filename entity outside the collection's own
+        axes must already agree before two files can be treated as one file
+        collection.
 
-        Every file whose suffix is in :data:`B0_FMAP_SUFFIXES` lands in exactly one
-        record, so :meth:`validate_fmap_renames` can treat an unreported fieldmap as
-        a standalone image rather than as something it failed to understand. Files
-        under ``fmap/`` with any other suffix, such as ``TB1map`` or ``M0scan``, are
-        not part of a collection and are left out of the report entirely.
+        Which files belong to one collection comes from the BIDS schema, by way of
+        :attr:`collection_rules`. This covers entity-linked collections in every
+        datatype, such as multi-echo, multi-flip, multi-inversion, and multi-part
+        acquisitions, as well as B0 and RF field-map collections. A file that
+        belongs to no collection is left out of the report entirely.
 
         Parameters
         ----------
@@ -844,12 +858,12 @@ class CuBIDS:
             Summary columns that variant labels are built from. Without them no
             shared label can be composed, so mismatched collections are reported
             as ``MANUAL_REVIEW`` instead of ``PROPOSED``. Callers that only gate
-            on ``PASS``, such as :meth:`validate_fmap_renames`, can omit it.
+            on ``PASS``, such as :meth:`validate_collection_renames`, can omit it.
 
         Returns
         -------
         report : :obj:`pandas.DataFrame`
-            One row per fieldmap collection, with a ``Status`` of ``PASS``,
+            One row per file collection, with a ``Status`` of ``PASS``,
             ``PROPOSED``, or ``MANUAL_REVIEW``.
         proposals : :obj:`dict`
             Maps ``KeyParamGroup`` to the set of entity sets proposed for it.
@@ -858,37 +872,29 @@ class CuBIDS:
         rename_cols = list(rename_cols)
         by_key = summary.set_index("KeyParamGroup", drop=False)
         records = []
-        gre_groups = defaultdict(list)
-        pepolar_groups = defaultdict(list)
+        collections = defaultdict(list)
 
         for _, file_row in files_df.iterrows():
             filepath = str(file_row["FilePath"])
-            if "/fmap/" not in filepath or file_row["KeyParamGroup"] not in by_key.index:
+            if file_row["KeyParamGroup"] not in by_key.index:
                 continue
 
             entities = parse_file_entities(filepath)
-            suffix = entities.get("suffix")
-            if suffix not in B0_FMAP_SUFFIXES:
-                continue
-
+            rule = utils.get_collection_rule(self.collection_rules, entities)
             summary_row = by_key.loc[file_row["KeyParamGroup"]]
             target_entities = utils._entity_set_to_entities(
                 self.get_planned_entity_set(summary_row)
             )
-            item = {
-                "filepath": filepath,
-                "key_param_group": file_row["KeyParamGroup"],
-                "source_entities": entities,
-                "target_entities": target_entities,
-                "summary_row": summary_row,
-                "phase_encoding_direction": file_row.get("PhaseEncodingDirection"),
-            }
-            if suffix == "epi":
-                context = utils.entity_context_key(entities, {"direction", "extension", "fmap"})
-                pepolar_groups[context].append(item)
-            else:
-                context = utils.entity_context_key(entities, {"suffix", "extension", "fmap"})
-                gre_groups[context].append(item)
+            collections[(rule, utils.collection_context(entities, rule))].append(
+                {
+                    "filepath": filepath,
+                    "key_param_group": file_row["KeyParamGroup"],
+                    "source_entities": entities,
+                    "target_entities": target_entities,
+                    "summary_row": summary_row,
+                    "phase_encoding_direction": file_row.get("PhaseEncodingDirection"),
+                }
+            )
 
         proposals = defaultdict(set)
 
@@ -915,30 +921,47 @@ class CuBIDS:
                 }
             )
 
-        def assess_complete_collection(case, members, relationship_axes):
-            target_contexts = [
-                utils.entity_context_key(member["target_entities"], relationship_axes)
-                for member in members
-            ]
-            if len(set(target_contexts)) == 1:
+        def planned_context(member, rule, ignore_acquisition=False):
+            """Identify what a member's planned name must share with its siblings."""
+            entities = dict(member["target_entities"])
+            ignored = rule.axes | {"fmap", "extension"}
+            if ignore_acquisition:
+                ignored = ignored | {"acquisition"}
+            elif "acquisition" in rule.axes:
+                # The acquisition label is what tells these members apart, so only
+                # the variant part of it has to agree.
+                ignored = ignored - {"acquisition"}
+                entities["acquisition"] = _split_variant(entities.get("acquisition"))[1]
+
+            return utils.entity_context_key(entities, ignored)
+
+        def assess_complete_collection(case, members, rule):
+            if len({planned_context(member, rule) for member in members}) == 1:
                 add_record(
-                    case, members, "PASS", "All paired files have matching planned entities."
+                    case,
+                    members,
+                    "PASS",
+                    "All collection members have compatible planned entities.",
                 )
                 return
 
-            non_acq_contexts = [
-                utils.entity_context_key(
-                    member["target_entities"], relationship_axes | {"acquisition"}
-                )
-                for member in members
-            ]
-            acquisitions = [member["target_entities"].get("acquisition", "") for member in members]
+            non_acq_contexts = {
+                planned_context(member, rule, ignore_acquisition=True) for member in members
+            }
             variant_bases = []
-            for acquisition in acquisitions:
-                if not acquisition or "VARIANT" not in str(acquisition):
+            for member in members:
+                base, variant = _split_variant(member["target_entities"].get("acquisition"))
+                if not variant:
+                    # A member whose planned name holds no variant leaves the others
+                    # nothing to line up with.
                     variant_bases = []
                     break
-                variant_bases.append(str(acquisition).split("VARIANT", 1)[0])
+
+                variant_bases.append(base)
+
+            # Members that their acquisition labels tell apart keep their own bases.
+            # Anywhere else the bases must already agree for one shared label to fit.
+            bases_fit = "acquisition" in rule.axes or len(set(variant_bases)) == 1
 
             varying_columns = set()
             for member in members:
@@ -951,17 +974,12 @@ class CuBIDS:
             # Preserve rename_cols order so the shared label is deterministic.
             component_names = [col for col in rename_cols if col in varying_columns]
 
-            if (
-                len(set(non_acq_contexts)) == 1
-                and variant_bases
-                and len(set(variant_bases)) == 1
-                and component_names
-            ):
-                proposed_acquisition = variant_bases[0] + "VARIANT" + "".join(component_names)
+            if len(non_acq_contexts) == 1 and variant_bases and bases_fit and component_names:
+                variant = "VARIANT" + "".join(component_names)
                 proposed = {}
-                for member in members:
+                for member, base in zip(members, variant_bases):
                     entities = dict(member["target_entities"])
-                    entities["acquisition"] = proposed_acquisition
+                    entities["acquisition"] = base + variant
                     entity_set = utils._entities_to_entity_set(entities)
                     proposed[member["key_param_group"]] = entity_set
                     proposals[member["key_param_group"]].add(entity_set)
@@ -969,8 +987,8 @@ class CuBIDS:
                     case,
                     members,
                     "PROPOSED",
-                    "Variant labels differ; a shared fieldmap variant was proposed.",
-                    proposed_acquisition,
+                    "Variant labels differ; a shared file-collection variant was proposed.",
+                    "|".join(sorted({base + variant for base in variant_bases})),
                     proposed,
                 )
                 return
@@ -979,33 +997,23 @@ class CuBIDS:
                 case,
                 members,
                 "MANUAL_REVIEW",
-                "Paired files have incompatible planned entities; "
+                "Collection members have incompatible planned entities; "
                 "no safe shared variant was proposed.",
             )
 
-        for members in gre_groups.values():
+        def assess_gradient_echo_collection(members, rule):
             suffixes = {member["source_entities"]["suffix"] for member in members}
-            if "phasediff" in suffixes:
-                expected = {"phasediff", "magnitude1"}
-                case = "phase-difference"
-            elif {"phase1", "phase2"} & suffixes:
-                expected = {"phase1", "phase2", "magnitude1", "magnitude2"}
-                case = "two-phase"
-            elif "fieldmap" in suffixes:
-                expected = {"fieldmap", "magnitude"}
-                case = "direct-fieldmap"
-            else:
+            case, missing = utils.resolve_gre_fieldmap_case(suffixes)
+            if case == "orphan-magnitude":
                 # Magnitude images only exist as part of one of the cases above,
                 # so on their own they are the remains of a broken collection.
                 add_record(
-                    "orphan-magnitude",
+                    case,
                     members,
                     "MANUAL_REVIEW",
                     "Magnitude images without a phasediff, phase, or fieldmap image.",
                 )
-                continue
-            missing = sorted(expected - suffixes)
-            if missing:
+            elif missing:
                 add_record(
                     case,
                     members,
@@ -1013,44 +1021,76 @@ class CuBIDS:
                     f"Incomplete collection; missing {', '.join(missing)}.",
                 )
             else:
-                assess_complete_collection(case, members, {"suffix", "fmap"})
+                assess_complete_collection(case, members, rule)
 
-        for members in pepolar_groups.values():
-            if len(members) == 1:
-                # A lone EPI fieldmap is valid BIDS, and there is no partner whose
-                # label it has to match, so it is renamed like any other image.
+        def assess_pepolar_collection(members, rule):
+            peds_by_direction = defaultdict(set)
+            for member in members:
+                peds_by_direction[member["source_entities"].get("direction")].add(
+                    member["phase_encoding_direction"]
+                )
+
+            if len(peds_by_direction) == 1:
+                # A fieldmap acquired in one phase-encoding direction is valid BIDS,
+                # and there is no partner whose label it has to match, so it is
+                # renamed like any other image.
                 add_record(
-                    "single-direction epi",
+                    f"single-direction {members[0]['source_entities']['suffix']}",
                     members,
                     "PASS",
                     "Only one phase-encoding direction; no paired file to match.",
                 )
-                continue
+                return
 
-            directions = {member["source_entities"].get("direction") for member in members}
-            peds = [member["phase_encoding_direction"] for member in members]
-            valid_pair = (
-                len(members) == 2
-                and len(directions) == 2
-                and all(utils.is_nonempty(ped) for ped in peds)
-                and str(peds[0]).rstrip("-") == str(peds[1]).rstrip("-")
-                and str(peds[0]).endswith("-") != str(peds[1]).endswith("-")
+            # The report verifies the metadata rather than inferring polarity from
+            # labels such as dir-AP and dir-PA. Several files can share a direction,
+            # as the parts of a complex-valued image do, as long as they agree on it.
+            peds = [
+                str(next(iter(values)))
+                for values in peds_by_direction.values()
+                if len(values) == 1 and utils.is_nonempty(next(iter(values)))
+            ]
+            opposed = (
+                len(peds_by_direction) == 2
+                and len(peds) == 2
+                and peds[0].rstrip("-") == peds[1].rstrip("-")
+                and peds[0].endswith("-") != peds[1].endswith("-")
             )
-            if not valid_pair:
+            if not opposed:
                 add_record(
-                    "pepolar",
+                    rule.case,
                     members,
                     "MANUAL_REVIEW",
                     "Expected exactly two dirs with opposite PhaseEncodingDirection values.",
                 )
             else:
-                assess_complete_collection("pepolar", members, {"direction", "fmap"})
+                assess_complete_collection(rule.case, members, rule)
 
-        report = pd.DataFrame(records, columns=FMAP_REPORT_COLUMNS)
+        for (rule, _), members in collections.items():
+            if rule.is_generic and len(members) == 1:
+                # A standalone image, such as a TB1map, belongs to no collection and
+                # so has no sibling whose label it has to match.
+                continue
+
+            if rule.case == "b0-gradient-echo":
+                assess_gradient_echo_collection(members, rule)
+            elif rule.case == "pepolar":
+                assess_pepolar_collection(members, rule)
+            elif len(members) == 1:
+                add_record(
+                    rule.case,
+                    members,
+                    "PASS",
+                    "Only one file in the collection; no other member to match.",
+                )
+            else:
+                assess_complete_collection(rule.case, members, rule)
+
+        report = pd.DataFrame(records, columns=FILE_COLLECTION_REPORT_COLUMNS)
         return report, proposals
 
-    def apply_fmap_variant_proposals(self, summary, proposals):
-        """Write globally unambiguous fieldmap rename suggestions into a summary.
+    def apply_collection_variant_proposals(self, summary, proposals):
+        """Write globally unambiguous file-collection rename suggestions into a summary.
 
         A parameter group that drew more than one proposal is skipped, since its
         collections disagree about which shared label to use.
@@ -1060,7 +1100,7 @@ class CuBIDS:
         summary : :obj:`pandas.DataFrame`
             The summary to annotate, modified in place.
         proposals : :obj:`dict`
-            Proposals from :meth:`analyze_fmap_variant_consistency`.
+            Proposals from :meth:`analyze_collection_variant_consistency`.
 
         Returns
         -------
@@ -1079,7 +1119,9 @@ class CuBIDS:
             existing = summary.loc[mask, "Notes"].fillna("").astype(str)
             summary.loc[mask, "Notes"] = existing.apply(
                 lambda note: "; ".join(
-                    part for part in [note, "Review proposed shared fieldmap variant."] if part
+                    part
+                    for part in [note, "Review proposed shared file-collection variant."]
+                    if part
                 )
             )
         return summary
@@ -1363,13 +1405,13 @@ class CuBIDS:
         if conflicts:
             raise ValueError("Unsafe rename plan: " + "; ".join(conflicts))
 
-    def validate_fmap_deletions(self, files_df, summary, deletion_keys, report=None):
-        """Fail before mutation when deletions would split a fieldmap collection.
+    def validate_collection_deletions(self, files_df, summary, deletion_keys, report=None):
+        """Fail before mutation when deletions would split a file collection.
 
-        A BIDS B0 fieldmap collection is only usable whole, so deleting some of
-        its members leaves files that no distortion-correction tool can use.
-        This guards every deletion, whether it came from a hand-edited
-        ``MergeInto`` of 0 or from ``--remove-RenameEntitySet``.
+        A file collection is only usable whole, so deleting some of its members
+        leaves an incomplete acquisition. This guards every deletion, whether it
+        came from a hand-edited ``MergeInto`` of 0 or from
+        ``--remove-RenameEntitySet``.
 
         Parameters
         ----------
@@ -1380,19 +1422,19 @@ class CuBIDS:
         deletion_keys : :obj:`set` of :obj:`str`
             ``KeyParamGroup`` values whose files apply is about to delete.
         report : :obj:`pandas.DataFrame` or None
-            A report from :meth:`analyze_fmap_variant_consistency` for these same
+            A report from :meth:`analyze_collection_variant_consistency` for these same
             tables, to save recomputing it. Computed here when not supplied.
 
         Raises
         ------
         ValueError
-            If any fieldmap collection would lose some, but not all, members.
+            If any file collection would lose some, but not all, members.
         """
         if not deletion_keys:
             return
 
         if report is None:
-            report, _ = self.analyze_fmap_variant_consistency(files_df, summary)
+            report, _ = self.analyze_collection_variant_consistency(files_df, summary)
         planned_entity_sets = {
             row["KeyParamGroup"]: self.get_planned_entity_set(row) for _, row in summary.iterrows()
         }
@@ -1409,25 +1451,30 @@ class CuBIDS:
 
         if partial_collections:
             raise ValueError(
-                "Deleting part of a fieldmap collection leaves it unusable; "
+                "Deleting part of a file collection leaves it unusable; "
                 f"{len(partial_collections)} would lose some, but not all, members, starting "
                 f"with {partial_collections[0]}. Delete every member of each collection, or "
                 "use cubids purge for individual files. Also missing: "
                 + ", ".join(sorted(surviving_entity_sets))
             )
 
-    def validate_fmap_renames(
-        self, files_df, summary, entity_sets, pending_deletions=(), report=None
+    def validate_collection_renames(
+        self,
+        files_df,
+        summary,
+        entity_sets,
+        pending_deletions=(),
+        allow_fmap_renames=False,
+        report=None,
     ):
-        """Ensure every B0 fieldmap collection being renamed has matching planned entities.
+        """Ensure every file collection being renamed has compatible planned entities.
 
         Only ``PASS`` collections are accepted, so the analysis runs without
         ``rename_cols``: whether a mismatch would have been labelled ``PROPOSED``
         or ``MANUAL_REVIEW`` does not change the outcome.
 
-        Only the B0 suffixes are checked. Other images under ``fmap/``, such as
-        ``TB1map`` or ``M0scan``, belong to no collection and so have no sibling
-        whose label they need to agree with; they are renamed like any other image.
+        Only files that belong to a collection are checked. A standalone image has
+        no sibling whose label it needs to agree with, so it is renamed normally.
 
         Parameters
         ----------
@@ -1440,56 +1487,66 @@ class CuBIDS:
         pending_deletions : :obj:`set` of :obj:`str`
             Files an earlier apply step removes. These are never renamed, so their
             groups do not need to pass.
+        allow_fmap_renames : :obj:`bool`
+            Whether files under ``fmap/`` are part of the rename plan. They are
+            excluded from this check when fieldmap renaming is disabled.
         report : :obj:`pandas.DataFrame` or None
-            A report from :meth:`analyze_fmap_variant_consistency` for these same
+            A report from :meth:`analyze_collection_variant_consistency` for these same
             tables, to save recomputing it. Computed here when not supplied.
 
         Raises
         ------
         ValueError
-            If any fieldmap being renamed belongs to a collection that is
-            incomplete or mismatched.
+            If any file being renamed belongs to an incomplete or mismatched
+            collection.
         """
         pending_deletions = set(pending_deletions)
+        rename_keys = set()
         fmap_keys = set()
+        collection_keys = set()
         for _, row in files_df.iterrows():
             filepath = str(row["FilePath"])
             if (
-                "/fmap/" not in filepath
-                or row["KeyParamGroup"] not in entity_sets
+                row["KeyParamGroup"] not in entity_sets
                 or self.path + filepath in pending_deletions
-                or parse_file_entities(filepath).get("suffix") not in B0_FMAP_SUFFIXES
+                or ("/fmap/" in filepath and not allow_fmap_renames)
             ):
                 continue
-            fmap_keys.add(row["KeyParamGroup"])
 
-        if not fmap_keys:
+            rename_keys.add(row["KeyParamGroup"])
+            if "/fmap/" in filepath:
+                fmap_keys.add(row["KeyParamGroup"])
+            rule = utils.get_collection_rule(self.collection_rules, parse_file_entities(filepath))
+            if not rule.is_generic:
+                collection_keys.add(row["KeyParamGroup"])
+
+        if not rename_keys:
             return
 
         if report is None:
-            report, _ = self.analyze_fmap_variant_consistency(files_df, summary)
+            report, _ = self.analyze_collection_variant_consistency(files_df, summary)
         reported_keys = set()
         invalid_records = []
         for _, record in report.iterrows():
             keys = set(filter(None, str(record["KeyParamGroups"]).split("|")))
             reported_keys.update(keys)
-            if keys & fmap_keys and record["Status"] != "PASS":
+            if keys & rename_keys and record["Status"] != "PASS":
                 invalid_records.append(record["CollectionID"])
 
-        # Every B0 fieldmap reaches a record, so a gap here means the tables
-        # disagree with each other rather than that the collection is unusable.
-        unclassified = fmap_keys - reported_keys
+        # Every file a specific collection rule applies to reaches a record, so a
+        # gap here means the tables disagree rather than that the file is standalone.
+        unclassified = collection_keys - reported_keys
         if invalid_records or unclassified:
             details = invalid_records + [f"unclassified key {key}" for key in sorted(unclassified)]
             raise ValueError(
-                "--fmap requires matching, complete fieldmap collections before renaming: "
-                + "; ".join(details)
+                "Renaming requires matching, complete file collections: " + "; ".join(details)
             )
 
-        print(
-            "WARNING: --fmap renames fieldmaps. Matching labels do not prove AP/PA "
-            "geometry is TOPUP-compatible; review the fmap report."
-        )
+        if fmap_keys:
+            print(
+                "WARNING: --fmap renames fieldmaps. Matching labels do not prove AP/PA "
+                "geometry is TOPUP-compatible; review the file-collection report."
+            )
 
     def apply_tsv_changes(
         self,
@@ -1588,18 +1645,24 @@ class CuBIDS:
                 if Path(self.path + rm_me).exists():
                     to_remove.append(self.path + rm_me)
 
-        fmap_report = None
-        if deletion_keys or (allow_fmap_renames and entity_sets):
-            fmap_report, _ = self.analyze_fmap_variant_consistency(files_df, summary_df)
+        collection_report = None
+        if deletion_keys or entity_sets:
+            collection_report, _ = self.analyze_collection_variant_consistency(
+                files_df, summary_df
+            )
 
-        self.validate_fmap_deletions(files_df, summary_df, deletion_keys, fmap_report)
+        self.validate_collection_deletions(files_df, summary_df, deletion_keys, collection_report)
         files_to_purge = self.get_files_to_purge(to_remove)
         rename_plan = self.plan_renames(files_df, entity_sets, allow_fmap_renames, files_to_purge)
         rename_pairs = self.plan_rename_pairs(rename_plan)
-        if allow_fmap_renames:
-            self.validate_fmap_renames(
-                files_df, summary_df, entity_sets, files_to_purge, fmap_report
-            )
+        self.validate_collection_renames(
+            files_df,
+            summary_df,
+            entity_sets,
+            files_to_purge,
+            allow_fmap_renames,
+            collection_report,
+        )
         self.validate_rename_destinations(rename_pairs, files_to_purge)
 
         # Everything that could reject this request has now run, so recording the
@@ -1730,8 +1793,6 @@ class CuBIDS:
 
         Notes
         -----
-        This is the function I need to spend the most time on, since it has entities hardcoded.
-
         :meth:`apply_tsv_changes` does not call this. It queues the moves from the
         plan it already validated, then rewrites ``IntendedFor`` for each renamed
         NIfTI, so that no rename can be discovered a second time and differ.
@@ -2325,10 +2386,10 @@ class CuBIDS:
             path_prefix = self.path + "/code/CuBIDS/" + path_prefix
 
         big_df, summary = self.get_param_groups_dataframes()
-        fmap_report, fmap_proposals = self.analyze_fmap_variant_consistency(
+        collection_report, collection_proposals = self.analyze_collection_variant_consistency(
             big_df, summary, self.get_variant_rename_columns(summary)
         )
-        summary = self.apply_fmap_variant_proposals(summary, fmap_proposals)
+        summary = self.apply_collection_variant_proposals(summary, collection_proposals)
 
         summary = summary.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
         big_df = big_df.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
@@ -2343,7 +2404,7 @@ class CuBIDS:
         files_json = f"{path_prefix}_files.json"
         summary_tsv = f"{path_prefix}_summary.tsv"
         summary_json = f"{path_prefix}_summary.json"
-        fmap_report_tsv = f"{path_prefix}_fmap_variant_report.tsv"
+        collection_report_tsv = f"{path_prefix}_file_collection_variant_report.tsv"
 
         with open(files_json, "w") as outfile:
             json.dump(files_dict, outfile, indent=4)
@@ -2354,30 +2415,30 @@ class CuBIDS:
         big_df.to_csv(files_tsv, sep="\t", index=False)
 
         summary.to_csv(summary_tsv, sep="\t", index=False)
-        fmap_report.to_csv(fmap_report_tsv, sep="\t", index=False)
+        collection_report.to_csv(collection_report_tsv, sep="\t", index=False)
 
         # Calculate the acq groups
         group_by_acquisition_sets(files_tsv, path_prefix, self.acq_group_level)
 
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
-        nonpassing_fmaps = len(fmap_report.loc[fmap_report["Status"] != "PASS"])
-        if nonpassing_fmaps:
+        nonpassing_collections = len(collection_report.loc[collection_report["Status"] != "PASS"])
+        if nonpassing_collections:
             print(
-                f"WARNING: {nonpassing_fmaps} fmap collections have mismatched variants; "
-                f"review {fmap_report_tsv}. Fieldmaps are not renamed without --fmap. "
-                "Matching labels do not guarantee compatibility with downstream "
-                "pipelines. For example, an AP/PA EPI fieldmap pair with different "
-                "Dim3Size values may not be compatible with TOPUP."
+                f"WARNING: {nonpassing_collections} file collections have mismatched "
+                f"variants; review {collection_report_tsv}."
             )
-        elif len(fmap_report):
-            print(f"Fieldmap variant consistency: PASS — {len(fmap_report)} collections checked.")
+        elif len(collection_report):
+            print(
+                "File-collection variant consistency: PASS — "
+                f"{len(collection_report)} collections checked."
+            )
         print(
             "Groupings info is available in\n\n"
             f"  * {files_tsv}\n"
             f"  * {files_json}\n"
             f"  * {summary_tsv}\n"
             f"  * {summary_json}\n"
-            f"  * {fmap_report_tsv}\n"
+            f"  * {collection_report_tsv}\n"
         )
 
     def get_entity_sets(self):

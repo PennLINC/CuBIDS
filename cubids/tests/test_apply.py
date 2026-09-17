@@ -458,7 +458,7 @@ def test_cubids_apply_fmap_rejects_mismatched_pair_before_renaming(tmp_path, bui
     summary.to_csv(summary_tsv, sep="\t", index=False)
     files.to_csv(files_tsv, sep="\t", index=False)
 
-    with pytest.raises(ValueError, match="matching, complete fieldmap collections"):
+    with pytest.raises(ValueError, match="matching, complete file collections"):
         apply(
             bids_dir=str(bids_dir),
             use_datalad=False,
@@ -622,7 +622,7 @@ def test_cubids_apply_rejects_removing_part_of_an_fmap_collection(tmp_path, buil
     summary.to_csv(summary_tsv, sep="\t", index=False)
     files.to_csv(files_tsv, sep="\t", index=False)
 
-    with pytest.raises(ValueError, match="Deleting part of a fieldmap collection"):
+    with pytest.raises(ValueError, match="Deleting part of a file collection"):
         apply(
             bids_dir=str(bids_dir),
             use_datalad=False,
@@ -659,7 +659,7 @@ def test_cubids_apply_writes_no_edited_summary_when_it_rejects_the_request(
     summary.to_csv(summary_tsv, sep="\t", index=False)
     files.to_csv(files_tsv, sep="\t", index=False)
 
-    with pytest.raises(ValueError, match="Deleting part of a fieldmap collection"):
+    with pytest.raises(ValueError, match="Deleting part of a file collection"):
         apply(
             bids_dir=str(bids_dir),
             use_datalad=False,
@@ -716,7 +716,7 @@ def test_cubids_apply_rejects_hand_edited_partial_fmap_deletion(tmp_path, build_
     summary.to_csv(summary_tsv, sep="\t", index=False)
     files.to_csv(files_tsv, sep="\t", index=False)
 
-    with pytest.raises(ValueError, match="Deleting part of a fieldmap collection"):
+    with pytest.raises(ValueError, match="Deleting part of a file collection"):
         apply(
             bids_dir=str(bids_dir),
             use_datalad=False,

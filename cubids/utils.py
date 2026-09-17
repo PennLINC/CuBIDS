@@ -7,6 +7,7 @@ import csv
 import json
 import os
 import re
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
@@ -242,7 +243,7 @@ def entity_context_key(entities, ignored):
     """Build a hashable key that identifies everything about a file except ``ignored``.
 
     Two files share a key when every entity outside ``ignored`` agrees, which is
-    how fieldmap collection members are matched to one another.
+    how file collection members are matched to one another.
 
     Parameters
     ----------
@@ -1057,9 +1058,6 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     WARNING: DATATYPE CHANGE DETECTED
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-meg_acq-VAR_bold.nii.gz'
 
-    It expects a longitudinal structure, so providing a cross-sectional filename won't work.
-    XXX: This is a bug.
-
     It also works for cross-sectional filename.
     >>> build_path(
     ...    "/input/sub-01/func/sub-01_task-rest_run-01_bold.nii.gz",
@@ -1118,8 +1116,6 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
 
     # CHECK TO SEE IF DATATYPE CHANGED
     # datatype may be overridden/changed if the original file is located in the wrong folder.
-    # XXX: This check for the datatype is fragile and should be improved.
-    # For example, what if we have sub-01/func/sub-01_task-anatomy_bold.nii.gz?
     dtype_orig = ""
     for dtype in valid_datatypes:
         if dtype in filepath:
@@ -1142,7 +1138,7 @@ def get_variant_components(summary, summary_row, rename_cols):
     """Return the fields where a parameter group differs from its dominant group.
 
     These differences are what :func:`assign_variants` turns into a variant label,
-    and what fieldmap collection checks compare across a collection's members.
+    and what file collection checks compare across a collection's members.
 
     Parameters
     ----------
@@ -1323,7 +1319,311 @@ def assign_variants(summary, rename_cols):
     return summary
 
 
-def collect_file_collections(layout, base_file):
+@dataclass(frozen=True)
+class CollectionRule:
+    """One way that several files can make up a single BIDS file collection.
+
+    Attributes
+    ----------
+    case : :obj:`str`
+        Name for this kind of collection, used when reporting one.
+    datatypes : :obj:`frozenset` of :obj:`str`
+        Datatypes the rule covers. Empty when it covers every datatype.
+    suffixes : :obj:`frozenset` of :obj:`str`
+        Suffixes that can take part in the collection. Empty when any can.
+    axes : :obj:`frozenset` of :obj:`str`
+        Entities whose values distinguish the collection's members from one
+        another. ``suffix`` is an axis when the members differ by suffix, and
+        ``acquisition`` when they differ by acquisition label.
+    """
+
+    case: str
+    datatypes: frozenset
+    suffixes: frozenset
+    axes: frozenset
+
+    @property
+    def is_generic(self):
+        """Whether this is the fallback rule rather than one for specific files."""
+        return not self.datatypes
+
+
+# Entities whose values distinguish the members of an entity-linked file collection,
+# mapped to the metadata field each mirrors, or None when it has no counterpart.
+# These are the names pybids parses filenames into, not the BIDS schema's names.
+ENTITY_LINKED_AXES = {
+    "echo": "EchoTime",
+    "part": None,
+    "mt": "MTState",
+    "inv": "InversionTime",
+    "flip": "FlipAngle",
+}
+
+# The BIDS schema's names for the entities that can span a collection, mapped to the
+# names pybids parses them into.
+_SCHEMA_COLLECTION_AXES = {
+    "direction": "direction",
+    "echo": "echo",
+    "flip": "flip",
+    "inversion": "inv",
+    "mtransfer": "mt",
+    "part": "part",
+}
+
+# The schema's name for a rule group that reads better in a report. M0 scans make up
+# the same kind of collection as EPI images, so they are reported the same way.
+_COLLECTION_CASE_NAMES = {"pepolar_m0scan": "pepolar"}
+
+# Prefixes that identify the role of each member of an acquisition-linked RF field
+# map. Any text after the prefix identifies the use case, so acq-anatTest pairs with
+# acq-fampTest rather than acq-fampRetest. The schema marks acquisition optional for
+# these suffixes, so the roles come from the spec's RF field mapping section.
+ACQUISITION_LINKED_PREFIXES = {
+    "TB1AFI": ("tr1", "tr2"),
+    "TB1TFL": ("anat", "famp"),
+    "TB1RFM": ("anat", "famp"),
+    "RB1COR": ("body", "head"),
+}
+ACQUISITION_LINKED_SUFFIXES = frozenset(ACQUISITION_LINKED_PREFIXES)
+
+# The suffix that identifies each type of gradient-echo B0 fieldmap collection, and
+# the suffixes such a collection cannot do without. The schema puts all of them in a
+# single rule group, so this comes from the spec's "Types of B0 fieldmaps".
+GRE_FIELDMAP_CASES = (
+    (
+        "phase-difference",
+        frozenset({"phasediff"}),
+        frozenset({"phasediff", "magnitude1"}),
+    ),
+    (
+        "two-phase",
+        frozenset({"phase1", "phase2"}),
+        frozenset({"phase1", "phase2", "magnitude1", "magnitude2"}),
+    ),
+    (
+        "direct-fieldmap",
+        frozenset({"fieldmap"}),
+        frozenset({"fieldmap", "magnitude"}),
+    ),
+)
+
+# Applies to any file whose suffix takes part in no collection of its own.
+GENERIC_COLLECTION_RULE = CollectionRule(
+    case="entity-linked",
+    datatypes=frozenset(),
+    suffixes=frozenset(),
+    axes=frozenset(ENTITY_LINKED_AXES),
+)
+
+
+def get_collection_rules(schema):
+    """Build the file collection rules that apply to a dataset from the BIDS schema.
+
+    A rule says which files make up one collection: the suffixes that can take part
+    and the entities their values are allowed to differ along. Every file that no
+    rule names falls back to :data:`GENERIC_COLLECTION_RULE`.
+
+    Parameters
+    ----------
+    schema : :obj:`dict`
+        The BIDS schema. This function reads ``schema["rules"]["files"]["raw"]``,
+        whose groups list the suffixes of each file type and the requirement level
+        of each of their entities.
+
+    Returns
+    -------
+    :obj:`dict`
+        Maps ``(datatype, suffix)`` to the :class:`CollectionRule` that covers it.
+
+    Notes
+    -----
+    An entity that a rule group requires spans a collection only if it is one of
+    :data:`_SCHEMA_COLLECTION_AXES`. Other required entities, like the task of a
+    ``func`` image, distinguish separate acquisitions rather than members of one.
+
+    Examples
+    --------
+    >>> import json, importlib
+    >>> schema_file = Path(importlib.resources.files("cubids") / "data/schema.json")
+    >>> with schema_file.open() as f:
+    ...     rules = get_collection_rules(json.load(f))
+
+    The phase-encoding direction spans a PEPOLAR collection, for EPI images and for
+    the M0 scans that arterial spin labeling data use instead.
+
+    >>> sorted(rules[("fmap", "epi")].axes & {"direction", "suffix"})
+    ['direction']
+    >>> rules[("fmap", "m0scan")].case
+    'pepolar'
+
+    Gradient-echo B0 fieldmaps are spanned by their suffixes instead.
+
+    >>> sorted(rules[("fmap", "phasediff")].axes & {"direction", "suffix"})
+    ['suffix']
+
+    A parametric map is a standalone image, so no rule names it.
+
+    >>> ("fmap", "TB1map") in rules
+    False
+    """
+    rules = {}
+
+    def add_rule(rule):
+        for datatype in rule.datatypes:
+            for suffix in rule.suffixes:
+                rules[(datatype, suffix)] = rule
+
+    for datatype, groups in schema["rules"]["files"]["raw"].items():
+        for group_name, group in groups.items():
+            axes = set()
+            for entity, requirement in group.get("entities", {}).items():
+                if isinstance(requirement, dict):
+                    requirement = requirement.get("level")
+
+                if requirement == "required" and entity in _SCHEMA_COLLECTION_AXES:
+                    axes.add(_SCHEMA_COLLECTION_AXES[entity])
+
+            if not axes:
+                continue
+
+            add_rule(
+                CollectionRule(
+                    case=_COLLECTION_CASE_NAMES.get(group_name, group_name),
+                    datatypes=frozenset(group.get("datatypes", [datatype])),
+                    suffixes=frozenset(group["suffixes"]),
+                    axes=frozenset(axes | set(ENTITY_LINKED_AXES)),
+                )
+            )
+
+    fmap_rules = schema["rules"]["files"]["raw"]["fmap"]
+    add_rule(
+        CollectionRule(
+            case="b0-gradient-echo",
+            datatypes=frozenset({"fmap"}),
+            suffixes=frozenset(fmap_rules["fieldmaps"]["suffixes"]),
+            axes=frozenset({"suffix"} | set(ENTITY_LINKED_AXES)),
+        )
+    )
+    add_rule(
+        CollectionRule(
+            case="rf-field-map",
+            datatypes=frozenset({"fmap"}),
+            suffixes=ACQUISITION_LINKED_SUFFIXES,
+            axes=frozenset({"acquisition"} | set(ENTITY_LINKED_AXES)),
+        )
+    )
+
+    return rules
+
+
+def get_collection_rule(rules, entities):
+    """Return the rule for the collection a file can belong to.
+
+    Parameters
+    ----------
+    rules : :obj:`dict`
+        Rules from :func:`get_collection_rules`.
+    entities : :obj:`dict`
+        A pybids entities dictionary.
+
+    Returns
+    -------
+    :class:`CollectionRule`
+        The matching rule, or :data:`GENERIC_COLLECTION_RULE` when the file's
+        suffix takes part in no collection of its own.
+    """
+    return rules.get(
+        (entities.get("datatype"), entities.get("suffix")),
+        GENERIC_COLLECTION_RULE,
+    )
+
+
+def resolve_gre_fieldmap_case(suffixes):
+    """Name the kind of gradient-echo B0 fieldmap a set of suffixes makes up.
+
+    Parameters
+    ----------
+    suffixes : :obj:`set` of :obj:`str`
+        The suffixes of the files found in one collection.
+
+    Returns
+    -------
+    case : :obj:`str`
+        The name of the matching case, or ``"orphan-magnitude"`` when the
+        suffixes identify none of them.
+    missing : :obj:`list` of :obj:`str`
+        Suffixes the case needs that the collection does not have.
+
+    Examples
+    --------
+    >>> resolve_gre_fieldmap_case({"phasediff", "magnitude1"})
+    ('phase-difference', [])
+
+    >>> resolve_gre_fieldmap_case({"fieldmap"})
+    ('direct-fieldmap', ['magnitude'])
+
+    A magnitude image is only ever acquired alongside one of the maps above, so on
+    its own it is the remains of a collection rather than a collection of its own.
+
+    >>> resolve_gre_fieldmap_case({"magnitude1", "magnitude2"})
+    ('orphan-magnitude', [])
+    """
+    for case, identifiers, required in GRE_FIELDMAP_CASES:
+        if identifiers & set(suffixes):
+            return case, sorted(required - set(suffixes))
+
+    return "orphan-magnitude", []
+
+
+def collection_context(entities, rule):
+    """Build a key shared by exactly the files in one collection.
+
+    Parameters
+    ----------
+    entities : :obj:`dict`
+        A pybids entities dictionary.
+    rule : :class:`CollectionRule`
+        The rule the file matched.
+
+    Returns
+    -------
+    :obj:`tuple`
+        Sorted ``(name, value)`` pairs for every entity that members of the
+        collection must agree on.
+
+    Examples
+    --------
+    >>> rule = GENERIC_COLLECTION_RULE
+    >>> collection_context(
+    ...     {"subject": "01", "echo": "1", "suffix": "bold", "extension": ".nii.gz"}, rule
+    ... )
+    (('subject', '01'), ('suffix', 'bold'))
+    """
+    # pybids parses an extra fmap entity that mirrors the suffix of a fieldmap, and
+    # a collection's members can be a mix of compressed and uncompressed images.
+    context = entity_context_key(entities, rule.axes | {"extension", "fmap"})
+
+    if "acquisition" not in rule.axes:
+        return context
+
+    # Acquisition-linked RF field maps use the start of acq- to identify a
+    # member's role and the remainder to distinguish separate collections. For
+    # example, anatTest/fampTest is one collection and anatRetest/fampRetest is
+    # another. An unrecognized label is kept whole because its role cannot be
+    # inferred safely; matching labels remain grouped along any other axes.
+    acquisition = entities.get("acquisition")
+    collection_label = acquisition
+    if is_nonempty(acquisition):
+        acquisition = str(acquisition)
+        for prefix in ACQUISITION_LINKED_PREFIXES.get(entities.get("suffix"), ()):
+            if acquisition.startswith(prefix):
+                collection_label = acquisition[len(prefix) :]
+                break
+
+    return tuple(sorted(context + (("acquisition_collection", collection_label),)))
+
+
+def collect_file_collections(layout, base_file, rules):
     """Build a list of files in a file collection for a given base file.
 
     Parameters
@@ -1332,6 +1632,9 @@ def collect_file_collections(layout, base_file):
         The BIDSLayout object.
     base_file : str
         The base file to collect file collections for.
+    rules : :obj:`dict`
+        Rules from :func:`get_collection_rules`, which decide what the file's
+        collection is spanned by: entity values, suffixes, or acquisition labels.
 
     Returns
     -------
@@ -1342,28 +1645,31 @@ def collect_file_collections(layout, base_file):
 
     Notes
     -----
-    This relies on a hardcoded list of entities that indicate file collections and their
-    corresponding metadata fields. It also does not work for file collections that are encoded
-    with the acq entity or different suffixes, like TB1AFI (which differentiates files with
-    acq-tr1/acq-tr2), MP2RAGE (which has both _MP2RAGE and _UNIT1 images from the same scan),
-    or phase-difference field maps (which have suffixes like magnitude1, magnitude2, phasediff,
-    phase1, and phase2).
+    This uses metadata from direct sidecar JSON files, so it will not work with
+    inherited metadata.
     """
     from bids.layout import Query
 
-    file_collection_entities = {
-        "echo": "EchoTime",
-        "part": None,
-        "mt": "MTState",
-        "inv": "InversionTime",
-        "flip": "FlipAngle",
-    }
-
     base_file = layout.get_file(base_file)
-    fc_query = {ent: [Query.ANY, Query.NONE] for ent in file_collection_entities}
-    query = base_file.get_entities()
-    query = {**query, **fc_query}
-    files = layout.get(**query)
+    entities = base_file.get_entities()
+    rule = get_collection_rule(rules, entities)
+
+    # Members agree on every entity outside the collection's axes, and take any
+    # value, including none at all, along them.
+    query = {
+        key: value for key, value in entities.items() if key not in rule.axes and key != "fmap"
+    }
+    query.update({axis: [Query.ANY, Query.NONE] for axis in rule.axes if axis != "suffix"})
+    if "suffix" in rule.axes:
+        query["suffix"] = sorted(rule.suffixes)
+
+    context = collection_context(entities, rule)
+    files = []
+    for file in layout.get(**query):
+        file_entities = file.get_entities()
+        file_rule = get_collection_rule(rules, file_entities)
+        if collection_context(file_entities, file_rule) == context:
+            files.append(file)
 
     if len(files) <= 1:
         return files, {}
@@ -1381,7 +1687,7 @@ def collect_file_collections(layout, base_file):
 
     files_metadata = [get_sidecar_metadata(img_to_new_ext(f.path, ".json")) for f in files]
     assert all(bool(meta) for meta in files_metadata), files
-    for ent, field in file_collection_entities.items():
+    for ent, field in ENTITY_LINKED_AXES.items():
         if ent in collected_entities:
             if field is None:
                 # If the entity is not mirrored in the metadata, like part,

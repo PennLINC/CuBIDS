@@ -97,7 +97,7 @@ def _add_deletion(summary_tsv):
     """Add a deletion entry to a summary TSV file.
 
     The first non-fieldmap group is used, because apply refuses to delete part
-    of a B0 fieldmap collection.
+    of a fieldmap collection.
 
     Parameters
     ----------
