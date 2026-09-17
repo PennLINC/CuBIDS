@@ -258,11 +258,131 @@ Variant Group to include ``acquisition-VARIANTEchoTime2`` in their filenames (if
 to cluster 2).
 
 When multiple parameters vary, their names are concatenated (e.g., ``VARIANTEchoTime2FlipAngle75``).
-When the user runs ``cubids apply``, filenames will get renamed according to the auto-generated
-names in the "Rename Entity Set" column in the summary.tsv
+When the user runs ``cubids apply``, non-fieldmap filenames get renamed according to the
+auto-generated names in the "Rename Entity Set" column in the summary.tsv.
 
 .. note::
-   The above behavior is new as of version 1.2.0. Prior to this, the variant name was just ``VARIANT{parameter}``.
+    The above behavior is new as of version 1.2.0. Prior to this, the variant name was just ``VARIANT{parameter}``.
+
+
+Fieldmap variant collections
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fieldmap files are special: the members of a BIDS B0 fieldmap collection can legitimately have
+different parameter groups. This includes a phase-difference map with magnitude image(s), two
+phase maps with two magnitude images, a direct fieldmap with a magnitude image, and an
+opposing-direction PEPOLAR EPI pair. The members need matching planned acquisition labels before
+CuBIDS can safely rename them together. ``cubids group`` checks these collections using their
+complete filenames, including subject, session, run, and every other entity. It writes
+``<prefix>_fmap_variant_report.tsv``. When it can derive one consistent acquisition label for
+every member of a fieldmap collection, it records the corresponding rename suggestions in
+``RenameEntitySet`` for review.
+
+For example, when inconsistent collections are found, group prints:
+
+.. code-block:: text
+
+    WARNING: 3 fmap collections have mismatched variants; review v0_fmap_variant_report.tsv.
+    Fieldmaps are not renamed without --fmap. Matching labels do not guarantee compatibility
+    with downstream pipelines. For example, an AP/PA EPI fieldmap pair with different Dim3Size
+    values (such as 128×128×64 for AP and 128×128×65 for PA) may not be compatible with TOPUP.
+
+For PEPOLAR, the report verifies the actual ``PhaseEncodingDirection`` metadata instead of
+inferring polarity from labels such as ``dir-AP`` and ``dir-PA``. Matching labels are a naming
+safeguard only: inspect reported differences before using the files with TOPUP or another
+distortion-correction tool.
+
+Only the B0 fieldmap types form collections. A file under ``fmap/`` with any other suffix, such
+as ``TB1map``, ``RB1map``, or ``M0scan``, is a standalone image and is left out of the report. So
+is a single EPI fieldmap acquired in one phase-encoding direction, which the report records as a
+passing ``single-direction epi``: it is valid BIDS and has no partner whose label it must match.
+Conversely, a magnitude image whose ``phasediff``, ``phase``, or ``fieldmap`` counterpart is
+absent is reported as ``orphan-magnitude`` for manual review.
+
+By default, ``cubids apply`` still excludes every file under ``fmap/``. After reviewing the
+report, use ``--fmap`` (or ``--allow-fmap-renames``) to allow them. CuBIDS revalidates all
+affected fieldmap collections before changing any files; an incomplete or mismatched collection
+causes apply to stop without applying its planned edits. Fieldmaps that belong to no collection
+are renamed like any other image. Renaming fmap EPI also renames its JSON sidecar and any
+matching ``.bval`` and ``.bvec`` companions. Every apply rename also updates matching
+``filename`` entries in subject- or session-level ``*_scans.tsv`` tables.
+
+
+Changing planned entity sets from the command line
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``cubids apply`` can rename or remove the collections listed in the ``RenameEntitySet`` column
+of the loaded summary, without hand-editing the table. Both options match a row on its planned
+entity set: the value in ``RenameEntitySet`` when that cell is filled in, and the value in
+``EntitySet`` when it is empty. Copy the value exactly as the summary writes it.
+
+To rename a collection, supply ``--change-RenameEntitySet OLD=NEW`` once for each mapping, where
+``OLD`` and ``NEW`` are complete entity sets, or pass a CSV or TSV mapping file to the same
+option. Mapping files must include ``old_entity_set`` and ``new_entity_set`` columns. You can
+combine the two forms. CuBIDS never modifies the input summary. When using
+``--change-RenameEntitySet`` or ``--remove-RenameEntitySet``, provide ``--write-edited-summary``
+to specify where to write the derived, edited summary. That file is written only once the whole
+request has passed validation, so a rejected apply leaves nothing behind.
+
+For example, to give two verbose variant collections one short shared name while allowing
+reviewed fmap renames:
+
+.. code-block:: console
+
+    $ cubids apply /data/bids v0_summary.tsv v0_files.tsv v1 \
+        --change-RenameEntitySet acquisition-VARIANTEchoTimeC1TotalReadoutTimeC1_datatype-dwi_direction-AP_run-01_suffix-dwi=acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi \
+        --change-RenameEntitySet acquisition-VARIANTEchoTimeC2TotalReadoutTimeC2_datatype-dwi_direction-AP_run-01_suffix-dwi=acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi \
+        --write-edited-summary v0_edited_summary.tsv \
+        --fmap
+
+Mappings are exact entity set substitutions, never substring replacements.
+
+For example, the mappings above can instead be stored in ``entity_set_changes.tsv``:
+
+.. code-block:: text
+
+    old_entity_set    new_entity_set
+    acquisition-VARIANTEchoTimeC1TotalReadoutTimeC1_datatype-dwi_direction-AP_run-01_suffix-dwi    acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi
+    acquisition-VARIANTEchoTimeC2TotalReadoutTimeC2_datatype-dwi_direction-AP_run-01_suffix-dwi    acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi
+
+Pass the file with ``--change-RenameEntitySet entity_set_changes.tsv --write-edited-summary
+v0_edited_summary.tsv``.
+
+When reviewing ``summary.tsv``, you may find a collection in the ``RenameEntitySet`` column that
+you want to discard, such as an incomplete acquisition. Use ``--remove-RenameEntitySet`` with
+that collection's entity set. CuBIDS writes ``0`` to ``MergeInto`` in the derived summary and
+then uses the normal apply deletion path. That path deletes the matching image and, when
+present, its standard BIDS companions, including JSON sidecars and modality-specific files. It
+also removes the image from applicable ``*_scans.tsv`` tables and every ``IntendedFor`` list
+that references it. Repeat the option for each collection to delete.
+
+When you combine the two options, the substitutions run first, so name a collection here by the
+entity set ``--change-RenameEntitySet`` leaves it with, not the one the summary started with.
+For example:
+
+.. code-block:: console
+
+    $ cubids apply /data/bids v0_summary.tsv v0_files.tsv v1 \
+        --remove-RenameEntitySet acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi \
+        --write-edited-summary v0_edited_summary.tsv
+
+Repeat the option for each collection to delete, or list the entity sets in a CSV or TSV file
+with an ``entity_set`` column and pass that file instead:
+
+.. code-block:: text
+
+    entity_set
+    datatype-fmap_direction-AP_fmap-epi_suffix-epi
+    datatype-fmap_direction-PA_fmap-epi_suffix-epi
+
+Listing every member of a fieldmap collection matters, because CuBIDS refuses a deletion that
+would split one. A BIDS B0 fieldmap collection is only usable whole: deleting one PEPOLAR EPI of
+an AP/PA pair, or a ``phasediff`` without its ``magnitude1``, leaves files that no
+distortion-correction tool can use. Apply checks every deletion against the fieldmap collections
+it finds, whether the deletion came from ``--remove-RenameEntitySet`` or from a hand-edited
+``MergeInto`` of ``0``, and stops before changing any files. The error names the entity sets
+that are still missing, so you can add them to the command or to the file above. To delete one
+member of a collection on purpose, use ``cubids purge`` instead.
 
 
 Deleting a mistake
@@ -276,6 +396,11 @@ We elect to remove this scan from our dataset because we do not want these param
 analyses.
 To remove these files from your BIDS data,
 add a ``0`` to ``MergeInto`` and save the new tsv as ``v0_edited_summary.tsv``
+
+.. note::
+    Deleting a Parameter Group that holds part of a BIDS B0 fieldmap collection is rejected,
+    because the remaining members would be unusable. Add a ``0`` for every member of the
+    collection, or use ``cubids purge`` to delete individual files.
 
 .. csv-table:: Pre Apply Groupings with Deletion Requested
     :file: _static/PNC_pre_apply_summary_dwi_run1_deletion.csv

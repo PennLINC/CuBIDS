@@ -3,7 +3,9 @@
 This module provides various utility functions used throughout the CuBIDS package.
 """
 
+import csv
 import json
+import os
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -113,6 +115,39 @@ def _update_json(json_file, metadata):
         json.dump(metadata, f, ensure_ascii=False, indent=4)
 
 
+def read_bids_tsv(tsv_file):
+    """Read a BIDS TSV while preserving empty cells and literal quote characters."""
+    return pd.read_csv(
+        tsv_file,
+        sep="\t",
+        dtype=str,
+        keep_default_na=False,
+        quoting=csv.QUOTE_NONE,
+    )
+
+
+def write_bids_tsv(dataframe, tsv_file):
+    """Write a BIDS TSV without introducing CSV-style quoting."""
+    dataframe.to_csv(tsv_file, sep="\t", index=False, quoting=csv.QUOTE_NONE)
+
+
+def is_nonempty(value):
+    """Return whether a TSV cell holds a meaningful value.
+
+    Parameters
+    ----------
+    value : object
+        A cell read from a TSV. Blank cells arrive as NaN, an empty string, or
+        the string ``"nan"`` depending on how the table was read.
+
+    Returns
+    -------
+    :obj:`bool`
+        False for missing, blank, and ``"nan"`` cells; True otherwise.
+    """
+    return not pd.isna(value) and str(value).strip() not in {"", "nan"}
+
+
 def find_json_files(root):
     """Return regular JSON files below ``root``, excluding hidden paths like ``.git``.
 
@@ -201,6 +236,39 @@ def _entities_to_entity_set(entities):
         group_keys.append("acquisition")
 
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
+
+
+def entity_context_key(entities, ignored):
+    """Build a hashable key that identifies everything about a file except ``ignored``.
+
+    Two files share a key when every entity outside ``ignored`` agrees, which is
+    how fieldmap collection members are matched to one another.
+
+    Parameters
+    ----------
+    entities : dict
+        A pybids entities dictionary.
+    ignored : set of str
+        Entity names to leave out of the key, typically the axes along which
+        members of a collection are expected to differ.
+
+    Returns
+    -------
+    :obj:`tuple`
+        Sorted ``(name, value)`` pairs for the retained entities.
+
+    Examples
+    --------
+    >>> entity_context_key({"subject": "01", "direction": "AP", "suffix": "epi"}, {"direction"})
+    (('subject', '01'), ('suffix', 'epi'))
+    """
+    return tuple(
+        sorted(
+            (key, str(value))
+            for key, value in entities.items()
+            if key not in ignored and value is not None
+        )
+    )
 
 
 def _file_to_entity_set(filename):
@@ -308,9 +376,47 @@ def _get_bidsuri(filename, dataset_root):
     Traceback (most recent call last):
     ValueError: Only local datasets are supported: ...
     """
-    if dataset_root in filename:
-        return filename.replace(dataset_root, "bids::").replace("bids::/", "bids::")
-    raise ValueError(f"Only local datasets are supported: {filename}")
+    relative_path = Path(os.path.relpath(filename, dataset_root)).as_posix()
+    if relative_path.startswith(".."):
+        raise ValueError(f"Only local datasets are supported: {filename}")
+    return f"bids::{relative_path}"
+
+
+def get_modality_params(config, modality):
+    """List every parameter CuBIDS groups a modality's scans on, with its settings.
+
+    The grouping config splits these parameters across two sections that callers
+    almost always want together: ``sidecar_params`` are read from the JSON
+    sidecar (EchoTime, FlipAngle, ...) and ``derived_params`` are computed by
+    CuBIDS from the NIfTI itself (Dim1Size, NumVolumes, Obliquity, ...). Where
+    the two disagree about a parameter, the derived value wins.
+
+    Parameters
+    ----------
+    config : dict
+        A CuBIDS grouping configuration, as loaded from ``config.yml``.
+    modality : str
+        Which modality's parameters to return: "anat", "dwi", "fmap", "func",
+        "perf", or "other".
+
+    Returns
+    -------
+    dict
+        Maps each parameter name to its settings for this modality. A settings
+        dict may carry ``tolerance`` (values within it cluster together),
+        ``precision`` (decimal places to round to), and ``suggest_variant_rename``
+        (whether a difference here earns a spot in a VARIANT label). Any of these
+        may be absent, so read them with ``.get()``.
+
+    Notes
+    -----
+    The result is a new dict, so callers can filter or extend it without editing
+    the shared configuration.
+    """
+    return {
+        **config["sidecar_params"][modality],
+        **config["derived_params"][modality],
+    }
 
 
 def _get_param_groups(
@@ -348,16 +454,9 @@ def _get_param_groups(
         print("WARNING: no files for", entity_set_name)
         return None, None
 
-    # Split the config into separate parts
-    imaging_params = grouping_config.get("sidecar_params", {})
-    imaging_params = imaging_params[modality]
-
+    imaging_params = get_modality_params(grouping_config, modality)
     relational_params = grouping_config.get("relational_params", {})
-
-    derived_params = grouping_config.get("derived_params")
-    derived_params = derived_params[modality]
-
-    imaging_params.update(derived_params)
+    derived_params = grouping_config["derived_params"][modality]
 
     dfs = []
     # path needs to be relative to the root with no leading prefix
@@ -496,8 +595,7 @@ def round_params(df, config, modality):
     """
     df = df.copy()  # don't modify DataFrame in place
 
-    to_format = config["sidecar_params"][modality]
-    to_format.update(config["derived_params"][modality])
+    to_format = get_modality_params(config, modality)
 
     for column_name, column_fmt in to_format.items():
         if column_name not in df:
@@ -597,8 +695,7 @@ def cluster_single_parameters(df, config, modality):
     """
     df = df.copy()  # don't modify DataFrame in place
 
-    to_format = config["sidecar_params"][modality]
-    to_format.update(config["derived_params"][modality])
+    to_format = get_modality_params(config, modality)
 
     for column_name, column_fmt in to_format.items():
         if column_name not in df:
@@ -1041,6 +1138,88 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     return new_path
 
 
+def get_variant_components(summary, summary_row, rename_cols):
+    """Return the fields where a parameter group differs from its dominant group.
+
+    These differences are what :func:`assign_variants` turns into a variant label,
+    and what fieldmap collection checks compare across a collection's members.
+
+    Parameters
+    ----------
+    summary : pandas.DataFrame
+        The full parameter group summary, used to locate the dominant group.
+    summary_row : pandas.Series
+        The row to describe.
+    rename_cols : list of str
+        Columns eligible to contribute to a variant label, in label order.
+
+    Returns
+    -------
+    list of tuple
+        ``(column, current_value, dominant_value, is_clustered)`` per differing
+        field. Empty when the row is itself the dominant group or has no single
+        dominant group to compare against. Cluster values are compared
+        numerically and returned as ints, with missing values normalized to
+        zero, matching the variant-label convention.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> summary = pd.DataFrame(
+    ...     {
+    ...         "EntitySet": ["datatype-func_task-rest", "datatype-func_task-rest"],
+    ...         "ParamGroup": [1, 2],
+    ...         "EchoTime": [0.05, 0.048],
+    ...         "Cluster_EchoTime": [0, 1],
+    ...         "HasFieldmap": ["True", "False"],
+    ...         "TaskName": ["rest", "rest"],
+    ...     }
+    ... )
+    >>> get_variant_components(
+    ...     summary, summary.iloc[1], ["EchoTime", "HasFieldmap", "TaskName"]
+    ... )
+    [('EchoTime', 1, 0, True), ('HasFieldmap', 'False', 'True', False)]
+    >>> get_variant_components(summary, summary.iloc[0], ["EchoTime", "HasFieldmap"])
+    []
+    """
+    if not rename_cols:
+        return []
+
+    # Compare numerically: a summary read back from a TSV can type ParamGroup as
+    # float, and "1.0" != "1" would silently make every group look dominant-like.
+    param_groups = pd.to_numeric(summary["ParamGroup"], errors="coerce")
+    if pd.to_numeric(summary_row["ParamGroup"], errors="coerce") == 1:
+        return []
+
+    dominant = summary.loc[
+        (summary["EntitySet"] == summary_row["EntitySet"]) & (param_groups == 1)
+    ]
+    if len(dominant) != 1:
+        return []
+    dominant = dominant.iloc[0]
+
+    components = []
+    for column in rename_cols:
+        if column not in summary.columns:
+            continue
+        cluster_column = f"Cluster_{column}"
+        if cluster_column in summary.columns:
+            # An entity set without this cluster column yields NaN after the
+            # cross-entity-set concatenation; those cells mean "cluster 0".
+            current = 0 if pd.isna(summary_row[cluster_column]) else summary_row[cluster_column]
+            reference = 0 if pd.isna(dominant[cluster_column]) else dominant[cluster_column]
+            if float(current) != float(reference):
+                components.append((column, int(current), int(reference), True))
+            continue
+
+        current = summary_row[column]
+        reference = dominant[column]
+        if not (pd.isna(current) and pd.isna(reference)) and str(current) != str(reference):
+            components.append((column, current, reference, False))
+
+    return components
+
+
 def assign_variants(summary, rename_cols):
     """Assign variant names to files based on differences from dominant group.
 
@@ -1075,24 +1254,6 @@ def assign_variants(summary, rename_cols):
     for col in rename_cols:
         summary[col] = summary[col].astype(str)
 
-    # loop through summary tsv and create dom_dict
-    dom_dict = {}
-    for row in range(len(summary)):
-        # if dominant group identified
-        if str(summary.loc[row, "ParamGroup"]) == "1":
-            val = {}
-            # grab col, all vals send to dict
-            key = summary.loc[row, "EntitySet"]
-            for col in rename_cols:
-                val[col] = summary.loc[row, col]
-
-                if f"Cluster_{col}" in summary.columns:
-                    val[f"Cluster_{col}"] = summary.loc[row, f"Cluster_{col}"]
-                    if pd.isna(val[f"Cluster_{col}"]):
-                        val[f"Cluster_{col}"] = 0
-
-            dom_dict[key] = val
-
     # now loop through again and ID variance
     for row in range(len(summary)):
         # check to see if renaming has already happened
@@ -1103,58 +1264,40 @@ def assign_variants(summary, rename_cols):
 
         if summary.loc[row, "ParamGroup"] != 1 and not renamed:
             acq_str = "VARIANT"
-            # now we know we have a deviant param group
-            # check if TR is same as param group 1
-            entity_set = summary.loc[row, "EntitySet"]
-            for col in rename_cols:
-                dom_entity_set = dom_dict[entity_set]
-
-                if f"Cluster_{col}" in dom_entity_set:
-                    cluster_val = summary.loc[row, f"Cluster_{col}"]
-                    if pd.isna(cluster_val):
-                        # This should only occur when the entity set does not have the
-                        # cluster column, so concatenation across entity sets will result
-                        # in NaN values in those cells.
-                        cluster_val = 0
-
-                    if cluster_val != dom_entity_set[f"Cluster_{col}"]:
-                        acq_str += f"{col}C{int(cluster_val)}"
-
-                elif (
-                    not (pd.isna(summary.loc[row, col]) and pd.isna(dom_entity_set[col]))
-                    and summary.loc[row, col] != dom_entity_set[col]
-                ):
-                    if col == "HasFieldmap":
-                        if dom_entity_set[col] == "True":
-                            acq_str += "NoFmap"
-                        else:
-                            acq_str += "HasFmap"
-                    elif col == "UsedAsFieldmap":
-                        if dom_entity_set[col] == "True":
-                            acq_str += "Unused"
-                        else:
-                            acq_str += "IsUsed"
-                    elif col == "Obliquity":
-                        val = summary.loc[row, col]
-                        if val == "True":
-                            acq_str += "Oblique"
-                        elif val == "False":
-                            acq_str += "Plumb"
+            for col, value, dominant_value, is_clustered in get_variant_components(
+                summary, summary.loc[row], rename_cols
+            ):
+                if is_clustered:
+                    acq_str += f"{col}C{value}"
+                elif col == "HasFieldmap":
+                    if dominant_value == "True":
+                        acq_str += "NoFmap"
                     else:
-                        val = summary.loc[row, col]
-                        # If the value is a string float (contains decimal point)
-                        if isinstance(val, str) and "." in val:
-                            val = val.replace(".", "p")
-                        # If the value is an actual float
-                        elif isinstance(val, float):
-                            val = str(val).replace(".", "p")
+                        acq_str += "HasFmap"
+                elif col == "UsedAsFieldmap":
+                    if dominant_value == "True":
+                        acq_str += "Unused"
+                    else:
+                        acq_str += "IsUsed"
+                elif col == "Obliquity":
+                    if value == "True":
+                        acq_str += "Oblique"
+                    elif value == "False":
+                        acq_str += "Plumb"
+                else:
+                    # If the value is a string float (contains decimal point)
+                    if isinstance(value, str) and "." in value:
+                        value = value.replace(".", "p")
+                    # If the value is an actual float
+                    elif isinstance(value, float):
+                        value = str(value).replace(".", "p")
 
-                        val = val.removesuffix("p0")
+                    value = value.removesuffix("p0")
 
-                        # Filter out non-alphanumeric characters
-                        val = re.sub(r"[^a-zA-Z0-9]", "", val)
+                    # Filter out non-alphanumeric characters
+                    value = re.sub(r"[^a-zA-Z0-9]", "", value)
 
-                        acq_str += f"{col}{val}"
+                    acq_str += f"{col}{value}"
 
             if acq_str == "VARIANT":
                 acq_str += "Other"
@@ -1234,7 +1377,7 @@ def collect_file_collections(layout, base_file):
 
     out_metadata = {}
     # Add metadata field with BIDS URIs to all files in file collection
-    out_metadata["FileCollection"] = [get_bidsuri(f.path, layout.root) for f in files]
+    out_metadata["FileCollection"] = [_get_bidsuri(f.path, layout.root) for f in files]
 
     files_metadata = [get_sidecar_metadata(img_to_new_ext(f.path, ".json")) for f in files]
     assert all(bool(meta) for meta in files_metadata), files
@@ -1255,23 +1398,3 @@ def collect_file_collections(layout, base_file):
                 out_metadata[collected_field] = field_values
 
     return files, out_metadata
-
-
-def get_bidsuri(filename, dataset_root):
-    """Get the BIDS URI for a given filename.
-
-    Parameters
-    ----------
-    filename : str
-        The filename to get the BIDS URI for.
-    dataset_root : str
-        The root directory of the dataset.
-
-    Returns
-    -------
-    str
-        The BIDS URI for the given filename.
-    """
-    import os
-
-    return f"bids::{os.path.relpath(filename, dataset_root)}"

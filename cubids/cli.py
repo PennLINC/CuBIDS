@@ -462,6 +462,16 @@ def _parse_apply():
     --config : str, optional
         Path to a config file for grouping. If not provided, the default config
         file from CuBIDS will be used.
+    --fmap : bool, optional
+        Allow renaming fieldmap files after validating fieldmap collections.
+    --change-RenameEntitySet : list[str], optional
+        Exact entity set substitutions in OLD=NEW form or paths to CSV/TSV
+        mapping tables with ``old_entity_set`` and ``new_entity_set`` columns.
+    --remove-RenameEntitySet : list[str], optional
+        Exact entity sets whose matching parameter groups are deleted, or paths to
+        CSV/TSV tables with an ``entity_set`` column.
+    --write-edited-summary : pathlib.Path, optional
+        Destination for the edited summary.tsv file.
 
     Returns
     -------
@@ -569,6 +579,51 @@ def _parse_apply():
             "Used as --jobs for datalad save and datalad run."
         ),
         required=False,
+    )
+    parser.add_argument(
+        "--fmap",
+        "--allow-fmap-renames",
+        action="store_true",
+        dest="allow_fmap_renames",
+        default=False,
+        help=(
+            "allow fieldmap renames after validating all BIDS B0 fieldmap "
+            "collections (phase-difference, two-phase, direct, and PEPOLAR); "
+            "fieldmaps remain excluded by default"
+        ),
+    )
+    parser.add_argument(
+        "--change-RenameEntitySet",
+        action="append",
+        dest="change_rename_entity_set",
+        default=[],
+        metavar="OLD=NEW|PATH",
+        help=(
+            "replace an exact entity set from the summary.tsv RenameEntitySet column with "
+            "OLD=NEW, or supply a CSV/TSV mapping file; argument may be supplied more than once"
+        ),
+    )
+    parser.add_argument(
+        "--remove-RenameEntitySet",
+        action="append",
+        dest="remove_rename_entity_set",
+        default=[],
+        metavar="ENTITY_SET|PATH",
+        help=(
+            "mark the groups with an exact entity set from the summary.tsv RenameEntitySet "
+            "column for deletion, or supply a CSV/TSV file with an entity_set column; "
+            "argument may be supplied more than once"
+        ),
+    )
+    parser.add_argument(
+        "--write-edited-summary",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "write the summary after entity set changes; required when "
+            "--change-RenameEntitySet or --remove-RenameEntitySet is supplied"
+        ),
     )
 
     return parser

@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from niworkflows.utils.testing import generate_bids_skeleton
 
+from cubids.cubids import CuBIDS
 from cubids.tests.utils import TEST_DATA
 
 
@@ -65,3 +66,9 @@ def build_bids_dataset():
         return bids_dir
 
     return _build
+
+
+@pytest.fixture
+def bare_cubids():
+    """Return an uninitialized CuBIDS instance for pure helper tests."""
+    return CuBIDS.__new__(CuBIDS)
