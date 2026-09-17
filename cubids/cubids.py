@@ -2324,10 +2324,11 @@ class CuBIDS:
     def get_variant_rename_columns(self, summary):
         """Return the summary columns that variant labels are built from.
 
-        A summary spans every modality in the dataset, so the eligible columns are
-        pooled across modalities rather than read from one modality's section. A
-        column that belongs to some other modality is missing for this row and for
-        its dominant group alike, so it cannot contribute a spurious label.
+        A summary spans every modality in the dataset, so eligible sidecar and
+        derived columns are pooled across modalities rather than read from one
+        modality's section. A column that belongs to some other modality is missing
+        for this row and for its dominant group alike, so it cannot contribute a
+        spurious label.
 
         Parameters
         ----------
@@ -2342,14 +2343,15 @@ class CuBIDS:
         relational = self.grouping_config.get("relational_params")
 
         rename_cols = []
-        for sidecar in self.grouping_config.get("sidecar_params").values():
-            for col, settings in sidecar.items():
-                if (
-                    settings.get("suggest_variant_rename")
-                    and col in summary.columns
-                    and col not in rename_cols
-                ):
-                    rename_cols.append(col)
+        for parameter_kind in ("sidecar_params", "derived_params"):
+            for modality_params in self.grouping_config.get(parameter_kind, {}).values():
+                for col, settings in modality_params.items():
+                    if (
+                        settings.get("suggest_variant_rename")
+                        and col in summary.columns
+                        and col not in rename_cols
+                    ):
+                        rename_cols.append(col)
 
         # deal with Fmap! and with IntendedFor Key!
         for relational_key, column in [

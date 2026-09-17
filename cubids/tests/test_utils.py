@@ -146,12 +146,60 @@ def test_get_variant_rename_columns_pool_every_modality_in_the_summary():
                 "M0Type": {"suggest_variant_rename": False},
             },
         },
+        "derived_params": {
+            "fmap": {
+                "Dim3Size": {"suggest_variant_rename": True},
+                "NumVolumes": {"suggest_variant_rename": False},
+            }
+        },
         "relational_params": {"FieldmapKey": {"suggest_variant_rename": True, "display_mode": ""}},
     }
-    summary = pd.DataFrame(columns=["EchoTime", "LabelingDistance", "M0Type", "HasFieldmap"])
+    summary = pd.DataFrame(
+        columns=[
+            "EchoTime",
+            "LabelingDistance",
+            "M0Type",
+            "Dim3Size",
+            "NumVolumes",
+            "HasFieldmap",
+        ]
+    )
 
-    assert cubids.get_variant_rename_columns(summary) == ["EchoTime", "LabelingDistance"]
+    assert cubids.get_variant_rename_columns(summary) == [
+        "EchoTime",
+        "LabelingDistance",
+        "Dim3Size",
+    ]
     assert cubids.get_variant_rename_columns(summary[["EchoTime"]]) == ["EchoTime"]
+
+
+def test_fmap_variant_name_includes_derived_difference():
+    """A derived NIfTI difference must not fall back to VARIANTOther."""
+    cubids = CuBIDS.__new__(CuBIDS)
+    cubids.grouping_config = {
+        "sidecar_params": {"fmap": {"EchoTime": {"suggest_variant_rename": True}}},
+        "derived_params": {"fmap": {"Dim3Size": {"suggest_variant_rename": True}}},
+        "relational_params": {},
+    }
+    summary = pd.DataFrame(
+        {
+            "EntitySet": [
+                "datatype-fmap_fmap-magnitude1_suffix-magnitude1",
+                "datatype-fmap_fmap-magnitude1_suffix-magnitude1",
+            ],
+            "ParamGroup": [1, 2],
+            "RenameEntitySet": ["", ""],
+            "EchoTime": [0.004, 0.004],
+            "Dim3Size": [64, 65],
+        }
+    )
+
+    rename_cols = cubids.get_variant_rename_columns(summary)
+    result = utils.assign_variants(summary, rename_cols)
+
+    assert result.loc[1, "RenameEntitySet"].endswith(
+        "acquisition-VARIANTDim3Size65"
+    )
 
 
 def test_round_params():
