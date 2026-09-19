@@ -197,9 +197,7 @@ def test_fmap_variant_name_includes_derived_difference():
     rename_cols = cubids.get_variant_rename_columns(summary)
     result = utils.assign_variants(summary, rename_cols)
 
-    assert result.loc[1, "RenameEntitySet"].endswith(
-        "acquisition-VARIANTDim3Size65"
-    )
+    assert result.loc[1, "RenameEntitySet"].endswith("acquisition-VARIANTDim3Size65")
 
 
 def test_round_params():
