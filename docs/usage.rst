@@ -37,55 +37,6 @@ that differ in a set of important acquisition parameters.
 The subsets of consistent acquisition parameter sets within a Entity Set are called a :ref:`paramgroup`.
 
 
-Date/time anonymization before DataLad
---------------------------------------
-
-Run ``cubids date-time-shift`` before your BIDS dataset is checked into DataLad. The command updates acquisition metadata in
-place, so running it before the first DataLad commit prevents identifiable dates
-and precise acquisition times from being recorded in the dataset history.
-
-Start with a dry run:
-
-.. code-block:: console
-
-    $ cubids date-time-shift /path/to/bids --dry-run
-
-To apply the anonymization, run:
-
-.. code-block:: console
-
-    $ cubids date-time-shift /path/to/bids
-
-For larger datasets, use ``--n-cpus`` to read and plan independent file
-updates in parallel. Files are still written only after the preflight phase
-has completed successfully:
-
-.. code-block:: console
-
-    $ cubids date-time-shift /path/to/bids --n-cpus 4
-
-For each subject, CuBIDS sets the earliest rounded acquisition date in
-subject-level or session-level ``*_scans.tsv`` files to ``1800-01-01`` and
-preserves calendar-day intervals between acquisitions. It rounds ``acq_time``
-values in those tables and the following JSON fields to the nearest hour:
-``AcquisitionTime``,
-``time.samples.AcquisitionTime``, ``time.samples.ContentTime``,
-``global.const.PerformedProcedureStepStartTime``, ``global.const.SeriesTime``,
-and ``global.const.StudyTime``. Thirty minutes rounds up, and times at 23:30 or
-later wrap to ``00:00:00``. No other metadata values are changed.
-
-Date-bearing JSON fields such as ``AcquisitionDateTime`` and the dcmmeta
-``global.const`` date fields (``StudyDate``, ``SeriesDate``, ``AcquisitionDate``,
-``ContentDate``) are not rewritten; the command reports them as warnings so
-they can be removed or de-identified before the dataset enters version
-control.
-
-The command validates all readable scans tables and JSON files before writing any
-changes. It reports unparseable acquisition-time values as warnings and leaves
-those individual values unchanged. Use ``--dry-run`` to review every planned
-change before running the command without that option.
-
-
 .. _paramgroup:
 
 Parameter Group
@@ -156,6 +107,55 @@ You won't need to edit this file directly,
 but it keeps track of every file's assignment to Entity and Parameter Groups.
 
 
+Date/time anonymization before DataLad
+--------------------------------------
+
+Run ``cubids date-time-shift`` before your BIDS dataset is checked into DataLad. The command updates acquisition metadata in
+place, so running it before the first DataLad commit prevents identifiable dates
+and precise acquisition times from being recorded in the dataset history.
+
+Start with a dry run:
+
+.. code-block:: console
+
+    $ cubids date-time-shift /path/to/bids --dry-run
+
+To apply the anonymization, run:
+
+.. code-block:: console
+
+    $ cubids date-time-shift /path/to/bids
+
+For larger datasets, use ``--n-cpus`` to read and plan independent file
+updates in parallel. Files are still written only after the preflight phase
+has completed successfully:
+
+.. code-block:: console
+
+    $ cubids date-time-shift /path/to/bids --n-cpus 4
+
+For each subject, CuBIDS sets the earliest rounded acquisition date in
+subject-level or session-level ``*_scans.tsv`` files to ``1800-01-01`` and
+preserves calendar-day intervals between acquisitions. It rounds ``acq_time``
+values in those tables and the following JSON fields to the nearest hour:
+``AcquisitionTime``,
+``time.samples.AcquisitionTime``, ``time.samples.ContentTime``,
+``global.const.PerformedProcedureStepStartTime``, ``global.const.SeriesTime``,
+and ``global.const.StudyTime``. Thirty minutes rounds up, and times at 23:30 or
+later wrap to ``00:00:00``. No other metadata values are changed.
+
+Date-bearing JSON fields such as ``AcquisitionDateTime`` and the dcmmeta
+``global.const`` date fields (``StudyDate``, ``SeriesDate``, ``AcquisitionDate``,
+``ContentDate``) are not rewritten; the command reports them as warnings so
+they can be removed or de-identified before the dataset enters version
+control.
+
+The command validates all readable scans tables and JSON files before writing any
+changes. It reports unparseable acquisition-time values as warnings and leaves
+those individual values unchanged. Use ``--dry-run`` to review every planned
+change before running the command without that option.
+
+
 .. _acqgrouptsv:
 
 Modifying Entity and Parameter Group Assignments
@@ -176,7 +176,8 @@ Once the columns have been edited you can apply the changes to BIDS data using
 
 The changes in ``entityparam_edited_summary.csv`` will be applied to the BIDS data in ``/bids/dir``
 and the new Entity and Parameter groups will be saved to csv files starting with ``new_entityparam_prefix``.
-Note: fieldmaps entitysets with variant parameters will be identified but not renamed.
+Note: every file collection is checked for compatible planned names. Fieldmaps with variant
+parameters are identified but are not renamed unless ``--fmap`` is passed to ``cubids apply``.
 
 
 The ``_AcqGrouping.tsv`` file
@@ -258,11 +259,165 @@ Variant Group to include ``acquisition-VARIANTEchoTime2`` in their filenames (if
 to cluster 2).
 
 When multiple parameters vary, their names are concatenated (e.g., ``VARIANTEchoTime2FlipAngle75``).
-When the user runs ``cubids apply``, filenames will get renamed according to the auto-generated
-names in the "Rename Entity Set" column in the summary.tsv
+When the user runs ``cubids apply``, non-fieldmap filenames get renamed according to the
+auto-generated names in the "Rename Entity Set" column in the summary.tsv.
 
 .. note::
-   The above behavior is new as of version 1.2.0. Prior to this, the variant name was just ``VARIANT{parameter}``.
+    The above behavior is new as of version 1.2.0. Prior to this, the variant name was just ``VARIANT{parameter}``.
+
+
+.. _file-collection-variants:
+
+File collection variants
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A :term:`File Collection` is a set of files from one acquisition that must be interpreted
+together. Examples include the echoes of a multi-echo BOLD acquisition, the magnitude and phase
+parts of a complex image, and the members of a field map. Each member still has its own row in
+the CuBIDS files table and is assigned independently to an Entity Set and a Parameter Group. The
+collection is an additional relationship that CuBIDS uses to keep those rows consistent when it
+groups, renames, or deletes files.
+
+CuBIDS derives collection rules from its bundled BIDS schema. Members must have the same complete
+filename context, including subject, session, run, and every entity that does not distinguish
+members of that collection. Most collections are distinguished by one or more of ``echo``,
+``flip``, ``inv``, ``mt``, or ``part``. Field maps also use these special relationships:
+
+-   ``phase-difference``, ``two-phase``, and ``direct-fieldmap`` B0 collections are linked by
+    suffix. These contain, respectively, a phase-difference map and magnitude image(s), two
+    phase maps and two magnitude images, or a fieldmap and magnitude image.
+-   ``pepolar`` B0 collections are linked by phase-encoding direction. Their members are
+    ``*_epi`` images or, for arterial spin labeling, ``*_m0scan`` images under ``fmap/``.
+-   The `BIDS RF field-mapping schemes
+    <https://bids-specification.readthedocs.io/en/v1.11.0/modality-specific-files/magnetic-resonance-imaging-data.html#radiofrequency-rf-field-mapping>`_
+    are linked by the entities prescribed for each method. ``TB1DAM`` varies by flip angle,
+    ``TB1EPI`` by echo and flip angle, and ``TB1SRGE`` by flip angle and inversion time.
+    ``TB1AFI``, ``TB1TFL``, ``TB1RFM``, and ``RB1COR`` use role prefixes in their acquisition
+    labels. For example, ``acq-anatTest`` pairs with ``acq-fampTest``, while the trailing
+    ``Test`` keeps that collection separate from ``acq-anatRetest`` and ``acq-fampRetest``.
+
+``cubids group`` performs this comparison for every file collection and writes one row per
+collection to ``<prefix>_file_collection_variant_report.tsv``. A collection passes when its
+planned names remain compatible. If only the variant portion of the acquisition labels differs
+and CuBIDS can derive one consistent label, the report proposes that label and the corresponding
+``RenameEntitySet`` values. Otherwise, it marks the collection for manual review.
+
+For example, when inconsistent collections are found, group prints:
+
+.. code-block:: text
+
+    WARNING: 3 file collections have mismatched variants; review
+    v0_file_collection_variant_report.tsv.
+
+Before applying changes, CuBIDS revalidates every affected collection against the planned names.
+An incomplete or mismatched collection stops the entire apply operation. Apply also prevents a
+partial collection deletion, whether deletion was requested with ``--remove-RenameEntitySet`` or
+with ``MergeInto`` set to ``0``. List every member to delete the whole collection; otherwise,
+apply stops before changing any files. Use ``cubids purge`` when intentionally deleting a single
+member.
+
+.. _fmap-collections:
+
+Fieldmap-specific handling
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For PEPOLAR, the report verifies the actual ``PhaseEncodingDirection`` metadata instead of
+inferring polarity from labels such as ``dir-AP`` and ``dir-PA``. Matching labels are a naming
+safeguard only: inspect reported differences before using the files with TOPUP or another
+distortion-correction tool.
+
+A parametric map under ``fmap/``, such as a ``TB1map`` or ``RB1map``, is a standalone image and
+is left out of the report. A fieldmap acquired in a single phase-encoding direction is recorded
+as a passing ``single-direction epi`` or ``single-direction m0scan``: it is valid BIDS and has
+no partner whose label it must match. Conversely, a magnitude image whose ``phasediff``,
+``phase``, or ``fieldmap`` counterpart is absent is reported as ``orphan-magnitude`` for manual
+review.
+
+Members that an acquisition label tells apart keep that label when they are renamed: an
+``rf-field-map`` collection gets the same variant appended to each member's own label, such as
+``acq-anatVARIANTEchoTime`` alongside ``acq-fampVARIANTEchoTime``.
+
+By default, ``cubids apply`` excludes every file under ``fmap/`` from renaming. After reviewing
+the report, use ``--fmap`` (or ``--allow-fmap-renames``) to allow fieldmap renames. A standalone
+fieldmap is renamed like any other image once fieldmap renames are enabled. Matching labels do
+not guarantee compatibility with downstream pipelines; for example, an AP/PA EPI pair with
+different dimensions may not be compatible with TOPUP.
+
+Renaming a fieldmap EPI also renames its JSON sidecar and any matching ``.bval`` and ``.bvec``
+companions. Every apply rename updates matching ``filename`` entries in subject- or
+session-level ``*_scans.tsv`` tables.
+
+
+Changing planned entity sets from the command line
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``cubids apply`` can rename or remove the collections listed in the ``RenameEntitySet`` column
+of the loaded summary, without hand-editing the table. Both options match a row on its planned
+entity set: the value in ``RenameEntitySet`` when that cell is filled in, and the value in
+``EntitySet`` when it is empty. Copy the value exactly as the summary writes it.
+
+To rename a collection, supply ``--change-RenameEntitySet OLD=NEW`` once for each mapping, where
+``OLD`` and ``NEW`` are complete entity sets, or pass a CSV or TSV mapping file to the same
+option. Mapping files must include ``old_entity_set`` and ``new_entity_set`` columns. You can
+combine the two forms. CuBIDS never modifies the input summary. When using
+``--change-RenameEntitySet`` or ``--remove-RenameEntitySet``, provide ``--write-edited-summary``
+to specify where to write the derived, edited summary. That file is written only once the whole
+request has passed validation, so a rejected apply leaves nothing behind.
+
+For example, to give two verbose variant collections one short shared name while allowing
+reviewed fmap renames:
+
+.. code-block:: console
+
+    $ cubids apply /data/bids v0_summary.tsv v0_files.tsv v1 \
+        --change-RenameEntitySet acquisition-VARIANTEchoTimeC1TotalReadoutTimeC1_datatype-dwi_direction-AP_run-01_suffix-dwi=acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi \
+        --change-RenameEntitySet acquisition-VARIANTEchoTimeC2TotalReadoutTimeC2_datatype-dwi_direction-AP_run-01_suffix-dwi=acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi \
+        --write-edited-summary v0_edited_summary.tsv \
+        --fmap
+
+Mappings are exact entity set substitutions, never substring replacements.
+
+For example, the mappings above can instead be stored in ``entity_set_changes.tsv``:
+
+.. code-block:: text
+
+    old_entity_set    new_entity_set
+    acquisition-VARIANTEchoTimeC1TotalReadoutTimeC1_datatype-dwi_direction-AP_run-01_suffix-dwi    acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi
+    acquisition-VARIANTEchoTimeC2TotalReadoutTimeC2_datatype-dwi_direction-AP_run-01_suffix-dwi    acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi
+
+Pass the file with ``--change-RenameEntitySet entity_set_changes.tsv --write-edited-summary
+v0_edited_summary.tsv``.
+
+When reviewing ``summary.tsv``, you may find a collection in the ``RenameEntitySet`` column that
+you want to discard, such as an incomplete acquisition. Use ``--remove-RenameEntitySet`` with
+that collection's entity set. CuBIDS writes ``0`` to ``MergeInto`` in the derived summary and
+then uses the normal apply deletion path. That path deletes the matching image and, when
+present, its standard BIDS companions, including JSON sidecars and modality-specific files. It
+also removes the image from applicable ``*_scans.tsv`` tables and every ``IntendedFor`` list
+that references it. Repeat the option for each collection to delete.
+
+When you combine the two options, the substitutions run first, so name a collection here by the
+entity set ``--change-RenameEntitySet`` leaves it with, not the one the summary started with.
+For example:
+
+.. code-block:: console
+
+    $ cubids apply /data/bids v0_summary.tsv v0_files.tsv v1 \
+        --remove-RenameEntitySet acquisition-VARIANTVar1_datatype-dwi_direction-AP_run-01_suffix-dwi \
+        --write-edited-summary v0_edited_summary.tsv
+
+Repeat the option for each collection to delete, or list the entity sets in a CSV or TSV file
+with an ``entity_set`` column and pass that file instead:
+
+.. code-block:: text
+
+    entity_set
+    datatype-fmap_direction-AP_fmap-epi_suffix-epi
+    datatype-fmap_direction-PA_fmap-epi_suffix-epi
+
+As described under :ref:`file-collection-variants`, list every member of a file collection. If
+the request would split a collection, apply stops and names the entity sets that still need to
+be included.
 
 
 Deleting a mistake
@@ -276,6 +431,10 @@ We elect to remove this scan from our dataset because we do not want these param
 analyses.
 To remove these files from your BIDS data,
 add a ``0`` to ``MergeInto`` and save the new tsv as ``v0_edited_summary.tsv``
+
+.. note::
+    The file collection safeguards described under :ref:`file-collection-variants` also apply
+    to deletions requested by editing ``MergeInto``.
 
 .. csv-table:: Pre Apply Groupings with Deletion Requested
     :file: _static/PNC_pre_apply_summary_dwi_run1_deletion.csv

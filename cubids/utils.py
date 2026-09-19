@@ -3,8 +3,11 @@
 This module provides various utility functions used throughout the CuBIDS package.
 """
 
+import csv
 import json
+import os
 import re
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
@@ -113,6 +116,39 @@ def _update_json(json_file, metadata):
         json.dump(metadata, f, ensure_ascii=False, indent=4)
 
 
+def read_bids_tsv(tsv_file):
+    """Read a BIDS TSV while preserving empty cells and literal quote characters."""
+    return pd.read_csv(
+        tsv_file,
+        sep="\t",
+        dtype=str,
+        keep_default_na=False,
+        quoting=csv.QUOTE_NONE,
+    )
+
+
+def write_bids_tsv(dataframe, tsv_file):
+    """Write a BIDS TSV without introducing CSV-style quoting."""
+    dataframe.to_csv(tsv_file, sep="\t", index=False, quoting=csv.QUOTE_NONE)
+
+
+def is_nonempty(value):
+    """Return whether a TSV cell holds a meaningful value.
+
+    Parameters
+    ----------
+    value : object
+        A cell read from a TSV. Blank cells arrive as NaN, an empty string, or
+        the string ``"nan"`` depending on how the table was read.
+
+    Returns
+    -------
+    :obj:`bool`
+        False for missing, blank, and ``"nan"`` cells; True otherwise.
+    """
+    return not pd.isna(value) and str(value).strip() not in {"", "nan"}
+
+
 def find_json_files(root):
     """Return regular JSON files below ``root``, excluding hidden paths like ``.git``.
 
@@ -201,6 +237,39 @@ def _entities_to_entity_set(entities):
         group_keys.append("acquisition")
 
     return "_".join([f"{key}-{entities[key]}" for key in group_keys])
+
+
+def entity_context_key(entities, ignored):
+    """Build a hashable key that identifies everything about a file except ``ignored``.
+
+    Two files share a key when every entity outside ``ignored`` agrees, which is
+    how file collection members are matched to one another.
+
+    Parameters
+    ----------
+    entities : dict
+        A pybids entities dictionary.
+    ignored : set of str
+        Entity names to leave out of the key, typically the axes along which
+        members of a collection are expected to differ.
+
+    Returns
+    -------
+    :obj:`tuple`
+        Sorted ``(name, value)`` pairs for the retained entities.
+
+    Examples
+    --------
+    >>> entity_context_key({"subject": "01", "direction": "AP", "suffix": "epi"}, {"direction"})
+    (('subject', '01'), ('suffix', 'epi'))
+    """
+    return tuple(
+        sorted(
+            (key, str(value))
+            for key, value in entities.items()
+            if key not in ignored and value is not None
+        )
+    )
 
 
 def _file_to_entity_set(filename):
@@ -308,9 +377,47 @@ def _get_bidsuri(filename, dataset_root):
     Traceback (most recent call last):
     ValueError: Only local datasets are supported: ...
     """
-    if dataset_root in filename:
-        return filename.replace(dataset_root, "bids::").replace("bids::/", "bids::")
-    raise ValueError(f"Only local datasets are supported: {filename}")
+    relative_path = Path(os.path.relpath(filename, dataset_root)).as_posix()
+    if relative_path.startswith(".."):
+        raise ValueError(f"Only local datasets are supported: {filename}")
+    return f"bids::{relative_path}"
+
+
+def get_modality_params(config, modality):
+    """List every parameter CuBIDS groups a modality's scans on, with its settings.
+
+    The grouping config splits these parameters across two sections that callers
+    almost always want together: ``sidecar_params`` are read from the JSON
+    sidecar (EchoTime, FlipAngle, ...) and ``derived_params`` are computed by
+    CuBIDS from the NIfTI itself (Dim1Size, NumVolumes, Obliquity, ...). Where
+    the two disagree about a parameter, the derived value wins.
+
+    Parameters
+    ----------
+    config : dict
+        A CuBIDS grouping configuration, as loaded from ``config.yml``.
+    modality : str
+        Which modality's parameters to return: "anat", "dwi", "fmap", "func",
+        "perf", or "other".
+
+    Returns
+    -------
+    dict
+        Maps each parameter name to its settings for this modality. A settings
+        dict may carry ``tolerance`` (values within it cluster together),
+        ``precision`` (decimal places to round to), and ``suggest_variant_rename``
+        (whether a difference here earns a spot in a VARIANT label). Any of these
+        may be absent, so read them with ``.get()``.
+
+    Notes
+    -----
+    The result is a new dict, so callers can filter or extend it without editing
+    the shared configuration.
+    """
+    return {
+        **config["sidecar_params"][modality],
+        **config["derived_params"][modality],
+    }
 
 
 def _get_param_groups(
@@ -348,16 +455,9 @@ def _get_param_groups(
         print("WARNING: no files for", entity_set_name)
         return None, None
 
-    # Split the config into separate parts
-    imaging_params = grouping_config.get("sidecar_params", {})
-    imaging_params = imaging_params[modality]
-
+    imaging_params = get_modality_params(grouping_config, modality)
     relational_params = grouping_config.get("relational_params", {})
-
-    derived_params = grouping_config.get("derived_params")
-    derived_params = derived_params[modality]
-
-    imaging_params.update(derived_params)
+    derived_params = grouping_config["derived_params"][modality]
 
     dfs = []
     # path needs to be relative to the root with no leading prefix
@@ -496,8 +596,7 @@ def round_params(df, config, modality):
     """
     df = df.copy()  # don't modify DataFrame in place
 
-    to_format = config["sidecar_params"][modality]
-    to_format.update(config["derived_params"][modality])
+    to_format = get_modality_params(config, modality)
 
     for column_name, column_fmt in to_format.items():
         if column_name not in df:
@@ -597,8 +696,7 @@ def cluster_single_parameters(df, config, modality):
     """
     df = df.copy()  # don't modify DataFrame in place
 
-    to_format = config["sidecar_params"][modality]
-    to_format.update(config["derived_params"][modality])
+    to_format = get_modality_params(config, modality)
 
     for column_name, column_fmt in to_format.items():
         if column_name not in df:
@@ -960,9 +1058,6 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
     WARNING: DATATYPE CHANGE DETECTED
     '/output/sub-01/ses-01/func/sub-01_ses-01_task-meg_acq-VAR_bold.nii.gz'
 
-    It expects a longitudinal structure, so providing a cross-sectional filename won't work.
-    XXX: This is a bug.
-
     It also works for cross-sectional filename.
     >>> build_path(
     ...    "/input/sub-01/func/sub-01_task-rest_run-01_bold.nii.gz",
@@ -1021,8 +1116,6 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
 
     # CHECK TO SEE IF DATATYPE CHANGED
     # datatype may be overridden/changed if the original file is located in the wrong folder.
-    # XXX: This check for the datatype is fragile and should be improved.
-    # For example, what if we have sub-01/func/sub-01_task-anatomy_bold.nii.gz?
     dtype_orig = ""
     for dtype in valid_datatypes:
         if dtype in filepath:
@@ -1039,6 +1132,88 @@ def build_path(filepath, out_entities, out_dir, schema, is_longitudinal):
         new_path = str(Path(out_dir) / sub / dtype_new / filename)
 
     return new_path
+
+
+def get_variant_components(summary, summary_row, rename_cols):
+    """Return the fields where a parameter group differs from its dominant group.
+
+    These differences are what :func:`assign_variants` turns into a variant label,
+    and what file collection checks compare across a collection's members.
+
+    Parameters
+    ----------
+    summary : pandas.DataFrame
+        The full parameter group summary, used to locate the dominant group.
+    summary_row : pandas.Series
+        The row to describe.
+    rename_cols : list of str
+        Columns eligible to contribute to a variant label, in label order.
+
+    Returns
+    -------
+    list of tuple
+        ``(column, current_value, dominant_value, is_clustered)`` per differing
+        field. Empty when the row is itself the dominant group or has no single
+        dominant group to compare against. Cluster values are compared
+        numerically and returned as ints, with missing values normalized to
+        zero, matching the variant-label convention.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> summary = pd.DataFrame(
+    ...     {
+    ...         "EntitySet": ["datatype-func_task-rest", "datatype-func_task-rest"],
+    ...         "ParamGroup": [1, 2],
+    ...         "EchoTime": [0.05, 0.048],
+    ...         "Cluster_EchoTime": [0, 1],
+    ...         "HasFieldmap": ["True", "False"],
+    ...         "TaskName": ["rest", "rest"],
+    ...     }
+    ... )
+    >>> get_variant_components(
+    ...     summary, summary.iloc[1], ["EchoTime", "HasFieldmap", "TaskName"]
+    ... )
+    [('EchoTime', 1, 0, True), ('HasFieldmap', 'False', 'True', False)]
+    >>> get_variant_components(summary, summary.iloc[0], ["EchoTime", "HasFieldmap"])
+    []
+    """
+    if not rename_cols:
+        return []
+
+    # Compare numerically: a summary read back from a TSV can type ParamGroup as
+    # float, and "1.0" != "1" would silently make every group look dominant-like.
+    param_groups = pd.to_numeric(summary["ParamGroup"], errors="coerce")
+    if pd.to_numeric(summary_row["ParamGroup"], errors="coerce") == 1:
+        return []
+
+    dominant = summary.loc[
+        (summary["EntitySet"] == summary_row["EntitySet"]) & (param_groups == 1)
+    ]
+    if len(dominant) != 1:
+        return []
+    dominant = dominant.iloc[0]
+
+    components = []
+    for column in rename_cols:
+        if column not in summary.columns:
+            continue
+        cluster_column = f"Cluster_{column}"
+        if cluster_column in summary.columns:
+            # An entity set without this cluster column yields NaN after the
+            # cross-entity-set concatenation; those cells mean "cluster 0".
+            current = 0 if pd.isna(summary_row[cluster_column]) else summary_row[cluster_column]
+            reference = 0 if pd.isna(dominant[cluster_column]) else dominant[cluster_column]
+            if float(current) != float(reference):
+                components.append((column, int(current), int(reference), True))
+            continue
+
+        current = summary_row[column]
+        reference = dominant[column]
+        if not (pd.isna(current) and pd.isna(reference)) and str(current) != str(reference):
+            components.append((column, current, reference, False))
+
+    return components
 
 
 def assign_variants(summary, rename_cols):
@@ -1075,24 +1250,6 @@ def assign_variants(summary, rename_cols):
     for col in rename_cols:
         summary[col] = summary[col].astype(str)
 
-    # loop through summary tsv and create dom_dict
-    dom_dict = {}
-    for row in range(len(summary)):
-        # if dominant group identified
-        if str(summary.loc[row, "ParamGroup"]) == "1":
-            val = {}
-            # grab col, all vals send to dict
-            key = summary.loc[row, "EntitySet"]
-            for col in rename_cols:
-                val[col] = summary.loc[row, col]
-
-                if f"Cluster_{col}" in summary.columns:
-                    val[f"Cluster_{col}"] = summary.loc[row, f"Cluster_{col}"]
-                    if pd.isna(val[f"Cluster_{col}"]):
-                        val[f"Cluster_{col}"] = 0
-
-            dom_dict[key] = val
-
     # now loop through again and ID variance
     for row in range(len(summary)):
         # check to see if renaming has already happened
@@ -1103,58 +1260,40 @@ def assign_variants(summary, rename_cols):
 
         if summary.loc[row, "ParamGroup"] != 1 and not renamed:
             acq_str = "VARIANT"
-            # now we know we have a deviant param group
-            # check if TR is same as param group 1
-            entity_set = summary.loc[row, "EntitySet"]
-            for col in rename_cols:
-                dom_entity_set = dom_dict[entity_set]
-
-                if f"Cluster_{col}" in dom_entity_set:
-                    cluster_val = summary.loc[row, f"Cluster_{col}"]
-                    if pd.isna(cluster_val):
-                        # This should only occur when the entity set does not have the
-                        # cluster column, so concatenation across entity sets will result
-                        # in NaN values in those cells.
-                        cluster_val = 0
-
-                    if cluster_val != dom_entity_set[f"Cluster_{col}"]:
-                        acq_str += f"{col}C{int(cluster_val)}"
-
-                elif (
-                    not (pd.isna(summary.loc[row, col]) and pd.isna(dom_entity_set[col]))
-                    and summary.loc[row, col] != dom_entity_set[col]
-                ):
-                    if col == "HasFieldmap":
-                        if dom_entity_set[col] == "True":
-                            acq_str += "NoFmap"
-                        else:
-                            acq_str += "HasFmap"
-                    elif col == "UsedAsFieldmap":
-                        if dom_entity_set[col] == "True":
-                            acq_str += "Unused"
-                        else:
-                            acq_str += "IsUsed"
-                    elif col == "Obliquity":
-                        val = summary.loc[row, col]
-                        if val == "True":
-                            acq_str += "Oblique"
-                        elif val == "False":
-                            acq_str += "Plumb"
+            for col, value, dominant_value, is_clustered in get_variant_components(
+                summary, summary.loc[row], rename_cols
+            ):
+                if is_clustered:
+                    acq_str += f"{col}C{value}"
+                elif col == "HasFieldmap":
+                    if dominant_value == "True":
+                        acq_str += "NoFmap"
                     else:
-                        val = summary.loc[row, col]
-                        # If the value is a string float (contains decimal point)
-                        if isinstance(val, str) and "." in val:
-                            val = val.replace(".", "p")
-                        # If the value is an actual float
-                        elif isinstance(val, float):
-                            val = str(val).replace(".", "p")
+                        acq_str += "HasFmap"
+                elif col == "UsedAsFieldmap":
+                    if dominant_value == "True":
+                        acq_str += "Unused"
+                    else:
+                        acq_str += "IsUsed"
+                elif col == "Obliquity":
+                    if value == "True":
+                        acq_str += "Oblique"
+                    elif value == "False":
+                        acq_str += "Plumb"
+                else:
+                    # If the value is a string float (contains decimal point)
+                    if isinstance(value, str) and "." in value:
+                        value = value.replace(".", "p")
+                    # If the value is an actual float
+                    elif isinstance(value, float):
+                        value = str(value).replace(".", "p")
 
-                        val = val.removesuffix("p0")
+                    value = value.removesuffix("p0")
 
-                        # Filter out non-alphanumeric characters
-                        val = re.sub(r"[^a-zA-Z0-9]", "", val)
+                    # Filter out non-alphanumeric characters
+                    value = re.sub(r"[^a-zA-Z0-9]", "", value)
 
-                        acq_str += f"{col}{val}"
+                    acq_str += f"{col}{value}"
 
             if acq_str == "VARIANT":
                 acq_str += "Other"
@@ -1180,7 +1319,311 @@ def assign_variants(summary, rename_cols):
     return summary
 
 
-def collect_file_collections(layout, base_file):
+@dataclass(frozen=True)
+class CollectionRule:
+    """One way that several files can make up a single BIDS file collection.
+
+    Attributes
+    ----------
+    case : :obj:`str`
+        Name for this kind of collection, used when reporting one.
+    datatypes : :obj:`frozenset` of :obj:`str`
+        Datatypes the rule covers. Empty when it covers every datatype.
+    suffixes : :obj:`frozenset` of :obj:`str`
+        Suffixes that can take part in the collection. Empty when any can.
+    axes : :obj:`frozenset` of :obj:`str`
+        Entities whose values distinguish the collection's members from one
+        another. ``suffix`` is an axis when the members differ by suffix, and
+        ``acquisition`` when they differ by acquisition label.
+    """
+
+    case: str
+    datatypes: frozenset
+    suffixes: frozenset
+    axes: frozenset
+
+    @property
+    def is_generic(self):
+        """Whether this is the fallback rule rather than one for specific files."""
+        return not self.datatypes
+
+
+# Entities whose values distinguish the members of an entity-linked file collection,
+# mapped to the metadata field each mirrors, or None when it has no counterpart.
+# These are the names pybids parses filenames into, not the BIDS schema's names.
+ENTITY_LINKED_AXES = {
+    "echo": "EchoTime",
+    "part": None,
+    "mt": "MTState",
+    "inv": "InversionTime",
+    "flip": "FlipAngle",
+}
+
+# The BIDS schema's names for the entities that can span a collection, mapped to the
+# names pybids parses them into.
+_SCHEMA_COLLECTION_AXES = {
+    "direction": "direction",
+    "echo": "echo",
+    "flip": "flip",
+    "inversion": "inv",
+    "mtransfer": "mt",
+    "part": "part",
+}
+
+# The schema's name for a rule group that reads better in a report. M0 scans make up
+# the same kind of collection as EPI images, so they are reported the same way.
+_COLLECTION_CASE_NAMES = {"pepolar_m0scan": "pepolar"}
+
+# Prefixes that identify the role of each member of an acquisition-linked RF field
+# map. Any text after the prefix identifies the use case, so acq-anatTest pairs with
+# acq-fampTest rather than acq-fampRetest. The schema marks acquisition optional for
+# these suffixes, so the roles come from the spec's RF field mapping section.
+ACQUISITION_LINKED_PREFIXES = {
+    "TB1AFI": ("tr1", "tr2"),
+    "TB1TFL": ("anat", "famp"),
+    "TB1RFM": ("anat", "famp"),
+    "RB1COR": ("body", "head"),
+}
+ACQUISITION_LINKED_SUFFIXES = frozenset(ACQUISITION_LINKED_PREFIXES)
+
+# The suffix that identifies each type of gradient-echo B0 fieldmap collection, and
+# the suffixes such a collection cannot do without. The schema puts all of them in a
+# single rule group, so this comes from the spec's "Types of B0 fieldmaps".
+GRE_FIELDMAP_CASES = (
+    (
+        "phase-difference",
+        frozenset({"phasediff"}),
+        frozenset({"phasediff", "magnitude1"}),
+    ),
+    (
+        "two-phase",
+        frozenset({"phase1", "phase2"}),
+        frozenset({"phase1", "phase2", "magnitude1", "magnitude2"}),
+    ),
+    (
+        "direct-fieldmap",
+        frozenset({"fieldmap"}),
+        frozenset({"fieldmap", "magnitude"}),
+    ),
+)
+
+# Applies to any file whose suffix takes part in no collection of its own.
+GENERIC_COLLECTION_RULE = CollectionRule(
+    case="entity-linked",
+    datatypes=frozenset(),
+    suffixes=frozenset(),
+    axes=frozenset(ENTITY_LINKED_AXES),
+)
+
+
+def get_collection_rules(schema):
+    """Build the file collection rules that apply to a dataset from the BIDS schema.
+
+    A rule says which files make up one collection: the suffixes that can take part
+    and the entities their values are allowed to differ along. Every file that no
+    rule names falls back to :data:`GENERIC_COLLECTION_RULE`.
+
+    Parameters
+    ----------
+    schema : :obj:`dict`
+        The BIDS schema. This function reads ``schema["rules"]["files"]["raw"]``,
+        whose groups list the suffixes of each file type and the requirement level
+        of each of their entities.
+
+    Returns
+    -------
+    :obj:`dict`
+        Maps ``(datatype, suffix)`` to the :class:`CollectionRule` that covers it.
+
+    Notes
+    -----
+    An entity that a rule group requires spans a collection only if it is one of
+    :data:`_SCHEMA_COLLECTION_AXES`. Other required entities, like the task of a
+    ``func`` image, distinguish separate acquisitions rather than members of one.
+
+    Examples
+    --------
+    >>> import json, importlib
+    >>> schema_file = Path(importlib.resources.files("cubids") / "data/schema.json")
+    >>> with schema_file.open() as f:
+    ...     rules = get_collection_rules(json.load(f))
+
+    The phase-encoding direction spans a PEPOLAR collection, for EPI images and for
+    the M0 scans that arterial spin labeling data use instead.
+
+    >>> sorted(rules[("fmap", "epi")].axes & {"direction", "suffix"})
+    ['direction']
+    >>> rules[("fmap", "m0scan")].case
+    'pepolar'
+
+    Gradient-echo B0 fieldmaps are spanned by their suffixes instead.
+
+    >>> sorted(rules[("fmap", "phasediff")].axes & {"direction", "suffix"})
+    ['suffix']
+
+    A parametric map is a standalone image, so no rule names it.
+
+    >>> ("fmap", "TB1map") in rules
+    False
+    """
+    rules = {}
+
+    def add_rule(rule):
+        for datatype in rule.datatypes:
+            for suffix in rule.suffixes:
+                rules[(datatype, suffix)] = rule
+
+    for datatype, groups in schema["rules"]["files"]["raw"].items():
+        for group_name, group in groups.items():
+            axes = set()
+            for entity, requirement in group.get("entities", {}).items():
+                if isinstance(requirement, dict):
+                    requirement = requirement.get("level")
+
+                if requirement == "required" and entity in _SCHEMA_COLLECTION_AXES:
+                    axes.add(_SCHEMA_COLLECTION_AXES[entity])
+
+            if not axes:
+                continue
+
+            add_rule(
+                CollectionRule(
+                    case=_COLLECTION_CASE_NAMES.get(group_name, group_name),
+                    datatypes=frozenset(group.get("datatypes", [datatype])),
+                    suffixes=frozenset(group["suffixes"]),
+                    axes=frozenset(axes | set(ENTITY_LINKED_AXES)),
+                )
+            )
+
+    fmap_rules = schema["rules"]["files"]["raw"]["fmap"]
+    add_rule(
+        CollectionRule(
+            case="b0-gradient-echo",
+            datatypes=frozenset({"fmap"}),
+            suffixes=frozenset(fmap_rules["fieldmaps"]["suffixes"]),
+            axes=frozenset({"suffix"} | set(ENTITY_LINKED_AXES)),
+        )
+    )
+    add_rule(
+        CollectionRule(
+            case="rf-field-map",
+            datatypes=frozenset({"fmap"}),
+            suffixes=ACQUISITION_LINKED_SUFFIXES,
+            axes=frozenset({"acquisition"} | set(ENTITY_LINKED_AXES)),
+        )
+    )
+
+    return rules
+
+
+def get_collection_rule(rules, entities):
+    """Return the rule for the collection a file can belong to.
+
+    Parameters
+    ----------
+    rules : :obj:`dict`
+        Rules from :func:`get_collection_rules`.
+    entities : :obj:`dict`
+        A pybids entities dictionary.
+
+    Returns
+    -------
+    :class:`CollectionRule`
+        The matching rule, or :data:`GENERIC_COLLECTION_RULE` when the file's
+        suffix takes part in no collection of its own.
+    """
+    return rules.get(
+        (entities.get("datatype"), entities.get("suffix")),
+        GENERIC_COLLECTION_RULE,
+    )
+
+
+def resolve_gre_fieldmap_case(suffixes):
+    """Name the kind of gradient-echo B0 fieldmap a set of suffixes makes up.
+
+    Parameters
+    ----------
+    suffixes : :obj:`set` of :obj:`str`
+        The suffixes of the files found in one collection.
+
+    Returns
+    -------
+    case : :obj:`str`
+        The name of the matching case, or ``"orphan-magnitude"`` when the
+        suffixes identify none of them.
+    missing : :obj:`list` of :obj:`str`
+        Suffixes the case needs that the collection does not have.
+
+    Examples
+    --------
+    >>> resolve_gre_fieldmap_case({"phasediff", "magnitude1"})
+    ('phase-difference', [])
+
+    >>> resolve_gre_fieldmap_case({"fieldmap"})
+    ('direct-fieldmap', ['magnitude'])
+
+    A magnitude image is only ever acquired alongside one of the maps above, so on
+    its own it is the remains of a collection rather than a collection of its own.
+
+    >>> resolve_gre_fieldmap_case({"magnitude1", "magnitude2"})
+    ('orphan-magnitude', [])
+    """
+    for case, identifiers, required in GRE_FIELDMAP_CASES:
+        if identifiers & set(suffixes):
+            return case, sorted(required - set(suffixes))
+
+    return "orphan-magnitude", []
+
+
+def collection_context(entities, rule):
+    """Build a key shared by exactly the files in one collection.
+
+    Parameters
+    ----------
+    entities : :obj:`dict`
+        A pybids entities dictionary.
+    rule : :class:`CollectionRule`
+        The rule the file matched.
+
+    Returns
+    -------
+    :obj:`tuple`
+        Sorted ``(name, value)`` pairs for every entity that members of the
+        collection must agree on.
+
+    Examples
+    --------
+    >>> rule = GENERIC_COLLECTION_RULE
+    >>> collection_context(
+    ...     {"subject": "01", "echo": "1", "suffix": "bold", "extension": ".nii.gz"}, rule
+    ... )
+    (('subject', '01'), ('suffix', 'bold'))
+    """
+    # pybids parses an extra fmap entity that mirrors the suffix of a fieldmap, and
+    # a collection's members can be a mix of compressed and uncompressed images.
+    context = entity_context_key(entities, rule.axes | {"extension", "fmap"})
+
+    if "acquisition" not in rule.axes:
+        return context
+
+    # Acquisition-linked RF field maps use the start of acq- to identify a
+    # member's role and the remainder to distinguish separate collections. For
+    # example, anatTest/fampTest is one collection and anatRetest/fampRetest is
+    # another. An unrecognized label is kept whole because its role cannot be
+    # inferred safely; matching labels remain grouped along any other axes.
+    acquisition = entities.get("acquisition")
+    collection_label = acquisition
+    if is_nonempty(acquisition):
+        acquisition = str(acquisition)
+        for prefix in ACQUISITION_LINKED_PREFIXES.get(entities.get("suffix"), ()):
+            if acquisition.startswith(prefix):
+                collection_label = acquisition[len(prefix) :]
+                break
+
+    return tuple(sorted(context + (("acquisition_collection", collection_label),)))
+
+
+def collect_file_collections(layout, base_file, rules):
     """Build a list of files in a file collection for a given base file.
 
     Parameters
@@ -1189,6 +1632,9 @@ def collect_file_collections(layout, base_file):
         The BIDSLayout object.
     base_file : str
         The base file to collect file collections for.
+    rules : :obj:`dict`
+        Rules from :func:`get_collection_rules`, which decide what the file's
+        collection is spanned by: entity values, suffixes, or acquisition labels.
 
     Returns
     -------
@@ -1199,28 +1645,31 @@ def collect_file_collections(layout, base_file):
 
     Notes
     -----
-    This relies on a hardcoded list of entities that indicate file collections and their
-    corresponding metadata fields. It also does not work for file collections that are encoded
-    with the acq entity or different suffixes, like TB1AFI (which differentiates files with
-    acq-tr1/acq-tr2), MP2RAGE (which has both _MP2RAGE and _UNIT1 images from the same scan),
-    or phase-difference field maps (which have suffixes like magnitude1, magnitude2, phasediff,
-    phase1, and phase2).
+    This uses metadata from direct sidecar JSON files, so it will not work with
+    inherited metadata.
     """
     from bids.layout import Query
 
-    file_collection_entities = {
-        "echo": "EchoTime",
-        "part": None,
-        "mt": "MTState",
-        "inv": "InversionTime",
-        "flip": "FlipAngle",
-    }
-
     base_file = layout.get_file(base_file)
-    fc_query = {ent: [Query.ANY, Query.NONE] for ent in file_collection_entities}
-    query = base_file.get_entities()
-    query = {**query, **fc_query}
-    files = layout.get(**query)
+    entities = base_file.get_entities()
+    rule = get_collection_rule(rules, entities)
+
+    # Members agree on every entity outside the collection's axes, and take any
+    # value, including none at all, along them.
+    query = {
+        key: value for key, value in entities.items() if key not in rule.axes and key != "fmap"
+    }
+    query.update({axis: [Query.ANY, Query.NONE] for axis in rule.axes if axis != "suffix"})
+    if "suffix" in rule.axes:
+        query["suffix"] = sorted(rule.suffixes)
+
+    context = collection_context(entities, rule)
+    files = []
+    for file in layout.get(**query):
+        file_entities = file.get_entities()
+        file_rule = get_collection_rule(rules, file_entities)
+        if collection_context(file_entities, file_rule) == context:
+            files.append(file)
 
     if len(files) <= 1:
         return files, {}
@@ -1234,11 +1683,11 @@ def collect_file_collections(layout, base_file):
 
     out_metadata = {}
     # Add metadata field with BIDS URIs to all files in file collection
-    out_metadata["FileCollection"] = [get_bidsuri(f.path, layout.root) for f in files]
+    out_metadata["FileCollection"] = [_get_bidsuri(f.path, layout.root) for f in files]
 
     files_metadata = [get_sidecar_metadata(img_to_new_ext(f.path, ".json")) for f in files]
     assert all(bool(meta) for meta in files_metadata), files
-    for ent, field in file_collection_entities.items():
+    for ent, field in ENTITY_LINKED_AXES.items():
         if ent in collected_entities:
             if field is None:
                 # If the entity is not mirrored in the metadata, like part,
@@ -1255,23 +1704,3 @@ def collect_file_collections(layout, base_file):
                 out_metadata[collected_field] = field_values
 
     return files, out_metadata
-
-
-def get_bidsuri(filename, dataset_root):
-    """Get the BIDS URI for a given filename.
-
-    Parameters
-    ----------
-    filename : str
-        The filename to get the BIDS URI for.
-    dataset_root : str
-        The root directory of the dataset.
-
-    Returns
-    -------
-    str
-        The BIDS URI for the given filename.
-    """
-    import os
-
-    return f"bids::{os.path.relpath(filename, dataset_root)}"

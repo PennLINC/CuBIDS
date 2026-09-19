@@ -11,6 +11,12 @@ Glossary
         The entity set is derived from the common BIDS filename elements.
         For example, ``datatype-*_run-*_task-*_suffix-*_acquisition-*``.
 
+    File Collection
+        A set of files from a single acquisition that only make sense together, such as the
+        echoes of a multi-echo run or the phase-difference and magnitude images of a fieldmap.
+        The members of a collection share all of their filename key-value pairs except the
+        ones that tell them apart.
+
     Parameter Group
         A set of scans with identical metadata parameters in their sidecars.
         Defined within a Entity Set.

@@ -38,6 +38,31 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 bids.config.set_option("extension_initial_dot", True)
 
 
+FILE_COLLECTION_REPORT_COLUMNS = [
+    "CollectionID",
+    "Case",
+    "FilePaths",
+    "KeyParamGroups",
+    "Status",
+    "Message",
+    "CurrentAcquisitions",
+    "ProposedAcquisition",
+    "ProposedRenameEntitySets",
+]
+
+
+def _split_variant(acquisition):
+    """Split an acquisition label into the part before its variant and the variant.
+
+    Both are empty strings when the label holds no variant.
+    """
+    base, marker, variant = str(acquisition or "").partition("VARIANT")
+    if not marker:
+        return "", ""
+
+    return base, marker + variant
+
+
 class CuBIDS:
     """The main CuBIDS class.
 
@@ -117,12 +142,14 @@ class CuBIDS:
         self.path = os.path.abspath(data_root)
         self._layout = None
         self._index = None  # Arrow table: entities + metadata (lazy)
+        self._collection_rules = None  # file collection rules from the schema (lazy)
         self.keys_files = {}
         self.fieldmaps_cached = False
         self.datalad_ready = False
         self.datalad_handle = None
         self.old_filenames = []  # files whose entity sets changed
         self.new_filenames = []  # new filenames for files to change
+        self._renamed_sources = set()  # membership index over old_filenames
         self.IF_rename_paths = []  # fmap jsons with rename intended fors
         self.grouping_config = load_config(grouping_config)
         self.acq_group_level = acq_group_level
@@ -422,7 +449,8 @@ class CuBIDS:
         """Add file collections to the dataset.
 
         This method processes all files in the BIDS directory specified by `self.path`.
-        It identifies file collections based on the presence of specific entities in the filenames.
+        It identifies file collections with :attr:`collection_rules`, so members can
+        be distinguished by entity values, by suffix, or by acquisition label.
 
         Notes
         -----
@@ -446,7 +474,9 @@ class CuBIDS:
                 continue
 
             # Add file collection metadata to the sidecar
-            files, collection_metadata = utils.collect_file_collections(self.layout, path)
+            files, collection_metadata = utils.collect_file_collections(
+                self.layout, path, self.collection_rules
+            )
             filepaths = [f.path for f in files]
             checked_files.update(filepaths)
 
@@ -469,7 +499,1067 @@ class CuBIDS:
 
         self._invalidate_index()
 
-    def apply_tsv_changes(self, summary_tsv, files_tsv, new_prefix, raise_on_error=True, n_cpus=1):
+    def get_planned_entity_set(self, summary_row):
+        """Return a summary row's proposed entity set, or its current one.
+
+        Parameters
+        ----------
+        summary_row : :obj:`pandas.Series`
+            A row of a CuBIDS summary table.
+
+        Returns
+        -------
+        :obj:`str`
+            ``RenameEntitySet`` when that cell is filled in, otherwise ``EntitySet``.
+        """
+        rename = summary_row.get("RenameEntitySet")
+        if utils.is_nonempty(rename):
+            return str(rename)
+        return str(summary_row["EntitySet"])
+
+    def update_scans_tsv_filenames(self, filename_changes):
+        """Update or remove exact ``filename`` entries in affected BIDS scans tables.
+
+        Both the subject-level and session-level ``*_scans.tsv`` tables that can
+        list a file are rewritten, each with the relative path it uses.
+
+        Parameters
+        ----------
+        filename_changes : :obj:`dict`
+            Maps an absolute NIfTI path to its new absolute path, or to None to
+            drop its row from the tables.
+        """
+        table_changes = defaultdict(dict)
+        for old_filename, new_filename in filename_changes.items():
+            old_path = Path(old_filename)
+            scans_dirs = []
+            for parent in old_path.parents:
+                if parent.name.startswith(("ses-", "sub-")):
+                    scans_dirs.append(parent)
+                if parent.name.startswith("sub-"):
+                    break
+
+            for scans_dir in scans_dirs:
+                old_relative = old_path.relative_to(scans_dir).as_posix()
+                new_relative = (
+                    Path(new_filename).relative_to(scans_dir).as_posix()
+                    if new_filename is not None
+                    else None
+                )
+                for scans_tsv in scans_dir.glob("*_scans.tsv"):
+                    table_changes[scans_tsv][old_relative] = new_relative
+
+        for scans_tsv, replacements in table_changes.items():
+            scans = utils.read_bids_tsv(scans_tsv)
+            if (
+                "filename" not in scans.columns
+                or not scans["filename"].isin(replacements.keys()).any()
+            ):
+                continue
+
+            renamed = {old: new for old, new in replacements.items() if new is not None}
+            deleted = {old for old, new in replacements.items() if new is None}
+            if renamed:
+                scans["filename"] = scans["filename"].replace(renamed)
+            if deleted:
+                scans = scans.loc[~scans["filename"].isin(deleted)]
+            utils.write_bids_tsv(scans, scans_tsv)
+
+    @staticmethod
+    def get_associated_file_pairs(filepath, new_path=None):
+        """Return a NIfTI's associated files and their planned destinations.
+
+        Covers the sidecar JSON, DWI and fmap EPI gradient tables, sbref, events,
+        physio, and ASL companions. Unlike :meth:`get_nifti_associations`, which
+        only matches files sharing the NIfTI's stem, this also finds companions
+        that swap the BIDS suffix, such as ``_bold.nii.gz`` to ``_events.tsv``.
+
+        Parameters
+        ----------
+        filepath : :obj:`str` or :obj:`pathlib.Path`
+            The NIfTI being renamed or deleted.
+        new_path : :obj:`str` or :obj:`pathlib.Path` or None
+            Destination for ``filepath``. None produces a deletion plan, where
+            every destination is None.
+
+        Returns
+        -------
+        :obj:`list` of :obj:`tuple`
+            ``(source, destination)`` pairs. The NIfTI itself always comes first;
+            companions are listed only when they exist on disk.
+
+        Notes
+        -----
+        Paths without a parseable BIDS suffix, which ``cubids purge`` can receive
+        from a user-supplied scans file, yield only the NIfTI and its sidecar.
+        """
+        filepath = str(filepath)
+        new_path = str(new_path) if new_path is not None else None
+        old_suffix = parse_file_entities(filepath).get("suffix")
+        extension = "".join(Path(filepath).suffixes)
+        new_suffix = parse_file_entities(new_path).get("suffix") if new_path else None
+        pairs = [(filepath, new_path)]
+        seen = {filepath}
+
+        def add_pair(source, destination):
+            if source not in seen and Path(source).exists():
+                pairs.append((source, destination))
+                seen.add(source)
+
+        extensions = [".json"]
+        if "/dwi/" in filepath or ("/fmap/" in filepath and old_suffix == "epi"):
+            extensions.extend([".bval", ".bvec"])
+        for association_extension in extensions:
+            source = utils.img_to_new_ext(filepath, association_extension)
+            destination = (
+                utils.img_to_new_ext(new_path, association_extension) if new_path else None
+            )
+            add_pair(source, destination)
+
+        if old_suffix is None or (new_path and new_suffix is None):
+            return pairs
+
+        scan_end = f"_{old_suffix}{extension}"
+        new_scan_end = f"_{new_suffix}{extension}" if new_path else None
+
+        def add_suffix_companions(companion_extensions):
+            for companion_extension in companion_extensions:
+                source = filepath.replace(scan_end, companion_extension)
+                destination = (
+                    new_path.replace(new_scan_end, companion_extension) if new_path else None
+                )
+                add_pair(source, destination)
+
+        if "/dwi/" in filepath:
+            add_suffix_companions(["_sbref.nii.gz", "_sbref.json"])
+        if "bold" in filepath:
+            add_suffix_companions(
+                [
+                    "_events.tsv",
+                    "_events.json",
+                    "_sbref.nii.gz",
+                    "_sbref.json",
+                    "_physio.tsv.gz",
+                    "_physio.json",
+                ]
+            )
+        if "/perf/" in filepath and old_suffix == "asl":
+            add_suffix_companions(["_aslcontext.tsv", "_asllabeling.jpg"])
+
+        return pairs
+
+    def get_files_to_purge(self, scans):
+        """Return every file deleted when ``scans`` are purged, companions included.
+
+        Parameters
+        ----------
+        scans : :obj:`list` of :obj:`str`
+            Absolute paths to the NIfTIs being purged.
+
+        Returns
+        -------
+        :obj:`list` of :obj:`str`
+            The NIfTIs plus each of their existing associated files.
+        """
+        return [source for scan in scans for source, _ in self.get_associated_file_pairs(scan)]
+
+    def get_planned_destination(self, filepath, new_entities):
+        """Return the path ``filepath`` is renamed to when it takes ``new_entities``.
+
+        Parameters
+        ----------
+        filepath : :obj:`str`
+            Absolute path to the file being renamed.
+        new_entities : :obj:`dict`
+            A pybids entities dictionary describing the new name.
+
+        Returns
+        -------
+        :obj:`str`
+            The absolute destination path.
+        """
+        return utils.build_path(
+            filepath=filepath,
+            out_entities=new_entities,
+            out_dir=str(self.path),
+            schema=self.schema,
+            is_longitudinal=self.is_longitudinal,
+        )
+
+    def plan_renames(self, files_df, entity_sets, allow_fmap_renames, pending_deletions=()):
+        """Return the NIfTI renames ``apply`` will perform, without performing them.
+
+        This is the single source of truth for which files a rename touches.
+        :meth:`validate_rename_destinations` and :meth:`apply_tsv_changes` both
+        consume it, so the plan that is validated is exactly the plan that runs.
+        It is also usable on its own as a dry run.
+
+        Parameters
+        ----------
+        files_df : :obj:`pandas.DataFrame`
+            A CuBIDS files table.
+        entity_sets : :obj:`dict`
+            Maps ``KeyParamGroup`` to the entity set its files should take.
+        allow_fmap_renames : :obj:`bool`
+            Whether files under ``fmap/`` may be renamed.
+        pending_deletions : :obj:`set` of :obj:`str`
+            Files an earlier apply step removes. A group can be marked for both
+            deletion and renaming, and deletion wins.
+
+        Returns
+        -------
+        :obj:`list` of :obj:`tuple`
+            ``(filepath, new_entities, new_path)`` for each NIfTI to rename.
+        """
+        pending_deletions = set(pending_deletions)
+        plan = []
+        for _, row in files_df.iterrows():
+            filepath = self.path + str(row["FilePath"])
+            if row["KeyParamGroup"] not in entity_sets or not Path(filepath).exists():
+                continue
+            if filepath in pending_deletions:
+                continue
+            if "/fmap/" in filepath and not allow_fmap_renames:
+                continue
+            new_entities = utils._entity_set_to_entities(entity_sets[row["KeyParamGroup"]])
+            plan.append(
+                (filepath, new_entities, self.get_planned_destination(filepath, new_entities))
+            )
+        return plan
+
+    def plan_rename_pairs(self, rename_plan):
+        """Expand a rename plan into the deduplicated moves it performs.
+
+        Computing this once lets :meth:`validate_rename_destinations` check the
+        exact moves that :meth:`apply_tsv_changes` then carries out, and keeps
+        the filesystem probing in :meth:`get_associated_file_pairs` to one pass.
+
+        Parameters
+        ----------
+        rename_plan : :obj:`list` of :obj:`tuple`
+            A plan from :meth:`plan_renames`.
+
+        Returns
+        -------
+        :obj:`list` of :obj:`tuple`
+            ``(source, destination)`` for every file the plan moves. A file that
+            several renamed NIfTIs claim as an association, such as an ``sbref``
+            shared by a DWI series, keeps the destination of the first claim.
+        """
+        pairs = []
+        seen = set()
+        for filepath, _, new_path in rename_plan:
+            for source, destination in self.get_associated_file_pairs(filepath, new_path):
+                if source in seen:
+                    continue
+                seen.add(source)
+                pairs.append((source, destination))
+        return pairs
+
+    def _record_rename_pairs(self, pairs):
+        """Append moves to the old/new filename lists, skipping sources already queued.
+
+        Private because it maintains ``_renamed_sources`` as a membership index over
+        ``old_filenames``; appending to those lists directly would desynchronize it.
+        """
+        for source, destination in pairs:
+            if source in self._renamed_sources:
+                continue
+            self._renamed_sources.add(source)
+            self.old_filenames.append(source)
+            self.new_filenames.append(destination)
+
+    def _rewrite_intendedfor_references(self, old_path, new_path=None, intended_for_index=None):
+        """Remove or rewrite ``IntendedFor`` entries that refer to one NIfTI."""
+        if intended_for_index is None:
+            intended_for_index = self._build_intendedfor_index()
+
+        old_references = (
+            utils._get_participant_relative_path(old_path),
+            utils._get_bidsuri(old_path, self.path),
+        )
+        new_references = (
+            (
+                utils._get_participant_relative_path(new_path),
+                utils._get_bidsuri(new_path, self.path),
+            )
+            if new_path is not None
+            else None
+        )
+        jsons_to_update = {
+            json_file
+            for reference in old_references
+            for json_file in intended_for_index.get(reference, [])
+        }
+
+        for json_file in jsons_to_update:
+            if new_references is not None:
+                self.IF_rename_paths.append(json_file)
+            cached = utils.get_sidecar_metadata(json_file)
+            if cached == "Erroneous sidecar":
+                print("Error parsing sidecar: ", json_file)
+                continue
+            if "IntendedFor" not in cached:
+                continue
+
+            data = dict(cached)
+            items = list(listify(data["IntendedFor"]) or [])
+            had_references = [reference in items for reference in old_references]
+            changed = False
+            for reference in old_references:
+                while reference in items:
+                    items.remove(reference)
+                    changed = True
+            if new_references is not None:
+                for had_reference, new_reference in zip(had_references, new_references):
+                    if had_reference and new_reference not in items:
+                        items.append(new_reference)
+                        changed = True
+            if changed:
+                data["IntendedFor"] = items
+                utils._update_json(json_file, data)
+                utils.get_sidecar_metadata.cache_clear()
+
+    @property
+    def collection_rules(self):
+        """Return the dataset's file collection rules, built from its BIDS schema.
+
+        Returns
+        -------
+        :obj:`dict`
+            Rules from :func:`~cubids.utils.get_collection_rules`.
+        """
+        if getattr(self, "_collection_rules", None) is None:
+            self._collection_rules = utils.get_collection_rules(self.schema)
+        return self._collection_rules
+
+    def analyze_collection_variant_consistency(self, files_df, summary, rename_cols=()):
+        """Inspect file collections and propose aligned variants.
+
+        The pairing key is constructed from each individual NIfTI path. This is
+        intentionally stricter than summary-level matching: subject, session,
+        run, chunk, and every other filename entity outside the collection's own
+        axes must already agree before two files can be treated as one file
+        collection.
+
+        Which files belong to one collection comes from the BIDS schema, by way of
+        :attr:`collection_rules`. This covers entity-linked collections in every
+        datatype, such as multi-echo, multi-flip, multi-inversion, and multi-part
+        acquisitions, as well as B0 and RF field-map collections. A file that
+        belongs to no collection is left out of the report entirely.
+
+        Parameters
+        ----------
+        files_df : :obj:`pandas.DataFrame`
+            A CuBIDS files table.
+        summary : :obj:`pandas.DataFrame`
+            The matching parameter group summary.
+        rename_cols : :obj:`list` of :obj:`str`
+            Summary columns that variant labels are built from. Without them no
+            shared label can be composed, so mismatched collections are reported
+            as ``MANUAL_REVIEW`` instead of ``PROPOSED``. Callers that only gate
+            on ``PASS``, such as :meth:`validate_collection_renames`, can omit it.
+
+        Returns
+        -------
+        report : :obj:`pandas.DataFrame`
+            One row per file collection, with a ``Status`` of ``PASS``,
+            ``PROPOSED``, or ``MANUAL_REVIEW``.
+        proposals : :obj:`dict`
+            Maps ``KeyParamGroup`` to the set of entity sets proposed for it.
+            A group with more than one proposal is ambiguous and is not applied.
+        """
+        rename_cols = list(rename_cols)
+        by_key = summary.set_index("KeyParamGroup", drop=False)
+        records = []
+        collections = defaultdict(list)
+
+        for _, file_row in files_df.iterrows():
+            filepath = str(file_row["FilePath"])
+            if file_row["KeyParamGroup"] not in by_key.index:
+                continue
+
+            entities = parse_file_entities(filepath)
+            rule = utils.get_collection_rule(self.collection_rules, entities)
+            summary_row = by_key.loc[file_row["KeyParamGroup"]]
+            target_entities = utils._entity_set_to_entities(
+                self.get_planned_entity_set(summary_row)
+            )
+            collections[(rule, utils.collection_context(entities, rule))].append(
+                {
+                    "filepath": filepath,
+                    "key_param_group": file_row["KeyParamGroup"],
+                    "source_entities": entities,
+                    "target_entities": target_entities,
+                    "summary_row": summary_row,
+                    "phase_encoding_direction": file_row.get("PhaseEncodingDirection"),
+                }
+            )
+
+        proposals = defaultdict(set)
+
+        def add_record(case, members, status, message, proposed_acquisition="", proposed=None):
+            paths = sorted(member["filepath"] for member in members)
+            collection_id = f"{case}:{'|'.join(paths)}"
+            acquisitions = sorted(
+                {str(member["target_entities"].get("acquisition", "")) for member in members}
+            )
+            proposed = proposed or {}
+            records.append(
+                {
+                    "CollectionID": collection_id,
+                    "Case": case,
+                    "FilePaths": "|".join(paths),
+                    "KeyParamGroups": "|".join(
+                        sorted({member["key_param_group"] for member in members})
+                    ),
+                    "Status": status,
+                    "Message": message,
+                    "CurrentAcquisitions": "|".join(acquisitions),
+                    "ProposedAcquisition": proposed_acquisition,
+                    "ProposedRenameEntitySets": "|".join(sorted(set(proposed.values()))),
+                }
+            )
+
+        def planned_context(member, rule, ignore_acquisition=False):
+            """Identify what a member's planned name must share with its siblings."""
+            entities = dict(member["target_entities"])
+            ignored = rule.axes | {"fmap", "extension"}
+            if ignore_acquisition:
+                ignored = ignored | {"acquisition"}
+            elif "acquisition" in rule.axes:
+                # The acquisition label is what tells these members apart, so only
+                # the variant part of it has to agree.
+                ignored = ignored - {"acquisition"}
+                entities["acquisition"] = _split_variant(entities.get("acquisition"))[1]
+
+            return utils.entity_context_key(entities, ignored)
+
+        def assess_complete_collection(case, members, rule):
+            if len({planned_context(member, rule) for member in members}) == 1:
+                add_record(
+                    case,
+                    members,
+                    "PASS",
+                    "All collection members have compatible planned entities.",
+                )
+                return
+
+            non_acq_contexts = {
+                planned_context(member, rule, ignore_acquisition=True) for member in members
+            }
+            variant_bases = []
+            for member in members:
+                base, variant = _split_variant(member["target_entities"].get("acquisition"))
+                if not variant:
+                    # A member whose planned name holds no variant leaves the others
+                    # nothing to line up with.
+                    variant_bases = []
+                    break
+
+                variant_bases.append(base)
+
+            # Members that their acquisition labels tell apart keep their own bases.
+            # Anywhere else the bases must already agree for one shared label to fit.
+            bases_fit = "acquisition" in rule.axes or len(set(variant_bases)) == 1
+
+            varying_columns = set()
+            for member in members:
+                varying_columns.update(
+                    column
+                    for column, _, _, _ in utils.get_variant_components(
+                        summary, member["summary_row"], rename_cols
+                    )
+                )
+            # Preserve rename_cols order so the shared label is deterministic.
+            component_names = [col for col in rename_cols if col in varying_columns]
+
+            if len(non_acq_contexts) == 1 and variant_bases and bases_fit and component_names:
+                variant = "VARIANT" + "".join(component_names)
+                proposed = {}
+                for member, base in zip(members, variant_bases):
+                    entities = dict(member["target_entities"])
+                    entities["acquisition"] = base + variant
+                    entity_set = utils._entities_to_entity_set(entities)
+                    proposed[member["key_param_group"]] = entity_set
+                    proposals[member["key_param_group"]].add(entity_set)
+                add_record(
+                    case,
+                    members,
+                    "PROPOSED",
+                    "Variant labels differ; a shared file-collection variant was proposed.",
+                    "|".join(sorted({base + variant for base in variant_bases})),
+                    proposed,
+                )
+                return
+
+            add_record(
+                case,
+                members,
+                "MANUAL_REVIEW",
+                "Collection members have incompatible planned entities; "
+                "no safe shared variant was proposed.",
+            )
+
+        def assess_gradient_echo_collection(members, rule):
+            suffixes = {member["source_entities"]["suffix"] for member in members}
+            case, missing = utils.resolve_gre_fieldmap_case(suffixes)
+            if case == "orphan-magnitude":
+                # Magnitude images only exist as part of one of the cases above,
+                # so on their own they are the remains of a broken collection.
+                add_record(
+                    case,
+                    members,
+                    "MANUAL_REVIEW",
+                    "Magnitude images without a phasediff, phase, or fieldmap image.",
+                )
+            elif missing:
+                add_record(
+                    case,
+                    members,
+                    "MANUAL_REVIEW",
+                    f"Incomplete collection; missing {', '.join(missing)}.",
+                )
+            else:
+                assess_complete_collection(case, members, rule)
+
+        def assess_pepolar_collection(members, rule):
+            peds_by_direction = defaultdict(set)
+            for member in members:
+                peds_by_direction[member["source_entities"].get("direction")].add(
+                    member["phase_encoding_direction"]
+                )
+
+            if len(peds_by_direction) == 1:
+                # A fieldmap acquired in one phase-encoding direction is valid BIDS,
+                # and there is no partner whose label it has to match, so it is
+                # renamed like any other image.
+                add_record(
+                    f"single-direction {members[0]['source_entities']['suffix']}",
+                    members,
+                    "PASS",
+                    "Only one phase-encoding direction; no paired file to match.",
+                )
+                return
+
+            # The report verifies the metadata rather than inferring polarity from
+            # labels such as dir-AP and dir-PA. Several files can share a direction,
+            # as the parts of a complex-valued image do, as long as they agree on it.
+            peds = [
+                str(next(iter(values)))
+                for values in peds_by_direction.values()
+                if len(values) == 1 and utils.is_nonempty(next(iter(values)))
+            ]
+            opposed = (
+                len(peds_by_direction) == 2
+                and len(peds) == 2
+                and peds[0].rstrip("-") == peds[1].rstrip("-")
+                and peds[0].endswith("-") != peds[1].endswith("-")
+            )
+            if not opposed:
+                add_record(
+                    rule.case,
+                    members,
+                    "MANUAL_REVIEW",
+                    "Expected exactly two dirs with opposite PhaseEncodingDirection values.",
+                )
+            else:
+                assess_complete_collection(rule.case, members, rule)
+
+        for (rule, _), members in collections.items():
+            if rule.is_generic and len(members) == 1:
+                # A standalone image, such as a TB1map, belongs to no collection and
+                # so has no sibling whose label it has to match.
+                continue
+
+            if rule.case == "b0-gradient-echo":
+                assess_gradient_echo_collection(members, rule)
+            elif rule.case == "pepolar":
+                assess_pepolar_collection(members, rule)
+            elif len(members) == 1:
+                add_record(
+                    rule.case,
+                    members,
+                    "PASS",
+                    "Only one file in the collection; no other member to match.",
+                )
+            else:
+                assess_complete_collection(rule.case, members, rule)
+
+        report = pd.DataFrame(records, columns=FILE_COLLECTION_REPORT_COLUMNS)
+        return report, proposals
+
+    def apply_collection_variant_proposals(self, summary, proposals):
+        """Write globally unambiguous file-collection rename suggestions into a summary.
+
+        A parameter group that drew more than one proposal is skipped, since its
+        collections disagree about which shared label to use.
+
+        Parameters
+        ----------
+        summary : :obj:`pandas.DataFrame`
+            The summary to annotate, modified in place.
+        proposals : :obj:`dict`
+            Proposals from :meth:`analyze_collection_variant_consistency`.
+
+        Returns
+        -------
+        :obj:`pandas.DataFrame`
+            The summary, with ``RenameEntitySet`` filled in and ``ManualCheck``
+            and ``Notes`` flagged for each proposal that was applied.
+        """
+        for column in ["RenameEntitySet", "ManualCheck", "Notes"]:
+            summary[column] = summary[column].astype("object")
+        for key_param_group, entity_sets in proposals.items():
+            if len(entity_sets) != 1:
+                continue
+            mask = summary["KeyParamGroup"] == key_param_group
+            summary.loc[mask, "RenameEntitySet"] = next(iter(entity_sets))
+            summary.loc[mask, "ManualCheck"] = 1
+            existing = summary.loc[mask, "Notes"].fillna("").astype(str)
+            summary.loc[mask, "Notes"] = existing.apply(
+                lambda note: "; ".join(
+                    part
+                    for part in [note, "Review proposed shared file-collection variant."]
+                    if part
+                )
+            )
+        return summary
+
+    @staticmethod
+    def parse_entity_set(value):
+        """Validate an entity set copied from the summary and return it.
+
+        Parameters
+        ----------
+        value : :obj:`str`
+            A complete entity set, such as
+            ``acquisition-VARIANTVar1_datatype-dwi_direction-AP_suffix-dwi``.
+
+        Returns
+        -------
+        :obj:`str`
+            The entity set, with surrounding whitespace removed.
+
+        Raises
+        ------
+        ValueError
+            If ``value`` is not a series of underscore-separated, alphanumeric
+            ``entity-label`` pairs.
+        """
+        value = str(value).strip()
+        if not re.fullmatch(r"[A-Za-z0-9]+-[A-Za-z0-9]+(?:_[A-Za-z0-9]+-[A-Za-z0-9]+)*", value):
+            raise ValueError(
+                "Entity sets must be complete, underscore-separated entity-label pairs as "
+                "written in the summary, such as "
+                "acquisition-VARIANTVar1_datatype-dwi_suffix-dwi."
+            )
+        return value
+
+    @staticmethod
+    def _read_entity_set_table(value, required_columns, option):
+        """Read a CSV or TSV entity set table, or return None for a non-table value.
+
+        Private because it only exists to share one table-reading rule between
+        the two entity set options below.
+
+        Parameters
+        ----------
+        value : :obj:`str` or :obj:`pathlib.Path`
+            A command-line value that may name a table file.
+        required_columns : :obj:`tuple` of :obj:`str`
+            Columns the table must contain.
+        option : :obj:`str`
+            Option name to quote in error messages.
+
+        Returns
+        -------
+        :obj:`pandas.DataFrame` or None
+            The table, or None when ``value`` does not name a CSV or TSV file.
+
+        Raises
+        ------
+        ValueError
+            If the named file does not exist or lacks a required column.
+        """
+        table_path = Path(str(value))
+        table_suffix = table_path.suffix.lower()
+        if table_suffix not in {".csv", ".tsv"}:
+            return None
+        if not table_path.is_file():
+            raise ValueError(f"{option} table file does not exist: {table_path}")
+        table = pd.read_csv(table_path, sep="," if table_suffix == ".csv" else "\t")
+        if not set(required_columns).issubset(table.columns):
+            raise ValueError(
+                f"{option} table files must contain these columns: " + ", ".join(required_columns)
+            )
+        return table
+
+    def load_entity_set_changes(self, change_rename_entity_set):
+        """Load exact entity set substitutions from CLI strings or mapping tables.
+
+        Parameters
+        ----------
+        change_rename_entity_set : :obj:`list` of :obj:`str` or None
+            Each item is either ``OLD_ENTITY_SET=NEW_ENTITY_SET`` or a path to a
+            CSV or TSV file with ``old_entity_set`` and ``new_entity_set`` columns.
+            The two forms can be mixed.
+
+        Returns
+        -------
+        :obj:`dict`
+            Maps each old entity set to its replacement.
+
+        Raises
+        ------
+        ValueError
+            If a value is malformed, a mapping file is missing or lacks the
+            required columns, or two substitutions conflict.
+        """
+        changes = {}
+
+        def add_change(old, new):
+            old = self.parse_entity_set(old)
+            new = self.parse_entity_set(new)
+            existing = changes.get(old)
+            if existing is not None and existing != new:
+                raise ValueError(f"Conflicting substitutions were supplied for {old}.")
+            changes[old] = new
+
+        for raw_change in change_rename_entity_set or []:
+            mappings = self._read_entity_set_table(
+                raw_change, ("old_entity_set", "new_entity_set"), "--change-RenameEntitySet"
+            )
+            if mappings is not None:
+                for _, mapping in mappings.iterrows():
+                    add_change(mapping["old_entity_set"], mapping["new_entity_set"])
+                continue
+
+            raw_change = str(raw_change)
+            if raw_change.count("=") != 1:
+                raise ValueError(
+                    "Each --change-RenameEntitySet value must have the form "
+                    "OLD_ENTITY_SET=NEW_ENTITY_SET or be a path to a CSV or TSV mapping file."
+                )
+            old, new = raw_change.split("=", 1)
+            add_change(old, new)
+
+        return changes
+
+    def load_entity_set_removals(self, remove_rename_entity_set):
+        """Load exact entity sets to delete from CLI strings or table files.
+
+        Parameters
+        ----------
+        remove_rename_entity_set : :obj:`list` of :obj:`str` or None
+            Each item is either an entity set or a path to a CSV or TSV file with
+            an ``entity_set`` column. The two forms can be mixed.
+
+        Returns
+        -------
+        :obj:`set` of :obj:`str`
+            The entity sets whose matching groups should be deleted.
+
+        Raises
+        ------
+        ValueError
+            If a value is malformed, or a table file is missing or lacks its
+            required column.
+        """
+        removals = set()
+        for raw_removal in remove_rename_entity_set or []:
+            table = self._read_entity_set_table(
+                raw_removal, ("entity_set",), "--remove-RenameEntitySet"
+            )
+            if table is not None:
+                removals.update(self.parse_entity_set(value) for value in table["entity_set"])
+                continue
+            removals.add(self.parse_entity_set(raw_removal))
+
+        return removals
+
+    def _matching_entity_set_rows(self, summary, entity_sets):
+        """Yield summary rows whose planned entity set is in ``entity_sets``.
+
+        Private because the yielded triple is shaped for the two callers below,
+        which mutate ``summary`` while iterating it.
+        """
+        for row_index, row in summary.iterrows():
+            planned_entity_set = self.get_planned_entity_set(row)
+            if planned_entity_set in entity_sets:
+                yield row_index, row, planned_entity_set
+
+    def apply_entity_set_changes(self, summary, changes):
+        """Apply exact entity set substitutions to a summary dataframe in memory.
+
+        Parameters
+        ----------
+        summary : :obj:`pandas.DataFrame`
+            The summary to edit, modified in place.
+        changes : :obj:`dict`
+            Substitutions from :meth:`load_entity_set_changes`.
+
+        Returns
+        -------
+        :obj:`pandas.DataFrame`
+            The summary, with ``RenameEntitySet`` set on every matching row.
+
+        Raises
+        ------
+        ValueError
+            If no row's planned entity set matched, which usually means a typo.
+        """
+        summary["RenameEntitySet"] = summary["RenameEntitySet"].astype("object")
+        changed_rows = 0
+        for row_index, _, planned_entity_set in self._matching_entity_set_rows(summary, changes):
+            summary.at[row_index, "RenameEntitySet"] = changes[planned_entity_set]
+            changed_rows += 1
+
+        if not changed_rows:
+            supplied = ", ".join(sorted(changes))
+            raise ValueError(
+                f"No summary rows matched the requested entity set substitutions: {supplied}"
+            )
+        return summary
+
+    def apply_entity_set_removals(self, summary, entity_sets):
+        """Mark parameter groups with exact planned entity sets for deletion.
+
+        Deletion reuses the normal ``MergeInto`` path rather than a second
+        removal mechanism, so companions and ``IntendedFor`` references are
+        handled the same way as for a hand-edited summary.
+
+        Parameters
+        ----------
+        summary : :obj:`pandas.DataFrame`
+            The summary to edit, modified in place.
+        entity_sets : :obj:`set` of :obj:`str`
+            Entity sets whose matching groups should be deleted.
+
+        Returns
+        -------
+        :obj:`pandas.DataFrame`
+            The summary, with ``MergeInto`` set to 0 on every matching row.
+
+        Raises
+        ------
+        ValueError
+            If no row matched, or if a matching row already carries a different
+            ``MergeInto`` instruction.
+        """
+        if "MergeInto" not in summary.columns:
+            summary["MergeInto"] = pd.NA
+        summary["MergeInto"] = summary["MergeInto"].astype("object")
+
+        matched_rows = []
+        for row_index, row, _ in self._matching_entity_set_rows(summary, entity_sets):
+            existing_merge = row["MergeInto"]
+            if utils.is_nonempty(existing_merge) and str(existing_merge) not in {"0", "0.0"}:
+                raise ValueError(
+                    "--remove-RenameEntitySet cannot replace an existing MergeInto instruction "
+                    f"for {row['KeyParamGroup']}."
+                )
+            summary.at[row_index, "MergeInto"] = 0
+            matched_rows.append(row_index)
+
+        if not matched_rows:
+            supplied = ", ".join(sorted(entity_sets))
+            raise ValueError(f"No summary rows matched the requested removals: {supplied}")
+        return summary
+
+    def validate_rename_destinations(self, rename_pairs, pending_deletions=()):
+        """Fail before mutation when the planned file destinations are unsafe.
+
+        Parameters
+        ----------
+        rename_pairs : :obj:`list` of :obj:`tuple`
+            The moves from :meth:`plan_rename_pairs`.
+        pending_deletions : :obj:`set` of :obj:`str`
+            Files that earlier apply steps remove before any rename runs, so
+            occupying a destination that is about to be deleted is not a conflict.
+
+        Raises
+        ------
+        ValueError
+            If two sources map to one destination, a rename chain or swap would
+            overwrite a file, or a destination is already occupied.
+        """
+        pending_deletions = set(pending_deletions)
+        pairs = list(rename_pairs)
+
+        sources = {source for source, _ in pairs}
+        destinations = defaultdict(set)
+        for source, destination in pairs:
+            destinations[destination].add(source)
+
+        conflicts = []
+        for destination, source_set in destinations.items():
+            if len(source_set) > 1:
+                conflicts.append(f"multiple sources map to {destination}")
+            elif destination in pending_deletions:
+                continue
+            elif destination in sources and destination not in source_set:
+                conflicts.append(f"rename chain or swap would overwrite {destination}")
+            elif Path(destination).exists() and destination not in source_set:
+                conflicts.append(f"destination already exists: {destination}")
+        if conflicts:
+            raise ValueError("Unsafe rename plan: " + "; ".join(conflicts))
+
+    def validate_collection_deletions(self, files_df, summary, deletion_keys, report=None):
+        """Fail before mutation when deletions would split a file collection.
+
+        A file collection is only usable whole, so deleting some of its members
+        leaves an incomplete acquisition. This guards every deletion, whether it
+        came from a hand-edited ``MergeInto`` of 0 or from
+        ``--remove-RenameEntitySet``.
+
+        Parameters
+        ----------
+        files_df : :obj:`pandas.DataFrame`
+            A CuBIDS files table.
+        summary : :obj:`pandas.DataFrame`
+            The matching parameter group summary.
+        deletion_keys : :obj:`set` of :obj:`str`
+            ``KeyParamGroup`` values whose files apply is about to delete.
+        report : :obj:`pandas.DataFrame` or None
+            A report from :meth:`analyze_collection_variant_consistency` for these same
+            tables, to save recomputing it. Computed here when not supplied.
+
+        Raises
+        ------
+        ValueError
+            If any file collection would lose some, but not all, members.
+        """
+        if not deletion_keys:
+            return
+
+        if report is None:
+            report, _ = self.analyze_collection_variant_consistency(files_df, summary)
+        planned_entity_sets = {
+            row["KeyParamGroup"]: self.get_planned_entity_set(row) for _, row in summary.iterrows()
+        }
+
+        partial_collections = []
+        surviving_entity_sets = set()
+        for _, record in report.iterrows():
+            keys = set(filter(None, str(record["KeyParamGroups"]).split("|")))
+            survivors = keys - deletion_keys
+            if not keys & deletion_keys or not survivors:
+                continue
+            partial_collections.append(record["CollectionID"])
+            surviving_entity_sets.update(planned_entity_sets.get(key, key) for key in survivors)
+
+        if partial_collections:
+            raise ValueError(
+                "Deleting part of a file collection leaves it unusable; "
+                f"{len(partial_collections)} would lose some, but not all, members, starting "
+                f"with {partial_collections[0]}. Delete every member of each collection, or "
+                "use cubids purge for individual files. Also missing: "
+                + ", ".join(sorted(surviving_entity_sets))
+            )
+
+    def validate_collection_renames(
+        self,
+        files_df,
+        summary,
+        entity_sets,
+        pending_deletions=(),
+        allow_fmap_renames=False,
+        report=None,
+    ):
+        """Ensure every file collection being renamed has compatible planned entities.
+
+        Only ``PASS`` collections are accepted, so the analysis runs without
+        ``rename_cols``: whether a mismatch would have been labelled ``PROPOSED``
+        or ``MANUAL_REVIEW`` does not change the outcome.
+
+        Only files that belong to a collection are checked. A standalone image has
+        no sibling whose label it needs to agree with, so it is renamed normally.
+
+        Parameters
+        ----------
+        files_df : :obj:`pandas.DataFrame`
+            A CuBIDS files table.
+        summary : :obj:`pandas.DataFrame`
+            The matching parameter group summary.
+        entity_sets : :obj:`dict`
+            Maps ``KeyParamGroup`` to the entity set its files should take.
+        pending_deletions : :obj:`set` of :obj:`str`
+            Files an earlier apply step removes. These are never renamed, so their
+            groups do not need to pass.
+        allow_fmap_renames : :obj:`bool`
+            Whether files under ``fmap/`` are part of the rename plan. They are
+            excluded from this check when fieldmap renaming is disabled.
+        report : :obj:`pandas.DataFrame` or None
+            A report from :meth:`analyze_collection_variant_consistency` for these same
+            tables, to save recomputing it. Computed here when not supplied.
+
+        Raises
+        ------
+        ValueError
+            If any file being renamed belongs to an incomplete or mismatched
+            collection.
+        """
+        pending_deletions = set(pending_deletions)
+        rename_keys = set()
+        fmap_keys = set()
+        collection_keys = set()
+        for _, row in files_df.iterrows():
+            filepath = str(row["FilePath"])
+            if (
+                row["KeyParamGroup"] not in entity_sets
+                or self.path + filepath in pending_deletions
+                or ("/fmap/" in filepath and not allow_fmap_renames)
+            ):
+                continue
+
+            rename_keys.add(row["KeyParamGroup"])
+            if "/fmap/" in filepath:
+                fmap_keys.add(row["KeyParamGroup"])
+            rule = utils.get_collection_rule(self.collection_rules, parse_file_entities(filepath))
+            if not rule.is_generic:
+                collection_keys.add(row["KeyParamGroup"])
+
+        if not rename_keys:
+            return
+
+        if report is None:
+            report, _ = self.analyze_collection_variant_consistency(files_df, summary)
+        reported_keys = set()
+        invalid_records = []
+        for _, record in report.iterrows():
+            keys = set(filter(None, str(record["KeyParamGroups"]).split("|")))
+            reported_keys.update(keys)
+            if keys & rename_keys and record["Status"] != "PASS":
+                invalid_records.append(record["CollectionID"])
+
+        # Every file a specific collection rule applies to reaches a record, so a
+        # gap here means the tables disagree rather than that the file is standalone.
+        unclassified = collection_keys - reported_keys
+        if invalid_records or unclassified:
+            details = invalid_records + [f"unclassified key {key}" for key in sorted(unclassified)]
+            raise ValueError(
+                "Renaming requires matching, complete file collections: " + "; ".join(details)
+            )
+
+        if fmap_keys:
+            print(
+                "WARNING: --fmap renames fieldmaps. Matching labels do not prove AP/PA "
+                "geometry is TOPUP-compatible; review the file-collection report."
+            )
+
+    def apply_tsv_changes(
+        self,
+        summary_tsv,
+        files_tsv,
+        new_prefix,
+        raise_on_error=True,
+        n_cpus=1,
+        allow_fmap_renames=False,
+        change_rename_entity_set=None,
+        remove_rename_entity_set=None,
+        write_edited_summary=None,
+    ):
         """Apply changes documented in the edited summary tsv and generate the new tsv files.
 
         This function looks at the RenameEntitySet and MergeInto
@@ -486,10 +1576,24 @@ class CuBIDS:
             Path prefix to the new tsv files.
         raise_on_error : :obj:`bool`
             If True, raise an error if the MergeInto column contains invalid merges.
+        allow_fmap_renames : :obj:`bool`
+            Allow validated fieldmap files to be renamed. Fieldmaps are skipped by default.
+        change_rename_entity_set : list[str] or None
+            Exact ``OLD_ENTITY_SET=NEW_ENTITY_SET`` substitutions or paths to CSV/TSV mapping
+            tables with ``old_entity_set`` and ``new_entity_set`` columns.
+        remove_rename_entity_set : list[str] or None
+            Exact entity sets whose matching groups are deleted, or paths to CSV/TSV tables
+            with an ``entity_set`` column. These are matched after the substitutions above
+            have been applied, so a group that both options touch is named here by its
+            substituted entity set.
+        write_edited_summary : :obj:`pathlib.Path` or None
+            Destination for the derived summary, written once the request has been fully
+            validated. Required when entity set changes are used.
         """
         # reset lists of old and new filenames
         self.old_filenames = []
         self.new_filenames = []
+        self._renamed_sources = set()
 
         if "/" not in str(summary_tsv):
             if not self.cubids_code_dir:
@@ -504,8 +1608,68 @@ class CuBIDS:
         summary_df = pd.read_table(summary_tsv)
         files_df = pd.read_table(files_tsv)
 
+        entity_set_changes = self.load_entity_set_changes(change_rename_entity_set)
+        entity_set_removals = self.load_entity_set_removals(remove_rename_entity_set)
+        edited_summary_path = None
+        if entity_set_changes or entity_set_removals:
+            if write_edited_summary is None:
+                raise ValueError(
+                    "--write-edited-summary is required with --change-RenameEntitySet or "
+                    "--remove-RenameEntitySet."
+                )
+            # Substitutions run first, so a removal has to name the entity set a
+            # substitution leaves behind rather than the one the summary started with.
+            if entity_set_changes:
+                summary_df = self.apply_entity_set_changes(summary_df, entity_set_changes)
+            if entity_set_removals:
+                summary_df = self.apply_entity_set_removals(summary_df, entity_set_removals)
+            edited_summary_path = Path(write_edited_summary)
+
+        # Plan and validate everything before the first mutation, so that an
+        # unsafe request fails without leaving the dataset partially changed.
+        change_keys_df = summary_df[summary_df["RenameEntitySet"].apply(utils.is_nonempty)]
+        entity_sets = {
+            row["KeyParamGroup"]: row["RenameEntitySet"] for _, row in change_keys_df.iterrows()
+        }
+
         # Check that the MergeInto column only contains valid merges
-        ok_merges, deletions = check_merging_operations(summary_tsv, raise_on_error=raise_on_error)
+        ok_merges, deletions = check_merging_operations(summary_df, raise_on_error=raise_on_error)
+
+        to_remove = []
+        deletion_keys = set()
+        for rm_id in deletions:
+            files_to_rm = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)]
+            deletion_keys.update(files_to_rm["KeyParamGroup"])
+
+            for rm_me in files_to_rm.FilePath:
+                if Path(self.path + rm_me).exists():
+                    to_remove.append(self.path + rm_me)
+
+        collection_report = None
+        if deletion_keys or entity_sets:
+            collection_report, _ = self.analyze_collection_variant_consistency(
+                files_df, summary_df
+            )
+
+        self.validate_collection_deletions(files_df, summary_df, deletion_keys, collection_report)
+        files_to_purge = self.get_files_to_purge(to_remove)
+        rename_plan = self.plan_renames(files_df, entity_sets, allow_fmap_renames, files_to_purge)
+        rename_pairs = self.plan_rename_pairs(rename_plan)
+        self.validate_collection_renames(
+            files_df,
+            summary_df,
+            entity_sets,
+            files_to_purge,
+            allow_fmap_renames,
+            collection_report,
+        )
+        self.validate_rename_destinations(rename_pairs, files_to_purge)
+
+        # Everything that could reject this request has now run, so recording the
+        # derived summary here cannot leave an audit trail for an apply that never
+        # happened.
+        if edited_summary_path is not None:
+            summary_df.to_csv(edited_summary_path, sep="\t", index=False)
 
         merge_commands = []
         merge_pairs = []
@@ -528,52 +1692,28 @@ class CuBIDS:
             merge_json_into_json(source_json, dest_json)
             merge_commands.append(f"# merged {source_json} -> {dest_json}")
 
-        # Get the delete commands
-        to_remove = []
-        for rm_id in deletions:
-            files_to_rm = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)]
-
-            for rm_me in files_to_rm.FilePath:
-                if Path(self.path + rm_me).exists():
-                    to_remove.append(self.path + rm_me)
-
         # call purge associations on list of files to remove
         self._purge_associations(to_remove)
 
         # Now do the file renaming
-        change_keys_df = summary_df[summary_df.RenameEntitySet.notnull()]
         move_ops = []
         # return if nothing to change
-        if len(change_keys_df) > 0:
-            entity_sets = {}
-
-            for i in range(len(change_keys_df)):
-                new_key = change_keys_df.iloc[i]["RenameEntitySet"]
-                old_key_param = change_keys_df.iloc[i]["KeyParamGroup"]
-
-                # add to dictionary
-                entity_sets[old_key_param] = new_key
-
-            # orig key/param tuples that will have new entity set
-            to_change = list(entity_sets.keys())
+        if rename_pairs:
+            # Queue exactly the moves that were validated above.
+            self._record_rename_pairs(rename_pairs)
 
             # Build an index of IntendedFor references once (reused during renames)
             intended_for_index = self._build_intendedfor_index()
+            for file_path, _, new_path in rename_plan:
+                self._rewrite_intendedfor_references(file_path, new_path, intended_for_index)
 
-            for row in range(len(files_df)):
-                file_path = self.path + files_df.loc[row, "FilePath"]
-                if Path(file_path).exists() and "/fmap/" not in file_path:
-                    key_param_group = files_df.loc[row, "KeyParamGroup"]
-
-                    if key_param_group in to_change:
-                        orig_key_param = files_df.loc[row, "KeyParamGroup"]
-
-                        new_key = entity_sets[orig_key_param]
-
-                        new_entities = utils._entity_set_to_entities(new_key)
-
-                        # generate new filenames according to new entity set
-                        self.change_filename(file_path, new_entities, intended_for_index)
+            self.update_scans_tsv_filenames(
+                {
+                    old_filename: new_filename
+                    for old_filename, new_filename in zip(self.old_filenames, self.new_filenames)
+                    if str(old_filename).endswith((".nii", ".nii.gz"))
+                }
+            )
 
             # create string of mv command ; mv command for dlapi.run
             for from_file, to_file in zip(self.old_filenames, self.new_filenames):
@@ -653,155 +1793,13 @@ class CuBIDS:
 
         Notes
         -----
-        This is the function I need to spend the most time on, since it has entities hardcoded.
+        :meth:`apply_tsv_changes` does not call this. It queues the moves from the
+        plan it already validated, then rewrites ``IntendedFor`` for each renamed
+        NIfTI, so that no rename can be discovered a second time and differ.
         """
-        new_path = utils.build_path(
-            filepath=filepath,
-            out_entities=entities,
-            out_dir=str(self.path),
-            schema=self.schema,
-            is_longitudinal=self.is_longitudinal,
-        )
-
-        exts = Path(filepath).suffixes
-        old_ext = "".join(exts)
-
-        suffix = entities["suffix"]
-
-        # Add the scan path + new path to the lists of old, new filenames
-        self.old_filenames.append(filepath)
-        self.new_filenames.append(new_path)
-
-        # Deterministically add key associated files without global scans
-        # Sidecar JSON
-        sidecar_old = utils.img_to_new_ext(filepath, ".json")
-        if Path(sidecar_old).exists():
-            self.old_filenames.append(sidecar_old)
-            self.new_filenames.append(utils.img_to_new_ext(new_path, ".json"))
-
-        # MAKE SURE THESE AREN'T COVERED BY get_associations!!!
-        # Update DWI-specific files
-        if "/dwi/" in filepath:
-            # add the bval and bvec if there
-            for ext in [".bval", ".bvec"]:
-                assoc_old = utils.img_to_new_ext(filepath, ext)
-                assoc_new = utils.img_to_new_ext(new_path, ext)
-                if Path(assoc_old).exists() and assoc_old not in self.old_filenames:
-                    self.old_filenames.append(assoc_old)
-                    self.new_filenames.append(assoc_new)
-            # Handle sbref files
-            old_suffix = parse_file_entities(filepath)["suffix"]
-            scan_end = "_" + old_suffix + old_ext
-            for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
-                old_sbref = filepath.replace(scan_end, sbref_ext)
-                if Path(old_sbref).exists():
-                    self.old_filenames.append(old_sbref)
-                    new_scan_end = "_" + suffix + old_ext
-                    new_sbref = new_path.replace(new_scan_end, sbref_ext)
-                    self.new_filenames.append(new_sbref)
-
-        # Update bold-specific files
-        # now rename _events, _sbref, and _physio files!
-        old_suffix = parse_file_entities(filepath)["suffix"]
-        scan_end = "_" + old_suffix + old_ext
-
-        if "bold" in filepath:
-            # Handle event files (.tsv and .json)
-            for event_ext in ["_events.tsv", "_events.json"]:
-                old_events = filepath.replace(scan_end, event_ext)
-                if Path(old_events).exists():
-                    self.old_filenames.append(old_events)
-                    new_scan_end = "_" + suffix + old_ext
-                    new_events = new_path.replace(new_scan_end, event_ext)
-                    self.new_filenames.append(new_events)
-
-            # Handle sbref files (.nii.gz and .json)
-            for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
-                old_sbref = filepath.replace(scan_end, sbref_ext)
-                if Path(old_sbref).exists():
-                    self.old_filenames.append(old_sbref)
-                    new_scan_end = "_" + suffix + old_ext
-                    new_sbref = new_path.replace(new_scan_end, sbref_ext)
-                    self.new_filenames.append(new_sbref)
-
-            # Handle physio files (.tsv.gz and .json)
-            for physio_ext in ["_physio.tsv.gz", "_physio.json"]:
-                old_physio = filepath.replace(scan_end, physio_ext)
-                if Path(old_physio).exists():
-                    self.old_filenames.append(old_physio)
-                    new_scan_end = "_" + suffix + old_ext
-                    new_physio = new_path.replace(new_scan_end, physio_ext)
-                    self.new_filenames.append(new_physio)
-
-        # Update ASL-specific files only when ASL timeseries is being renamed
-        if "/perf/" in filepath and old_suffix == "asl":
-            old_context = filepath.replace(scan_end, "_aslcontext.tsv")
-            if Path(old_context).exists():
-                self.old_filenames.append(old_context)
-                new_scan_end = "_" + suffix + old_ext
-                new_context = new_path.replace(new_scan_end, "_aslcontext.tsv")
-                self.new_filenames.append(new_context)
-
-            # Do NOT rename M0 scans or their JSON sidecars. M0 files should
-            # retain their original filenames to preserve independent variability.
-            # The IntendedFor field in M0 JSONs will be updated below to point
-            # to the newly renamed ASL files.
-
-            old_labeling = filepath.replace(scan_end, "_asllabeling.jpg")
-            if Path(old_labeling).exists():
-                self.old_filenames.append(old_labeling)
-                new_scan_end = "_" + suffix + old_ext
-                new_labeling = new_path.replace(new_scan_end, "_asllabeling.jpg")
-                self.new_filenames.append(new_labeling)
-
-        # RENAME INTENDED FORS using prebuilt index when available
-        if intended_for_index is None:
-            intended_for_index = self._build_intendedfor_index()
-
-        old_rel = utils._get_participant_relative_path(filepath)
-        old_bidsuri = utils._get_bidsuri(filepath, self.path)
-        new_rel = utils._get_participant_relative_path(new_path)
-        new_bidsuri = utils._get_bidsuri(new_path, self.path)
-
-        jsons_to_update = set()
-        for key in (old_rel, old_bidsuri):
-            if key in intended_for_index:
-                for jf in intended_for_index[key]:
-                    jsons_to_update.add(jf)
-
-        for jf in jsons_to_update:
-            self.IF_rename_paths.append(jf)
-            cached = utils.get_sidecar_metadata(jf)
-            if cached == "Erroneous sidecar":
-                print("Error parsing sidecar: ", jf)
-                continue
-            if "IntendedFor" not in cached:
-                continue
-            # Work on a copy to avoid mutating the lru_cache entry
-            data = dict(cached)
-            items = list(listify(data["IntendedFor"]) or [])
-            changed = False
-            # Track which format was present to preserve it
-            had_rel = old_rel in items
-            had_bidsuri = old_bidsuri in items
-            # Remove old references (both styles)
-            while old_rel in items:
-                items.remove(old_rel)
-                changed = True
-            while old_bidsuri in items:
-                items.remove(old_bidsuri)
-                changed = True
-            # Append new references in the same format(s) that were originally present
-            if had_rel and new_rel not in items:
-                items.append(new_rel)
-                changed = True
-            if had_bidsuri and new_bidsuri not in items:
-                items.append(new_bidsuri)
-                changed = True
-            if changed:
-                data["IntendedFor"] = items
-                utils._update_json(jf, data)
-                utils.get_sidecar_metadata.cache_clear()
+        new_path = self.get_planned_destination(filepath, entities)
+        self._record_rename_pairs(self.get_associated_file_pairs(filepath, new_path))
+        self._rewrite_intendedfor_references(filepath, new_path, intended_for_index)
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -917,33 +1915,11 @@ class CuBIDS:
         intended_index = self._build_intendedfor_index()
 
         for scan in scans:
-            old_rel = utils._get_participant_relative_path(scan)
-            old_bidsuri = utils._get_bidsuri(scan, self.path)
-            jsons_to_update = set()
-            for key in (old_rel, old_bidsuri):
-                for jf in intended_index.get(key, []):
-                    jsons_to_update.add(jf)
-            for jf in jsons_to_update:
-                cached = utils.get_sidecar_metadata(jf)
-                if cached == "Erroneous sidecar":
-                    print("Error parsing sidecar: ", jf)
-                    continue
-                if "IntendedFor" not in cached:
-                    continue
-                # Work on a copy to avoid mutating the lru_cache entry
-                data = dict(cached)
-                items = list(listify(data["IntendedFor"]) or [])
-                changed = False
-                while old_rel in items:
-                    items.remove(old_rel)
-                    changed = True
-                while old_bidsuri in items:
-                    items.remove(old_bidsuri)
-                    changed = True
-                if changed:
-                    data["IntendedFor"] = items
-                    utils._update_json(jf, data)
-                    utils.get_sidecar_metadata.cache_clear()
+            self._rewrite_intendedfor_references(scan, intended_for_index=intended_index)
+
+        self.update_scans_tsv_filenames(
+            {str(scan): None for scan in scans if str(scan).endswith((".nii", ".nii.gz"))}
+        )
 
         # save IntendedFor purges so that you can datalad run the
         # remove association file commands on a clean dataset
@@ -956,62 +1932,7 @@ class CuBIDS:
             self._invalidate_index()
 
         # NOW WE WANT TO PURGE ALL ASSOCIATIONS
-
-        to_remove = []
-
-        for scan in scans:
-            # Sidecar JSON
-            sidecar = utils.img_to_new_ext(str(scan), ".json")
-            if Path(sidecar).exists():
-                to_remove.append(sidecar)
-
-            # DWI-specific
-            if "/dwi/" in str(scan):
-                for ext in [".bval", ".bvec"]:
-                    assoc_file = utils.img_to_new_ext(str(scan), ext)
-                    if Path(assoc_file).exists():
-                        to_remove.append(assoc_file)
-                # Handle sbref files
-                old_suffix = parse_file_entities(str(scan))["suffix"]
-                old_ext = "".join(Path(scan).suffixes)
-                scan_end = "_" + old_suffix + old_ext
-                for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
-                    sbref_file = str(scan).replace(scan_end, sbref_ext)
-                    if Path(sbref_file).exists():
-                        to_remove.append(sbref_file)
-
-            # BOLD-specific
-            if "bold" in str(scan):
-                old_suffix = parse_file_entities(str(scan))["suffix"]
-                old_ext = "".join(Path(scan).suffixes)
-                scan_end = "_" + old_suffix + old_ext
-                # Event files
-                for event_ext in ["_events.tsv", "_events.json"]:
-                    event_file = str(scan).replace(scan_end, event_ext)
-                    if Path(event_file).exists():
-                        to_remove.append(event_file)
-                # Physio files
-                for physio_ext in ["_physio.tsv.gz", "_physio.json"]:
-                    physio_file = str(scan).replace(scan_end, physio_ext)
-                    if Path(physio_file).exists():
-                        to_remove.append(physio_file)
-                # Handle sbref files (.nii.gz and .json)
-                for sbref_ext in ["_sbref.nii.gz", "_sbref.json"]:
-                    sbref_file = str(scan).replace(scan_end, sbref_ext)
-                    if Path(sbref_file).exists():
-                        to_remove.append(sbref_file)
-
-            # PERF-specific
-            if "/perf/" in str(scan):
-                if parse_file_entities(str(scan))["suffix"] == "asl":
-                    context = utils.img_to_new_ext(str(scan), "_aslcontext.tsv")
-                    if Path(context).exists():
-                        to_remove.append(context)
-                    labeling = utils.img_to_new_ext(str(scan), "_asllabeling.jpg")
-                    if Path(labeling).exists():
-                        to_remove.append(labeling)
-
-        to_remove += list(scans)
+        to_remove = self.get_files_to_purge(scans)
 
         # create rm commands for all files that need to be purged
         purge_commands = []
@@ -1395,43 +2316,54 @@ class CuBIDS:
 
         # Now automate suggested rename based on variant params
         # loop though imaging and derived param keys
-
-        sidecar = self.grouping_config.get("sidecar_params")
-        sidecar = sidecar[modality]
-
-        relational = self.grouping_config.get("relational_params")
-
-        # list of columns names that we account for in suggested renaming
         summary["RenameEntitySet"] = summary["RenameEntitySet"].apply(str)
-
-        rename_cols = []
-        tolerance_cols = []
-        for col in sidecar:
-            if "suggest_variant_rename" in sidecar[col]:
-                if sidecar[col]["suggest_variant_rename"] and col in summary.columns:
-                    rename_cols.append(col)
-                    if "tolerance" in sidecar[col]:
-                        tolerance_cols.append(col)
-
-        # deal with Fmap!
-        if "FieldmapKey" in relational:
-            if "suggest_variant_rename" in relational["FieldmapKey"]:
-                if relational["FieldmapKey"]["suggest_variant_rename"]:
-                    # check if 'bool' or 'columns'
-                    if relational["FieldmapKey"]["display_mode"] == "bool":
-                        rename_cols.append("HasFieldmap")
-
-        # deal with IntendedFor Key!
-        if "IntendedForKey" in relational:
-            if "suggest_variant_rename" in relational["IntendedForKey"]:
-                if relational["IntendedForKey"]["suggest_variant_rename"]:
-                    # check if 'bool' or 'columns'
-                    if relational["IntendedForKey"]["display_mode"] == "bool":
-                        rename_cols.append("UsedAsFieldmap")
-
-        summary = utils.assign_variants(summary, rename_cols)
+        summary = utils.assign_variants(summary, self.get_variant_rename_columns(summary))
 
         return big_df, summary
+
+    def get_variant_rename_columns(self, summary):
+        """Return the summary columns that variant labels are built from.
+
+        A summary spans every modality in the dataset, so eligible sidecar and
+        derived columns are pooled across modalities rather than read from one
+        modality's section. A column that belongs to some other modality is missing
+        for this row and for its dominant group alike, so it cannot contribute a
+        spurious label.
+
+        Parameters
+        ----------
+        summary : :obj:`pandas.DataFrame`
+            Parameter group summary. Only columns present here are eligible.
+
+        Returns
+        -------
+        :obj:`list` of :obj:`str`
+            Column names, in the order their labels are concatenated.
+        """
+        relational = self.grouping_config.get("relational_params")
+
+        rename_cols = []
+        for parameter_kind in ("sidecar_params", "derived_params"):
+            for modality_params in self.grouping_config.get(parameter_kind, {}).values():
+                for col, settings in modality_params.items():
+                    if (
+                        settings.get("suggest_variant_rename")
+                        and col in summary.columns
+                        and col not in rename_cols
+                    ):
+                        rename_cols.append(col)
+
+        # deal with Fmap! and with IntendedFor Key!
+        for relational_key, column in [
+            ("FieldmapKey", "HasFieldmap"),
+            ("IntendedForKey", "UsedAsFieldmap"),
+        ]:
+            settings = relational.get(relational_key, {})
+            # check if 'bool' or 'columns'
+            if settings.get("suggest_variant_rename") and settings.get("display_mode") == "bool":
+                rename_cols.append(column)
+
+        return rename_cols
 
     def get_tsvs(self, path_prefix):
         """Create the _summary and _files tsvs for the bids dataset.
@@ -1456,6 +2388,10 @@ class CuBIDS:
             path_prefix = self.path + "/code/CuBIDS/" + path_prefix
 
         big_df, summary = self.get_param_groups_dataframes()
+        collection_report, collection_proposals = self.analyze_collection_variant_consistency(
+            big_df, summary, self.get_variant_rename_columns(summary)
+        )
+        summary = self.apply_collection_variant_proposals(summary, collection_proposals)
 
         summary = summary.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
         big_df = big_df.sort_values(by=["Modality", "EntitySetCount"], ascending=[True, False])
@@ -1470,6 +2406,7 @@ class CuBIDS:
         files_json = f"{path_prefix}_files.json"
         summary_tsv = f"{path_prefix}_summary.tsv"
         summary_json = f"{path_prefix}_summary.json"
+        collection_report_tsv = f"{path_prefix}_file_collection_variant_report.tsv"
 
         with open(files_json, "w") as outfile:
             json.dump(files_dict, outfile, indent=4)
@@ -1480,17 +2417,30 @@ class CuBIDS:
         big_df.to_csv(files_tsv, sep="\t", index=False)
 
         summary.to_csv(summary_tsv, sep="\t", index=False)
+        collection_report.to_csv(collection_report_tsv, sep="\t", index=False)
 
         # Calculate the acq groups
         group_by_acquisition_sets(files_tsv, path_prefix, self.acq_group_level)
 
         print(f"CuBIDS detected {len(summary)} Parameter Groups.")
+        nonpassing_collections = len(collection_report.loc[collection_report["Status"] != "PASS"])
+        if nonpassing_collections:
+            print(
+                f"WARNING: {nonpassing_collections} file collections have mismatched "
+                f"variants; review {collection_report_tsv}."
+            )
+        elif len(collection_report):
+            print(
+                "File-collection variant consistency: PASS — "
+                f"{len(collection_report)} collections checked."
+            )
         print(
             "Groupings info is available in\n\n"
             f"  * {files_tsv}\n"
             f"  * {files_json}\n"
             f"  * {summary_tsv}\n"
             f"  * {summary_json}\n"
+            f"  * {collection_report_tsv}\n"
         )
 
     def get_entity_sets(self):
