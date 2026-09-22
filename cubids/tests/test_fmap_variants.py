@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from cubids import utils
+from cubids import file_collections, utils
 
 
 def _fmap_entity_set(suffix, **entities):
@@ -113,8 +113,8 @@ def test_fmap_variant_analysis_proposes_one_shared_pepolar_variant(bare_cubids):
         }
     )
 
-    report, proposals = bare_cubids.analyze_collection_variant_consistency(
-        files, summary, ["EchoTime"]
+    report, proposals = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary, ["EchoTime"]
     )
 
     assert report.loc[0, "Status"] == "PROPOSED"
@@ -122,7 +122,7 @@ def test_fmap_variant_analysis_proposes_one_shared_pepolar_variant(bare_cubids):
     assert proposals[f"{original_ap}__2"] == {expected_ap}
     assert proposals[f"{original_pa}__2"] == {expected_pa}
 
-    updated = bare_cubids.apply_collection_variant_proposals(summary, proposals)
+    updated = file_collections.apply_collection_variant_proposals(summary, proposals)
     assert updated.loc[1, "RenameEntitySet"] == expected_ap
     assert updated.loc[3, "RenameEntitySet"] == expected_pa
 
@@ -149,8 +149,8 @@ def test_fmap_variant_analysis_accepts_matching_pepolar_variants(bare_cubids):
     )
     files, summary = _pepolar_frames(ap_rename, pa_rename)
 
-    report, proposals = bare_cubids.analyze_collection_variant_consistency(
-        files, summary, ["EchoTime"]
+    report, proposals = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary, ["EchoTime"]
     )
 
     assert report.loc[0, "Status"] == "PASS"
@@ -179,7 +179,9 @@ def test_fmap_variant_analysis_without_rename_cols_defers_to_manual_review(bare_
     )
     files, summary = _pepolar_frames(ap_rename, pa_rename)
 
-    report, proposals = bare_cubids.analyze_collection_variant_consistency(files, summary)
+    report, proposals = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary
+    )
 
     assert report.loc[0, "Status"] == "MANUAL_REVIEW"
     assert not proposals
@@ -227,8 +229,8 @@ def test_fmap_variant_analysis_covers_non_pepolar_b0_cases(bare_cubids, expected
         }
     )
 
-    report, proposals = bare_cubids.analyze_collection_variant_consistency(
-        files, summary, ["EchoTime"]
+    report, proposals = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary, ["EchoTime"]
     )
 
     assert report.loc[0, "Case"] == expected_case
@@ -244,8 +246,8 @@ def test_fmap_variant_analysis_pairs_pepolar_m0scans(bare_cubids):
         suffix="m0scan",
     )
 
-    report, proposals = bare_cubids.analyze_collection_variant_consistency(
-        files, summary, ["EchoTime"]
+    report, proposals = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary, ["EchoTime"]
     )
 
     assert report.loc[0, "Case"] == "pepolar"
@@ -284,8 +286,8 @@ def test_fmap_variant_analysis_pairs_pepolar_across_parts(bare_cubids):
         }
     )
 
-    report, proposals = bare_cubids.analyze_collection_variant_consistency(
-        files, summary, ["EchoTime"]
+    report, proposals = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary, ["EchoTime"]
     )
 
     assert len(report) == 1
@@ -328,8 +330,8 @@ def test_fmap_variant_analysis_keeps_rf_field_map_acquisition_labels(bare_cubids
         }
     )
 
-    report, proposals = bare_cubids.analyze_collection_variant_consistency(
-        files, summary, ["EchoTime"]
+    report, proposals = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary, ["EchoTime"]
     )
 
     assert report.loc[0, "Case"] == "rf-field-map"
@@ -390,14 +392,21 @@ def test_fmap_renames_allow_fieldmaps_with_no_collection_partner(
     bare_cubids.path = ""
     files, summary, planned = _standalone_fmap_frames(suffix, filename, phase_encoding_direction)
 
-    report, proposals = bare_cubids.analyze_collection_variant_consistency(
-        files, summary, ["EchoTime"]
+    report, proposals = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary, ["EchoTime"]
     )
 
     assert report["Case"].tolist() == ([expected_case] if expected_case else [])
     assert (report["Status"] == "PASS").all()
     assert not proposals
-    bare_cubids.validate_collection_renames(files, summary, planned, allow_fmap_renames=True)
+    file_collections.validate_collection_renames(
+        bare_cubids.collection_rules,
+        bare_cubids.path,
+        files,
+        summary,
+        planned,
+        allow_fmap_renames=True,
+    )
 
 
 def test_fmap_renames_reject_a_magnitude_image_left_without_its_collection(bare_cubids):
@@ -405,12 +414,21 @@ def test_fmap_renames_reject_a_magnitude_image_left_without_its_collection(bare_
     bare_cubids.path = ""
     files, summary, planned = _standalone_fmap_frames("magnitude1", "sub-01_magnitude1.nii.gz")
 
-    report, _ = bare_cubids.analyze_collection_variant_consistency(files, summary, ["EchoTime"])
+    report, _ = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary, ["EchoTime"]
+    )
 
     assert report.loc[0, "Case"] == "orphan-magnitude"
     assert report.loc[0, "Status"] == "MANUAL_REVIEW"
     with pytest.raises(ValueError, match="matching, complete file collections"):
-        bare_cubids.validate_collection_renames(files, summary, planned, allow_fmap_renames=True)
+        file_collections.validate_collection_renames(
+            bare_cubids.collection_rules,
+            bare_cubids.path,
+            files,
+            summary,
+            planned,
+            allow_fmap_renames=True,
+        )
 
 
 def test_validate_collection_renames_ignores_groups_that_are_only_being_deleted(bare_cubids):
@@ -423,9 +441,18 @@ def test_validate_collection_renames_ignores_groups_that_are_only_being_deleted(
     deletions = ["/bids" + path for path in files["FilePath"]]
 
     with pytest.raises(ValueError, match="matching, complete file collections"):
-        bare_cubids.validate_collection_renames(files, summary, planned, allow_fmap_renames=True)
+        file_collections.validate_collection_renames(
+            bare_cubids.collection_rules,
+            bare_cubids.path,
+            files,
+            summary,
+            planned,
+            allow_fmap_renames=True,
+        )
 
-    bare_cubids.validate_collection_renames(
+    file_collections.validate_collection_renames(
+        bare_cubids.collection_rules,
+        bare_cubids.path,
         files,
         summary,
         planned,
@@ -441,7 +468,9 @@ def test_validate_collection_deletions_rejects_a_partial_collection_deletion(bar
     ap_key, _ = files["KeyParamGroup"].tolist()
 
     with pytest.raises(ValueError, match="Deleting part of a file collection") as excinfo:
-        bare_cubids.validate_collection_deletions(files, summary, {ap_key})
+        file_collections.validate_collection_deletions(
+            bare_cubids.collection_rules, files, summary, {ap_key}
+        )
 
     assert pa_entity_set in str(excinfo.value)
 
@@ -450,7 +479,9 @@ def test_validate_collection_deletions_accepts_a_whole_collection_deletion(bare_
     """Deleting every member of a collection is allowed."""
     files, summary = _pepolar_frames(_pepolar_entity_set("AP"), _pepolar_entity_set("PA"))
 
-    bare_cubids.validate_collection_deletions(files, summary, set(files["KeyParamGroup"]))
+    file_collections.validate_collection_deletions(
+        bare_cubids.collection_rules, files, summary, set(files["KeyParamGroup"])
+    )
 
 
 def test_validate_collection_deletions_accepts_deleting_an_unpaired_fieldmap(bare_cubids):
@@ -458,4 +489,6 @@ def test_validate_collection_deletions_accepts_deleting_an_unpaired_fieldmap(bar
     files, summary = _pepolar_frames(_pepolar_entity_set("AP"), _pepolar_entity_set("PA"))
     files = files.iloc[[0]]
 
-    bare_cubids.validate_collection_deletions(files, summary, set(files["KeyParamGroup"]))
+    file_collections.validate_collection_deletions(
+        bare_cubids.collection_rules, files, summary, set(files["KeyParamGroup"])
+    )

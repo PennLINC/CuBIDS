@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import pytest
 
-from cubids import utils
+from cubids import file_collections, utils
 from cubids.workflows import add_file_collections
 
 
@@ -62,8 +62,8 @@ def test_collection_variant_analysis_covers_non_fieldmap_collections(bare_cubids
     """Multi-echo BOLD members receive one shared variant proposal."""
     files, summary, _ = _multi_echo_frames("RestVARIANTEchoTimeA", "RestVARIANTEchoTimeB")
 
-    report, proposals = bare_cubids.analyze_collection_variant_consistency(
-        files, summary, ["EchoTime"]
+    report, proposals = file_collections.analyze_collection_variant_consistency(
+        bare_cubids.collection_rules, files, summary, ["EchoTime"]
     )
 
     assert report.loc[0, "Case"] == "entity-linked"
@@ -83,10 +83,14 @@ def test_collection_guards_cover_non_fieldmap_collections(bare_cubids):
     rename_plan = dict(zip(files["KeyParamGroup"], planned))
 
     with pytest.raises(ValueError, match="matching, complete file collections"):
-        bare_cubids.validate_collection_renames(files, summary, rename_plan)
+        file_collections.validate_collection_renames(
+            bare_cubids.collection_rules, bare_cubids.path, files, summary, rename_plan
+        )
 
     with pytest.raises(ValueError, match="Deleting part of a file collection"):
-        bare_cubids.validate_collection_deletions(files, summary, {files.loc[0, "KeyParamGroup"]})
+        file_collections.validate_collection_deletions(
+            bare_cubids.collection_rules, files, summary, {files.loc[0, "KeyParamGroup"]}
+        )
 
 
 @pytest.mark.parametrize(

@@ -5,7 +5,7 @@ from copy import deepcopy
 import pandas as pd
 import pytest
 
-from cubids import utils
+from cubids import file_collections, utils
 from cubids.constants import NON_KEY_ENTITIES
 from cubids.cubids import CuBIDS
 from cubids.tests.utils import compare_group_assignments
@@ -48,7 +48,7 @@ def test_find_dataset_file_prefers_subject_file_list_then_dataset_root(tmp_path)
 
 def test_collection_rules_come_from_the_bids_schema(bare_cubids):
     """Which files make up a collection is read off the schema, not hardcoded."""
-    rules = utils.get_collection_rules(bare_cubids.schema)
+    rules = file_collections.get_collection_rules(bare_cubids.schema)
     fmap_rules = bare_cubids.schema["rules"]["files"]["raw"]["fmap"]
 
     # Every suffix the spec lists for a multi-file fieldmap type has a rule.
@@ -67,26 +67,28 @@ def test_collection_rules_come_from_the_bids_schema(bare_cubids):
     # A required entity spans a collection only when it can distinguish members,
     # so the task of a func image does not make separate acquisitions into one.
     assert ("func", "bold") not in rules
-    assert utils.get_collection_rule(rules, {"datatype": "func", "suffix": "bold"}).is_generic
+    assert file_collections.get_collection_rule(
+        rules, {"datatype": "func", "suffix": "bold"}
+    ).is_generic
 
     # Parametric maps are the fieldmap suffixes that stand on their own.
     for suffix in fmap_rules["parametric"]["suffixes"]:
         assert ("fmap", suffix) not in rules
 
     # Members of one collection agree on everything outside its axes.
-    pepolar = utils.get_collection_rule(rules, {"datatype": "fmap", "suffix": "epi"})
+    pepolar = file_collections.get_collection_rule(rules, {"datatype": "fmap", "suffix": "epi"})
     ap_entities = {"subject": "01", "direction": "AP", "suffix": "epi", "acquisition": "x"}
     pa_entities = {**ap_entities, "direction": "PA"}
-    assert utils.collection_context(ap_entities, pepolar) == utils.collection_context(
-        pa_entities, pepolar
-    )
-    assert utils.collection_context(
+    assert file_collections.collection_context(
+        ap_entities, pepolar
+    ) == file_collections.collection_context(pa_entities, pepolar)
+    assert file_collections.collection_context(
         {**pa_entities, "acquisition": "y"}, pepolar
-    ) != utils.collection_context(ap_entities, pepolar)
+    ) != file_collections.collection_context(ap_entities, pepolar)
 
     # The role prefix links acquisition-based RF field maps, while trailing text
     # keeps separate use cases from being merged into one collection.
-    rf = utils.get_collection_rule(rules, {"datatype": "fmap", "suffix": "TB1TFL"})
+    rf = file_collections.get_collection_rule(rules, {"datatype": "fmap", "suffix": "TB1TFL"})
     anat_test = {
         "subject": "01",
         "suffix": "TB1TFL",
@@ -94,8 +96,12 @@ def test_collection_rules_come_from_the_bids_schema(bare_cubids):
     }
     famp_test = {**anat_test, "acquisition": "fampTest"}
     famp_retest = {**anat_test, "acquisition": "fampRetest"}
-    assert utils.collection_context(anat_test, rf) == utils.collection_context(famp_test, rf)
-    assert utils.collection_context(anat_test, rf) != utils.collection_context(famp_retest, rf)
+    assert file_collections.collection_context(
+        anat_test, rf
+    ) == file_collections.collection_context(famp_test, rf)
+    assert file_collections.collection_context(
+        anat_test, rf
+    ) != file_collections.collection_context(famp_retest, rf)
 
 
 def test_bids_tsv_helpers_preserve_empty_cells_and_literal_quotes(tmp_path):
