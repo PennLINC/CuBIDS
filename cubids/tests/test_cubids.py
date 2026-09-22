@@ -137,21 +137,6 @@ def _test_apply_tsv_changes(cubids_instance):
     assert True
 
 
-def _test_change_filename(cubids_instance):
-    """Test changing filename.
-
-    Parameters
-    ----------
-    cubids_instance : CuBIDS
-        An instance of the CuBIDS class.
-    """
-    filepath = "/path/to/file.nii.gz"
-    entities = {"subject": "sub-01", "session": "ses-01"}
-    # This test verifies the method completes without errors when called
-    cubids_instance.change_filename(filepath, entities)
-    assert True
-
-
 def _test_copy_exemplars(cubids_instance):
     """Test copying exemplars.
 

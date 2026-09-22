@@ -15,7 +15,6 @@ IMAGING_PARAMS : set of str
 
 ID_VARS = {"EntitySet", "ParamGroup", "FilePath"}
 NON_KEY_ENTITIES = {"subject", "session", "extension"}
-# Multi-dimensional keys SliceTiming  XXX: what is this line about?
 IMAGING_PARAMS = {
     "ParallelReductionFactorInPlane",
     "ParallelAcquisitionTechnique",

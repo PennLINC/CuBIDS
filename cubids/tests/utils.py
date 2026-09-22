@@ -96,6 +96,9 @@ def _get_json_string(json_path):
 def _add_deletion(summary_tsv):
     """Add a deletion entry to a summary TSV file.
 
+    The first non-fieldmap group is used, because apply refuses to delete part
+    of a fieldmap collection.
+
     Parameters
     ----------
     summary_tsv : str or pathlib.Path
@@ -107,9 +110,10 @@ def _add_deletion(summary_tsv):
         The value of the 'KeyParamGroup' column for the modified row.
     """
     df = pd.read_table(summary_tsv)
-    df.loc[3, "MergeInto"] = 0
+    row = df.index[~df["EntitySet"].str.contains("datatype-fmap")][0]
+    df.loc[row, "MergeInto"] = 0
     df.to_csv(summary_tsv, sep="\t", index=False)
-    return df.loc[3, "KeyParamGroup"]
+    return df.loc[row, "KeyParamGroup"]
 
 
 def _add_ext_files(img_path):
