@@ -22,8 +22,10 @@ def check_merging_operations(action_tsv, raise_on_error=False):
 
     Parameters
     ----------
-    action_tsv : :obj:`str`
-        Path to the action tsv file.
+    action_tsv : :obj:`str` or :obj:`pandas.DataFrame`
+        Path to the action tsv file, or an already-loaded action table. Passing
+        the table lets a caller that edited it in memory check the edits without
+        having to write them out first.
     raise_on_error : :obj:`bool`, optional
         Whether to raise an exception if there are errors.
 
@@ -39,7 +41,7 @@ def check_merging_operations(action_tsv, raise_on_error=False):
     :obj:`Exception`
         If there are errors and ``raise_on_error`` is ``True``.
     """
-    actions = pd.read_table(action_tsv)
+    actions = action_tsv if isinstance(action_tsv, pd.DataFrame) else pd.read_table(action_tsv)
     ok_merges = []
     deletions = []
     overwrite_merges = []
@@ -52,9 +54,12 @@ def check_merging_operations(action_tsv, raise_on_error=False):
     def _check_sdc_cols(meta1, meta2):
         return {key: meta1[key] for key in sdc_cols} == {key: meta2[key] for key in sdc_cols}
 
-    needs_merge = actions[np.isfinite(actions["MergeInto"])]
-    for _, row_needs_merge in needs_merge.iterrows():
-        source_param_key = tuple(row_needs_merge[["MergeInto", "EntitySet"]])
+    # An in-memory table can carry MergeInto as object dtype, which np.isfinite
+    # cannot read, so normalize to float first.
+    merge_into = pd.to_numeric(actions["MergeInto"], errors="coerce")
+    needs_merge = actions[np.isfinite(merge_into)]
+    for row_index, row_needs_merge in needs_merge.iterrows():
+        source_param_key = (merge_into.loc[row_index], row_needs_merge["EntitySet"])
         dest_param_key = tuple(row_needs_merge[["ParamGroup", "EntitySet"]])
         dest_metadata = row_needs_merge.to_dict()
         source_row = actions.loc[(actions[["ParamGroup", "EntitySet"]] == source_param_key).all(1)]

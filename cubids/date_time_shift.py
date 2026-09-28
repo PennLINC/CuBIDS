@@ -7,7 +7,6 @@ sidecars.
 
 from __future__ import annotations
 
-import csv
 import io
 import json
 import logging
@@ -24,7 +23,7 @@ from typing import TypeVar
 
 import pandas as pd
 
-from cubids.utils import find_json_files
+from cubids.utils import find_json_files, read_bids_tsv, write_bids_tsv
 
 logger = logging.getLogger("cubids-cli")
 
@@ -221,15 +220,7 @@ def _parallel_map(
 def _read_scans_table(scans_file: Path) -> tuple[_ScansTable | None, str | None]:
     """Read one scans table and return a validation error rather than raising it."""
     try:
-        data = pd.read_csv(
-            scans_file,
-            sep="\t",
-            dtype=str,
-            keep_default_na=False,
-            # BIDS TSVs do not use quoting; QUOTE_NONE keeps quote characters
-            # in untouched columns byte-identical through the rewrite.
-            quoting=csv.QUOTE_NONE,
-        )
+        data = read_bids_tsv(scans_file)
     except (
         OSError,
         UnicodeDecodeError,
@@ -331,7 +322,7 @@ def _plan_scans_update(
     updated_data = table.data.copy()
     updated_data["acq_time"] = updated_times
     contents = io.StringIO()
-    updated_data.to_csv(contents, sep="\t", index=False, quoting=csv.QUOTE_NONE)
+    write_bids_tsv(updated_data, contents)
     return (
         _ScansUpdate(path=table.path, contents=contents.getvalue(), changes=changes),
         warnings,

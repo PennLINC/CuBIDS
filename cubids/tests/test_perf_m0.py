@@ -46,9 +46,12 @@ def test_m0_not_renamed_but_aslcontext_is_and_intendedfor_updated(tmp_path, buil
 
     c = CuBIDS(str(bids_root))
 
-    # Rename the ASL scan by adding a variant acquisition
+    # Rename the ASL scan by adding a variant acquisition, the same way
+    # apply_tsv_changes carries out a single file's rename.
     entities = {"suffix": "asl", "acquisition": "VARIANTTest"}
-    c.change_filename(str(asl_base), entities)
+    new_path = c.get_planned_destination(str(asl_base), entities)
+    c._record_rename_pairs(c.get_associated_file_pairs(str(asl_base), new_path))
+    c._rewrite_intendedfor_references(str(asl_base), new_path)
 
     # Old/new filenames prepared for ASL and aslcontext, but NOT for M0
     assert str(asl_base) in c.old_filenames

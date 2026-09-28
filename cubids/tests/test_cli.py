@@ -16,7 +16,7 @@ from functools import partial
 import pandas as pd
 import pytest
 
-from cubids.cli import _is_file, _main, _path_exists
+from cubids.cli import _is_file, _main, _parse_apply, _path_exists
 from cubids.tests.utils import TEST_DATA, chdir
 
 
@@ -153,6 +153,52 @@ def test_main_help(capsys):
     assert excinfo.value.code == 0
     captured = capsys.readouterr()
     assert "CuBIDS commands" in captured.out
+
+
+@pytest.mark.parametrize("fmap_flag", ["--fmap", "--allow-fmap-renames"])
+def test_apply_parser_accepts_fmap_and_entity_set_change_options(tmp_path, fmap_flag):
+    """The apply parser exposes the opt-in fmap and RenameEntitySet-change interface."""
+    mapping_file = tmp_path / "entity_set_changes.tsv"
+    mapping_file.write_text(
+        "old_entity_set\tnew_entity_set\n"
+        "acquisition-five_datatype-dwi_suffix-dwi\tacquisition-six_datatype-dwi_suffix-dwi\n"
+    )
+    removals_file = tmp_path / "entity_set_removals.tsv"
+    removals_file.write_text("entity_set\nacquisition-seven_datatype-dwi_suffix-dwi\n")
+
+    args = _parse_apply().parse_args(
+        [
+            str(tmp_path),
+            "summary.tsv",
+            "files.tsv",
+            "v1",
+            fmap_flag,
+            "--change-RenameEntitySet",
+            "acquisition-one_datatype-dwi_suffix-dwi=acquisition-two_datatype-dwi_suffix-dwi",
+            "--change-RenameEntitySet",
+            "acquisition-three_datatype-dwi_suffix-dwi=acquisition-four_datatype-dwi_suffix-dwi",
+            "--change-RenameEntitySet",
+            str(mapping_file),
+            "--remove-RenameEntitySet",
+            "acquisition-five_datatype-dwi_suffix-dwi",
+            "--remove-RenameEntitySet",
+            str(removals_file),
+            "--write-edited-summary",
+            "edited_summary.tsv",
+        ]
+    )
+
+    assert args.allow_fmap_renames is True
+    assert args.change_rename_entity_set == [
+        "acquisition-one_datatype-dwi_suffix-dwi=acquisition-two_datatype-dwi_suffix-dwi",
+        "acquisition-three_datatype-dwi_suffix-dwi=acquisition-four_datatype-dwi_suffix-dwi",
+        str(mapping_file),
+    ]
+    assert args.remove_rename_entity_set == [
+        "acquisition-five_datatype-dwi_suffix-dwi",
+        str(removals_file),
+    ]
+    assert args.write_edited_summary.name == "edited_summary.tsv"
 
 
 def _create_date_time_shift_dataset(tmp_path):
@@ -501,6 +547,9 @@ def test_group_command_with_test_dataset(tmp_path, build_bids_dataset):
     # Check that output files were created
     assert (output_prefix.parent / f"{output_prefix.name}_summary.tsv").exists()
     assert (output_prefix.parent / f"{output_prefix.name}_files.tsv").exists()
+    assert (
+        output_prefix.parent / f"{output_prefix.name}_file_collection_variant_report.tsv"
+    ).exists()
     assert (output_prefix.parent / f"{output_prefix.name}_AcqGrouping.tsv").exists()
 
 
