@@ -357,9 +357,9 @@ entity set: the value in ``RenameEntitySet`` when that cell is filled in, and th
 ``EntitySet`` when it is empty. Copy the value exactly as the summary writes it.
 
 To rename a collection, supply ``--change-RenameEntitySet OLD=NEW`` once for each mapping, where
-``OLD`` and ``NEW`` are complete entity sets, or pass a CSV or TSV mapping file to the same
-option. Mapping files must include ``old_entity_set`` and ``new_entity_set`` columns. You can
-combine the two forms. CuBIDS never modifies the input summary. When using
+``OLD`` and ``NEW`` are complete entity sets, or pass a CSV or TSV file with the columns
+``old_entity_set`` and ``new_entity_set``, one mapping per row. You can combine the two forms
+and repeat the option. CuBIDS never modifies the input summary. When using
 ``--change-RenameEntitySet`` or ``--remove-RenameEntitySet``, provide ``--write-edited-summary``
 to specify where to write the derived, edited summary. That file is written only once the whole
 request has passed validation, so a rejected apply leaves nothing behind.
@@ -394,7 +394,7 @@ that collection's entity set. CuBIDS writes ``0`` to ``MergeInto`` in the derive
 then uses the normal apply deletion path. That path deletes the matching image and, when
 present, its standard BIDS companions, including JSON sidecars and modality-specific files. It
 also removes the image from applicable ``*_scans.tsv`` tables and every ``IntendedFor`` list
-that references it. Repeat the option for each collection to delete.
+that references it.
 
 When you combine the two options, the substitutions run first, so name a collection here by the
 entity set ``--change-RenameEntitySet`` leaves it with, not the one the summary started with.
@@ -407,7 +407,7 @@ For example:
         --write-edited-summary v0_edited_summary.tsv
 
 Repeat the option for each collection to delete, or list the entity sets in a CSV or TSV file
-with an ``entity_set`` column and pass that file instead:
+with an ``entity_set`` column, one entity set per row, and pass that file instead:
 
 .. code-block:: text
 

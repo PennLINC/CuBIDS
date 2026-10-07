@@ -332,7 +332,7 @@ def _add_fmap_epi_associations(bids_dir):
         stem.with_suffix(".bvec").write_text("0\n0\n0\n")
 
 
-def test_get_associated_file_pairs_plan_every_bold_companion(tmp_path):
+def test_bold_associated_file_pairs(tmp_path):
     """Rename, validation, and purge share one complete BOLD association plan."""
     source = tmp_path / "sub-01/func/sub-01_task-rest_bold.nii.gz"
     source.parent.mkdir(parents=True)
@@ -368,7 +368,7 @@ def test_get_associated_file_pairs_plan_every_bold_companion(tmp_path):
     assert all(target is None for _, target in CuBIDS.get_associated_file_pairs(source))
 
 
-def test_rename_validation_checks_bold_companion_destinations(tmp_path, build_bids_dataset):
+def test_rename_validation_bold_companion_collision(tmp_path, build_bids_dataset):
     """A pre-existing event file cannot be overwritten by a BOLD rename."""
     bids_dir = build_bids_dataset(
         tmp_path=tmp_path,
@@ -406,7 +406,7 @@ def test_rename_validation_checks_bold_companion_destinations(tmp_path, build_bi
     cubids.validate_rename_destinations(pairs, pending_deletions=[str(destination_event)])
 
 
-def test_cubids_apply_fmap_renames_epi_associations(tmp_path, build_bids_dataset):
+def test_apply_fmap_renames_epi_associations(tmp_path, build_bids_dataset):
     """--fmap renames validated PEPOLAR NIfTI, JSON, bval, and bvec files."""
     from cubids.workflows import apply
 
@@ -442,7 +442,7 @@ def test_cubids_apply_fmap_renames_epi_associations(tmp_path, build_bids_dataset
             assert new_stem.with_suffix(extension).exists()
 
 
-def test_cubids_apply_fmap_rejects_mismatched_pair_before_renaming(tmp_path, build_bids_dataset):
+def test_apply_fmap_rejects_mismatched_pair(tmp_path, build_bids_dataset):
     """--fmap fails before writes when an AP/PA pair has different planned labels."""
     from cubids.workflows import apply
 
@@ -475,7 +475,7 @@ def test_cubids_apply_fmap_rejects_mismatched_pair_before_renaming(tmp_path, bui
     assert not (bids_dir / "sub-01/fmap/sub-01_acq-VARIANTVar1_dir-AP_epi.nii.gz").exists()
 
 
-def test_cubids_apply_change_rename_entity_set_writes_a_new_summary(tmp_path, build_bids_dataset):
+def test_apply_change_entity_set_writes_edited_summary(tmp_path, build_bids_dataset):
     """--change-RenameEntitySet is an exact summary transformation with an audit copy."""
     from cubids.workflows import apply
 
@@ -530,10 +530,12 @@ def test_cubids_apply_change_rename_entity_set_writes_a_new_summary(tmp_path, bu
     assert (bids_dir / "sub-01/dwi" / f"sub-01_acq-{new}_dir-AP_run-01_dwi.nii.gz").exists()
 
 
-def test_cubids_apply_remove_rename_entity_set_deletes_files_and_purges_intendedfor(
-    tmp_path, build_bids_dataset
-):
-    """--remove-RenameEntitySet derives MergeInto=0, deletes companions, purges references."""
+def test_apply_remove_entity_set_deletes_group(tmp_path, build_bids_dataset):
+    """--remove-RenameEntitySet deletes a group through the normal MergeInto path.
+
+    The derived summary carries MergeInto=0, the image and its companions are
+    removed, and the scans table and fieldmap IntendedFor lists stop naming it.
+    """
     import json
 
     from cubids.workflows import apply
@@ -606,7 +608,7 @@ def test_cubids_apply_remove_rename_entity_set_deletes_files_and_purges_intended
         assert json.loads(fmap_json.read_text())["IntendedFor"] == []
 
 
-def test_cubids_apply_rejects_removing_part_of_an_fmap_collection(tmp_path, build_bids_dataset):
+def test_apply_rejects_partial_collection_removal(tmp_path, build_bids_dataset):
     """Deleting one PEPOLAR EPI would leave its pair unusable, so apply stops first."""
     from cubids.workflows import apply
 
@@ -640,9 +642,7 @@ def test_cubids_apply_rejects_removing_part_of_an_fmap_collection(tmp_path, buil
         assert (bids_dir / "sub-01/fmap" / f"sub-01_dir-{direction}_epi.nii.gz").exists()
 
 
-def test_cubids_apply_writes_no_edited_summary_when_it_rejects_the_request(
-    tmp_path, build_bids_dataset
-):
+def test_apply_rejected_writes_no_edited_summary(tmp_path, build_bids_dataset):
     """A rejected apply leaves behind neither dataset changes nor an audit trail."""
     from cubids.workflows import apply
 
@@ -676,7 +676,7 @@ def test_cubids_apply_writes_no_edited_summary_when_it_rejects_the_request(
     assert not edited_summary.exists()
 
 
-def test_plan_rename_pairs_deduplicates_shared_associations(tmp_path, build_bids_dataset):
+def test_plan_rename_pairs_dedup_shared_associations(tmp_path, build_bids_dataset):
     """A companion claimed by two renamed images is moved once, to the first destination."""
     bids_dir = build_bids_dataset(
         tmp_path=tmp_path,
@@ -699,7 +699,7 @@ def test_plan_rename_pairs_deduplicates_shared_associations(tmp_path, build_bids
     assert dict(pairs)[str(source)] == plan[0][2]
 
 
-def test_cubids_apply_rejects_hand_edited_partial_fmap_deletion(tmp_path, build_bids_dataset):
+def test_apply_rejects_partial_merge_into_deletion(tmp_path, build_bids_dataset):
     """The same guard covers a summary hand-edited with MergeInto=0."""
     from cubids.workflows import apply
 
@@ -732,9 +732,7 @@ def test_cubids_apply_rejects_hand_edited_partial_fmap_deletion(tmp_path, build_
         assert (bids_dir / "sub-01/fmap" / f"sub-01_dir-{direction}_epi.nii.gz").exists()
 
 
-def test_cubids_apply_remove_rename_entity_set_deletes_fmap_epi_gradient_companions(
-    tmp_path, build_bids_dataset
-):
+def test_apply_remove_entity_set_table_deletes_collection(tmp_path, build_bids_dataset):
     """A table of entity sets deletes a whole collection, with every EPI companion."""
     from cubids.workflows import apply
 

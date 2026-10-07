@@ -58,7 +58,7 @@ def _multi_echo_frames(first_acquisition, second_acquisition):
     return files, summary, planned
 
 
-def test_collection_variant_analysis_covers_non_fieldmap_collections(bare_cubids):
+def test_variant_analysis_multi_echo_proposal(bare_cubids):
     """Multi-echo BOLD members receive one shared variant proposal."""
     files, summary, _ = _multi_echo_frames("RestVARIANTEchoTimeA", "RestVARIANTEchoTimeB")
 
@@ -76,7 +76,7 @@ def test_collection_variant_analysis_covers_non_fieldmap_collections(bare_cubids
     )
 
 
-def test_collection_guards_cover_non_fieldmap_collections(bare_cubids):
+def test_collection_guards_multi_echo(bare_cubids):
     """Rename and deletion safeguards apply to ordinary file collections too."""
     bare_cubids.path = "/bids"
     files, summary, planned = _multi_echo_frames("VARIANTOne", "VARIANTTwo")
@@ -155,7 +155,7 @@ def test_add_file_collections(tmp_path, build_bids_dataset, skeleton_name):
     assert json.loads(f3.read_text()) == expected
 
 
-def test_add_file_collections_covers_fieldmaps(tmp_path, build_bids_dataset):
+def test_add_file_collections_fmap(tmp_path, build_bids_dataset):
     """Fieldmap collections are collected like any other, whatever spans them."""
     bids_dir = build_bids_dataset(
         tmp_path=tmp_path,

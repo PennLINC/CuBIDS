@@ -465,13 +465,13 @@ def _parse_apply():
     --fmap : bool, optional
         Allow renaming fieldmap files after validating fieldmap collections.
     --change-RenameEntitySet : list[str], optional
-        Exact entity set substitutions in OLD=NEW form or paths to CSV/TSV
-        mapping tables with ``old_entity_set`` and ``new_entity_set`` columns.
+        Exact entity set substitutions as ``OLD=NEW``, or paths to CSV/TSV files
+        with ``old_entity_set`` and ``new_entity_set`` columns.
     --remove-RenameEntitySet : list[str], optional
-        Exact entity sets whose matching parameter groups are deleted, or paths to
-        CSV/TSV tables with an ``entity_set`` column.
+        Exact entity sets whose parameter groups are deleted, or paths to CSV/TSV
+        files with an ``entity_set`` column.
     --write-edited-summary : pathlib.Path, optional
-        Destination for the edited summary.tsv file.
+        Destination for the edited summary.tsv file. Required with either option above.
 
     Returns
     -------
@@ -600,7 +600,8 @@ def _parse_apply():
         metavar="OLD=NEW|PATH",
         help=(
             "replace an exact entity set from the summary.tsv RenameEntitySet column with "
-            "OLD=NEW, or supply a CSV/TSV mapping file; argument may be supplied more than once"
+            "OLD=NEW, or supply a CSV/TSV file with the columns old_entity_set and "
+            "new_entity_set (one mapping per row); may be supplied more than once"
         ),
     )
     parser.add_argument(
@@ -611,8 +612,8 @@ def _parse_apply():
         metavar="ENTITY_SET|PATH",
         help=(
             "mark the groups with an exact entity set from the summary.tsv RenameEntitySet "
-            "column for deletion, or supply a CSV/TSV file with an entity_set column; "
-            "argument may be supplied more than once"
+            "column for deletion, or supply a CSV/TSV file with the column entity_set (one "
+            "entity set per row); may be supplied more than once"
         ),
     )
     parser.add_argument(
@@ -621,8 +622,8 @@ def _parse_apply():
         default=None,
         metavar="PATH",
         help=(
-            "write the summary after entity set changes; required when "
-            "--change-RenameEntitySet or --remove-RenameEntitySet is supplied"
+            "write the edited summary to PATH; required when --change-RenameEntitySet or "
+            "--remove-RenameEntitySet is supplied"
         ),
     )
 

@@ -22,7 +22,7 @@ def _summary(entity_sets):
     )
 
 
-def test_change_rename_entity_set_rewrites_only_the_matching_entity_set():
+def test_apply_entity_set_changes_exact_match():
     """Entity set substitutions are exact and create a RenameEntitySet instruction."""
     old = utils._entities_to_entity_set(
         {**DWI_ENTITIES, "acquisition": "VARIANTEchoTimeC1TotalReadoutTimeC1"}
@@ -37,7 +37,7 @@ def test_change_rename_entity_set_rewrites_only_the_matching_entity_set():
     assert result.loc[1, "RenameEntitySet"] == ""
 
 
-def test_change_rename_entity_set_matches_an_already_planned_entity_set():
+def test_apply_entity_set_changes_matches_planned():
     """A value copied from RenameEntitySet matches the planned, not the original, entity set."""
     original = utils._entities_to_entity_set(DWI_ENTITIES)
     planned = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTEchoTime2"})
@@ -50,7 +50,7 @@ def test_change_rename_entity_set_matches_an_already_planned_entity_set():
     assert result.loc[0, "RenameEntitySet"] == new
 
 
-def test_change_rename_entity_set_rejects_unmatched_entity_sets():
+def test_apply_entity_set_changes_rejects_unmatched():
     """A typo raises instead of silently applying nothing."""
     summary = _summary([utils._entities_to_entity_set(DWI_ENTITIES)])
     missing = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTTypo"})
@@ -59,7 +59,7 @@ def test_change_rename_entity_set_rejects_unmatched_entity_sets():
         entity_sets.apply_entity_set_changes(summary, {missing: missing})
 
 
-def test_remove_rename_entity_set_marks_only_the_matching_group_for_deletion():
+def test_apply_entity_set_removals_exact_match():
     """Removal writes MergeInto=0 only for an exact planned entity set."""
     remove = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTVar1"})
     keep = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTVar2"})
@@ -72,7 +72,7 @@ def test_remove_rename_entity_set_marks_only_the_matching_group_for_deletion():
 
 
 @pytest.mark.parametrize(("suffix", "separator"), [(".tsv", "\t"), (".csv", ",")])
-def test_change_rename_entity_set_accepts_csv_and_tsv_mapping_files(tmp_path, suffix, separator):
+def test_load_entity_set_changes_from_table(tmp_path, suffix, separator):
     """A --change-RenameEntitySet value may be a CSV or TSV mapping-table path."""
     old = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTEchoTimeC1"})
     new = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTVar1"})
@@ -93,7 +93,7 @@ def test_load_entity_set_changes_rejects_partial_entities():
 
 
 @pytest.mark.parametrize(("suffix", "separator"), [(".tsv", "\t"), (".csv", ",")])
-def test_load_entity_set_removals_mixes_values_and_table_files(tmp_path, suffix, separator):
+def test_load_entity_set_removals_mixed_sources(tmp_path, suffix, separator):
     """Removals may be given directly, in a CSV or TSV table, or both at once."""
     tabled = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTVar1"})
     supplied = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTVar2"})
@@ -105,7 +105,7 @@ def test_load_entity_set_removals_mixes_values_and_table_files(tmp_path, suffix,
     assert removals == {tabled, supplied}
 
 
-def test_removals_are_readable_as_merge_instructions_without_a_round_trip():
+def test_removals_check_as_merges_in_memory():
     """Apply checks the merges it derived in memory, so nothing is written before validation."""
     remove = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTVar1"})
     keep = utils._entities_to_entity_set({**DWI_ENTITIES, "acquisition": "VARIANTVar2"})
@@ -119,12 +119,21 @@ def test_removals_are_readable_as_merge_instructions_without_a_round_trip():
     assert deletions == [(2, remove)]
 
 
-def test_load_entity_set_removals_requires_an_entity_set_column(tmp_path):
-    """A table without the expected column names the column it needs."""
+def test_load_entity_set_removals_missing_column(tmp_path):
+    """A table without the expected column names both the column it needs and those found."""
     removals_file = tmp_path / "removals.tsv"
     pd.DataFrame({"KeyParamGroup": ["datatype-dwi_suffix-dwi__1"]}).to_csv(
         removals_file, sep="\t", index=False
     )
 
-    with pytest.raises(ValueError, match="entity_set"):
+    with pytest.raises(ValueError, match="header row.*entity_set.*found: KeyParamGroup"):
         entity_sets.load_entity_set_removals([removals_file])
+
+
+def test_load_entity_set_changes_rejects_blank_cell(tmp_path):
+    """A blank cell in a mapping table is reported as empty rather than as 'nan'."""
+    mapping_file = tmp_path / "entity_set_changes.csv"
+    mapping_file.write_text("old_entity_set,new_entity_set\ndatatype-dwi_suffix-dwi,\n")
+
+    with pytest.raises(ValueError, match="empty entity set"):
+        entity_sets.load_entity_set_changes([mapping_file])

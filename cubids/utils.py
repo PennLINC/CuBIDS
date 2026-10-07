@@ -1168,10 +1168,10 @@ def get_variant_components(summary, summary_row, rename_cols):
 
     # Compare numerically: a summary read back from a TSV can type ParamGroup as
     # float, and "1.0" != "1" would silently make every group look dominant-like.
-    param_groups = pd.to_numeric(summary["ParamGroup"], errors="coerce")
     if pd.to_numeric(summary_row["ParamGroup"], errors="coerce") == 1:
         return []
 
+    param_groups = pd.to_numeric(summary["ParamGroup"], errors="coerce")
     dominant = summary.loc[
         (summary["EntitySet"] == summary_row["EntitySet"]) & (param_groups == 1)
     ]

@@ -124,7 +124,6 @@ class CuBIDS:
         self.datalad_handle = None
         self.old_filenames = []  # files whose entity sets changed
         self.new_filenames = []  # new filenames for files to change
-        self._renamed_sources = set()  # membership index over old_filenames
         self.IF_rename_paths = []  # fmap jsons with rename intended fors
         self.grouping_config = load_config(grouping_config)
         self.acq_group_level = acq_group_level
@@ -713,21 +712,30 @@ class CuBIDS:
                 pairs.append((source, destination))
         return pairs
 
-    def _record_rename_pairs(self, pairs):
-        """Append moves to the old/new filename lists, skipping sources already queued.
-
-        Private because it maintains ``_renamed_sources`` as a membership index over
-        ``old_filenames``; appending to those lists directly would desynchronize it.
-        """
-        for source, destination in pairs:
-            if source in self._renamed_sources:
-                continue
-            self._renamed_sources.add(source)
-            self.old_filenames.append(source)
-            self.new_filenames.append(destination)
-
     def _rewrite_intendedfor_references(self, old_path, new_path=None, intended_for_index=None):
-        """Remove or rewrite ``IntendedFor`` entries that refer to one NIfTI."""
+        """Remove or rewrite ``IntendedFor`` entries that refer to one NIfTI.
+
+        Both reference styles are handled, and each sidecar keeps the style it
+        already used: a participant-relative path is replaced by a relative path
+        and a BIDS URI by a BIDS URI.
+
+        Private because it is one step of :meth:`apply_tsv_changes` and
+        :meth:`_purge_associations`: it records the sidecars it touched in
+        ``IF_rename_paths`` for the later DataLad commit and clears the sidecar
+        metadata cache, bookkeeping that only makes sense inside those flows.
+
+        Parameters
+        ----------
+        old_path : :obj:`str`
+            Absolute path of the NIfTI the references currently point to.
+        new_path : :obj:`str` or None
+            Absolute path the NIfTI is renamed to. None removes the references
+            instead, for a NIfTI that is being deleted.
+        intended_for_index : :obj:`dict` or None
+            Index from :meth:`_build_intendedfor_index`, mapping each reference to
+            the sidecars that hold it. Built here when not supplied; callers that
+            process many files should build it once and pass it in.
+        """
         if intended_for_index is None:
             intended_for_index = self._build_intendedfor_index()
 
@@ -873,7 +881,6 @@ class CuBIDS:
         # reset lists of old and new filenames
         self.old_filenames = []
         self.new_filenames = []
-        self._renamed_sources = set()
 
         if "/" not in str(summary_tsv):
             if not self.cubids_code_dir:
@@ -918,7 +925,9 @@ class CuBIDS:
         to_remove = []
         deletion_keys = set()
         for rm_id in deletions:
-            files_to_rm = files_df.loc[(files_df[["ParamGroup", "EntitySet"]] == rm_id).all(1)]
+            files_to_rm = files_df.loc[
+                (files_df[["ParamGroup", "EntitySet"]] == rm_id).all(axis=1)
+            ]
             deletion_keys.update(files_to_rm["KeyParamGroup"])
 
             for rm_me in files_to_rm.FilePath:
@@ -986,7 +995,8 @@ class CuBIDS:
         # return if nothing to change
         if rename_pairs:
             # Queue exactly the moves that were validated above.
-            self._record_rename_pairs(rename_pairs)
+            self.old_filenames = [source for source, _ in rename_pairs]
+            self.new_filenames = [destination for _, destination in rename_pairs]
 
             # Build an index of IntendedFor references once (reused during renames)
             intended_for_index = self._build_intendedfor_index()

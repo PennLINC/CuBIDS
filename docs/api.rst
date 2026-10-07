@@ -40,6 +40,43 @@ API
    workflows.print_metadata_fields
 
 
+******************************************************
+:mod:`cubids.entity_sets`: Scripted Entity Set Changes
+******************************************************
+
+.. currentmodule:: cubids
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+   entity_sets.parse_entity_set
+   entity_sets.load_entity_set_changes
+   entity_sets.load_entity_set_removals
+   entity_sets.apply_entity_set_changes
+   entity_sets.apply_entity_set_removals
+
+
+************************************************
+:mod:`cubids.file_collections`: File Collections
+************************************************
+
+.. currentmodule:: cubids
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+   file_collections.get_collection_rules
+   file_collections.get_collection_rule
+   file_collections.collection_context
+   file_collections.collect_file_collections
+   file_collections.analyze_collection_variant_consistency
+   file_collections.apply_collection_variant_proposals
+   file_collections.validate_collection_deletions
+   file_collections.validate_collection_renames
+
+
 **********************************************
 :mod:`cubids.metadata_merge`: Merging Metadata
 **********************************************

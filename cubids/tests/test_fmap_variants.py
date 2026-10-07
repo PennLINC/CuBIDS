@@ -55,7 +55,7 @@ def _pepolar_entity_set(direction, acquisition="VARIANTVar1"):
     return _fmap_entity_set("epi", direction=direction, acquisition=acquisition)
 
 
-def test_fmap_variant_analysis_proposes_one_shared_pepolar_variant(bare_cubids):
+def test_pepolar_shared_variant_proposal(bare_cubids):
     """Different PEPOLAR variant values yield one structured shared proposal."""
     ap_rename = utils._entities_to_entity_set(
         {
@@ -127,7 +127,7 @@ def test_fmap_variant_analysis_proposes_one_shared_pepolar_variant(bare_cubids):
     assert updated.loc[3, "RenameEntitySet"] == expected_pa
 
 
-def test_fmap_variant_analysis_accepts_matching_pepolar_variants(bare_cubids):
+def test_pepolar_matching_variants_pass(bare_cubids):
     """A collection whose planned acquisition labels match passes validation."""
     ap_rename = utils._entities_to_entity_set(
         {
@@ -157,7 +157,7 @@ def test_fmap_variant_analysis_accepts_matching_pepolar_variants(bare_cubids):
     assert not proposals
 
 
-def test_fmap_variant_analysis_without_rename_cols_defers_to_manual_review(bare_cubids):
+def test_mismatch_without_rename_cols_is_manual_review(bare_cubids):
     """The apply-time validation path cannot propose, so mismatches must not PASS."""
     ap_rename = utils._entities_to_entity_set(
         {
@@ -195,7 +195,7 @@ def test_fmap_variant_analysis_without_rename_cols_defers_to_manual_review(bare_
         ("direct-fieldmap", ["fieldmap", "magnitude"]),
     ],
 )
-def test_fmap_variant_analysis_covers_non_pepolar_b0_cases(bare_cubids, expected_case, suffixes):
+def test_gradient_echo_b0_cases_pass(bare_cubids, expected_case, suffixes):
     """Phase-difference, two-phase, and direct fieldmaps are checked as collections."""
     acquisition = "VARIANTVar1"
     entity_sets = [
@@ -238,7 +238,7 @@ def test_fmap_variant_analysis_covers_non_pepolar_b0_cases(bare_cubids, expected
     assert not proposals
 
 
-def test_fmap_variant_analysis_pairs_pepolar_m0scans(bare_cubids):
+def test_pepolar_m0scan_proposal(bare_cubids):
     """M0 scans under fmap/ are the PEPOLAR fieldmap of perfusion data."""
     files, summary = _pepolar_frames(
         _fmap_entity_set("m0scan", direction="AP", acquisition="AcquisitionVARIANTEchoTimeA"),
@@ -256,7 +256,7 @@ def test_fmap_variant_analysis_pairs_pepolar_m0scans(bare_cubids):
     assert set(proposals) == set(files["KeyParamGroup"])
 
 
-def test_fmap_variant_analysis_pairs_pepolar_across_parts(bare_cubids):
+def test_pepolar_complex_parts_one_collection(bare_cubids):
     """The parts of a complex-valued PEPOLAR pair are checked as one collection."""
     entity_sets = [
         _fmap_entity_set("epi", direction=direction, part=part, acquisition="VARIANTVar1")
@@ -297,7 +297,7 @@ def test_fmap_variant_analysis_pairs_pepolar_across_parts(bare_cubids):
     assert not proposals
 
 
-def test_fmap_variant_analysis_keeps_rf_field_map_acquisition_labels(bare_cubids):
+def test_rf_field_map_keeps_acquisition_labels(bare_cubids):
     """Members that acquisition labels tell apart keep those labels when renamed."""
     entity_sets = [
         _fmap_entity_set("TB1TFL", acquisition=acquisition) for acquisition in ("anat", "famp")
@@ -385,7 +385,7 @@ def _standalone_fmap_frames(suffix, filename, phase_encoding_direction=None):
         ("TB1map", "sub-01_TB1map.nii.gz", None, None),
     ],
 )
-def test_fmap_renames_allow_fieldmaps_with_no_collection_partner(
+def test_unpaired_fmap_rename_allowed(
     bare_cubids, suffix, filename, phase_encoding_direction, expected_case
 ):
     """A fieldmap with nothing to stay consistent with is renamed like any other image."""
@@ -409,7 +409,7 @@ def test_fmap_renames_allow_fieldmaps_with_no_collection_partner(
     )
 
 
-def test_fmap_renames_reject_a_magnitude_image_left_without_its_collection(bare_cubids):
+def test_orphan_magnitude_rename_rejected(bare_cubids):
     """An orphan magnitude image is reported rather than silently left unclassified."""
     bare_cubids.path = ""
     files, summary, planned = _standalone_fmap_frames("magnitude1", "sub-01_magnitude1.nii.gz")
@@ -431,7 +431,7 @@ def test_fmap_renames_reject_a_magnitude_image_left_without_its_collection(bare_
         )
 
 
-def test_validate_collection_renames_ignores_groups_that_are_only_being_deleted(bare_cubids):
+def test_validate_renames_skips_pending_deletions(bare_cubids):
     """A mismatched pair that apply deletes does not have to pass the rename check."""
     bare_cubids.path = "/bids"
     files, summary = _pepolar_frames(
@@ -461,7 +461,7 @@ def test_validate_collection_renames_ignores_groups_that_are_only_being_deleted(
     )
 
 
-def test_validate_collection_deletions_rejects_a_partial_collection_deletion(bare_cubids):
+def test_validate_deletions_rejects_partial(bare_cubids):
     """Deleting one PEPOLAR member names the entity set that would be left behind."""
     pa_entity_set = _pepolar_entity_set("PA")
     files, summary = _pepolar_frames(_pepolar_entity_set("AP"), pa_entity_set)
@@ -475,7 +475,7 @@ def test_validate_collection_deletions_rejects_a_partial_collection_deletion(bar
     assert pa_entity_set in str(excinfo.value)
 
 
-def test_validate_collection_deletions_accepts_a_whole_collection_deletion(bare_cubids):
+def test_validate_deletions_accepts_whole(bare_cubids):
     """Deleting every member of a collection is allowed."""
     files, summary = _pepolar_frames(_pepolar_entity_set("AP"), _pepolar_entity_set("PA"))
 
@@ -484,7 +484,7 @@ def test_validate_collection_deletions_accepts_a_whole_collection_deletion(bare_
     )
 
 
-def test_validate_collection_deletions_accepts_deleting_an_unpaired_fieldmap(bare_cubids):
+def test_validate_deletions_accepts_unpaired(bare_cubids):
     """An fmap with no surviving collection members can be deleted on its own."""
     files, summary = _pepolar_frames(_pepolar_entity_set("AP"), _pepolar_entity_set("PA"))
     files = files.iloc[[0]]

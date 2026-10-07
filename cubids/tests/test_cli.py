@@ -156,7 +156,7 @@ def test_main_help(capsys):
 
 
 @pytest.mark.parametrize("fmap_flag", ["--fmap", "--allow-fmap-renames"])
-def test_apply_parser_accepts_fmap_and_entity_set_change_options(tmp_path, fmap_flag):
+def test_apply_parser_entity_set_options(tmp_path, fmap_flag):
     """The apply parser exposes the opt-in fmap and RenameEntitySet-change interface."""
     mapping_file = tmp_path / "entity_set_changes.tsv"
     mapping_file.write_text(

@@ -62,7 +62,9 @@ def check_merging_operations(action_tsv, raise_on_error=False):
         source_param_key = (merge_into.loc[row_index], row_needs_merge["EntitySet"])
         dest_param_key = tuple(row_needs_merge[["ParamGroup", "EntitySet"]])
         dest_metadata = row_needs_merge.to_dict()
-        source_row = actions.loc[(actions[["ParamGroup", "EntitySet"]] == source_param_key).all(1)]
+        source_row = actions.loc[
+            (actions[["ParamGroup", "EntitySet"]] == source_param_key).all(axis=1)
+        ]
 
         if source_param_key[0] == 0:
             print("going to delete ", dest_param_key)

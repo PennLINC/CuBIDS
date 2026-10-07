@@ -33,7 +33,7 @@ def test_find_json_files_excludes_git_metadata(tmp_path):
     ]
 
 
-def test_find_dataset_file_prefers_subject_file_list_then_dataset_root(tmp_path):
+def test_find_dataset_file_lookup_order(tmp_path):
     """Validation's common lookup handles listed, root-level, and absent files."""
     listed_file = tmp_path / "listed" / "participants.tsv"
     listed_file.parent.mkdir()
@@ -46,7 +46,7 @@ def test_find_dataset_file_prefers_subject_file_list_then_dataset_root(tmp_path)
     assert find_dataset_file("missing.json", [], tmp_path) is None
 
 
-def test_collection_rules_come_from_the_bids_schema(bare_cubids):
+def test_collection_rules_from_schema(bare_cubids):
     """Which files make up a collection is read off the schema, not hardcoded."""
     rules = file_collections.get_collection_rules(bare_cubids.schema)
     fmap_rules = bare_cubids.schema["rules"]["files"]["raw"]["fmap"]
@@ -104,8 +104,12 @@ def test_collection_rules_come_from_the_bids_schema(bare_cubids):
     ) != file_collections.collection_context(famp_retest, rf)
 
 
-def test_bids_tsv_helpers_preserve_empty_cells_and_literal_quotes(tmp_path):
-    """Shared BIDS-TSV I/O preserves the settings needed by both callers."""
+def test_bids_tsv_round_trip(tmp_path):
+    """Reading and writing a BIDS TSV keeps empty cells and literal quote characters.
+
+    Both the scans-table rewrite in apply and date-time-shift rely on this, so the
+    rewritten file is byte-identical to its source.
+    """
     source = tmp_path / "source.tsv"
     destination = tmp_path / "destination.tsv"
     source.write_text('filename\tnote\nfunc/example.nii.gz\tsay "hi"\nfunc/empty.nii.gz\t\n')
@@ -118,7 +122,7 @@ def test_bids_tsv_helpers_preserve_empty_cells_and_literal_quotes(tmp_path):
 
 
 @pytest.mark.parametrize("param_groups", [[1, 2], [1.0, 2.0], ["1", "2"]])
-def test_get_variant_components_share_dominant_group_comparison(param_groups):
+def test_get_variant_components(param_groups):
     """Clustered and plain fields report only differences from ParamGroup 1.
 
     ParamGroup is compared numerically, so a summary that read it back as float or
@@ -140,7 +144,7 @@ def test_get_variant_components_share_dominant_group_comparison(param_groups):
     assert utils.get_variant_components(summary, summary.iloc[0], ["EchoTime"]) == []
 
 
-def test_get_variant_rename_columns_pool_every_modality_in_the_summary():
+def test_get_variant_rename_columns_pools_modalities():
     """Variant labels are built from the same columns whatever order modalities came in."""
     cubids = CuBIDS.__new__(CuBIDS)
     cubids.grouping_config = {
@@ -179,7 +183,7 @@ def test_get_variant_rename_columns_pool_every_modality_in_the_summary():
     assert cubids.get_variant_rename_columns(summary[["EchoTime"]]) == ["EchoTime"]
 
 
-def test_fmap_variant_name_includes_derived_difference():
+def test_variant_name_includes_derived_param():
     """A derived NIfTI difference must not fall back to VARIANTOther."""
     cubids = CuBIDS.__new__(CuBIDS)
     cubids.grouping_config = {
@@ -248,7 +252,7 @@ def test_round_params():
     pd.testing.assert_frame_equal(rounded_df, expected_df)
 
 
-def test_get_modality_params_combines_settings_without_mutating_config():
+def test_get_modality_params():
     """Sidecar and derived settings are combined without changing the config."""
     config = {
         "sidecar_params": {"func": {"EchoTime": {"precision": 3}}},

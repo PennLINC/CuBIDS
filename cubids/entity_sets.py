@@ -24,6 +24,7 @@ import pandas as pd
 from cubids import utils
 
 __all__ = [
+    "parse_entity_set",
     "load_entity_set_changes",
     "load_entity_set_removals",
     "apply_entity_set_changes",
@@ -52,6 +53,10 @@ def parse_entity_set(value):
         ``entity-label`` pairs.
     """
     value = str(value).strip()
+    if not value:
+        raise ValueError(
+            "An empty entity set was supplied; copy the complete entity set from the summary."
+        )
     if not re.fullmatch(r"[A-Za-z0-9]+-[A-Za-z0-9]+(?:_[A-Za-z0-9]+-[A-Za-z0-9]+)*", value):
         raise ValueError(
             "Entity sets must be complete, underscore-separated entity-label pairs as "
@@ -63,6 +68,12 @@ def parse_entity_set(value):
 
 def _read_entity_set_table(value, required_columns, option):
     """Read a CSV or TSV entity set table, or return None for a non-table value.
+
+    The file's extension decides its delimiter: ``.csv`` is comma-separated and
+    ``.tsv`` is tab-separated. The first row must be a header naming
+    ``required_columns``; other columns are ignored. Cells are read as text, so
+    a blank cell reaches :func:`parse_entity_set` as an empty string rather than
+    NaN and is reported as such.
 
     Private because it only exists to share one table-reading rule between
     the two entity set options below.
@@ -92,10 +103,18 @@ def _read_entity_set_table(value, required_columns, option):
         return None
     if not table_path.is_file():
         raise ValueError(f"{option} table file does not exist: {table_path}")
-    table = pd.read_csv(table_path, sep="," if table_suffix == ".csv" else "\t")
+    table = pd.read_csv(
+        table_path,
+        sep="," if table_suffix == ".csv" else "\t",
+        dtype=str,
+        keep_default_na=False,
+    )
     if not set(required_columns).issubset(table.columns):
         raise ValueError(
-            f"{option} table files must contain these columns: " + ", ".join(required_columns)
+            f"{option} table {table_path} must have a header row with the column(s) "
+            + ", ".join(required_columns)
+            + "; found: "
+            + ", ".join(str(column) for column in table.columns)
         )
     return table
 
