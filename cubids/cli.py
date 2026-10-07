@@ -462,6 +462,16 @@ def _parse_apply():
     --config : str, optional
         Path to a config file for grouping. If not provided, the default config
         file from CuBIDS will be used.
+    --fmap : bool, optional
+        Allow renaming fieldmap files after validating fieldmap collections.
+    --change-RenameEntitySet : list[str], optional
+        Exact entity set substitutions as ``OLD=NEW``, or paths to CSV/TSV files
+        with ``old_entity_set`` and ``new_entity_set`` columns.
+    --remove-RenameEntitySet : list[str], optional
+        Exact entity sets whose parameter groups are deleted, or paths to CSV/TSV
+        files with an ``entity_set`` column.
+    --write-edited-summary : pathlib.Path, optional
+        Destination for the edited summary.tsv file. Required with either option above.
 
     Returns
     -------
@@ -516,7 +526,7 @@ def _parse_apply():
         help=(
             "file prefix for writing the post-apply grouping "
             "outputs. If users pass in just a filename prefix "
-            "e.g. V2, then CuBIDS will put the four grouping "
+            "e.g. V2, then CuBIDS will put the grouping "
             "outputs in bids_dir/code/CuBIDS. If the user "
             "specifies a path (e.g. /Users/scovitz/BIDS/V2 "
             "then output files will go to the specified location."
@@ -569,6 +579,52 @@ def _parse_apply():
             "Used as --jobs for datalad save and datalad run."
         ),
         required=False,
+    )
+    parser.add_argument(
+        "--fmap",
+        "--allow-fmap-renames",
+        action="store_true",
+        dest="allow_fmap_renames",
+        default=False,
+        help=(
+            "allow fieldmap renames after validating all fieldmap collections "
+            "(phase-difference, two-phase, direct, PEPOLAR, and RF field maps); "
+            "fieldmaps remain excluded by default"
+        ),
+    )
+    parser.add_argument(
+        "--change-RenameEntitySet",
+        action="append",
+        dest="change_rename_entity_set",
+        default=[],
+        metavar="OLD=NEW|PATH",
+        help=(
+            "replace an exact entity set from the summary.tsv RenameEntitySet column with "
+            "OLD=NEW, or supply a CSV/TSV file with the columns old_entity_set and "
+            "new_entity_set (one mapping per row); may be supplied more than once"
+        ),
+    )
+    parser.add_argument(
+        "--remove-RenameEntitySet",
+        action="append",
+        dest="remove_rename_entity_set",
+        default=[],
+        metavar="ENTITY_SET|PATH",
+        help=(
+            "mark the groups with an exact entity set from the summary.tsv RenameEntitySet "
+            "column for deletion, or supply a CSV/TSV file with the column entity_set (one "
+            "entity set per row); may be supplied more than once"
+        ),
+    )
+    parser.add_argument(
+        "--write-edited-summary",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "write the edited summary to PATH; required when --change-RenameEntitySet or "
+            "--remove-RenameEntitySet is supplied"
+        ),
     )
 
     return parser

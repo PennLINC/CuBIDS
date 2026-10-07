@@ -7,74 +7,87 @@ Ensures that when ASL scans are renamed with variant acquisition labels:
 """
 
 import json
-from pathlib import Path
 
-from cubids.cubids import CuBIDS
+import pandas as pd
 
-
-def _write(path: Path, content: str = ""):
-    """Write text content, creating the parent directory if needed."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content)
+from cubids.workflows import apply
 
 
-def test_m0_not_renamed_but_aslcontext_is_and_intendedfor_updated(tmp_path, build_bids_dataset):
-    """Test that ASL companion files are renamed without renaming M0 scans."""
+def test_asl_rename_keeps_m0_and_updates_intendedfor(tmp_path, build_bids_dataset):
+    """Renaming an ASL scan renames its aslcontext but leaves the M0 scan in place.
+
+    The M0 scan keeps its own name because its variability is independent of
+    the ASL series; only its IntendedFor reference follows the renamed ASL file.
+    """
     bids_root = build_bids_dataset(
         tmp_path=tmp_path,
         dataset_name="perf_m0_dataset",
         skeleton_name="skeleton_perf_m0.yml",
     )
-    sub = "sub-01"
-    ses = "ses-01"
+    perf_dir = bids_root / "sub-01" / "ses-01" / "perf"
+    asl_base = perf_dir / "sub-01_ses-01_asl.nii.gz"
+    m0_base = perf_dir / "sub-01_ses-01_m0scan.nii.gz"
+    m0_json = perf_dir / "sub-01_ses-01_m0scan.json"
+    aslcontext = perf_dir / "sub-01_ses-01_aslcontext.tsv"
 
-    perf_dir = bids_root / sub / ses / "perf"
-
-    asl_base = perf_dir / f"{sub}_{ses}_asl.nii.gz"
-    m0_base = perf_dir / f"{sub}_{ses}_m0scan.nii.gz"
-    m0_json = perf_dir / f"{sub}_{ses}_m0scan.json"
-    aslcontext = perf_dir / f"{sub}_{ses}_aslcontext.tsv"
-
-    # Generate_bids_skeleton creates empty files and sidecars from the YAML skeleton.
+    # generate_bids_skeleton creates empty files and sidecars from the YAML skeleton.
     assert asl_base.exists()
     assert m0_base.exists()
     assert m0_json.exists()
 
-    # Add ASL context file to ensure companion rename behavior is exercised.
-    intended_for_rel = f"{ses}/perf/{sub}_{ses}_asl.nii.gz"
-    _write(aslcontext, "label\ncontrol\nlabel\ncontrol\n")
+    # Add an ASL context file to ensure companion rename behavior is exercised.
+    aslcontext.write_text("label\ncontrol\nlabel\ncontrol\n")
 
-    c = CuBIDS(str(bids_root))
+    asl_entity_set = "datatype-perf_suffix-asl"
+    m0_entity_set = "datatype-perf_suffix-m0scan"
+    summary = pd.DataFrame(
+        {
+            "RenameEntitySet": [f"{asl_entity_set}_acquisition-VARIANTTest", None],
+            "KeyParamGroup": [f"{asl_entity_set}__1", f"{m0_entity_set}__1"],
+            "EntitySet": [asl_entity_set, m0_entity_set],
+            "ParamGroup": [1, 1],
+            "MergeInto": [None, None],
+        }
+    )
+    files = pd.DataFrame(
+        {
+            "FilePath": [
+                f"/{asl_base.relative_to(bids_root).as_posix()}",
+                f"/{m0_base.relative_to(bids_root).as_posix()}",
+            ],
+            "KeyParamGroup": summary["KeyParamGroup"],
+            "EntitySet": summary["EntitySet"],
+            "ParamGroup": [1, 1],
+        }
+    )
+    summary_tsv = tmp_path / "summary.tsv"
+    files_tsv = tmp_path / "files.tsv"
+    summary.to_csv(summary_tsv, sep="\t", index=False)
+    files.to_csv(files_tsv, sep="\t", index=False)
 
-    # Rename the ASL scan by adding a variant acquisition
-    entities = {"suffix": "asl", "acquisition": "VARIANTTest"}
-    c.change_filename(str(asl_base), entities)
+    apply(
+        bids_dir=str(bids_root),
+        use_datalad=False,
+        acq_group_level="subject",
+        config=None,
+        schema=None,
+        edited_summary_tsv=summary_tsv,
+        files_tsv=files_tsv,
+        new_tsv_prefix=tmp_path / "v1",
+    )
 
-    # Old/new filenames prepared for ASL and aslcontext, but NOT for M0
-    assert str(asl_base) in c.old_filenames
-    assert any(fn.endswith("_asl.json") for fn in c.old_filenames)
-    assert any(fn.endswith("_aslcontext.tsv") for fn in c.old_filenames)
+    # The ASL scan, its sidecar, and its aslcontext were renamed together.
+    new_stem = perf_dir / "sub-01_ses-01_acq-VARIANTTest"
+    assert not asl_base.exists()
+    assert not aslcontext.exists()
+    assert (perf_dir / "sub-01_ses-01_acq-VARIANTTest_asl.nii.gz").exists()
+    assert (perf_dir / "sub-01_ses-01_acq-VARIANTTest_asl.json").exists()
+    assert (perf_dir / "sub-01_ses-01_acq-VARIANTTest_aslcontext.tsv").exists()
+    assert not list(perf_dir.glob(f"{new_stem.name}_m0scan*"))
 
-    assert not any(fn.endswith("_m0scan.nii.gz") for fn in c.old_filenames)
-    assert not any(fn.endswith("_m0scan.json") for fn in c.old_filenames)
-
-    # Compute expected new ASL path and aslcontext path
-    expected_new_asl = perf_dir / f"{sub}_{ses}_acq-VARIANTTest_asl.nii.gz"
-    expected_new_aslcontext = perf_dir / f"{sub}_{ses}_acq-VARIANTTest_aslcontext.tsv"
-
-    assert str(expected_new_asl) in c.new_filenames
-    assert str(expected_new_aslcontext) in c.new_filenames
-
-    # M0 files remain with original names
+    # The M0 scan keeps its name, but its IntendedFor follows the renamed ASL file.
     assert m0_base.exists()
     assert m0_json.exists()
-
-    # But M0 IntendedFor should now point to the new ASL relative path
-    with open(m0_json, "r") as f:
-        m0_meta = json.load(f)
-
-    new_rel = f"{ses}/perf/{sub}_{ses}_acq-VARIANTTest_asl.nii.gz"
-    assert "IntendedFor" in m0_meta
-    assert new_rel in m0_meta["IntendedFor"]
-    # Ensure old reference removed
-    assert intended_for_rel not in m0_meta["IntendedFor"]
+    assert json.loads(m0_json.read_text())["IntendedFor"] == [
+        "ses-01/perf/sub-01_ses-01_acq-VARIANTTest_asl.nii.gz"
+    ]

@@ -34,6 +34,34 @@ GIT_CONFIG = os.path.join(os.path.expanduser("~"), ".gitconfig")
 logging.getLogger("datalad").setLevel(logging.ERROR)
 
 
+def find_dataset_file(filename, files_list, bids_dir):
+    """Return a dataset-level file from the subject file list, or the dataset root.
+
+    Parameters
+    ----------
+    filename : str
+        Basename to look for, such as ``dataset_description.json``.
+    files_list : list of str
+        Paths already collected for the subject being validated.
+    bids_dir : str
+        Dataset root, searched when the file is not in ``files_list``.
+
+    Returns
+    -------
+    str or None
+        Path to the file, or None when it exists in neither location.
+    """
+    for candidate_path in files_list:
+        if os.path.basename(candidate_path) == filename:
+            return str(candidate_path)
+
+    if bids_dir:
+        candidate_path = os.path.join(bids_dir, filename)
+        if os.path.exists(candidate_path):
+            return candidate_path
+    return None
+
+
 def _validate_single_subject(args):
     """Validate a single subject in a temporary directory.
 
@@ -108,17 +136,9 @@ def _validate_single_subject(args):
         # Ensure dataset_description.json is available in temp root
         dataset_description_path = os.path.join(temporary_bids_dir, "dataset_description.json")
         if not os.path.exists(dataset_description_path):
-            # Try to find dataset_description.json in the provided file list first
-            source_dataset_description_path = None
-            for candidate_path in files_list:
-                if os.path.basename(candidate_path) == "dataset_description.json":
-                    source_dataset_description_path = candidate_path
-                    break
-            # If not in file list, try to get it from the original bids_dir
-            if not source_dataset_description_path and bids_dir:
-                potential_path = os.path.join(bids_dir, "dataset_description.json")
-                if os.path.exists(potential_path):
-                    source_dataset_description_path = potential_path
+            source_dataset_description_path = find_dataset_file(
+                "dataset_description.json", files_list, bids_dir
+            )
             if source_dataset_description_path:
                 _link_or_copy(source_dataset_description_path, dataset_description_path)
 
@@ -141,18 +161,8 @@ def _validate_single_subject(args):
                         f"Failed to remove existing file '{dest_path}': {e}. "
                         "The file may be overwritten or cause conflicts."
                     )
-            # Try to find source file in the provided file list
             try:
-                source_path = None
-                for candidate_path in files_list:
-                    if os.path.basename(candidate_path) == filename:
-                        source_path = candidate_path
-                        break
-                # If not in file list, try to get it from the original bids_dir
-                if not source_path and bids_dir:
-                    potential_path = os.path.join(bids_dir, filename)
-                    if os.path.exists(potential_path):
-                        source_path = potential_path
+                source_path = find_dataset_file(filename, files_list, bids_dir)
                 if source_path:
                     # Always copy (not link) to protect the original file from modification
                     shutil.copy2(source_path, dest_path)
@@ -529,6 +539,10 @@ def apply(
     files_tsv,
     new_tsv_prefix,
     n_cpus=1,
+    allow_fmap_renames=False,
+    change_rename_entity_set=None,
+    remove_rename_entity_set=None,
+    write_edited_summary=None,
 ):
     """Apply the tsv changes.
 
@@ -550,6 +564,16 @@ def apply(
         Path to the files tsv.
     new_tsv_prefix : :obj:`pathlib.Path`
         Path to the new tsv prefix.
+    allow_fmap_renames : :obj:`bool`
+        Allow fieldmap renames after validating related fieldmap collections.
+    change_rename_entity_set : list[str] or None
+        Exact entity set substitutions in ``OLD=NEW`` form or paths to CSV/TSV mapping
+        tables with ``old_entity_set`` and ``new_entity_set`` columns.
+    remove_rename_entity_set : list[str] or None
+        Exact entity sets whose matching parameter groups are deleted, or paths to CSV/TSV
+        tables with an ``entity_set`` column.
+    write_edited_summary : :obj:`pathlib.Path` or None
+        Destination for the edited summary.tsv file.
     """
     # Run directly from python using
     bod = CuBIDS(
@@ -567,6 +591,10 @@ def apply(
         str(new_tsv_prefix),
         raise_on_error=False,
         n_cpus=n_cpus,
+        allow_fmap_renames=allow_fmap_renames,
+        change_rename_entity_set=change_rename_entity_set,
+        remove_rename_entity_set=remove_rename_entity_set,
+        write_edited_summary=write_edited_summary,
     )
 
 

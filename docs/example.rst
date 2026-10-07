@@ -340,7 +340,7 @@ that grouping reveals alongside BIDS errors that the validator catches,
 gives users a more comprehensive view of the issues they will need to fix during the curation process.
 Note that if users choose to provide just a pass in just a filename prefix (e.g. V1)
 for the second argument,
-then CuBIDS will put the four grouping outputs in ``bids_dir/code/CuBIDS``.
+then CuBIDS will put the grouping outputs in ``bids_dir/code/CuBIDS``.
 If users provide a path (e.g., ``/Users/scovitz/BIDS/V1``),
 then output files will go to the specified location.
 An example command for running the grouping function as follows:
@@ -356,11 +356,13 @@ You can also specify one or more entities to ignore when creating entity sets us
 
     $ cubids group BIDS_Dataset_DataLad v0 --ignore-entity task
 
-This command will produce four tables that describe the dataset's heterogeneity in different ways.
+This command will produce five tables that describe the dataset's heterogeneity in different ways.
 
 #.  ``v0_summary.tsv`` contains all detected Key and Parameter groups and provides a high-level
     overview of the heterogeneity in the entire dataset.
 #.  ``v0_files.tsv`` maps each imaging file in the BIDS directory to a Key and Parameter group.
+#.  ``v0_file_collection_variant_report.tsv`` checks that the planned names of every file
+    collection remain compatible and records any proposed shared variant names.
 #.  ``v0_AcqGrouping.tsv`` maps each session in the dataset to an Acquisition Group.
 #.  ``v0_AcqGroupInfo.txt`` lists the set of scanning parameters present in each Acquisition Group.
 

@@ -1,0 +1,127 @@
+"01":
+  - fmap:
+      - suffix: phasediff
+        metadata:
+          EchoTime1: 0.00492
+          EchoTime2: 0.00738
+      - suffix: magnitude1
+        metadata:
+          EchoTime: 0.00492
+      - suffix: magnitude2
+        metadata:
+          EchoTime: 0.00738
+      - dir: AP
+        suffix: epi
+        metadata:
+          PhaseEncodingDirection: j-
+          TotalReadoutTime: 0.03
+      - dir: PA
+        suffix: epi
+        metadata:
+          PhaseEncodingDirection: j
+          TotalReadoutTime: 0.03
+      - dir: AP
+        suffix: m0scan
+        metadata:
+          PhaseEncodingDirection: j-
+          TotalReadoutTime: 0.03
+      - dir: PA
+        suffix: m0scan
+        metadata:
+          PhaseEncodingDirection: j
+          TotalReadoutTime: 0.03
+      - acq: anat
+        suffix: TB1TFL
+        metadata:
+          FlipAngle: 8
+      - acq: famp
+        suffix: TB1TFL
+        metadata:
+          FlipAngle: 8
+      - flip: 1
+        suffix: TB1DAM
+        metadata:
+          FlipAngle: 60
+      - flip: 2
+        suffix: TB1DAM
+        metadata:
+          FlipAngle: 120
+      - echo: 1
+        flip: 1
+        suffix: TB1EPI
+        metadata:
+          EchoTime: 0.01
+          FlipAngle: 60
+          TotalReadoutTime: 0.03
+          MixingTime: 0.02
+      - echo: 2
+        flip: 1
+        suffix: TB1EPI
+        metadata:
+          EchoTime: 0.02
+          FlipAngle: 60
+          TotalReadoutTime: 0.03
+          MixingTime: 0.02
+      - echo: 1
+        flip: 2
+        suffix: TB1EPI
+        metadata:
+          EchoTime: 0.01
+          FlipAngle: 120
+          TotalReadoutTime: 0.03
+          MixingTime: 0.02
+      - echo: 2
+        flip: 2
+        suffix: TB1EPI
+        metadata:
+          EchoTime: 0.02
+          FlipAngle: 120
+          TotalReadoutTime: 0.03
+          MixingTime: 0.02
+      - acq: tr1Test
+        suffix: TB1AFI
+        metadata:
+          RepetitionTimeExcitation: 0.02
+      - acq: tr2Test
+        suffix: TB1AFI
+        metadata:
+          RepetitionTimeExcitation: 0.1
+      - acq: tr1Retest
+        suffix: TB1AFI
+        metadata:
+          RepetitionTimeExcitation: 0.03
+      - acq: tr2Retest
+        suffix: TB1AFI
+        metadata:
+          RepetitionTimeExcitation: 0.15
+      - acq: anat
+        suffix: TB1RFM
+        metadata:
+          FlipAngle: 8
+      - acq: famp
+        suffix: TB1RFM
+        metadata:
+          FlipAngle: 8
+      - flip: 1
+        inv: 1
+        suffix: TB1SRGE
+        metadata:
+          FlipAngle: 4
+          InversionTime: 0.1
+      - flip: 2
+        inv: 2
+        suffix: TB1SRGE
+        metadata:
+          FlipAngle: 11
+          InversionTime: 2.4
+      - acq: body
+        suffix: RB1COR
+        metadata:
+          FlipAngle: 8
+      - acq: head
+        suffix: RB1COR
+        metadata:
+          FlipAngle: 8
+      - suffix: TB1map
+        metadata:
+          Units: arbitrary
