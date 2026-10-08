@@ -121,11 +121,16 @@ Deploying
 
 A reminder for the maintainers on how to deploy.
 The package version is derived from the git tag by hatch-vcs, so there is no version to bump.
-Make sure all your changes are merged into main and the tests pass.
-Then create a GitHub release with a new tag (no ``v`` prefix, e.g., ``1.3.0``)::
 
-    $ gh release create X.Y.Z --target main --title X.Y.Z --generate-notes
+1.  Preview the release notes::
+
+        $ gh api repos/PennLINC/CuBIDS/releases/generate-notes -f tag_name=X.Y.Z --jq .body
+
+2.  In a pull request, add the release notes to HISTORY.rst and update ``version`` and
+    ``date-released`` in CITATION.cff, using the planned release date.
+3.  Merge the pull request into main and make sure the tests pass.
+4.  Create a GitHub release with a new tag (no ``v`` prefix, e.g., ``1.3.0``)::
+
+        $ gh release create X.Y.Z --target main --title X.Y.Z --generate-notes
 
 CircleCI will then deploy to PyPI if tests pass.
-Afterwards, add the release notes to HISTORY.rst and update ``version`` and
-``date-released`` in CITATION.cff.
