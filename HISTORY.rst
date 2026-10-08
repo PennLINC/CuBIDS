@@ -2,11 +2,37 @@
 History
 =======
 
+1.3.0 (2026-10-07)
+------------------
+
+CuBIDS now requires Python 3.11 or later (Python 3.9 and 3.10 are no longer supported),
+and pyarrow is now a required dependency.
+
+🎉 Exciting New Features
+````````````````````````
+
+* Add --ignore-entity flag to `cubids group` by @tien-tong in https://github.com/PennLINC/CuBIDS/pull/487
+* Add `cubids date-time-shift` by @tien-tong in https://github.com/PennLINC/CuBIDS/pull/499
+* Add safe fmap renaming and CLI entity-set edits to `cubids apply` by @tien-tong in https://github.com/PennLINC/CuBIDS/pull/507
+
+🐛 Bug Fixes
+````````````
+
+* Fix `cubids group` handling of NaN metadata by @tien-tong in https://github.com/PennLINC/CuBIDS/pull/506
+
+Other Changes
+`````````````
+
+* Update tests with BIDS skeleton yaml by @tien-tong in https://github.com/PennLINC/CuBIDS/pull/490
+* Refactor indexing and fix codecov by @tien-tong in https://github.com/PennLINC/CuBIDS/pull/489
+
+**Full Changelog**: https://github.com/PennLINC/CuBIDS/compare/1.2.1...1.3.0
+
 1.2.1 (2026-01-22)
 ------------------
 
 🎉 Exciting New Features
-```````````````````````
+````````````````````````
 
 * Add parallel processing to `cubids apply` by @tien-tong in https://github.com/PennLINC/CuBIDS/pull/481
 * Add parallelization to `cubids add-nifti-info` by @tien-tong in https://github.com/PennLINC/CuBIDS/pull/479
