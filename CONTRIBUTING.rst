@@ -103,7 +103,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2.  If the pull request adds functionality, the docs should be updated. Put
     your new functionality into a function with a docstring, and add the
     feature to the list in README.rst.
-3.  The pull request should work for Python 3.11, 3.12 and 3.13, and for PyPI.
+3.  The pull request should work for Python 3.11, 3.12, 3.13 and 3.14, and for PyPI.
     Check https://circleci.com/gh/PennLINC/CuBIDS
     and make sure that the tests pass for all supported Python versions.
 
@@ -120,11 +120,17 @@ Deploying
 ---------
 
 A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run::
+The package version is derived from the git tag by hatch-vcs, so there is no version to bump.
 
-    $ bump2version patch # possible: major / minor / patch
-    $ git push
-    $ git push --tags
+1.  Preview the release notes::
+
+        $ gh api repos/PennLINC/CuBIDS/releases/generate-notes -f tag_name=X.Y.Z --jq .body
+
+2.  In a pull request, add the release notes to HISTORY.rst and update ``version`` and
+    ``date-released`` in CITATION.cff, using the planned release date.
+3.  Merge the pull request into main and make sure the tests pass.
+4.  Create a GitHub release with a new tag (no ``v`` prefix, e.g., ``1.3.0``)::
+
+        $ gh release create X.Y.Z --target main --title X.Y.Z --generate-notes
 
 CircleCI will then deploy to PyPI if tests pass.
